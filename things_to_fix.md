@@ -7,6 +7,10 @@
 - ✅ It includes spell slot information for spell levels 1-9
 - TODO: Add spells given by other features like species and species variants (when implemented)
 
+## Sub-species effects
+
+- Cantrips and spells on species variants need to be added
+
 ## Repetitions
 
 - Repeated Skill Proficiency: users may select proficiency on skills which are then given in the Background or through some Feat. We need to recognize repeated proficiencies and offer the user alternatives from the original class skill list (not fixed)

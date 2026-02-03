@@ -1,0 +1,15 @@
+{
+  "class": "Druid",
+  "level": 2,
+  "spell_level_name": "2nd-level Spells",
+  "spells": {
+    "Pass without Trace": {
+      "school": "Abjuration",
+      "casting_time": "1 action",
+      "range": "Self",
+      "components": "V, S, M",
+      "duration": "Concentration, up to 1 hour",
+      "description": "You and nearby allies become harder to track and gain a bonus to Stealth checks for the duration."
+    }
+  }
+}

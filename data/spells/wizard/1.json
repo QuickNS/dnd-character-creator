@@ -1,0 +1,23 @@
+{
+  "class": "Wizard",
+  "level": 1,
+  "spell_level_name": "1st-level Spells",
+  "spells": {
+    "Detect Magic": {
+      "school": "Divination",
+      "casting_time": "1 action",
+      "range": "Self",
+      "components": "V, S",
+      "duration": "Concentration, up to 10 minutes",
+      "description": "For the duration, you can sense the presence of magic nearby and learn its general nature."
+    },
+    "Faerie Fire": {
+      "school": "Evocation",
+      "casting_time": "1 action",
+      "range": "60 feet",
+      "components": "V",
+      "duration": "Concentration, up to 1 minute",
+      "description": "Each creature/object in an area is outlined with light on a failed save; attacks against affected targets have advantage and affected creatures can’t benefit from being Invisible."
+    }
+  }
+}

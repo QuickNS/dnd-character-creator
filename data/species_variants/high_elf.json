@@ -13,8 +13,30 @@
         }
       ]
     },
-    "Detect Magic (Level 3)": "You learn the Detect Magic spell. You always have that spell prepared. You can cast it once without a spell slot, and you regain the ability to cast it in that way when you finish a Long Rest. You can also cast the spell using any spell slots you have of the appropriate level.",
-    "Misty Step (Level 5)": "You learn the Misty Step spell. You always have that spell prepared. You can cast it once without a spell slot, and you regain the ability to cast it in that way when you finish a Long Rest. You can also cast the spell using any spell slots you have of the appropriate level."
+    "Detect Magic (Level 3)": {
+      "description": "Starting at level 3, you always have Detect Magic prepared. You can also cast it using spell slots you have of the appropriate level.",
+      "effects": [
+        {
+          "type": "grant_spell",
+          "spell": "Detect Magic",
+          "level": 1,
+          "spell_list": "Wizard",
+          "min_level": 3
+        }
+      ]
+    },
+    "Misty Step (Level 5)": {
+      "description": "Starting at level 5, you always have Misty Step prepared. You can also cast it using spell slots you have of the appropriate level.",
+      "effects": [
+        {
+          "type": "grant_spell",
+          "spell": "Misty Step",
+          "level": 2,
+          "spell_list": "Wizard",
+          "min_level": 5
+        }
+      ]
+    }
   },
   "spells_by_level": {
     "cantrip": ["Prestidigitation"],

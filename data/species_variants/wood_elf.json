@@ -4,9 +4,40 @@
   "speed": 35,
   "traits": {
     "Increased Speed": "Your Speed increases to 35 feet.",
-    "Druidcraft": "You know the Druidcraft cantrip.",
-    "Longstrider (Level 3)": "You learn the Longstrider spell. You always have that spell prepared. You can cast it once without a spell slot, and you regain the ability to cast it in that way when you finish a Long Rest. You can also cast the spell using any spell slots you have of the appropriate level.",
-    "Pass without Trace (Level 5)": "You learn the Pass without Trace spell. You always have that spell prepared. You can cast it once without a spell slot, and you regain the ability to cast it in that way when you finish a Long Rest. You can also cast the spell using any spell slots you have of the appropriate level."
+    "Druidcraft": {
+      "description": "You know the Druidcraft cantrip.",
+      "effects": [
+        {
+          "type": "grant_cantrip",
+          "spell": "Druidcraft",
+          "spell_list": "Druid"
+        }
+      ]
+    },
+    "Longstrider (Level 3)": {
+      "description": "Starting at level 3, you always have Longstrider prepared.",
+      "effects": [
+        {
+          "type": "grant_spell",
+          "spell": "Longstrider",
+          "level": 1,
+          "spell_list": "Druid",
+          "min_level": 3
+        }
+      ]
+    },
+    "Pass without Trace (Level 5)": {
+      "description": "Starting at level 5, you always have Pass without Trace prepared.",
+      "effects": [
+        {
+          "type": "grant_spell",
+          "spell": "Pass without Trace",
+          "level": 2,
+          "spell_list": "Druid",
+          "min_level": 5
+        }
+      ]
+    }
   },
   "spells_by_level": {
     "cantrip": ["Druidcraft"],

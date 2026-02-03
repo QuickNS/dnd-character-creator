@@ -1,0 +1,23 @@
+{
+  "class": "Wizard",
+  "level": 2,
+  "spell_level_name": "2nd-level Spells",
+  "spells": {
+    "Darkness": {
+      "school": "Evocation",
+      "casting_time": "1 action",
+      "range": "60 feet",
+      "components": "V, M",
+      "duration": "Concentration, up to 10 minutes",
+      "description": "Magical darkness spreads from a point within range, heavily obscuring the area and blocking nonmagical light."
+    },
+    "Misty Step": {
+      "school": "Conjuration",
+      "casting_time": "1 bonus action",
+      "range": "Self",
+      "components": "V",
+      "duration": "Instantaneous",
+      "description": "You teleport a short distance to an unoccupied space you can see."
+    }
+  }
+}

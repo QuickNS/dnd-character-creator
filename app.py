@@ -1182,6 +1182,10 @@ def select_species():
                 # Apply effects from this trait
                 if 'effects' in trait_data:
                     for effect in trait_data['effects']:
+                        if isinstance(effect, dict):
+                            min_level = effect.get('min_level')
+                            if isinstance(min_level, int) and character.get('level', 1) < min_level:
+                                continue
                         effect_with_source = effect.copy()
                         effect_with_source['source'] = trait_name
                         character['effects'].append(effect_with_source)
@@ -1397,6 +1401,9 @@ def select_lineage():
                         # Apply structured effects from this trait (generic, data-driven)
                         for effect in trait_data.get('effects', []) if isinstance(trait_data.get('effects', []), list) else []:
                             if isinstance(effect, dict):
+                                min_level = effect.get('min_level')
+                                if isinstance(min_level, int) and character.get('level', 1) < min_level:
+                                    continue
                                 effect_with_source = effect.copy()
                                 effect_with_source['source'] = trait_name
                                 character['effects'].append(effect_with_source)
@@ -1708,8 +1715,13 @@ def _gather_character_spells(character: dict) -> dict:
     effects = character.get('effects', [])
     if isinstance(effects, list):
         cantrip_cache: dict[str, dict] = {}
+        spell_cache_by_level: dict[tuple[str, int], dict] = {}
         for effect in effects:
             if not isinstance(effect, dict):
+                continue
+
+            min_level = effect.get('min_level')
+            if isinstance(min_level, int) and character.get('level', 1) < min_level:
                 continue
 
             effect_type = effect.get('type')
@@ -1738,6 +1750,45 @@ def _gather_character_spells(character: dict) -> dict:
                     'components': cantrip_info.get('components', ''),
                     'duration': cantrip_info.get('duration', ''),
                     'description': cantrip_info.get('description', ''),
+                    'source': effect.get('source', 'Effects')
+                })
+
+            elif effect_type == 'grant_spell':
+                spell_name = effect.get('spell')
+                spell_level = effect.get('level')
+                if not spell_name or not isinstance(spell_level, int):
+                    continue
+
+                # Avoid duplicates
+                if spell_level in spells_by_level and any(s.get('name') == spell_name for s in spells_by_level[spell_level]):
+                    continue
+
+                spell_list = effect.get('spell_list') or class_name
+                cache_key = (spell_list, spell_level)
+                if cache_key not in spell_cache_by_level:
+                    spell_file = Path(__file__).parent / "data" / "spells" / spell_list.lower() / f"{spell_level}.json"
+                    if spell_file.exists():
+                        try:
+                            with open(spell_file, 'r') as f:
+                                spell_data = json.load(f)
+                                spell_cache_by_level[cache_key] = spell_data.get('spells', {})
+                        except (json.JSONDecodeError, IOError):
+                            spell_cache_by_level[cache_key] = {}
+                    else:
+                        spell_cache_by_level[cache_key] = {}
+
+                spell_info = spell_cache_by_level.get(cache_key, {}).get(spell_name, {})
+                if spell_level not in spells_by_level:
+                    spells_by_level[spell_level] = []
+
+                spells_by_level[spell_level].append({
+                    'name': spell_name,
+                    'school': spell_info.get('school', ''),
+                    'casting_time': spell_info.get('casting_time', ''),
+                    'range': spell_info.get('range', ''),
+                    'components': spell_info.get('components', ''),
+                    'duration': spell_info.get('duration', ''),
+                    'description': spell_info.get('description', ''),
                     'source': effect.get('source', 'Effects')
                 })
     

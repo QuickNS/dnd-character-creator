@@ -4,9 +4,40 @@
   "darkvision_range": 120,
   "traits": {
     "Extended Darkvision": "The range of your Darkvision increases to 120 feet.",
-    "Dancing Lights": "You know the Dancing Lights cantrip.",
-    "Faerie Fire (Level 3)": "You learn the Faerie Fire spell. You always have that spell prepared. You can cast it once without a spell slot, and you regain the ability to cast it in that way when you finish a Long Rest. You can also cast the spell using any spell slots you have of the appropriate level.",
-    "Darkness (Level 5)": "You learn the Darkness spell. You always have that spell prepared. You can cast it once without a spell slot, and you regain the ability to cast it in that way when you finish a Long Rest. You can also cast the spell using any spell slots you have of the appropriate level."
+    "Dancing Lights": {
+      "description": "You know the Dancing Lights cantrip.",
+      "effects": [
+        {
+          "type": "grant_cantrip",
+          "spell": "Dancing Lights",
+          "spell_list": "Wizard"
+        }
+      ]
+    },
+    "Faerie Fire (Level 3)": {
+      "description": "Starting at level 3, you always have Faerie Fire prepared.",
+      "effects": [
+        {
+          "type": "grant_spell",
+          "spell": "Faerie Fire",
+          "level": 1,
+          "spell_list": "Wizard",
+          "min_level": 3
+        }
+      ]
+    },
+    "Darkness (Level 5)": {
+      "description": "Starting at level 5, you always have Darkness prepared.",
+      "effects": [
+        {
+          "type": "grant_spell",
+          "spell": "Darkness",
+          "level": 2,
+          "spell_list": "Wizard",
+          "min_level": 5
+        }
+      ]
+    }
   },
   "spells_by_level": {
     "cantrip": ["Dancing Lights"],
