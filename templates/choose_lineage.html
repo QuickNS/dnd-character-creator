@@ -14,7 +14,7 @@
                 
                 <form method="POST" action="{{ url_for('select_lineage') }}">
                     {% for lineage_name, lineage_data in lineages.items() %}
-                    <div class="card border lineage-card mb-3" data-lineage="{{ lineage_name }}">
+                    <div class="card border lineage-card selection-card mb-3" data-lineage="{{ lineage_name }}">
                         <div class="card-body">
                             <div class="form-check">
                                 <input class="form-check-input" type="radio" name="lineage" 

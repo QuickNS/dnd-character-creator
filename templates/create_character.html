@@ -26,6 +26,17 @@
                         </select>
                         <div class="form-text">Most campaigns start at level 1.</div>
                     </div>
+
+                    <div class="mb-3">
+                        <label for="alignment" class="form-label">Alignment</label>
+                        <select class="form-select" id="alignment" name="alignment">
+                            <option value="" selected>Choose (optional)</option>
+                            {% for a in alignments %}
+                                <option value="{{ a }}">{{ a }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">Optional; you can leave this blank.</div>
+                    </div>
                     
                     <div class="d-grid gap-2">
                         <button type="submit" class="btn btn-primary btn-lg">

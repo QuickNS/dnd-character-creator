@@ -155,7 +155,18 @@ def index():
 @app.route('/create', methods=['GET', 'POST'])
 def create_character():
     """Start character creation process."""
+    alignments = [
+        "Unaligned",
+        "Lawful Good", "Neutral Good", "Chaotic Good",
+        "Lawful Neutral", "True Neutral", "Chaotic Neutral",
+        "Lawful Evil", "Neutral Evil", "Chaotic Evil",
+    ]
+
     if request.method == 'POST':
+        selected_alignment = request.form.get('alignment', '').strip()
+        if selected_alignment and selected_alignment not in alignments:
+            selected_alignment = ""
+
         # Initialize character data
         character_data = {
             "name": request.form.get('name', 'Unnamed Character'),
@@ -164,7 +175,7 @@ def create_character():
             "background": "",
             "species": "",
             "lineage": "",
-            "alignment": "",
+            "alignment": selected_alignment,
             "ability_scores": {
                 "Strength": 10,
                 "Dexterity": 10, 
@@ -192,6 +203,9 @@ def create_character():
             "choices_made": {},
             "step": "class"
         }
+
+        if selected_alignment:
+            character_data["choices_made"]["alignment"] = selected_alignment
         
         session.clear()  # Clear any existing session data
         session['character'] = character_data
@@ -205,7 +219,7 @@ def create_character():
         classes = dict(sorted(character_creator.classes.items()))
         return render_template('choose_class.html', classes=classes, character_created=True)
     
-    return render_template('create_character.html')
+    return render_template('create_character.html', alignments=alignments)
 
 @app.route('/choose-class')
 def choose_class():
@@ -1335,7 +1349,24 @@ def select_lineage():
         except (json.JSONDecodeError, IOError) as e:
             print(f"Error loading lineage data: {e}")  # Debug
         
-        # Apply lineage modifications
+        # Ensure features is properly structured (handle legacy characters)
+        if not isinstance(character.get('features'), dict):
+            character['features'] = {
+                "class": [],
+                "species": [],
+                "lineage": [],
+                "background": [],
+                "feats": []
+            }
+
+        # Clear old lineage features when changing lineage/reselecting
+        character['features']['lineage'] = []
+
+        # Initialize effects array if not present
+        if 'effects' not in character:
+            character['effects'] = []
+
+        # Apply lineage modifications and traits
         if lineage_data:
             # Apply speed changes
             if 'speed' in lineage_data:
@@ -1344,6 +1375,31 @@ def select_lineage():
             # Apply darkvision changes
             if 'darkvision_range' in lineage_data:
                 character['physical_attributes']['darkvision'] = lineage_data['darkvision_range']
+
+            # Process lineage traits and add to features/effects
+            traits = lineage_data.get('traits', {})
+            if isinstance(traits, dict):
+                for trait_name, trait_data in traits.items():
+                    if isinstance(trait_data, str):
+                        character['features']['lineage'].append({
+                            "name": trait_name,
+                            "description": trait_data,
+                            "source": f"{lineage_name} Lineage"
+                        })
+                    elif isinstance(trait_data, dict):
+                        description = trait_data.get('description', str(trait_data))
+                        character['features']['lineage'].append({
+                            "name": trait_name,
+                            "description": description,
+                            "source": f"{lineage_name} Lineage"
+                        })
+
+                        # Apply structured effects from this trait (generic, data-driven)
+                        for effect in trait_data.get('effects', []) if isinstance(trait_data.get('effects', []), list) else []:
+                            if isinstance(effect, dict):
+                                effect_with_source = effect.copy()
+                                effect_with_source['source'] = trait_name
+                                character['effects'].append(effect_with_source)
             
             print(f"Applied lineage {lineage_name}: speed={character['physical_attributes']['speed']}, darkvision={character['physical_attributes']['darkvision']}")  # Debug
     
@@ -1366,7 +1422,7 @@ def choose_languages():
     
     # Allow access if step is 'languages' or we're navigating back from later steps  
     character_step = session['character'].get('step')
-    if character_step not in ['languages', 'ability_scores', 'background_bonuses', 'alignment']:
+    if character_step not in ['languages', 'ability_scores', 'background_bonuses', 'complete']:
         return redirect(url_for('index'))
     
     # Update step to languages when accessing this page
@@ -1440,7 +1496,7 @@ def assign_ability_scores():
     character = session['character']
     
     # Allow access if we're at ability_scores step or later
-    if character.get('step') not in ['ability_scores', 'background_bonuses', 'alignment']:
+    if character.get('step') not in ['ability_scores', 'background_bonuses', 'complete']:
         return redirect(url_for('index'))
     
     character = session['character']
@@ -1560,7 +1616,7 @@ def background_bonuses():
     character = session['character']
     
     # Allow access if we're at background_bonuses step or later
-    if character.get('step') not in ['background_bonuses', 'alignment']:
+    if character.get('step') not in ['background_bonuses', 'complete']:
         return redirect(url_for('index'))
     
     character = session['character']
@@ -1621,42 +1677,7 @@ def submit_background_bonuses():
         
         character['choices_made']['background_ability_score_assignment'] = assignment
     
-    character['step'] = 'alignment'
-    session['character'] = character
-    return redirect(url_for('choose_alignment'))
-
-@app.route('/choose-alignment')
-def choose_alignment():
-    """Alignment selection step."""
-    if 'character' not in session:
-        return redirect(url_for('index'))
-    
-    # Allow access if step is 'alignment' or we're navigating back from complete
-    character_step = session['character'].get('step')
-    if character_step not in ['alignment', 'complete']:
-        return redirect(url_for('index'))
-    
-    # Update step to alignment when accessing this page
-    session['character']['step'] = 'alignment'
-    session.modified = True
-    
-    alignments = [
-        "Lawful Good", "Neutral Good", "Chaotic Good",
-        "Lawful Neutral", "True Neutral", "Chaotic Neutral",
-        "Lawful Evil", "Neutral Evil", "Chaotic Evil"
-    ]
-    
-    return render_template('choose_alignment.html', alignments=alignments)
-
-@app.route('/select-alignment', methods=['POST'])
-def select_alignment():
-    """Handle alignment selection."""
-    alignment = request.form.get('alignment')
-    character = session['character']
-    character['alignment'] = alignment
-    character['choices_made']['alignment'] = alignment
     character['step'] = 'complete'
-    
     session['character'] = character
     return redirect(url_for('character_summary'))
 
@@ -1668,6 +1689,57 @@ def _gather_character_spells(character: dict) -> dict:
     spells_by_level = {}
     choices_made = character.get('choices_made', {})
     class_name = character.get('class', '')
+
+    def _load_cantrips_for_spell_list(spell_list_name: str) -> dict:
+        """Load cantrip details for a given spell list name (e.g., 'Wizard')."""
+        if not spell_list_name:
+            return {}
+        spell_file = Path(__file__).parent / "data" / "spells" / spell_list_name.lower() / "0.json"
+        if not spell_file.exists():
+            return {}
+        try:
+            with open(spell_file, 'r') as f:
+                spell_data = json.load(f)
+                return spell_data.get('spells', {})
+        except (json.JSONDecodeError, IOError):
+            return {}
+
+    # 1) Add spells granted directly via character effects (generic, data-driven)
+    effects = character.get('effects', [])
+    if isinstance(effects, list):
+        cantrip_cache: dict[str, dict] = {}
+        for effect in effects:
+            if not isinstance(effect, dict):
+                continue
+
+            effect_type = effect.get('type')
+            if effect_type == 'grant_cantrip':
+                cantrip_name = effect.get('spell')
+                if not cantrip_name:
+                    continue
+
+                # Avoid duplicates
+                if 0 in spells_by_level and any(s.get('name') == cantrip_name for s in spells_by_level[0]):
+                    continue
+
+                spell_list = effect.get('spell_list') or class_name
+                if spell_list not in cantrip_cache:
+                    cantrip_cache[spell_list] = _load_cantrips_for_spell_list(spell_list)
+
+                cantrip_info = cantrip_cache.get(spell_list, {}).get(cantrip_name, {})
+                if 0 not in spells_by_level:
+                    spells_by_level[0] = []
+
+                spells_by_level[0].append({
+                    'name': cantrip_name,
+                    'school': cantrip_info.get('school', ''),
+                    'casting_time': cantrip_info.get('casting_time', ''),
+                    'range': cantrip_info.get('range', ''),
+                    'components': cantrip_info.get('components', ''),
+                    'duration': cantrip_info.get('duration', ''),
+                    'description': cantrip_info.get('description', ''),
+                    'source': effect.get('source', 'Effects')
+                })
     
     # Get class cantrips from choices
     # Cantrips may be stored under different keys depending on the feature name

@@ -13,6 +13,9 @@
     --dnd-white: #FFFFFF;
     --dnd-white-transparent: rgba(255, 255, 255, 0.6);
     --dnd-accent-gray: #6C757D;
+
+    /* Side background art sizing */
+    --side-art-width: 40vw;
     
     /* Clean gradients for subtle effects */
     --clean-gradient: linear-gradient(180deg, var(--dnd-white) 0%, var(--dnd-light-gray) 100%);
@@ -53,9 +56,11 @@ body::before {
     position: fixed;
     top: 0;
     right: 0;
-    width: 1000px;
-    height: 100%;
-    background: url('/static/background/bar-r.png') no-repeat center center;
+    width: var(--side-art-width);
+    height: 100vh;
+    background-image: url('/static/background/bar-r.png');
+    background-repeat: no-repeat;
+    background-position: top center;
     background-size: cover;
     opacity: 0.6;
     pointer-events: none;
@@ -67,9 +72,11 @@ body::after {
     position: fixed;
     top: 0;
     left: 0;
-    width: 1000px;
-    height: 100%;
-    background: var(--left-bg-image, url('/static/background/bar-l.png')) no-repeat center center;
+    width: var(--side-art-width);
+    height: 100vh;
+    background-image: var(--left-bg-image, url('/static/background/bar-l.png'));
+    background-repeat: no-repeat;
+    background-position: top center;
     background-size: cover;
     opacity: 0.6;
     pointer-events: none;
@@ -117,7 +124,6 @@ h1, h2, h3, h4, h5, h6 {
 .container, .container-fluid {
     position: relative;
     z-index: 1;
-    max-width: calc(100vw - 680px); /* Account for both left and right background art space + padding */
     margin: 0 auto;
     padding-left: 20px;
     padding-right: 20px;
@@ -183,6 +189,50 @@ h1, h2, h3, h4, h5, h6 {
     cursor: pointer;
     background: var(--dnd-white);
     border: 2px solid var(--dnd-medium-gray);
+}
+
+/* Fixed-height cards for option grids (species/background/class selection, etc.) */
+:root {
+    --selection-card-height: 260px;
+}
+
+.selection-card {
+    height: var(--selection-card-height);
+}
+
+.selection-card .card-body,
+.selection-card .form-check,
+.selection-card .form-check-label {
+    height: 100%;
+}
+
+.selection-card .card-body {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Let descriptions take available space without changing card height */
+.selection-card .card-text {
+    flex: 1 1 auto;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    line-clamp: 4;
+    -webkit-box-orient: vertical;
+}
+
+/* Avoid long bullet lists blowing up fixed-height cards */
+.selection-card ul {
+    margin-bottom: 0;
+    overflow: hidden;
+    max-height: 5.5em;
+}
+
+@media (max-width: 768px) {
+    .selection-card {
+        height: auto;
+        min-height: 220px;
+    }
 }
 
 .class-card:hover, .background-card:hover, .species-card:hover,
@@ -561,7 +611,6 @@ ul.fantasy-list li::before {
 /* Responsive Design */
 @media (max-width: 1200px) {
     .container, .container-fluid {
-        max-width: calc(100vw - 40px); /* Reduce background art space on smaller screens */
         margin: 0 auto;
         padding: 0 20px;
     }

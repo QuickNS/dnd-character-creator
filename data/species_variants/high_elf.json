@@ -2,7 +2,17 @@
   "name": "High Elf",
   "parent_species": "Elf",
   "traits": {
-    "Prestidigitation": "You know the Prestidigitation cantrip. Whenever you finish a Long Rest, you can replace that cantrip with a different cantrip from the Wizard spell list.",
+    "Prestidigitation": 
+    { 
+      "description": "You know the Prestidigitation cantrip.",
+      "effects": [
+        {
+          "type": "grant_cantrip",
+          "spell": "Prestidigitation",
+          "spell_list": "Wizard"
+        }
+      ]
+    },
     "Detect Magic (Level 3)": "You learn the Detect Magic spell. You always have that spell prepared. You can cast it once without a spell slot, and you regain the ability to cast it in that way when you finish a Long Rest. You can also cast the spell using any spell slots you have of the appropriate level.",
     "Misty Step (Level 5)": "You learn the Misty Step spell. You always have that spell prepared. You can cast it once without a spell slot, and you regain the ability to cast it in that way when you finish a Long Rest. You can also cast the spell using any spell slots you have of the appropriate level."
   },
