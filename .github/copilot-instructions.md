@@ -2,6 +2,53 @@
 
 ## 🎯 Core Principles
 
+### Effects System - CRITICAL
+**NEVER hardcode specific feature names or species names in application logic!**
+
+The system uses a data-driven effects model where ALL mechanical benefits are defined in JSON data files and applied generically through the effects system.
+
+#### ❌ WRONG - Hardcoded Logic
+```python
+# DON'T DO THIS - Hardcoding specific features
+if feature_name == 'Dwarven Resilience' and ability_name == 'Constitution':
+    special_notes.append("Advantage vs Poisoned condition")
+
+if species_name == 'Dwarf':
+    hp_bonus += character_level
+```
+
+#### ✅ CORRECT - Effects-Based Logic
+```python
+# DO THIS - Generic effects checking
+if 'effects' in character:
+    for effect in character['effects']:
+        if effect.get('type') == 'grant_save_advantage':
+            if ability_name in effect.get('abilities', []):
+                special_notes.append(effect.get('display', 'Advantage'))
+```
+
+#### Effects System Rules
+1. **Check effects array first** - Always look for `character['effects']` or `feature_data['effects']`
+2. **Use effect types** - Never check feature names; check `effect['type']` instead
+3. **Generic processing** - Code should work for ANY feature/species that uses the same effect type
+4. **Data-driven** - ALL mechanical benefits must be in JSON data files with structured effects
+5. **No string parsing** - Never parse feature descriptions for mechanical effects
+
+#### Available Effect Types
+See [FEATURE_EFFECTS.md](../FEATURE_EFFECTS.md) for complete documentation:
+- `grant_cantrip` / `grant_cantrip_choice` - Spell granting
+- `grant_weapon_proficiency` / `grant_armor_proficiency` - Proficiencies
+- `grant_save_advantage` - Saving throw advantages
+- `grant_damage_resistance` / `grant_damage_immunity` - Resistances
+- `ability_bonus` - Conditional ability bonuses
+- And more...
+
+#### When Adding New Features
+1. **Define the effect in JSON data** - Add structured effects array to the feature
+2. **Implement generic handler** - Write code that processes ANY feature with that effect type
+3. **Document the effect** - Add to FEATURE_EFFECTS.md
+4. **Test with multiple sources** - Verify it works for different classes/species using the same effect
+
 ### D&D 2024 Edition Compliance
 - **ALWAYS** verify that features, mechanics, and rules come from D&D 2024 (One D&D), not 2014
 - **NEVER** assume backwards compatibility with 2014 rules without explicit verification
@@ -79,6 +126,40 @@ When fetching from live wiki (only if not cached):
 - **Dependency Injection**: Modules should not directly instantiate other modules where possible
 - **Interface Contracts**: Clear, documented APIs between modules
 - **No Circular Dependencies**: Maintain clean dependency hierarchy
+
+### Web Application Architecture & Goals
+
+#### Primary Objective: JSON Character Export
+The web application guides users through creating a D&D 2024 character and produces a **comprehensive JSON model** of the character that includes:
+- All character data (class, species, background, abilities, etc.)
+- **Server-side calculated values** (skill modifiers, saving throws, combat stats)
+- Complete feature descriptions and effects
+- Spell lists and prepared spells
+- Proficiencies and bonuses
+
+**CRITICAL**: All calculations (skills, saves, combat stats, bonuses) MUST be done server-side in `app.py` and passed to templates. This ensures:
+- JSON export contains calculated values
+- Consistent data for all output formats
+- No client-side calculation dependencies
+
+#### Secondary Objective: Printable Character Sheets
+After JSON export is complete and robust, extend to generate **printable character sheets** in multiple formats:
+- **PDF Character Sheets**: Official D&D 2024 character sheet layouts
+- **Modular Cards**: 
+  - Character Info Card
+  - Weapon Cards
+  - Armor Cards
+  - Spell Cards
+  - Feature Cards
+  - Equipment Cards
+
+All print formats should use the same JSON model, ensuring consistency across outputs.
+
+#### Development Workflow
+1. **Always implement server-side calculations first** - Never rely on template calculations
+2. **Store calculated values in structured objects** - `skill_modifiers`, `saving_throws`, `combat_stats`
+3. **Pass pre-calculated data to templates** - Templates should only display, not calculate
+4. **Design for exportability** - Every feature should work for both web display and JSON/PDF export
 
 #### Current Module Structure
 ```

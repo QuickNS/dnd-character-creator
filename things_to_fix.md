@@ -17,7 +17,7 @@
 
 ## Cleric
 
-Divine Order -> Protector : must grant proficiency with Martial weapons and Heavy Armor (not fixed)
+✅ Divine Order -> Protector : must grant proficiency with Martial weapons and Heavy Armor
 ✅ Divine Order -> Thaumaturge: grants one extra Cleric cantrip
 ✅ Light Domain -> gives the Light cantrip
 Divine Order -> Thaumaturge: gives WIS bonus to Intelligence checks (Arcana or Religion), minimum of +1 (not fixed)
