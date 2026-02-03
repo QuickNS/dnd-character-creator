@@ -1,0 +1,18 @@
+{
+  "name": "College of Dance",
+  "class": "Bard",
+  "description": "Bards who blend artistry and combat, turning battle into graceful performance.",
+  "source": "Player's Handbook 2024",
+  "features_by_level": {
+    "3": {
+      "Dazzling Footwork": "When you take the Dash action or move at least 10 feet on your turn, you can give a creature a penalty. Choose one creature within 5 feet after moving. It has Disadvantage on attacks until start of your next turn. Can do this only once per turn.",
+      "Bardic Damage": "You gain proficiency with Scimitars, and Scimitars count as a Bard weapon for you. When you deal Sneak Attack damage, you can roll your Bardic Inspiration die and add that number to the damage."
+    },
+    "6": {
+      "Leading Evasion": "You gain proficiency in Dexterity saving throws if you don't already have it. When a creature you can see within 5 feet fails a Dexterity save, you can use Reaction to grant them Advantage on the save (potentially changing the outcome)."
+    },
+    "14": {
+      "Tandem Footwork": "When you use Dazzling Footwork, you can affect a number of creatures within 5 feet equal to your Charisma modifier (minimum 1)."
+    }
+  }
+}

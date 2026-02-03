@@ -1,0 +1,24 @@
+{
+  "name": "Psi Warrior",
+  "class": "Fighter",
+  "description": "Fighters who augment their physical might with psionic energy.",
+  "source": "Player's Handbook 2024",
+  "features_by_level": {
+    "3": {
+      "Psionic Power": "You harbor a wellspring of psionic energy. You have Psionic Energy dice equal to twice your Proficiency Bonus (d6 each). Regain all on Long Rest. Use them for: Protective Field (when you or creature within 30 feet takes damage, use Reaction to reduce damage by d6 + Intelligence modifier), Psionic Strike (once per turn when you hit, deal extra Force damage equal to one Psionic Energy die), Telekinetic Movement (move one object or willing creature up to 30 feet as an action).",
+      "Telekinetic Adept": "When you use Psionic Strike, you can also move the target 5 feet in any direction if it is Large or smaller."
+    },
+    "7": {
+      "Psi-Powered Leap": "As a Bonus Action, gain a flying speed equal to twice your Walking Speed until the end of the current turn. Can use once without expending a Psionic Energy die, then must expend a die for subsequent uses until you finish a Short or Long Rest."
+    },
+    "10": {
+      "Guarded Mind": "You have Resistance to Psychic damage. If you start your turn Charmed or Frightened, you can expend a Psionic Energy die and end every effect on yourself causing those conditions."
+    },
+    "15": {
+      "Bulwark of Force": "When you or a creature you can see within 30 feet takes damage, you can use Reaction to grant Resistance to that damage. When you do so, expend one Psionic Energy die, and the target gains Temporary HP equal to the number rolled plus your Intelligence modifier."
+    },
+    "18": {
+      "Telekinetic Master": "Your Psionic Energy dice become d8s. As an action, you can cast Telekinesis without components or a spell slot. When you do so, the spell's save DC equals 8 + Proficiency Bonus + Intelligence modifier. You can use this action a number of times equal to your Intelligence modifier (minimum 1), regaining uses on Long Rest."
+    }
+  }
+}

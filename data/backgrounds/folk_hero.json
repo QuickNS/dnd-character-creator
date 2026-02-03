@@ -1,0 +1,20 @@
+{
+  "name": "Folk Hero",
+  "description": "You come from a humble social rank, but you are destined for so much more. Already the people of your home village regard you as their champion, and your destiny calls you to stand against the tyrants and monsters that threaten the common folk everywhere.",
+  "ability_score_increase": {
+    "total": 3,
+    "options": ["Constitution", "Wisdom", "Strength"],
+    "suggested": {"Constitution": 1, "Wisdom": 2}
+  },
+  "feat": "Tough",
+  "skill_proficiencies": ["Animal Handling", "Survival"],
+  "tool_proficiencies": ["Carpenter's Tools", "Vehicles (Land)"],
+  "languages": 1,
+  "equipment": [
+    "Carpenter's Tools",
+    "Shovel",
+    "Iron Pot",
+    "Traveler's Clothes",
+    "23 GP"
+  ]
+}

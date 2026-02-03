@@ -1,0 +1,21 @@
+{
+  "name": "Path of the Zealot",
+  "class": "Barbarian",
+  "description": "Barbarians who are fueled by divine fury and fight as instruments of their gods.",
+  "source": "Player's Handbook 2024",
+  "features_by_level": {
+    "3": {
+      "Divine Fury": "While raging, the first creature you hit on each turn with a melee attack takes extra damage equal to 1d6 + half your Barbarian level. The extra damage is Necrotic or Radiant (your choice when you gain this feature).",
+      "Warrior of the Gods": "A spell cast to restore you to life (not Undeath or Lichdom) doesn't require material components."
+    },
+    "6": {
+      "Zealous Presence": "As a Bonus Action, choose up to 10 creatures within 60 feet. Each chosen creature gains Advantage on attack rolls and saving throws until the start of your next turn. Once you use this feature, you can't use it again until you finish a Long Rest."
+    },
+    "10": {
+      "Rage Beyond Death": "While raging, having 0 Hit Points doesn't knock you Unconscious. You still must make Death Saving Throws, and you suffer normal effects of taking damage while at 0 HP. If you would die due to failing Death Saves, you don't die until your Rage ends, and you only die then if you still have 0 HP."
+    },
+    "14": {
+      "Reckless Abandon": "When you use Reckless Attack during Rage, you gain Temporary Hit Points equal to your Barbarian level. They vanish when your Rage ends."
+    }
+  }
+}

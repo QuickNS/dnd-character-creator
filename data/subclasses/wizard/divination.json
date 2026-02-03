@@ -1,0 +1,21 @@
+{
+  "name": "Divination",
+  "description": "Seeks to unveil the mysteries of the multiverse through divination magic.",
+  "features_by_level": {
+    "2": {
+      "Divination Savant": "The gold and time you must spend to copy Divination spells into your spellbook is halved.",
+      "Portent": "You can glimpse the future and use it to aid your allies or hinder your enemies. When you finish a long rest, roll two d20s and record the numbers rolled. You can replace any attack roll, saving throw, or ability check made by you or a creature you can see with one of these foretelling rolls."
+    },
+    "6": {
+      "Expert Divination": "Casting divination spells comes so easily to you that it expends only a fraction of your spellcasting efforts. When you cast a divination spell of 2nd level or higher using a spell slot, you regain one expended spell slot. The slot you regain must be of a level lower than the spell you cast and can't be higher than 5th level."
+    },
+    "10": {
+      "The Third Eye": "You can use your action to increase your powers of perception. When you do so, choose one of the following benefits, which lasts until you are incapacitated or you take a short or long rest: Darkvision (60 feet), Ethereal Sight, Greater Comprehension, or See Invisibility."
+    },
+    "14": {
+      "Greater Portent": "The visions in your dreams intensify and paint a more accurate picture of what is to come. You roll three d20s for your Portent feature, rather than two."
+    }
+  },
+  "class": "Wizard",
+  "source": "Player's Handbook 2024"
+}

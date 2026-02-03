@@ -1,0 +1,8 @@
+<svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <g fill="#D4AF37" opacity="0.9">
+    <!-- Example class icon design -->
+    <path d="M20 4L22 6H30L32 8V12L30 14H25L23 16L20 35L17 16L15 14H10L8 12V8L10 6H18L20 4Z"/>
+    <path d="M18 8H22V12H18Z"/>
+    <circle cx="20" cy="18" r="1.5"/>
+  </g>
+</svg>

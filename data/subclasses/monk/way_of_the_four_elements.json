@@ -1,0 +1,21 @@
+{
+  "name": "Way of the Four Elements",
+  "class": "Monk",
+  "description": "Monks who harness the power of the four elements, channeling elemental ki into devastating attacks.",
+  "source": "Player's Handbook 2024",
+  "features_by_level": {
+    "3": {
+      "Disciple of the Elements": "You learn magical disciplines that harness elemental power. You know Elemental Attunement and one other elemental discipline of your choice. Learn one additional discipline at 6th, 11th, and 17th level. To use a discipline, spend Ki points equal to its level.",
+      "Elemental Attunement": "You can use your action to briefly control elemental forces nearby, causing one of the following effects: create a harmless sensory effect using air, earth, fire, or water; instantaneously light or snuff out a candle, torch, or small campfire; chill or warm up to 1 pound of nonliving material for 1 hour; cause earth, fire, water, or mist to shape into a crude form for 1 minute."
+    },
+    "6": {
+      "Extra Elemental Discipline": "You learn one additional elemental discipline of your choice from Disciple of the Elements."
+    },
+    "11": {
+      "Extra Elemental Discipline": "You learn one additional elemental discipline of your choice from Disciple of the Elements."
+    },
+    "17": {
+      "Extra Elemental Discipline": "You learn one additional elemental discipline of your choice from Disciple of the Elements."
+    }
+  }
+}

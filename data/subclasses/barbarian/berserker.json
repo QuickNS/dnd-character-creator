@@ -1,0 +1,20 @@
+{
+  "name": "Berserker",
+  "description": "Barbarians who follow the Path of the Berserker lose themselves to the fury of their rage, entering a state of frenzied bloodlust.",
+  "features_by_level": {
+    "3": {
+      "Frenzy": "When you enter your rage, you can go into a frenzy. If you do so, for the duration of your rage you can make a single melee weapon attack as a bonus action on each of your turns after this one. When your rage ends, you suffer one level of exhaustion."
+    },
+    "6": {
+      "Mindless Rage": "You can't be charmed or frightened while raging. If you are charmed or frightened when you enter your rage, the effect is suspended for the duration of the rage."
+    },
+    "10": {
+      "Intimidating Presence": "You can use your action to frighten someone with your menacing presence. Choose one creature that you can see within 30 feet. If the creature can see or hear you, it must succeed on a Wisdom saving throw (DC 8 + your proficiency bonus + your Charisma modifier) or be frightened of you until the end of your next turn."
+    },
+    "14": {
+      "Retaliation": "When you take damage from a creature that is within 5 feet of you, you can use your reaction to make a melee weapon attack against that creature."
+    }
+  },
+  "class": "Barbarian",
+  "source": "Player's Handbook 2024"
+}

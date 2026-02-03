@@ -1,0 +1,12 @@
+{
+  "name": "Crafter",
+  "description": "You are adept at crafting things and bargaining with merchants, granting you the following benefits:",
+  "benefits": [
+    "You gain Tool Proficiency with three different Artisan's Tools of your choice.",
+    "Whenever you buy a nonmagical item, you receive a 20 percent discount on it.",
+    "When you finish a Long Rest, you can craft one piece of gear from the Adventuring Gear table, provided you have the Artisan's Tools associated with that item and have proficiency with those tools. The item must be worth no more than 20 GP, and you must expend raw materials (leather, metal, wood, or other materials) worth half the item's market price. If the item is a weapon or a suit of armor, it can't have the Heavy property."
+  ],
+  "category": "General",
+  "prerequisite": "None",
+  "source": "Player's Handbook 2024"
+}

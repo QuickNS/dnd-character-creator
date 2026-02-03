@@ -1,0 +1,24 @@
+{
+  "name": "Eldritch Knight",
+  "class": "Fighter",
+  "description": "Fighters who supplement martial prowess with the ability to cast spells.",
+  "source": "Player's Handbook 2024",
+  "features_by_level": {
+    "3": {
+      "Spellcasting": "Cast spells using Intelligence. Know 2 cantrips and 3 first-level spells from the Wizard spell list. Most spells must be from Abjuration or Evocation schools. Spell slots: 2 first-level at 3rd level, increasing as you level up.",
+      "Weapon Bond": "At the end of a Short or Long Rest, touch one weapon. You can't be disarmed of that weapon unless Incapacitated. If the weapon is on the same plane, you can summon it as a Bonus Action. Can bond up to two weapons."
+    },
+    "7": {
+      "War Magic": "When you use your action to cast a cantrip, you can make one weapon attack as a Bonus Action."
+    },
+    "10": {
+      "Eldritch Strike": "When you hit a creature with a weapon attack, that creature has Disadvantage on the next saving throw it makes against a spell you cast before the end of your next turn."
+    },
+    "15": {
+      "Arcane Charge": "When you use Action Surge, you can teleport up to 30 feet to an unoccupied space you can see. You can teleport before or after the additional action."
+    },
+    "18": {
+      "Improved War Magic": "When you use your action to cast a spell, you can make one weapon attack as a Bonus Action."
+    }
+  }
+}

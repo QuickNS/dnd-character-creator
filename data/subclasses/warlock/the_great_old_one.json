@@ -1,0 +1,21 @@
+{
+  "name": "The Great Old One",
+  "description": "Your patron is a mysterious entity whose nature is utterly foreign to the fabric of reality. It might come from the Far Realm, the space beyond reality, or it could be one of the elder gods known only in legends. Its motives are incomprehensible to mortals, and its knowledge so immense and ancient that even the greatest libraries pale in comparison to the vast secrets it holds.",
+  "features_by_level": {
+    "1": {
+      "Expanded Spell List": "1st level: Dissonant Whispers, Tasha's Hideous Laughter. 2nd level: Calm Emotions, Detect Thoughts. 3rd level: Clairvoyance, Sending. 4th level: Dominate Beast, Evard's Black Tentacles. 5th level: Dominate Person, Modify Memory.",
+      "Telepathic Communication": "Your patron bestows upon you the ability to communicate telepathically. You can telepathically speak to any creature you can see within 30 feet of you. You don't need to share a language with the creature for it to understand your telepathic utterances, but the creature must be able to understand at least one language."
+    },
+    "6": {
+      "Entropic Ward": "You learn to magically ward yourself against attack and to turn an enemy's failed strike into good luck for yourself. When a creature makes an attack roll against you, you can use your reaction to impose disadvantage on that roll. If the attack misses you, your next attack roll against the creature has advantage if you make it before the end of your next turn. Once you use this feature, you can't use it again until you finish a short or long rest."
+    },
+    "10": {
+      "Thought Shield": "Your thoughts can't be read by telepathy or other means unless you allow it. You also have resistance to psychic damage, and whenever a creature deals psychic damage to you, that creature takes the same amount of damage that you do."
+    },
+    "14": {
+      "Create Thrall": "You gain the ability to infect a humanoid's mind with the alien magic of your patron. You can use your action to choose a humanoid that you can see within 30 feet of you. The target must succeed on a Wisdom saving throw against your warlock spell save DC or be charmed by you until a Remove Curse spell is cast on it, the charmed condition is removed from it, or you use this feature again. You can communicate telepathically with the charmed creature as long as the two of you are on the same plane of existence."
+    }
+  },
+  "class": "Warlock",
+  "source": "Player's Handbook 2024"
+}

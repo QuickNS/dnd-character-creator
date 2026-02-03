@@ -1,0 +1,21 @@
+{
+  "name": "Arcane Trickster",
+  "class": "Rogue",
+  "description": "Some Rogues enhance their skills with spells, learning magical tricks to aid their trade. Some use talents as pickpockets and burglars, others are pranksters.",
+  "source": "Player's Handbook",
+  "features_by_level": {
+    "3": {
+      "Spellcasting": "You learn to cast spells using Wizard spell list. Know 3 cantrips (including Mage Hand, plus 2 others). Prepare spells from Wizard list starting with 3 level 1 spells. Intelligence is spellcasting ability. Can use Arcane Focus. Gain additional cantrip at level 10.",
+      "Mage Hand Legerdemain": "Cast Mage Hand as Bonus Action and make it Invisible. Control it as Bonus Action and make Dexterity (Sleight of Hand) checks through it."
+    },
+    "9": {
+      "Magical Ambush": "If you have Invisible condition when casting spell on creature, it has Disadvantage on saving throw against the spell."
+    },
+    "13": {
+      "Versatile Trickster": "When you use Trip option of Cunning Strike, you can also use it on another creature within 5 feet of your spectral Mage Hand."
+    },
+    "17": {
+      "Spell Thief": "When creature casts spell targeting you or including you in area, use Reaction to force Intelligence save (your spell DC). On fail, negate spell against you and steal knowledge of spell (level 1+ you can cast). Have it prepared for 8 hours; creature can't cast it for 8 hours. Once per Long Rest."
+    }
+  }
+}

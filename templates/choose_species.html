@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="card shadow">
+            <div class="card-header text-white">
+                <h4 class="card-title mb-0">
+                    <i class="fas fa-users"></i> Choose Your Species
+                </h4>
+            </div>
+            <div class="card-body">
+                <p class="lead">Your species determines your physical characteristics, natural abilities, and racial traits.</p>
+                
+                <form method="POST" action="{{ url_for('select_species') }}">
+                    <div class="row">
+                        {% for species_name, species_data in species.items() %}
+                        <div class="col-lg-6 mb-3">
+                            <div class="card border species-card" data-species="{{ species_name }}">
+                                <div class="card-body">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="species" 
+                                               id="species_{{ loop.index }}" value="{{ species_name }}" required
+                                               {% if character.species == species_name %}checked{% endif %}>
+                                        <label class="form-check-label w-100" for="species_{{ loop.index }}">
+                                            <h5 class="card-title">{{ species_name }}</h5>
+                                            <p class="card-text small">
+                                                {{ species_data.get('description', 'A unique species with special traits.') }}
+                                            </p>
+                                            <div class="row text-muted small">
+                                                <div class="col-6">
+                                                    <strong>Size:</strong> {{ species_data.get('size', 'Medium') }}
+                                                </div>
+                                                <div class="col-6">
+                                                    <strong>Speed:</strong> {{ species_data.get('speed', 30) }} ft
+                                                </div>
+                                            </div>
+                                            {% if species_data.get('darkvision_range') and species_data.darkvision_range > 0 %}
+                                            <div class="text-muted small">
+                                                <strong>Darkvision:</strong> {{ species_data.darkvision_range }} feet
+                                            </div>
+                                            {% endif %}
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="d-grid gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-arrow-right"></i> Continue
+                        </button>
+                        <a href="{{ url_for('choose_background') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left"></i> Back to Background
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.querySelectorAll('.species-card').forEach(card => {
+    card.addEventListener('click', function() {
+        const radio = this.querySelector('input[type="radio"]');
+        radio.checked = true;
+        
+        // Update visual selection
+        document.querySelectorAll('.species-card').forEach(c => c.classList.remove('border-info'));
+        this.classList.add('border-info');
+    });
+});
+</script>
+{% endblock %}

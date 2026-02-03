@@ -1,0 +1,13 @@
+{
+  "name": "Abyssal Tiefling",
+  "parent_species": "Tiefling",
+  "traits": {
+    "Abyssal Magic": "You know the Poison Spray cantrip. Starting at 3rd level, you can cast the Ray of Sickness spell with this trait. Starting at 5th level, you can also cast the Hold Person spell with it. Once you cast Ray of Sickness or Hold Person with this trait, you can't cast that spell with it again until you finish a long rest. You can also cast these spells using spell slots you have of the appropriate level. Charisma is your spellcasting ability for these spells."
+  },
+  "spellcasting_ability": "Charisma",
+  "spells_by_level": {
+    "cantrip": ["Poison Spray"],
+    "3": ["Ray of Sickness"],
+    "5": ["Hold Person"]
+  }
+}

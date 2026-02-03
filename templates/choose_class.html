@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="card shadow-lg">
+            <div class="card-header bg-primary text-white">
+                <h4 class="card-title mb-0 text-center">
+                    <i class="fas fa-sword me-2"></i> Choose Your Calling
+                </h4>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-4">
+                    <p class="lead" style="font-size: 1.2rem;">
+                        Every hero must choose their path. Your class defines your role in the party, 
+                        your combat prowess, and the unique abilities that set you apart.
+                    </p>
+                    <div class="alert alert-info">
+                        <i class="fas fa-lightbulb me-2"></i>
+                        <strong>Choose Wisely:</strong> Your class determines hit points, proficiencies, and starting features. 
+                        Each class offers unique gameplay and strategic options.
+                    </div>
+                </div>
+                
+                <form method="POST" action="{{ url_for('select_class') }}">
+                    <div class="row">
+                        {% for class_name, class_data in classes.items() %}
+                        <div class="col-lg-6 mb-4">
+                            <div class="card border class-card h-100" data-class="{{ class_name }}">
+                                <div class="card-body d-flex flex-column">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="class" 
+                                               id="class_{{ loop.index }}" value="{{ class_name }}" required>
+                                        <label class="form-check-label w-100" for="class_{{ loop.index }}">
+                                            <div class="d-flex justify-content-between align-items-start">
+                                                <div>
+                                                    <h5 class="card-title">{{ class_name }}</h5>
+                                                    <p class="text-muted small mb-2">
+                                                        <strong>Primary:</strong> {{ class_data.get('primary_ability', 'Various') }}<br>
+                                                        <strong>Hit Die:</strong> {{ class_data.get('hit_die', 'd6') }}
+                                                    </p>
+                                                    <p class="card-text small">
+                                                        {{ class_data.get('description', 'A versatile adventurer.') }}
+                                                    </p>
+                                                </div>
+                                                <div class="class-icon">
+                                                    <img src="{{ url_for('static', filename='images/classes/' + class_name.lower() + '.svg') }}" 
+                                                         alt="{{ class_name }} Icon" 
+                                                         class="class-icon-svg"
+                                                         onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-block';">
+                                                    <i class="fas fa-{% if class_name == 'Wizard' %}hat-wizard{% elif class_name == 'Fighter' %}sword{% elif class_name == 'Rogue' %}mask{% elif class_name == 'Cleric' %}cross{% elif class_name == 'Ranger' %}bow-arrow{% elif class_name == 'Barbarian' %}fire{% elif class_name == 'Bard' %}music{% elif class_name == 'Druid' %}leaf{% elif class_name == 'Monk' %}fist-raised{% elif class_name == 'Paladin' %}shield-alt{% elif class_name == 'Sorcerer' %}magic{% elif class_name == 'Warlock' %}eye{% else %}user{% endif %}" 
+                                                       style="display: none;"></i>
+                                                </div>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="d-grid gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-arrow-right"></i> Continue to Class Features
+                        </button>
+                        {% if character_created %}
+                        <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left"></i> Back to Home
+                        </a>
+                        {% else %}
+                        <a href="{{ url_for('create_character') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left"></i> Back to Character Details
+                        </a>
+                        {% endif %}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.querySelectorAll('.class-card').forEach(card => {
+    card.addEventListener('click', function() {
+        const radio = this.querySelector('input[type="radio"]');
+        radio.checked = true;
+        
+        // Update visual selection
+        document.querySelectorAll('.class-card').forEach(c => c.classList.remove('border-primary'));
+        this.classList.add('border-primary');
+        
+        // Update background image based on selected class
+        const className = radio.value;
+        if (window.updateClassBackground) {
+            window.updateClassBackground(className);
+        }
+    });
+    
+    // Also update background when radio button is clicked directly
+    const radio = card.querySelector('input[type="radio"]');
+    radio.addEventListener('change', function() {
+        if (this.checked && window.updateClassBackground) {
+            window.updateClassBackground(this.value);
+        }
+    });
+});
+</script>
+{% endblock %}

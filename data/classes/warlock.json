@@ -1,0 +1,113 @@
+{
+  "name": "Warlock",
+  "description": "Scholars of hidden knowledge who quest for power through binding pacts with otherworldly patrons. Drawing on ancient secrets from angels, archfey, demons, devils, and alien entities, Warlocks piece together arcane mysteries to bolster their abilities.",
+  "hit_die": 8,
+  "primary_ability": "Charisma",
+  "saving_throw_proficiencies": ["Wisdom", "Charisma"],
+  "armor_proficiencies": ["Light armor"],
+  "weapon_proficiencies": ["Simple weapons"],
+  "skill_proficiencies_count": 2,
+  "skill_options": [
+    "Arcana",
+    "Deception",
+    "History",
+    "Intimidation",
+    "Investigation",
+    "Nature",
+    "Religion"
+  ],
+  "subclass_selection_level": 1,
+  "spellcasting_ability": "Charisma",
+  "spellcasting_focus": ["Arcane Focus"],
+  "proficiency_bonus_by_level": {
+    "1": 2, "2": 2, "3": 2, "4": 2, "5": 3, "6": 3, "7": 3, "8": 3, "9": 4, "10": 4,
+    "11": 4, "12": 4, "13": 5, "14": 5, "15": 5, "16": 5, "17": 6, "18": 6, "19": 6, "20": 6
+  },
+  "pact_magic_slots_by_level": {
+    "1": [1, 1],
+    "2": [2, 1],
+    "3": [2, 2],
+    "4": [2, 2],
+    "5": [2, 3],
+    "6": [2, 3],
+    "7": [2, 4],
+    "8": [2, 4],
+    "9": [2, 5],
+    "10": [2, 5],
+    "11": [3, 5],
+    "12": [3, 5],
+    "13": [3, 5],
+    "14": [3, 5],
+    "15": [3, 5],
+    "16": [3, 5],
+    "17": [4, 5],
+    "18": [4, 5],
+    "19": [4, 5],
+    "20": [4, 5]
+  },
+  "features_by_level": {
+    "1": {
+      "Pact Magic": "You have made a pact with an otherworldly being. Your arcane research and the magic bestowed on you by your patron have given you facility with spells. You know two 1st-level spells and two cantrips of your choice from the Warlock spell list.",
+      "Warlock Subclass": "You gain a Warlock Subclass of your choice, which represents the entity with which you've made a pact."
+    },
+    "2": {
+      "Eldritch Invocations": "In your study of occult lore, you have unearthed Eldritch Invocations, fragments of forbidden knowledge. You gain two Eldritch Invocations of your choice."
+    },
+    "3": {
+      "Pact Boon": "Your otherworldly patron bestows a gift upon you for your loyal service. You gain a Pact Boon of your choice: Pact of the Blade, Pact of the Chain, or Pact of the Tome."
+    },
+    "4": {
+      "Ability Score Improvement": "You gain the Ability Score Improvement feat or another feat of your choice for which you qualify."
+    },
+    "5": {
+      "Eldritch Invocations": "You learn an additional Eldritch Invocation."
+    },
+    "6": {
+      "Subclass Feature": "You gain a feature from your Warlock subclass."
+    },
+    "7": {
+      "Eldritch Invocations": "You learn an additional Eldritch Invocation."
+    },
+    "8": {
+      "Ability Score Improvement": "You gain the Ability Score Improvement feat or another feat of your choice for which you qualify."
+    },
+    "9": {
+      "Eldritch Invocations": "You learn an additional Eldritch Invocation."
+    },
+    "10": {
+      "Subclass Feature": "You gain a feature from your Warlock subclass."
+    },
+    "11": {
+      "Mystic Arcanum": "Your patron bestows upon you a magical secret called an Arcanum. You can cast your Arcanum spell once without expending a spell slot. You must finish a Long Rest before you can do so again. Choose one 6th-level spell from the Warlock spell list as this Arcanum."
+    },
+    "12": {
+      "Ability Score Improvement": "You gain the Ability Score Improvement feat or another feat of your choice for which you qualify.",
+      "Eldritch Invocations": "You learn an additional Eldritch Invocation."
+    },
+    "13": {
+      "Mystic Arcanum": "You learn a 7th-level spell, which becomes an Arcanum for you."
+    },
+    "14": {
+      "Subclass Feature": "You gain a feature from your Warlock subclass."
+    },
+    "15": {
+      "Mystic Arcanum": "You learn an 8th-level spell, which becomes an Arcanum for you.",
+      "Eldritch Invocations": "You learn an additional Eldritch Invocation."
+    },
+    "16": {
+      "Ability Score Improvement": "You gain the Ability Score Improvement feat or another feat of your choice for which you qualify."
+    },
+    "17": {
+      "Mystic Arcanum": "You learn a 9th-level spell, which becomes an Arcanum for you."
+    },
+    "18": {
+      "Eldritch Invocations": "You learn an additional Eldritch Invocation."
+    },
+    "19": {
+      "Epic Boon": "You gain an Epic Boon feat or another feat of your choice for which you qualify. Boon of the Night Spirit is recommended."
+    },
+    "20": {
+      "Eldritch Master": "You can draw on your inner reserve of mystical power to entreat your patron to regain expended spell slots. You can spend 1 minute entreating your patron for aid to regain all your expended Pact Magic spell slots. You can't use this feature again until you finish a Long Rest."
+    }
+  }
+}

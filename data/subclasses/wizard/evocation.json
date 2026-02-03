@@ -1,0 +1,21 @@
+{
+  "name": "Evocation",
+  "description": "Focuses on magic that creates powerful elemental effects.",
+  "features_by_level": {
+    "2": {
+      "Evocation Savant": "The gold and time you must spend to copy Evocation spells into your spellbook is halved.",
+      "Sculpt Spells": "You can create pockets of relative safety within the effects of your evocation spells. When you cast an evocation spell that affects other creatures that you can see, you can choose a number of them equal to 1 + the spell's level. The chosen creatures automatically succeed on their saving throws against the spell, and they take no damage if they would normally take half damage on a successful save."
+    },
+    "6": {
+      "Potent Cantrip": "Your damaging cantrips affect even creatures that avoid the brunt of the effect. When a creature succeeds on a saving throw against your cantrip, the creature takes half the cantrip's damage (if any) but suffers no additional effect from the cantrip."
+    },
+    "10": {
+      "Empowered Evocation": "You can add your Intelligence modifier to the damage roll of any wizard evocation spell you cast. The damage bonus applies to one damage roll of a spell, not multiple rolls."
+    },
+    "14": {
+      "Overchannel": "You can increase the power of your simpler spells. When you cast a wizard spell of 5th level or lower that deals damage, you can deal maximum damage with that spell. The first time you do so, you suffer no adverse effect. If you use this feature again before you finish a long rest, you take 2d12 necrotic damage for each level of the spell, immediately after you cast it."
+    }
+  },
+  "class": "Wizard",
+  "source": "Player's Handbook 2024"
+}

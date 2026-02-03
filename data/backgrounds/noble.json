@@ -1,0 +1,19 @@
+{
+  "name": "Noble",
+  "description": "You understand wealth, power, and privilege. You carry a noble title, and your family owns land, collects taxes, and wields significant political influence. You might be a pampered aristocrat unfamiliar with work or discomfort, a former merchant just elevated to the nobility, or a disinherited scoundrel with a disproportionate sense of entitlement.",
+  "ability_score_increase": {
+    "total": 3,
+    "options": ["Charisma", "Intelligence", "Wisdom"],
+    "suggested": {"Charisma": 1, "Intelligence": 2}
+  },
+  "feat": "Skilled",
+  "skill_proficiencies": ["History", "Persuasion"],
+  "tool_proficiencies": ["Gaming Set"],
+  "languages": 2,
+  "equipment": [
+    "Gaming Set",
+    "Fine Clothes",
+    "Perfume",
+    "29 GP"
+  ]
+}

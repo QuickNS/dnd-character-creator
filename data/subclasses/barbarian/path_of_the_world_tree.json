@@ -1,0 +1,21 @@
+{
+  "name": "Path of the World Tree",
+  "class": "Barbarian",
+  "description": "Barbarians who tap into the cosmic tree that connects all existence, channeling its vitality.",
+  "source": "Player's Handbook 2024",
+  "features_by_level": {
+    "3": {
+      "Vitality of the Tree": "When you activate Rage, you gain Temporary Hit Points equal to your Barbarian level. While you have these Temporary HP and are raging, at start of each turn each creature of your choice within 10 feet takes Force damage equal to your Proficiency Bonus.",
+      "Battering Roots": "Once per turn when raging, immediately after hitting with melee attack, can use Bonus Action to summon spectral roots. Target must succeed on Strength save (DC 8 + Proficiency Bonus + Strength modifier) or be Restrained until start of your next turn. While Restrained, target takes 1d6 Force damage at start of each of its turns."
+    },
+    "6": {
+      "Branches of the Tree": "When you activate Rage, choose Reach or Refresh. Reach: Melee attacks with weapons using Strength have their reach extended by 10 feet. Refresh: When you activate Rage and as Bonus Action while raging, choose up to 2 creatures within 30 feet. Each regains Hit Points equal to 1d8 + your Constitution modifier."
+    },
+    "10": {
+      "Travel Along the Tree": "When you activate Rage, and as Bonus Action while raging, you can teleport up to 30 feet to an unoccupied space you can see."
+    },
+    "14": {
+      "Fury of the Tree": "When you activate Rage, you can gain two of the following benefits (your choice): Bolstering Embrace (You and your allies gain +2 AC while within 10 feet of you), Burning Blaze (Spectral flames surround you, shedding Bright Light in 10-foot radius and Dim Light for 10 feet beyond. When a creature hits you with an attack, it takes Fire damage equal to your Proficiency Bonus), Grasping Vines (Spectral vines sprout from you. Your Speed increases by 15 feet, Opportunity Attacks against you have Disadvantage, and Difficult Terrain costs you no extra movement)."
+    }
+  }
+}

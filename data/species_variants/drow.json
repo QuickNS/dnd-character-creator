@@ -1,0 +1,17 @@
+{
+  "name": "Drow",
+  "parent_species": "Elf",
+  "darkvision_range": 120,
+  "traits": {
+    "Extended Darkvision": "The range of your Darkvision increases to 120 feet.",
+    "Dancing Lights": "You know the Dancing Lights cantrip.",
+    "Faerie Fire (Level 3)": "You learn the Faerie Fire spell. You always have that spell prepared. You can cast it once without a spell slot, and you regain the ability to cast it in that way when you finish a Long Rest. You can also cast the spell using any spell slots you have of the appropriate level.",
+    "Darkness (Level 5)": "You learn the Darkness spell. You always have that spell prepared. You can cast it once without a spell slot, and you regain the ability to cast it in that way when you finish a Long Rest. You can also cast the spell using any spell slots you have of the appropriate level."
+  },
+  "spells_by_level": {
+    "cantrip": ["Dancing Lights"],
+    "3": ["Faerie Fire"],
+    "5": ["Darkness"]
+  },
+  "spellcasting_ability_choices": ["Intelligence", "Wisdom", "Charisma"]
+}

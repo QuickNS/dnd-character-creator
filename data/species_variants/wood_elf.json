@@ -1,0 +1,17 @@
+{
+  "name": "Wood Elf",
+  "parent_species": "Elf",
+  "speed": 35,
+  "traits": {
+    "Increased Speed": "Your Speed increases to 35 feet.",
+    "Druidcraft": "You know the Druidcraft cantrip.",
+    "Longstrider (Level 3)": "You learn the Longstrider spell. You always have that spell prepared. You can cast it once without a spell slot, and you regain the ability to cast it in that way when you finish a Long Rest. You can also cast the spell using any spell slots you have of the appropriate level.",
+    "Pass without Trace (Level 5)": "You learn the Pass without Trace spell. You always have that spell prepared. You can cast it once without a spell slot, and you regain the ability to cast it in that way when you finish a Long Rest. You can also cast the spell using any spell slots you have of the appropriate level."
+  },
+  "spells_by_level": {
+    "cantrip": ["Druidcraft"],
+    "3": ["Longstrider"],
+    "5": ["Pass without Trace"]
+  },
+  "spellcasting_ability_choices": ["Intelligence", "Wisdom", "Charisma"]
+}

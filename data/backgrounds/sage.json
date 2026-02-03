@@ -1,0 +1,20 @@
+{
+  "name": "Sage",
+  "description": "You spent years learning the lore of the multiverse. You scoured manuscripts, studied scrolls, and listened to the greatest experts on the subjects that interest you. Your efforts have made you a master in your fields of study.",
+  "ability_score_increase": {
+    "total": 3,
+    "options": ["Constitution", "Intelligence", "Wisdom"],
+    "suggested": {"Constitution": 1, "Intelligence": 2}
+  },
+  "feat": "Magic Initiate (Wizard)",
+  "skill_proficiencies": ["Arcana", "History"],
+  "tool_proficiencies": ["Calligrapher's Supplies"],
+  "languages": 2,
+  "equipment": [
+    "Calligrapher's Supplies",
+    "Book (history)",
+    "Ink (1 ounce)",
+    "Traveler's Clothes",
+    "8 GP"
+  ]
+}

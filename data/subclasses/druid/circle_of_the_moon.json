@@ -1,0 +1,21 @@
+{
+  "name": "Circle of the Moon",
+  "class": "Druid",
+  "description": "Druids who embrace the wildness within, transforming into powerful beasts.",
+  "source": "Player's Handbook 2024",
+  "features_by_level": {
+    "2": {
+      "Combat Wild Shape": "You can use Wild Shape as a Bonus Action. While in Wild Shape, you can expend a spell slot as a Bonus Action to regain 1d8 Hit Points per level of the spell slot expended.",
+      "Circle Forms": "Your Wild Shape CR limit is equal to 1/3 your Druid level (rounded down). At level 6, you can transform into a beast with a swimming speed, and at level 8, one with a flying speed."
+    },
+    "6": {
+      "Primal Strike": "Your attacks in beast form count as magical for overcoming resistance and immunity to nonmagical attacks and damage."
+    },
+    "10": {
+      "Elemental Wild Shape": "You can expend two uses of Wild Shape to transform into an Air Elemental, Earth Elemental, Fire Elemental, or Water Elemental."
+    },
+    "14": {
+      "Thousand Forms": "You have learned to use magic to alter your physical form in more subtle ways. You can cast Alter Self at will without expending a spell slot."
+    }
+  }
+}

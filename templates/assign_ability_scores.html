@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="card shadow">
+            <div class="card-header bg-danger text-white">
+                <h4 class="card-title mb-0">
+                    <i class="fas fa-chart-bar"></i> Assign Ability Scores
+                </h4>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <h5><i class="fas fa-info-circle"></i> Standard Array</h5>
+                    <p class="mb-2">Use the balanced standard array: <strong>{{ standard_array|join(', ') }}</strong></p>
+                    {% if primary_abilities %}
+                    <p class="mb-0"><strong>{{ character.class }} Primary Abilities:</strong> {{ primary_abilities|join(', ') }}</p>
+                    {% endif %}
+                </div>
+                
+                <form method="POST" action="{{ url_for('submit_ability_scores') }}">
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">Choose Assignment Method</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="radio" name="assignment_method" 
+                                       id="recommended" value="recommended" checked>
+                                <label class="form-check-label" for="recommended">
+                                    <strong>Recommended Allocation</strong><br>
+                                    <small class="text-muted">Automatically assign scores based on {{ character.class }} priorities:</small>
+                                    <div class="mt-2">
+                                        {% for ability in ['Strength', 'Dexterity', 'Constitution', 'Intelligence', 'Wisdom', 'Charisma'] %}
+                                            <span class="badge bg-secondary me-1">{{ ability }}: {{ recommended_allocation[ability] }}</span>
+                                        {% endfor %}
+                                    </div>
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="assignment_method" 
+                                       id="manual" value="manual">
+                                <label class="form-check-label" for="manual">
+                                    <strong>Manual Assignment</strong><br>
+                                    <small class="text-muted">Choose where to assign each value yourself</small>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="manual-assignment" class="card" style="display: none;">
+                        <div class="card-header">
+                            <h5 class="mb-0">Manual Assignment</h5>
+                        </div>
+                        <div class="card-body">
+                            <p>Assign each standard array value to an ability score:</p>
+                            <div class="row">
+                                {% for ability in ['Strength', 'Dexterity', 'Constitution', 'Intelligence', 'Wisdom', 'Charisma'] %}
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label" for="ability_{{ ability }}">{{ ability }}</label>
+                                    <select class="form-select ability-select" name="ability_{{ ability }}" id="ability_{{ ability }}">
+                                        <option value="">Select value...</option>
+                                        {% for value in standard_array %}
+                                        <option value="{{ value }}">{{ value }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <div id="assignment-validation" class="text-danger small" style="display: none;">
+                                Please assign all values exactly once.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 mt-4">
+                        <button type="submit" class="btn btn-danger btn-lg" id="submit-btn">
+                            <i class="fas fa-arrow-right"></i> Continue to Background Bonuses
+                        </button>
+                        <a href="{{ url_for('choose_species') if not character.get('lineage') else url_for('choose_lineage') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left"></i> Back
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const recommendedRadio = document.getElementById('recommended');
+const manualRadio = document.getElementById('manual');
+const manualAssignment = document.getElementById('manual-assignment');
+const abilitySelects = document.querySelectorAll('.ability-select');
+const submitBtn = document.getElementById('submit-btn');
+const validationMsg = document.getElementById('assignment-validation');
+
+// Toggle manual assignment visibility
+function toggleManualAssignment() {
+    if (manualRadio.checked) {
+        manualAssignment.style.display = 'block';
+        validateManualAssignment();
+    } else {
+        manualAssignment.style.display = 'none';
+        submitBtn.disabled = false;
+        validationMsg.style.display = 'none';
+        
+        // Reset all selections when switching to recommended
+        abilitySelects.forEach(select => {
+            select.value = '';
+            const options = select.querySelectorAll('option');
+            options.forEach(option => option.disabled = false);
+        });
+    }
+}
+
+// Validate manual assignment
+function validateManualAssignment() {
+    if (!manualRadio.checked) return;
+    
+    const selectedValues = [];
+    const standardArray = {{ standard_array|tojson }};
+    let allSelected = true;
+    
+    abilitySelects.forEach(select => {
+        if (select.value) {
+            selectedValues.push(parseInt(select.value));
+        } else {
+            allSelected = false;
+        }
+    });
+    
+    // Check if all values are selected and no duplicates
+    const isValid = allSelected && 
+                   selectedValues.length === standardArray.length &&
+                   selectedValues.sort().join(',') === standardArray.sort().join(',');
+    
+    submitBtn.disabled = !isValid;
+    validationMsg.style.display = isValid ? 'none' : 'block';
+    
+    // Update select options to prevent duplicates
+    abilitySelects.forEach(select => {
+        const currentValue = select.value;
+        const options = select.querySelectorAll('option');
+        
+        options.forEach(option => {
+            if (option.value && option.value !== currentValue) {
+                option.disabled = selectedValues.includes(parseInt(option.value)) && option.value !== currentValue;
+            }
+        });
+    });
+}
+
+// Event listeners
+recommendedRadio.addEventListener('change', toggleManualAssignment);
+manualRadio.addEventListener('change', toggleManualAssignment);
+abilitySelects.forEach(select => {
+    select.addEventListener('change', validateManualAssignment);
+});
+
+// Initialize
+toggleManualAssignment();
+</script>
+{% endblock %}

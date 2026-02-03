@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow">
+            <div class="card-header text-white">
+                <h4 class="card-title mb-0">
+                    <i class="fas fa-plus"></i> Background Ability Score Bonuses
+                </h4>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <h5><i class="fas fa-info-circle"></i> {{ character.background }} Background</h5>
+                    <p class="mb-1">Your <strong>{{ character.background }}</strong> background provides <strong>{{ total_points }} ability score increase points</strong> to distribute among your abilities.</p>
+                    <p class="mb-0"><strong>Available abilities:</strong> {{ ability_options | join(', ') }}</p>
+                    <p class="mb-0">Increase one of these scores by 2 and another one by 1, or increase all three by 1. None of these increases can raise a score above 20.</p>
+                </div>
+                
+                <form method="POST" action="{{ url_for('submit_background_bonuses') }}">
+                    <div class="card mb-4">
+                       <div class="sub-card-header bg-secondary">
+                            <h6 class="card-title mb-0">Choose Assignment Method</h6>
+                        </div>
+                        <div class="card-body">
+                            {% if suggested %}
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="radio" name="assignment_method" 
+                                       id="suggested" value="suggested" checked>
+                                <label class="form-check-label" for="suggested">
+                                    <strong>Suggested Allocation</strong><br>
+                                    <small class="text-muted">
+                                        {% for ability, bonus in suggested.items() %}
+                                            {{ ability }} +{{ bonus }}{% if not loop.last %}, {% endif %}
+                                        {% endfor %}
+                                    </small>
+                                </label>
+                            </div>
+                            {% endif %}
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="assignment_method" 
+                                       id="manual_bg" value="manual" {% if not suggested %}checked{% endif %}>
+                                <label class="form-check-label" for="manual_bg">
+                                    <strong>Manual Assignment</strong><br>
+                                    <small class="text-muted">Choose how to distribute the {{ total_points }} points yourself</small>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="manual-bg-assignment" class="card" style="display: {% if not suggested %}block{% else %}none{% endif %};">
+                        <div class="sub-card-header bg-secondary">
+                            <h6 class="card-title mb-0">Manual Point Distribution</h6>
+                        </div>
+                        <div class="card-body">
+                            <p>Distribute {{ total_points }} points among your available abilities (max +2 per ability):</p>
+                            <div class="row">
+                                {% for ability in ability_options %}
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label" for="bonus_{{ ability }}">
+                                        {{ ability }} 
+                                        <span class="text-muted small">({{ character.ability_scores[ability] }} base)</span>
+                                    </label>
+                                    <select class="form-select bonus-select" name="bonus_{{ ability }}" id="bonus_{{ ability }}">
+                                        <option value="0">+0</option>
+                                        <option value="1">+1</option>
+                                        <option value="2">+2</option>
+                                    </select>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <div class="mt-3">
+                                <span class="badge bg-info">Points Used: <span id="points-used">0</span> / {{ total_points }}</span>
+                            </div>
+                            <div id="points-validation" class="text-danger small mt-2" style="display: none;">
+                                Please distribute exactly {{ total_points }} points.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary btn-lg" id="submit-bg-btn">
+                            <i class="fas fa-arrow-right"></i> Continue to Alignment
+                        </button>
+                        <a href="{{ url_for('assign_ability_scores') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left"></i> Back to Ability Scores
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const suggestedRadio = document.getElementById('suggested');
+const manualBgRadio = document.getElementById('manual_bg');
+const manualBgAssignment = document.getElementById('manual-bg-assignment');
+const bonusSelects = document.querySelectorAll('.bonus-select');
+const pointsUsed = document.getElementById('points-used');
+const pointsValidation = document.getElementById('points-validation');
+const submitBgBtn = document.getElementById('submit-bg-btn');
+const totalPoints = {{ total_points }};
+
+// Toggle manual assignment visibility
+function toggleManualBgAssignment() {
+    if (manualBgRadio.checked) {
+        manualBgAssignment.style.display = 'block';
+        validatePointDistribution();
+    } else {
+        manualBgAssignment.style.display = 'none';
+        submitBgBtn.disabled = false;
+        pointsValidation.style.display = 'none';
+    }
+}
+
+// Validate point distribution
+function validatePointDistribution() {
+    if (!manualBgRadio.checked) return;
+    
+    let used = 0;
+    bonusSelects.forEach(select => {
+        used += parseInt(select.value) || 0;
+    });
+    
+    pointsUsed.textContent = used;
+    
+    const isValid = used === totalPoints;
+    submitBgBtn.disabled = !isValid;
+    pointsValidation.style.display = isValid ? 'none' : 'block';
+}
+
+// Event listeners
+if (suggestedRadio) {
+    suggestedRadio.addEventListener('change', toggleManualBgAssignment);
+}
+manualBgRadio.addEventListener('change', toggleManualBgAssignment);
+bonusSelects.forEach(select => {
+    select.addEventListener('change', validatePointDistribution);
+});
+
+// Initialize
+toggleManualBgAssignment();
+</script>
+{% endblock %}

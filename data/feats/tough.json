@@ -1,0 +1,12 @@
+{
+  "name": "Tough",
+  "description": "Your hit point maximum increases by an amount equal to twice your character level when you gain this feat. Whenever you gain a character level thereafter, your hit point maximum increases by an additional 2 hit points.",
+  "benefits": [
+    "Your hit point maximum increases by 2 × your character level.",
+    "Each time you gain a level, your hit point maximum increases by 2 additional hit points.",
+    "This benefit applies retroactively to all levels you have gained."
+  ],
+  "category": "General",
+  "prerequisite": "None",
+  "source": "Player's Handbook 2024"
+}

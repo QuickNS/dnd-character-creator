@@ -1,0 +1,20 @@
+{
+  "name": "Path of the Berserker",
+  "class": "Barbarian",
+  "description": "Warriors who embrace primal fury and fight with unthinking ferocity.",
+  "source": "Player's Handbook 2024",
+  "features_by_level": {
+    "3": {
+      "Frenzy": "When you activate Rage, can enter a Frenzy (no extra action required). During Frenzy, when you take the Attack action you can make a single melee weapon attack as a Bonus Action. When Frenzy ends, gain 1 level of Exhaustion."
+    },
+    "6": {
+      "Mindless Rage": "While raging, you can't be Charmed or Frightened, and such effects are suspended."
+    },
+    "10": {
+      "Retaliation": "When you take damage from a creature within 5 feet, you can use your Reaction to make a melee weapon attack against that creature."
+    },
+    "14": {
+      "Intimidating Presence": "As a Bonus Action, choose one creature within 30 feet. It must succeed on a Wisdom saving throw (DC 8 + Proficiency Bonus + Strength modifier) or be Frightened until the end of your next turn. On subsequent turns, can use Bonus Action to extend duration. Target can repeat save at end of each of its turns."
+    }
+  }
+}

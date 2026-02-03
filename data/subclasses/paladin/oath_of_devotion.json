@@ -1,0 +1,46 @@
+{
+  "name": "Oath of Devotion",
+  "class": "Paladin",
+  "description": "Paladins who swear the Oath of Devotion commit themselves to the highest ideals of justice, virtue, and order, upholding the principles of honor and righteousness.",
+  "source": "Player's Handbook 2024",
+  "features_by_level": {
+    "3": {
+      "Oath Spells": {
+        "description": "You always have certain spells prepared.",
+        "spells": {
+          "3": [
+            "Protection from Evil and Good",
+            "Sanctuary"
+          ],
+          "5": [
+            "Lesser Restoration",
+            "Zone of Truth"
+          ],
+          "9": [
+            "Beacon of Hope",
+            "Dispel Magic"
+          ],
+          "13": [
+            "Freedom of Movement",
+            "Guardian of Faith"
+          ],
+          "17": [
+            "Commune",
+            "Flame Strike"
+          ]
+        }
+      },
+      "Sacred Weapon": "As a Channel Divinity action, you can imbue one weapon you're holding with positive energy for 1 minute. For the duration, you add your Charisma modifier to attack rolls made with that weapon (minimum +1), it emits Bright Light in a 20-foot radius and Dim Light 20 feet beyond that, and it counts as magical. You can end this effect as a Bonus Action.",
+      "Turn the Unholy": "As a Channel Divinity action, each Fiend or Undead within 30 feet that can see or hear you must make a Wisdom save or be Turned for 1 minute or until it takes damage."
+    },
+    "7": {
+      "Aura of Devotion": "You and friendly creatures within 10 feet can't be Charmed while you are conscious. At 18th level, range increases to 30 feet."
+    },
+    "15": {
+      "Purity of Spirit": "You are always under the effects of a Protection from Evil and Good spell."
+    },
+    "20": {
+      "Holy Nimbus": "As a Bonus Action, you can emanate an aura of sunlight for 1 minute. During this time, you emit Bright Light in a 30-foot radius and Dim Light 30 feet beyond that. Whenever an enemy creature starts its turn in the Bright Light, it takes 10 Radiant damage. You also have Advantage on saving throws against spells cast by Fiends and Undead. Once used, can't use again until Long Rest."
+    }
+  }
+}

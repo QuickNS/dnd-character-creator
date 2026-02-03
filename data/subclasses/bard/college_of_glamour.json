@@ -1,0 +1,18 @@
+{
+  "name": "College of Glamour",
+  "class": "Bard",
+  "description": "Bards who master the art of enchantment and captivating beauty inspired by the Feywild.",
+  "source": "Player's Handbook 2024",
+  "features_by_level": {
+    "3": {
+      "Mantle of Inspiration": "As a Bonus Action, expend one use of Bardic Inspiration and choose a number of creatures you can see within 60 feet up to your Charisma modifier (minimum 1). Each gains Temporary HP equal to roll of Bardic Inspiration die + your Charisma modifier and can immediately use Reaction to move up to their Speed without provoking Opportunity Attacks.",
+      "Beguiling Magic": "When you cast a spell that Charms one or more creatures or forces them to make a Wisdom save, you can give one target Disadvantage on its first save against the spell."
+    },
+    "6": {
+      "Mantle of Majesty": "As a Bonus Action, you appear unearthly beautiful for 1 minute. During that time, you can cast Command as a Bonus Action without expending a spell slot (target has Disadvantage on save). Until the effect ends, any creature Charmed by you automatically fails saves against your Command. Once you use this feature, can't use again until Long Rest."
+    },
+    "14": {
+      "Unbreakable Majesty": "As a Bonus Action, assume a magically majestic presence for 1 minute. First time a creature attacks you each turn, they must make a Charisma save (DC equals your spell save DC) or change target (wasting attack if no other valid target). Once you use this, can't use again until Short or Long Rest."
+    }
+  }
+}

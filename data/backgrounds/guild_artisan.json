@@ -1,0 +1,19 @@
+{
+  "name": "Guild Artisan",
+  "description": "You are a member of an artisan's guild, skilled in a particular field and closely associated with other artisans. You are a well-established part of the mercantile world, freed by talent and wealth from the constraints of a feudal social order. You learned your skills as an apprentice to a master artisan, under the sponsorship of your guild, until you became a master in your own right.",
+  "ability_score_increase": {
+    "total": 3,
+    "options": ["Charisma", "Intelligence", "Dexterity"],
+    "suggested": {"Charisma": 1, "Intelligence": 2}
+  },
+  "feat": "Crafter",
+  "skill_proficiencies": ["Insight", "Persuasion"],
+  "tool_proficiencies": ["Artisan's Tools"],
+  "languages": 2,
+  "equipment": [
+    "Artisan's Tools",
+    "Traveler's Clothes",
+    "Pouch",
+    "32 GP"
+  ]
+}

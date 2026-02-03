@@ -1,0 +1,482 @@
+{
+  "name": "Wizard",
+  "description": "Scholars defined by exhaustive study of magic's inner workings. Wizards master spells of explosive fire, arcing lightning, subtle deception, and spectacular transformations. Their mightiest magic can change matter, call down meteors, or open portals between worlds.",
+  "hit_die": 6,
+  "primary_ability": "Intelligence",
+  "saving_throw_proficiencies": [
+    "Intelligence",
+    "Wisdom"
+  ],
+  "armor_proficiencies": [],
+  "weapon_proficiencies": [
+    "Simple weapons"
+  ],
+  "skill_proficiencies_count": 2,
+  "skill_options": [
+    "Arcana",
+    "History",
+    "Insight",
+    "Investigation",
+    "Medicine",
+    "Nature",
+    "Religion"
+  ],
+  "spellcasting_ability": "Intelligence",
+  "spellcasting_focus": [
+    "Arcane focus",
+    "Spellbook"
+  ],
+  "subclass_selection_level": 2,
+  "proficiency_bonus_by_level": {
+    "1": 2,
+    "2": 2,
+    "3": 2,
+    "4": 2,
+    "5": 3,
+    "6": 3,
+    "7": 3,
+    "8": 3,
+    "9": 4,
+    "10": 4,
+    "11": 4,
+    "12": 4,
+    "13": 5,
+    "14": 5,
+    "15": 5,
+    "16": 5,
+    "17": 6,
+    "18": 6,
+    "19": 6,
+    "20": 6
+  },
+  "features_by_level": {
+    "1": {
+      "Spellcasting": "You have learned to cast spells through study of arcane magic. You know three Wizard cantrips (Light, Mage Hand, and Ray of Frost are recommended). Your spellbook starts with six level 1 Wizard spells (Detect Magic, Feather Fall, Mage Armor, Magic Missile, Sleep, and Thunderwave are recommended). You prepare spells from your spellbook and can change your prepared spells when you finish a Long Rest.",
+      "Ritual Adept": "You can cast any spell as a Ritual if that spell has the Ritual tag and the spell is in your spellbook. You needn't have the spell prepared, but you must read from the book to cast a spell in this way.",
+      "Arcane Recovery": "When you finish a Short Rest, you can choose expended spell slots to recover. The spell slots can have a combined level equal to no more than half your Wizard level (round up), and none of the slots can be level 6 or higher. Once you use this feature, you can't do so again until you finish a Long Rest."
+    },
+    "2": {
+      "Scholar": "Choose one of the following skills in which you have proficiency: Arcana, History, Investigation, Medicine, Nature, or Religion. You have Expertise in the chosen skill."
+    },
+    "3": {
+      "Wizard Subclass": "You gain a Wizard subclass of your choice. A subclass grants you features at levels 2, 6, 10, and 14."
+    },
+    "4": {
+      "Ability Score Improvement": "You gain the Ability Score Improvement feat or another feat of your choice for which you qualify."
+    },
+    "5": {
+      "Memorize Spell": "Whenever you finish a Short Rest, you can study your spellbook and replace one of the level 1+ Wizard spells you have prepared for your Spellcasting feature with another level 1+ spell from the book."
+    },
+    "6": {
+      "Subclass Feature": "You gain a feature from your Wizard subclass."
+    },
+    "7": {},
+    "8": {
+      "Ability Score Improvement": "You gain the Ability Score Improvement feat or another feat of your choice for which you qualify."
+    },
+    "9": {},
+    "10": {
+      "Subclass Feature": "You gain a feature from your Wizard subclass."
+    },
+    "11": {},
+    "12": {
+      "Ability Score Improvement": "You gain the Ability Score Improvement feat or another feat of your choice for which you qualify."
+    },
+    "13": {},
+    "14": {
+      "Subclass Feature": "You gain a feature from your Wizard subclass."
+    },
+    "15": {},
+    "16": {
+      "Ability Score Improvement": "You gain the Ability Score Improvement feat or another feat of your choice for which you qualify."
+    },
+    "17": {},
+    "18": {
+      "Spell Mastery": {
+        "description": "Choose a level 1 and a level 2 spell in your spellbook that have a casting time of an action. You always have those spells prepared, and you can cast them at their lowest level without expending a spell slot. You can replace one of those spells with an eligible spell of the same level when you finish a Long Rest.",
+        "choices": {
+          "type": "select_multiple",
+          "count": 2,
+          "choice_id": "spell_mastery",
+          "source": {
+            "type": "computed",
+            "from": "spellbook",
+            "filter": {
+              "level": [1, 2],
+              "casting_time": "1 action"
+            }
+          },
+          "restrictions": "Must select one level 1 spell and one level 2 spell"
+        }
+      }
+    },
+    "19": {
+      "Epic Boon": "You gain an Epic Boon feat or another feat of your choice for which you qualify. Boon of Spell Recall is recommended."
+    },
+    "20": {
+      "Signature Spells": {
+        "description": "Choose two level 3 spells in your spellbook as your signature spells. You always have these spells prepared, and you can cast each of them once at level 3 without expending a spell slot. When you do so, you can't cast them in this way again until you finish a Short or Long Rest.",
+        "choices": {
+          "type": "select_multiple",
+          "count": 2,
+          "choice_id": "signature_spells",
+          "source": {
+            "type": "computed",
+            "from": "spellbook",
+            "filter": {
+              "level": 3
+            }
+          }
+        }
+      }
+    }
+  },
+  "spell_slots_by_level": {
+    "1": [
+      2,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "2": [
+      3,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "3": [
+      4,
+      2,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "4": [
+      4,
+      3,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "5": [
+      4,
+      3,
+      2,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "6": [
+      4,
+      3,
+      3,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "7": [
+      4,
+      3,
+      3,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "8": [
+      4,
+      3,
+      3,
+      2,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "9": [
+      4,
+      3,
+      3,
+      3,
+      1,
+      0,
+      0,
+      0,
+      0
+    ],
+    "10": [
+      4,
+      3,
+      3,
+      3,
+      2,
+      0,
+      0,
+      0,
+      0
+    ],
+    "11": [
+      4,
+      3,
+      3,
+      3,
+      2,
+      1,
+      0,
+      0,
+      0
+    ],
+    "12": [
+      4,
+      3,
+      3,
+      3,
+      2,
+      1,
+      0,
+      0,
+      0
+    ],
+    "13": [
+      4,
+      3,
+      3,
+      3,
+      2,
+      1,
+      1,
+      0,
+      0
+    ],
+    "14": [
+      4,
+      3,
+      3,
+      3,
+      2,
+      1,
+      1,
+      0,
+      0
+    ],
+    "15": [
+      4,
+      3,
+      3,
+      3,
+      2,
+      1,
+      1,
+      1,
+      0
+    ],
+    "16": [
+      4,
+      3,
+      3,
+      3,
+      2,
+      1,
+      1,
+      1,
+      0
+    ],
+    "17": [
+      4,
+      3,
+      3,
+      3,
+      2,
+      1,
+      1,
+      1,
+      1
+    ],
+    "18": [
+      4,
+      3,
+      3,
+      3,
+      3,
+      1,
+      1,
+      1,
+      1
+    ],
+    "19": [
+      4,
+      3,
+      3,
+      3,
+      3,
+      2,
+      1,
+      1,
+      1
+    ],
+    "20": [
+      4,
+      3,
+      3,
+      3,
+      3,
+      2,
+      2,
+      1,
+      1
+    ]
+  },
+  "spells_known_by_level": {
+    "1": {
+      "spells_in_book": 6,
+      "cantrips": 3
+    },
+    "2": {
+      "spells_in_book": 8,
+      "cantrips": 3
+    },
+    "3": {
+      "spells_in_book": 10,
+      "cantrips": 3
+    },
+    "4": {
+      "spells_in_book": 12,
+      "cantrips": 4
+    },
+    "5": {
+      "spells_in_book": 14,
+      "cantrips": 4
+    },
+    "6": {
+      "spells_in_book": 16,
+      "cantrips": 4
+    },
+    "7": {
+      "spells_in_book": 18,
+      "cantrips": 4
+    },
+    "8": {
+      "spells_in_book": 20,
+      "cantrips": 4
+    },
+    "9": {
+      "spells_in_book": 22,
+      "cantrips": 4
+    },
+    "10": {
+      "spells_in_book": 24,
+      "cantrips": 5
+    },
+    "11": {
+      "spells_in_book": 26,
+      "cantrips": 5
+    },
+    "12": {
+      "spells_in_book": 28,
+      "cantrips": 5
+    },
+    "13": {
+      "spells_in_book": 30,
+      "cantrips": 5
+    },
+    "14": {
+      "spells_in_book": 32,
+      "cantrips": 5
+    },
+    "15": {
+      "spells_in_book": 34,
+      "cantrips": 5
+    },
+    "16": {
+      "spells_in_book": 36,
+      "cantrips": 5
+    },
+    "17": {
+      "spells_in_book": 38,
+      "cantrips": 5
+    },
+    "18": {
+      "spells_in_book": 40,
+      "cantrips": 5
+    },
+    "19": {
+      "spells_in_book": 42,
+      "cantrips": 5
+    },
+    "20": {
+      "spells_in_book": 44,
+      "cantrips": 5
+    }
+  },
+  "prepared_spells_by_level": {
+    "1": 4,
+    "2": 5,
+    "3": 6,
+    "4": 7,
+    "5": 9,
+    "6": 10,
+    "7": 11,
+    "8": 12,
+    "9": 14,
+    "10": 15,
+    "11": 16,
+    "12": 16,
+    "13": 17,
+    "14": 18,
+    "15": 19,
+    "16": 21,
+    "17": 22,
+    "18": 23,
+    "19": 24,
+    "20": 25
+  },
+  "cantrips_known_by_level": {
+    "1": 3,
+    "2": 3,
+    "3": 3,
+    "4": 4,
+    "5": 4,
+    "6": 4,
+    "7": 4,
+    "8": 4,
+    "9": 4,
+    "10": 5,
+    "11": 5,
+    "12": 5,
+    "13": 5,
+    "14": 5,
+    "15": 5,
+    "16": 5,
+    "17": 5,
+    "18": 5,
+    "19": 5,
+    "20": 5
+  }
+}

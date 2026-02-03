@@ -1,0 +1,20 @@
+{
+  "name": "Way of Shadow",
+  "class": "Monk",
+  "description": "Monks who embrace shadows and stealth, following a tradition that values subterfuge and infiltration.",
+  "source": "Player's Handbook 2024",
+  "features_by_level": {
+    "3": {
+      "Shadow Arts": "You can use Ki to duplicate the effects of certain spells. As an action, spend 2 Ki to cast Darkness, Darkvision, Pass Without Trace, or Silence without material components. You gain the Minor Illusion cantrip if you don't already know it."
+    },
+    "6": {
+      "Shadow Step": "When you are in Dim Light or Darkness, as a Bonus Action you can teleport up to 60 feet to an unoccupied space you can see that is also in Dim Light or Darkness. You then have Advantage on the first melee attack you make before the end of the turn."
+    },
+    "11": {
+      "Cloak of Shadows": "As an action, you become Invisible in Dim Light or Darkness. You remain Invisible until you make an attack, cast a spell, or are in Bright Light."
+    },
+    "17": {
+      "Opportunist": "You can exploit a creature's momentary distraction when it is hit by an attack. Whenever a creature within 5 feet of you is hit by an attack made by a creature other than you, you can use your Reaction to make a melee attack against that creature."
+    }
+  }
+}

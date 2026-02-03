@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow">
+            <div class="card-header text-white">
+                <h2 class="card-title mb-0">
+                    <i class="fas fa-star"></i> Choose {{ character.species }} Traits
+                </h2>
+            </div>
+            <div class="card-body">
+                <p class="lead">Your {{ character.species }} heritage grants you special traits with choices to make.</p>
+                
+                <form method="POST" action="{{ url_for('select_species_traits') }}">
+                    {% for trait_name, trait_data in trait_choices.items() %}
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">{{ trait_name }}</h5>
+                        </div>
+                        <div class="card-body">
+                            <p class="mb-3">{{ trait_data.description }}</p>
+                            
+                            {% set choice_key = "trait_" + trait_name.lower().replace(' ', '_') %}
+                            <div class="row">
+                                {% for option in trait_data.options %}
+                                <div class="col-md-4 mb-2">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" 
+                                               name="{{ choice_key }}" 
+                                               value="{{ option }}" 
+                                               id="{{ choice_key }}_{{ loop.index }}" required>
+                                        <label class="form-check-label" for="{{ choice_key }}_{{ loop.index }}">
+                                            {{ option }}
+                                        </label>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            
+                            {% if trait_data.count and trait_data.count > 1 %}
+                            <small class="text-muted">Choose {{ trait_data.count }} option{{ 's' if trait_data.count > 1 else '' }}.</small>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                    
+                    <div class="d-grid gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-arrow-right"></i> Continue
+                        </button>
+                        <a href="{{ url_for('choose_species') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left"></i> Back to Species
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function validateForm() {
+    const submitButton = document.querySelector('button[type="submit"]');
+    const requiredGroups = document.querySelectorAll('input[type="radio"][required]');
+    
+    // Get unique group names
+    const groupNames = new Set();
+    requiredGroups.forEach(radio => groupNames.add(radio.name));
+    
+    // Check if all groups have a selection
+    let allSelected = true;
+    for (let groupName of groupNames) {
+        const groupSelected = document.querySelector(`input[name="${groupName}"]:checked`);
+        if (!groupSelected) {
+            allSelected = false;
+            break;
+        }
+    }
+    
+    submitButton.disabled = !allSelected;
+}
+
+// Add event listeners to all radio buttons
+document.querySelectorAll('input[type="radio"]').forEach(radio => {
+    radio.addEventListener('change', validateForm);
+});
+
+// Initial validation
+validateForm();
+</script>
+{% endblock %}

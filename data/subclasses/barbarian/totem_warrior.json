@@ -1,0 +1,21 @@
+{
+  "name": "Totem Warrior",
+  "description": "The Path of the Totem Warrior is a spiritual journey, as the barbarian accepts a spirit animal as guide, protector, and inspiration.",
+  "features_by_level": {
+    "3": {
+      "Spirit Seeker": "Yours is a path that seeks attunement with the natural world, giving you a kinship with beasts. You gain the ability to cast the beast sense and speak with animals spells, but only as rituals.",
+      "Totem Spirit": "Choose a totem animal: bear, eagle, or wolf. You gain its benefit while raging and not wearing heavy armor. Bear: Resistance to all damage except psychic. Eagle: Other creatures have disadvantage on opportunity attacks against you, and you can use the Dash action as a bonus action. Wolf: Your friends have advantage on melee attack rolls against enemies within 5 feet of you."
+    },
+    "6": {
+      "Aspect of the Beast": "You gain a magical benefit based on your totem animal. Bear: You count as one size larger when determining carrying capacity and weight you can push/drag/lift, and have advantage on Strength checks. Eagle: You can see up to 1 mile away with no difficulty and have advantage on Wisdom (Perception) checks that rely on sight. Wolf: You can track other creatures while traveling at a fast pace, and you can move stealthily while tracking."
+    },
+    "10": {
+      "Spirit Walker": "You can cast the commune with nature spell, but only as a ritual. When you do so, a spiritual version of one of the animals you chose for Totem Spirit or Aspect of the Beast appears to you to convey the information you seek."
+    },
+    "14": {
+      "Totemic Attunement": "You gain a magical benefit based on your totem animal. Bear: While raging, any creature within 5 feet that's hostile to you has disadvantage on attack rolls against targets other than you or another character with this feature. Eagle: While raging, you have a flying speed equal to your current walking speed (this benefit works only in short bursts; you fall if you end your turn in the air). Wolf: While raging, you can use a bonus action to knock a Large or smaller creature prone when you hit it with a melee weapon attack."
+    }
+  },
+  "class": "Barbarian",
+  "source": "Player's Handbook 2024"
+}

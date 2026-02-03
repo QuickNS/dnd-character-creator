@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <!-- Hero Section -->
+        <div class="text-center mb-5">
+            <h1 class="display-3 text-fantasy mb-3">
+                <i class="fas fa-dragon me-3"></i>
+                Dungeons & Dragons
+                <i class="fas fa-dice-d20 ms-3"></i>
+            </h1>
+            <h2 class="mb-4" style="font-family: 'Cinzel', serif; color: var(--dnd-gold);">
+                2024 Character Creator
+            </h2>
+            <p class="lead text-center" style="max-width: 600px; margin: 0 auto; font-size: 1.3rem;">
+                Forge your legend with the official D&D 2024 rules. 
+                Step into a world of infinite possibilities and create heroes worthy of song and story.
+            </p>
+        </div>
+        
+        <div class="row">
+            <!-- New Character Card -->
+            <div class="col-md-6 mb-4">
+                <div class="card shadow-lg h-100" style="background: linear-gradient(135deg, var(--dnd-parchment) 0%, rgba(30, 58, 138, 0.1) 100%);">
+                    <div class="card-header bg-primary text-white">
+                        <h3 class="card-title mb-0 text-center">
+                            <i class="fas fa-user-plus me-2"></i> New Adventure
+                        </h3>
+                    </div>
+                    <div class="card-body text-center d-flex flex-column">
+                        <div class="mb-4">
+                            <i class="fas fa-shield-halved" style="font-size: 3rem; color: var(--dnd-forest-green); opacity: 0.8;"></i>
+                        </div>
+                        <h5 class="card-title">Create Your Hero</h5>
+                        <p class="card-text flex-grow-1">
+                            Embark on a journey of character creation. Choose your species, class, and background 
+                            to craft a unique adventurer ready to face any challenge.
+                        </p>
+                        <ul class="fantasy-list text-start mb-4">
+                            <li>Official D&D 2024 species & lineages</li>
+                            <li>All 12 character classes</li>
+                            <li>Rich backgrounds with bonuses</li>
+                            <li>Complete trait & feat system</li>
+                        </ul>
+                        <a href="{{ url_for('create_character') }}" class="btn btn-primary btn-lg w-100">
+                            <i class="fas fa-play me-2"></i> Begin Your Quest
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Continue/Load Character Card -->
+            <div class="col-md-6 mb-4">
+                <div class="card shadow-lg h-100" style="background: linear-gradient(135deg, var(--dnd-parchment) 0%, rgba(22, 66, 60, 0.1) 100%);">
+                    <div class="card-header bg-success text-white">
+                        <h3 class="card-title mb-0 text-center">
+                            <i class="fas fa-book-open me-2"></i> Continue Tale
+                        </h3>
+                    </div>
+                    <div class="card-body text-center d-flex flex-column">
+                        <div class="mb-4">
+                            <i class="fas fa-scroll" style="font-size: 3rem; color: var(--dnd-forest-green); opacity: 0.8;"></i>
+                        </div>
+                        <h5 class="card-title">Resume Creation</h5>
+                        <p class="card-text flex-grow-1">
+                            Return to a character in progress or review completed heroes. 
+                            Export your characters or make adjustments to perfect your build.
+                        </p>
+                        <div class="text-start mb-4">
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <strong>Coming Soon:</strong> Character saving and loading functionality will be available in the next update!
+                            </div>
+                        </div>
+                        <button class="btn btn-outline-secondary btn-lg w-100" disabled>
+                            <i class="fas fa-hourglass-half me-2"></i> Feature In Development
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Features Showcase -->
+        <div class="row mt-5">
+            <div class="col-12">
+                <div class="card shadow-lg">
+                    <div class="card-header text-dark">
+                        <h4 class="card-title mb-0 text-center">
+                            <i class="fas fa-gem me-2"></i> Features of this Character Creator
+                        </h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3 text-center mb-3">
+                                <i class="fas fa-users" style="font-size: 2.5rem; color: var(--dnd-burgundy); margin-bottom: 1rem;"></i>
+                                <h6>10 Species</h6>
+                                <small class="text-muted">With lineage variants for Elves, Dragonborn, Gnomes, and Tieflings</small>
+                            </div>
+                            <div class="col-md-3 text-center mb-3">
+                                <i class="fas fa-fist-raised" style="font-size: 2.5rem; color: var(--dnd-deep-blue); margin-bottom: 1rem;"></i>
+                                <h6>12 Classes</h6>
+                                <small class="text-muted">Full class features, skill choices, and fighting styles</small>
+                            </div>
+                            <div class="col-md-3 text-center mb-3">
+                                <i class="fas fa-map" style="font-size: 2.5rem; color: var(--dnd-forest-green); margin-bottom: 1rem;"></i>
+                                <h6>Rich Backgrounds</h6>
+                                <small class="text-muted">Complete with skill bonuses and ability score increases</small>
+                            </div>
+                            <div class="col-md-3 text-center mb-3">
+                                <i class="fas fa-magic" style="font-size: 2.5rem; color: var(--dnd-gold); margin-bottom: 1rem;"></i>
+                                <h6>D&D 2024 Rules</h6>
+                                <small class="text-muted">Updated mechanics, traits, and character options</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="mt-4 text-center">
+            <small class="text-muted">
+                This character creator follows the official Dungeons & Dragons 2024 Player's Handbook rules.
+            </small>
+        </div>
+    </div>
+</div>
+{% endblock %}

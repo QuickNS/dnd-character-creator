@@ -1,0 +1,21 @@
+{
+  "name": "Path of the Wild Heart",
+  "class": "Barbarian",
+  "description": "Barbarians who draw on the spirits of animals, manifesting their power.",
+  "source": "Player's Handbook 2024",
+  "features_by_level": {
+    "3": {
+      "Animal Speaker": "You can cast Beast Sense and Speak with Animals, but only as Rituals.",
+      "Rage of the Wilds": "When you activate Rage, choose a Rage option (you know all 5 options). While raging, you gain its benefits. Options: Bear (Resistance to all damage except Force, Necrotic, Psychic, Radiant), Eagle (Flying Speed equal to Walking Speed if not wearing Heavy armor), Lion (Bonus Action to force Large or smaller creature within 15 feet to make Strength save or be knocked Prone), Ram (Speed increases by 15 feet, Opportunity Attacks against you have Disadvantage), Wolf (Allies have Advantage on melee attack rolls against Hostile creatures within 5 feet of you)."
+    },
+    "6": {
+      "Aspect of the Wilds": "You gain one benefit based on an animal: Bear (Expertise in Strength-based skills), Eagle (Proficiency in Perception or Survival, Expertise if already proficient, Advantage on Perception checks relying on sight), Lion (Proficiency in one Charisma skill, Expertise if already proficient), Ram (Your Speed increases by 10 feet), Wolf (Proficiency in one Wisdom skill, Expertise if already proficient)."
+    },
+    "10": {
+      "Nature Speaker": "You can cast Commune with Nature, but only as a Ritual. When you do, spirit version of animal from Animal Speaker or Aspect appears."
+    },
+    "14": {
+      "Power of the Wilds": "When you activate Rage, you can choose two Rage of the Wilds options instead of one, gaining benefits of both."
+    }
+  }
+}

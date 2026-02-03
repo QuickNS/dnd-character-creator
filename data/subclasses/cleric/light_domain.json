@@ -1,0 +1,52 @@
+{
+  "name": "Light Domain",
+  "class": "Cleric",
+  "description": "Clerics who wield the power of light to burn away darkness and reveal truth.",
+  "source": "Player's Handbook 2024",
+  "features_by_level": {
+    "3": {
+      "Bonus Cantrip": {
+        "description": "You know the Light cantrip.",
+        "effects": [
+          {
+            "type": "grant_cantrip",
+            "spell": "Light",
+            "spell_list": "Cleric"
+          }
+        ]
+      },
+      "Warding Flare": "When a creature you can see within 30 feet attacks you, use Reaction to impose Disadvantage on the attack roll, as divine light flares before them. Creature with Blindsight unaffected. Uses: Wisdom modifier times per Long Rest (minimum 1).",
+      "Domain Spells": {
+        "description": "You always have certain spells prepared.",
+        "spells": {
+          "1": [
+            "Burning Hands",
+            "Faerie Fire"
+          ],
+          "3": [
+            "Flaming Sphere",
+            "Scorching Ray"
+          ],
+          "5": [
+            "Daylight",
+            "Fireball"
+          ],
+          "7": [
+            "Guardian of Faith",
+            "Wall of Fire"
+          ],
+          "9": [
+            "Flame Strike",
+            "Scrying"
+          ]
+        }
+      }
+    },
+    "6": {
+      "Improved Flare": "As a Channel Divinity, when you use Warding Flare on a creature, you can affect creatures within 30 feet of the attacker with the same effect (impose Disadvantage on attack rolls until end of your next turn)."
+    },
+    "17": {
+      "Corona of Light": "As an action, create an aura of sunlight in 60-foot radius for 1 minute. Bright Light fills area. Each Hostile creature in area has Disadvantage on saves against Fire or Radiant damage spells you cast. Once used, can't use until Long Rest."
+    }
+  }
+}

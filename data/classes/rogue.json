@@ -1,0 +1,136 @@
+{
+  "name": "Rogue",
+  "description": "Rogues rely on cunning, stealth, and their foes' vulnerabilities to get the upper hand. They have a knack for finding solutions to any problem, making precise strikes over brute force. Some began as criminals, others as crime fighters.",
+  "hit_die": 8,
+  "primary_ability": "Dexterity",
+  "saving_throw_proficiencies": [
+    "Dexterity",
+    "Intelligence"
+  ],
+  "armor_proficiencies": [
+    "Light armor"
+  ],
+  "weapon_proficiencies": [
+    "Simple weapons",
+    "Martial weapons with Finesse or Light property"
+  ],
+  "tool_proficiencies": [
+    "Thieves' Tools"
+  ],
+  "skill_proficiencies_count": 4,
+  "skill_options": [
+    "Acrobatics",
+    "Athletics",
+    "Deception",
+    "Insight",
+    "Intimidation",
+    "Investigation",
+    "Perception",
+    "Persuasion",
+    "Sleight of Hand",
+    "Stealth"
+  ],
+  "subclass_selection_level": 3,
+  "proficiency_bonus_by_level": {
+    "1": 2,
+    "2": 2,
+    "3": 2,
+    "4": 2,
+    "5": 3,
+    "6": 3,
+    "7": 3,
+    "8": 3,
+    "9": 4,
+    "10": 4,
+    "11": 4,
+    "12": 4,
+    "13": 5,
+    "14": 5,
+    "15": 5,
+    "16": 5,
+    "17": 6,
+    "18": 6,
+    "19": 6,
+    "20": 6
+  },
+  "sneak_attack_by_level": {
+    "1": "1d6",
+    "3": "2d6",
+    "5": "3d6",
+    "7": "4d6",
+    "9": "5d6",
+    "11": "6d6",
+    "13": "7d6",
+    "15": "8d6",
+    "17": "9d6",
+    "19": "10d6"
+  },
+  "features_by_level": {
+    "1": {
+      "Expertise": "Gain Expertise in two skills.",
+      "Sneak Attack": "Once per turn, deal extra 1d6 damage with Finesse/Ranged weapon if you have Advantage or ally within 5 feet of target.",
+      "Thieves' Cant": "Know Thieves' Cant and one other language.",
+      "Weapon Mastery": "Use mastery properties of two weapons."
+    },
+    "2": {
+      "Cunning Action": "Take Dash, Disengage, or Hide as Bonus Action."
+    },
+    "3": {
+      "Rogue Subclass": "Choose your roguish archetype.",
+      "Steady Aim": "As Bonus Action, give yourself Advantage on next attack (Speed 0 after)."
+    },
+    "4": {
+      "Ability Score Improvement": "Gain Ability Score Improvement feat or another feat."
+    },
+    "5": {
+      "Cunning Strike": "Add effects to Sneak Attack by foregoing dice: Poison (1d6), Trip (1d6), Withdraw (1d6).",
+      "Uncanny Dodge": "When hit by attack, use Reaction to halve damage."
+    },
+    "6": {
+      "Expertise": "Gain Expertise in two more skills."
+    },
+    "7": {
+      "Evasion": "Dexterity saves: no damage on success, half on fail.",
+      "Reliable Talent": "Treat d20 rolls of 9 or lower as 10 for skill/tool proficiencies."
+    },
+    "8": {
+      "Ability Score Improvement": "Gain Ability Score Improvement feat or another feat."
+    },
+    "9": {
+      "Subclass Feature": "Gain feature from your archetype."
+    },
+    "10": {
+      "Ability Score Improvement": "Gain Ability Score Improvement feat or another feat."
+    },
+    "11": {
+      "Improved Cunning Strike": "Can use up to two Cunning Strike effects per Sneak Attack."
+    },
+    "12": {
+      "Ability Score Improvement": "Gain Ability Score Improvement feat or another feat."
+    },
+    "13": {
+      "Subclass Feature": "Gain feature from your archetype."
+    },
+    "14": {
+      "Devious Strikes": "New Cunning Strikes: Daze (2d6), Knock Out (6d6), Obscure (3d6)."
+    },
+    "15": {
+      "Slippery Mind": "Gain proficiency in Wisdom and Charisma saves."
+    },
+    "16": {
+      "Ability Score Improvement": "Gain Ability Score Improvement feat or another feat."
+    },
+    "17": {
+      "Subclass Feature": "Gain capstone feature from your archetype."
+    },
+    "18": {
+      "Elusive": "No attack roll can have Advantage against you unless you're Incapacitated."
+    },
+    "19": {
+      "Epic Boon": "Gain Epic Boon feat. Boon of the Night Spirit recommended."
+    },
+    "20": {
+      "Stroke of Luck": "If you fail d20 Test, turn the roll into a 20. Once per Short or Long Rest."
+    }
+  }
+}

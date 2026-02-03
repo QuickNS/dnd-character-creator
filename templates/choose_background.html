@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="card shadow">
+            <div class="card-header text-dark">
+                <h4 class="card-title mb-0">
+                    <i class="fas fa-book"></i> Choose Your Background
+                </h4>
+            </div>
+            <div class="card-body">
+                <p class="lead">Your background represents your character's history and provides ability score increases, skill proficiencies, and special features.</p>
+                
+                <form method="POST" action="{{ url_for('select_background') }}">
+                    <div class="row">
+                        {% for bg_name, bg_data in backgrounds.items() %}
+                        <div class="col-lg-6 mb-3">
+                            <div class="card border background-card" data-background="{{ bg_name }}">
+                                <div class="card-body">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="background" 
+                                               id="bg_{{ loop.index }}" value="{{ bg_name }}" required
+                                               {% if character.background == bg_name %}checked{% endif %}>
+                                        <label class="form-check-label w-100" for="bg_{{ loop.index }}">
+                                            <h5 class="card-title">{{ bg_name }}</h5>
+                                            <p class="card-text small">
+                                                {{ bg_data.get('description', 'A background with unique experiences.') }}
+                                            </p>
+                                            {% if bg_data.get('skill_proficiencies') %}
+                                            <p class="text-muted small">
+                                                <strong>Skills:</strong> {{ ', '.join(bg_data.skill_proficiencies) }}
+                                            </p>
+                                            {% endif %}
+                                            {% if bg_data.get('feat') %}
+                                            <p class="text-muted small">
+                                                <strong>Feat:</strong> <span class="badge bg-success">{{ bg_data.feat }}</span>
+                                            </p>
+                                            {% endif %}
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="d-grid gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-arrow-right"></i> Continue to Species Selection
+                        </button>
+                        <a href="{{ url_for('class_choices') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left"></i> Back to Class Features
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.querySelectorAll('.background-card').forEach(card => {
+    card.addEventListener('click', function() {
+        const radio = this.querySelector('input[type="radio"]');
+        radio.checked = true;
+        
+        // Update visual selection
+        document.querySelectorAll('.background-card').forEach(c => c.classList.remove('border-warning'));
+        this.classList.add('border-warning');
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,21 @@
+{
+  "name": "Assassin",
+  "class": "Rogue",
+  "description": "Training focuses on using stealth, poison, and disguise to eliminate foes with deadly efficiency. While some are hired killers, spies, or bounty hunters, these capabilities are equally useful for adventurers facing monstrous enemies.",
+  "source": "Player's Handbook",
+  "features_by_level": {
+    "3": {
+      "Assassinate": "Initiative: Have Advantage on Initiative rolls. Surprising Strikes: During first round of combat, have Advantage on attack rolls vs creatures that haven't taken a turn. If Sneak Attack hits during that round, target takes extra damage equal to your Rogue level.",
+      "Assassin's Tools": "You gain Disguise Kit and Poisoner's Kit with proficiency."
+    },
+    "9": {
+      "Infiltration Expertise": "Masterful Mimicry: Unerringly mimic person's speech/handwriting after 1 hour study. Roving Aim: Speed isn't reduced to 0 by using Steady Aim."
+    },
+    "13": {
+      "Envenom Weapons": "When you use Poison option of Cunning Strike, target also takes 2d6 Poison damage on failed save. This damage ignores Resistance to Poison."
+    },
+    "17": {
+      "Death Strike": "When you hit with Sneak Attack on first round of combat, target must make Constitution save (DC 8 + Dexterity + Proficiency) or attack's damage is doubled."
+    }
+  }
+}

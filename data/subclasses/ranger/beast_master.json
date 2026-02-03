@@ -1,0 +1,122 @@
+{
+  "name": "Beast Master",
+  "description": "The Beast Master archetype embodies a friendship between the civilized races and the beasts of the world. United in focus, beast and ranger work as one to fight the monstrous foes that threaten civilization and the wilderness alike.",
+  "features_by_level": {
+    "3": {
+      "Ranger's Companion": "You gain a beast companion that accompanies you on your adventures and is trained to fight alongside you. Choose a beast that is no larger than Medium and that has a challenge rating of 1/4 or lower. Your beast companion gains a variety of benefits while linked to you.",
+      "Primal Companion": "You magically summon a primal beast, which draws on the power of your bond with nature. The beast is friendly to you and your companions and obeys your commands. Choose its stat block: Beast of the Land, Beast of the Sea, or Beast of the Sky. You also determine the kind of animal the beast is, choosing a kind appropriate for the stat block. Whatever kind you choose, the beast bears primal markings, indicating its mystical origin."
+    },
+    "7": {
+      "Exceptional Training": "On any of your turns when your beast companion doesn't attack, you can use a bonus action to command the beast to take the Dash, Disengage, Dodge, or Help action on its turn."
+    },
+    "11": {
+      "Bestial Fury": "Your beast companion can make two attacks when you command it to use the Attack action."
+    },
+    "15": {
+      "Share Spells": "When you cast a spell targeting yourself, you can also affect your beast companion with the spell if the beast is within 30 feet of you."
+    }
+  },
+  "spellcasting_ability": "Wisdom",
+  "spell_slots_by_level": {
+    "1": {},
+    "2": {
+      "1": 2
+    },
+    "3": {
+      "1": 3
+    },
+    "4": {
+      "1": 3
+    },
+    "5": {
+      "1": 4,
+      "2": 2
+    },
+    "6": {
+      "1": 4,
+      "2": 2
+    },
+    "7": {
+      "1": 4,
+      "2": 3
+    },
+    "8": {
+      "1": 4,
+      "2": 3
+    },
+    "9": {
+      "1": 4,
+      "2": 3,
+      "3": 2
+    },
+    "10": {
+      "1": 4,
+      "2": 3,
+      "3": 2
+    },
+    "11": {
+      "1": 4,
+      "2": 3,
+      "3": 3
+    },
+    "12": {
+      "1": 4,
+      "2": 3,
+      "3": 3
+    },
+    "13": {
+      "1": 4,
+      "2": 3,
+      "3": 3,
+      "4": 1
+    },
+    "14": {
+      "1": 4,
+      "2": 3,
+      "3": 3,
+      "4": 1
+    },
+    "15": {
+      "1": 4,
+      "2": 3,
+      "3": 3,
+      "4": 2
+    },
+    "16": {
+      "1": 4,
+      "2": 3,
+      "3": 3,
+      "4": 2
+    },
+    "17": {
+      "1": 4,
+      "2": 3,
+      "3": 3,
+      "4": 3,
+      "5": 1
+    },
+    "18": {
+      "1": 4,
+      "2": 3,
+      "3": 3,
+      "4": 3,
+      "5": 1
+    },
+    "19": {
+      "1": 4,
+      "2": 3,
+      "3": 3,
+      "4": 3,
+      "5": 2
+    },
+    "20": {
+      "1": 4,
+      "2": 3,
+      "3": 3,
+      "4": 3,
+      "5": 2
+    }
+  },
+  "class": "Ranger",
+  "source": "Player's Handbook 2024"
+}

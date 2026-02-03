@@ -1,0 +1,13 @@
+{
+  "name": "Chthonic Tiefling",
+  "parent_species": "Tiefling",
+  "traits": {
+    "Chthonic Magic": "You know the Chill Touch cantrip. Starting at 3rd level, you can cast the False Life spell with this trait. Starting at 5th level, you can also cast the Ray of Enfeeblement spell with it. Once you cast False Life or Ray of Enfeeblement with this trait, you can't cast that spell with it again until you finish a long rest. You can also cast these spells using spell slots you have of the appropriate level. Charisma is your spellcasting ability for these spells."
+  },
+  "spellcasting_ability": "Charisma",
+  "spells_by_level": {
+    "cantrip": ["Chill Touch"],
+    "3": ["False Life"],
+    "5": ["Ray of Enfeeblement"]
+  }
+}

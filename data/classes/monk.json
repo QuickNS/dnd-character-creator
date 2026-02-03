@@ -1,0 +1,120 @@
+{
+  "name": "Monk",
+  "description": "Monks are masters of martial arts, harnessing the energy that flows through their bodies. They focus their ki to perform superhuman feats and deliver devastating unarmed strikes.",
+  "hit_die": 8,
+  "primary_ability": "Dexterity and Wisdom",
+  "saving_throw_proficiencies": [
+    "Strength",
+    "Dexterity"
+  ],
+  "armor_proficiencies": [],
+  "weapon_proficiencies": [
+    "Simple weapons",
+    "Shortswords"
+  ],
+  "tool_proficiencies": [
+    "Choose one type of artisan's tools or one musical instrument"
+  ],
+  "skill_proficiencies_count": 2,
+  "skill_options": [
+    "Acrobatics",
+    "Athletics",
+    "History",
+    "Insight",
+    "Religion",
+    "Stealth"
+  ],
+  "subclass_selection_level": 3,
+  "proficiency_bonus_by_level": {
+    "1": 2,
+    "2": 2,
+    "3": 2,
+    "4": 2,
+    "5": 3,
+    "6": 3,
+    "7": 3,
+    "8": 3,
+    "9": 4,
+    "10": 4,
+    "11": 4,
+    "12": 4,
+    "13": 5,
+    "14": 5,
+    "15": 5,
+    "16": 5,
+    "17": 6,
+    "18": 6,
+    "19": 6,
+    "20": 6
+  },
+  "features_by_level": {
+    "1": {
+      "Unarmored Defense": "While not wearing armor or wielding a shield, your AC equals 10 + Dexterity modifier + Wisdom modifier.",
+      "Martial Arts": "Your unarmed strikes and monk weapons deal 1d6 damage (increases at higher levels). You can use Dexterity instead of Strength for attack and damage rolls with unarmed strikes and monk weapons. When you use Attack action with unarmed strike or monk weapon, you can make one unarmed strike as a Bonus Action."
+    },
+    "2": {
+      "Ki": "Gain Ki points equal to your Monk level. Spend Ki to fuel special abilities: Flurry of Blows (1 Ki, make 2 unarmed strikes as Bonus Action), Patient Defense (1 Ki, Dodge as Bonus Action), Step of the Wind (1 Ki, Disengage or Dash as Bonus Action, jump distance doubled). Regain all Ki on Short or Long Rest.",
+      "Unarmored Movement": "Your Speed increases by 10 feet while not wearing armor or wielding a shield. Bonus increases at higher levels."
+    },
+    "3": {
+      "Deflect Missiles": "When hit by ranged weapon attack, use Reaction to reduce damage by 1d10 + Dexterity modifier + Monk level. If damage reduced to 0, you can catch the missile and spend 1 Ki to throw it back (range 20/60, attack with proficiency).",
+      "Monk Subclass": "Choose your Monastic Tradition subclass."
+    },
+    "4": {
+      "Ability Score Improvement": "Increase one ability score by 2, or increase two ability scores by 1.",
+      "Slow Fall": "Reduce falling damage by an amount equal to 5 times your Monk level."
+    },
+    "5": {
+      "Extra Attack": "Attack twice, instead of once, when you take the Attack action on your turn.",
+      "Stunning Strike": "When you hit with melee weapon attack, spend 1 Ki to attempt stunning strike. Target makes Constitution save (DC 8 + Proficiency Bonus + Wisdom modifier) or be Stunned until end of your next turn."
+    },
+    "6": {
+      "Empowered Strikes": "Your unarmed strikes count as magical for overcoming resistance and immunity to nonmagical attacks and damage.",
+      "Subclass Feature": "Gain a feature from your Monastic Tradition subclass."
+    },
+    "7": {
+      "Evasion": "When you are subjected to an effect that allows a Dexterity saving throw to take only half damage, you instead take no damage if you succeed on the save, and only half damage if you fail.",
+      "Stillness of Mind": "Use your action to end one effect on yourself causing you to be Charmed or Frightened."
+    },
+    "8": {
+      "Ability Score Improvement": "Increase one ability score by 2, or increase two ability scores by 1."
+    },
+    "9": {
+      "Unarmored Movement Improvement": "You can move along vertical surfaces and across liquids on your turn without falling during the move."
+    },
+    "10": {
+      "Purity of Body": "Immune to disease and poison.",
+      "Subclass Feature": "Gain a feature from your Monastic Tradition subclass."
+    },
+    "11": {
+      "Subclass Feature": "Gain a feature from your Monastic Tradition subclass."
+    },
+    "12": {
+      "Ability Score Improvement": "Increase one ability score by 2, or increase two ability scores by 1."
+    },
+    "13": {
+      "Tongue of the Sun and Moon": "You understand all spoken languages. Creatures that understand a language can understand what you say."
+    },
+    "14": {
+      "Diamond Soul": "Proficiency in all saving throws. When you fail a saving throw, you can spend 1 Ki to reroll it and take the second result."
+    },
+    "15": {
+      "Timeless Body": "You suffer none of the frailty of old age, and you can't be aged magically. You can still die of old age. You no longer need food or water."
+    },
+    "16": {
+      "Ability Score Improvement": "Increase one ability score by 2, or increase two ability scores by 1."
+    },
+    "17": {
+      "Subclass Feature": "Gain a feature from your Monastic Tradition subclass."
+    },
+    "18": {
+      "Empty Body": "Spend 4 Ki as an action to become Invisible for 1 minute. During that time, you have resistance to all damage except Force damage. Alternatively, spend 8 Ki to cast Astral Projection without material components."
+    },
+    "19": {
+      "Epic Boon": "Gain an Epic Boon feat or another feat of your choice."
+    },
+    "20": {
+      "Perfect Self": "When you roll Initiative and have no Ki points remaining, you regain 4 Ki points."
+    }
+  }
+}

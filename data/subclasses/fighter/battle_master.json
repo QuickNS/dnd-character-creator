@@ -1,0 +1,24 @@
+{
+  "name": "Battle Master",
+  "class": "Fighter",
+  "description": "Fighters who employ tactical maneuvers and superior combat techniques.",
+  "source": "Player's Handbook 2024",
+  "features_by_level": {
+    "3": {
+      "Combat Superiority": "You learn three maneuvers of your choice from Battle Master maneuvers. You gain four Superiority Dice (d8). When you use a maneuver, expend one die, adding it to the maneuver's effect. Regain all dice on Short or Long Rest. Learn 2 more maneuvers at 7th, 10th, and 15th level. Gain one more Superiority Die at 7th and 15th level. Die becomes d10 at 10th, d12 at 18th.",
+      "Student of War": "Gain proficiency with one type of artisan's tools of your choice."
+    },
+    "7": {
+      "Know Your Enemy": "If you spend at least 1 minute observing or interacting with a creature outside combat, you can learn certain information about its capabilities compared to yours (whether the creature is your equal, superior, or inferior in regard to Strength, Dexterity, Constitution scores, AC, current HP, total class levels, or Fighter levels)."
+    },
+    "10": {
+      "Improved Combat Superiority": "Your Superiority Dice turn into d10s."
+    },
+    "15": {
+      "Relentless": "When you roll Initiative and have no Superiority Dice remaining, you regain one Superiority Die."
+    },
+    "18": {
+      "Ultimate Combat Superiority": "Your Superiority Dice turn into d12s."
+    }
+  }
+}

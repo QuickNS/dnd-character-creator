@@ -1,0 +1,20 @@
+{
+  "name": "Way of the Open Hand",
+  "class": "Monk",
+  "description": "Monks who master the techniques of unarmed combat, manipulating ki to deliver devastating blows.",
+  "source": "Player's Handbook 2024",
+  "features_by_level": {
+    "3": {
+      "Open Hand Technique": "When you hit with an attack granted by Flurry of Blows, you can impose one effect: target must succeed on Dexterity save or be knocked Prone, must succeed on Strength save or be pushed up to 15 feet away, or can't take Reactions until end of your next turn."
+    },
+    "6": {
+      "Wholeness of Body": "As an action, you can regain Hit Points equal to three times your Monk level. Once used, can't use again until Long Rest."
+    },
+    "11": {
+      "Tranquility": "At the end of a Long Rest, gain the effect of a Sanctuary spell that lasts until the start of your next Long Rest (spell can end early as normal). Spell's save DC equals 8 + Wisdom modifier + Proficiency Bonus."
+    },
+    "17": {
+      "Quivering Palm": "When you hit a creature with an unarmed strike, you can spend 3 Ki to start imperceptible vibrations. At any time within your Monk level in days, you can use an action to cause vibrations to harm the creature (must be on same plane). Creature makes Constitution save (DC 8 + Wisdom modifier + Proficiency Bonus). On failure, reduced to 0 HP. On success, takes 10d10 Necrotic damage. Can have only one creature under this effect at a time."
+    }
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "name": "College of Lore",
+  "class": "Bard",
+  "description": "Bards who collect knowledge from all sources, using wit and skill to overcome challenges.",
+  "source": "Player's Handbook 2024",
+  "features_by_level": {
+    "3": {
+      "Bonus Proficiencies": "You gain proficiency in three skills of your choice.",
+      "Cutting Words": "When a creature you can see within 60 feet makes an attack roll, ability check, or damage roll, you can use your Reaction and expend one Bardic Inspiration die to subtract the number rolled from the creature's roll. You can use this after seeing the roll but before knowing if it succeeds or fails."
+    },
+    "6": {
+      "Magical Discoveries": "Whenever you gain a Bard level and learn a new spell, that spell can come from the Bard spell list or from the Cleric, Druid, or Wizard spell list. The spell counts as a Bard spell for you."
+    },
+    "14": {
+      "Peerless Skill": "When you make an ability check and fail, you can expend one use of Bardic Inspiration. Roll your Bardic Inspiration die and add it to your ability check, potentially turning it into a success."
+    }
+  }
+}

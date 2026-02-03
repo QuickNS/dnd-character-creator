@@ -1,0 +1,42 @@
+{
+  "name": "Trickery Domain",
+  "class": "Cleric",
+  "description": "Clerics who champion deception, illusion, and cunning, patrons of thieves and rebels.",
+  "source": "Player's Handbook 2024",
+  "features_by_level": {
+    "3": {
+      "Blessing of the Trickster": "As an action, touch a willing creature to give it Advantage on Dexterity (Stealth) checks. Lasts 1 hour or until you use this again.",
+      "Domain Spells": {
+        "description": "You always have certain spells prepared.",
+        "spells": {
+          "1": [
+            "Charm Person",
+            "Disguise Self"
+          ],
+          "3": [
+            "Invisibility",
+            "Pass Without Trace"
+          ],
+          "5": [
+            "Hypnotic Pattern",
+            "Nondetection"
+          ],
+          "7": [
+            "Confusion",
+            "Dimension Door"
+          ],
+          "9": [
+            "Dominate Person",
+            "Modify Memory"
+          ]
+        }
+      }
+    },
+    "6": {
+      "Invoke Duplicity": "As a Channel Divinity, create perfect illusion of yourself in unoccupied space within 30 feet for 1 minute. As Bonus Action, move it up to 30 feet to space you can see. You can cast spells as though in illusion's space. Creatures have Disadvantage on Opportunity Attacks against you if illusion is within 5 feet of them."
+    },
+    "17": {
+      "Improved Duplicity": "When you use Invoke Duplicity, you can create up to four duplicates instead of one. As Bonus Action, move any number of them up to 30 feet."
+    }
+  }
+}

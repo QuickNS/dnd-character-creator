@@ -1,0 +1,24 @@
+{
+  "name": "Champion",
+  "class": "Fighter",
+  "description": "Fighters who focus on raw physical power and athletic excellence.",
+  "source": "Player's Handbook 2024",
+  "features_by_level": {
+    "3": {
+      "Improved Critical": "Your weapon attacks score a critical hit on a roll of 19 or 20.",
+      "Remarkable Athlete": "Add half your Proficiency Bonus (rounded up) to Strength, Dexterity, or Constitution checks you make that don't already use your Proficiency Bonus. When you make a running long jump, the distance you can cover increases by a number of feet equal to your Strength modifier."
+    },
+    "7": {
+      "Additional Fighting Style": "Choose a second Fighting Style from the Fighter class."
+    },
+    "10": {
+      "Heroic Champion": "Your Remarkable Athlete benefits now apply to Initiative rolls. You gain Proficiency in Strength, Dexterity, or Constitution saves (choose one)."
+    },
+    "15": {
+      "Superior Critical": "Your weapon attacks score a critical hit on a roll of 18-20."
+    },
+    "18": {
+      "Survivor": "At the start of each of your turns, you regain Hit Points equal to 5 + Constitution modifier if you have no more than half your Hit Points left. You don't gain this benefit if you have 0 Hit Points."
+    }
+  }
+}

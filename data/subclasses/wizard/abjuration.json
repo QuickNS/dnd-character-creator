@@ -1,0 +1,21 @@
+{
+  "name": "Abjuration",
+  "description": "Focuses on protective magic and dispelling harmful effects.",
+  "features_by_level": {
+    "2": {
+      "Abjuration Savant": "The gold and time you must spend to copy Abjuration spells into your spellbook is halved.",
+      "Arcane Ward": "You can weave magic around yourself for protection. When you cast an Abjuration spell of 1st level or higher, you can simultaneously use a strand of the spell's magic to create a magical ward on yourself. The ward has hit points equal to twice your wizard level + your Intelligence modifier."
+    },
+    "6": {
+      "Projected Ward": "When a creature that you can see within 30 feet of you takes damage, you can use your reaction to cause your Arcane Ward to absorb that damage instead of that creature taking it. If this damage reduces the ward to 0 hit points, the warded creature takes any remaining damage."
+    },
+    "10": {
+      "Improved Abjuration": "When you cast an Abjuration spell that requires you to make an ability check as a part of casting that spell (as in Counterspell and Dispel Magic), you add your proficiency bonus to that ability check."
+    },
+    "14": {
+      "Spell Resistance": "You have advantage on saving throws against spells, and you have resistance against the damage of spells."
+    }
+  },
+  "class": "Wizard",
+  "source": "Player's Handbook 2024"
+}

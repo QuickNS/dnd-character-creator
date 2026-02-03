@@ -1,0 +1,19 @@
+{
+  "name": "Entertainer",
+  "description": "You thrive in front of an audience. You know how to entrance them, entertain them, and even inspire them. Your poetics can stir the hearts of those who hear you, awakening grief or joy, laughter or anger. Your music raises their spirits or captures their sorrow.",
+  "ability_score_increase": {
+    "total": 3,
+    "options": ["Charisma", "Dexterity", "Constitution"],
+    "suggested": {"Charisma": 2, "Dexterity": 1}
+  },
+  "feat": "Musician",
+  "skill_proficiencies": ["Acrobatics", "Performance"],
+  "tool_proficiencies": ["Musical Instrument"],
+  "languages": 2,
+  "equipment": [
+    "Musical Instrument",
+    "Costume",
+    "Traveler's Clothes",
+    "15 GP"
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "name": "War Domain",
+  "class": "Cleric",
+  "description": "Clerics who excel in battle, inspiring others and smiting enemies with divine power.",
+  "source": "Player's Handbook 2024",
+  "features_by_level": {
+    "3": {
+      "Bonus Proficiencies": "You gain proficiency with Heavy armor and Martial weapons.",
+      "War Priest": "When you take the Attack action, you can make one weapon attack as a Bonus Action. You can use this feature a number of times equal to your Wisdom modifier (minimum 1). Regain all uses on Long Rest.",
+      "Domain Spells": {
+        "description": "You always have certain spells prepared.",
+        "spells": {
+          "1": [
+            "Divine Favor",
+            "Shield of Faith"
+          ],
+          "3": [
+            "Magic Weapon",
+            "Spiritual Weapon"
+          ],
+          "5": [
+            "Crusader's Mantle",
+            "Spirit Guardians"
+          ],
+          "7": [
+            "Freedom of Movement",
+            "Stoneskin"
+          ],
+          "9": [
+            "Flame Strike",
+            "Hold Monster"
+          ]
+        }
+      }
+    },
+    "6": {
+      "Guided Strike": "When you or a creature within 30 feet makes an attack roll, you can use Channel Divinity to grant +10 bonus to the roll (use before or after roll, but before knowing outcome)."
+    },
+    "17": {
+      "Avatar of Battle": "You gain Resistance to Bludgeoning, Piercing, and Slashing damage from nonmagical attacks."
+    }
+  }
+}

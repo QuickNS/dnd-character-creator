@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow">
+            <div class="card-header text-dark">
+                <h4 class="card-title mb-0">
+                    <i class="fas fa-language"></i> Choose Additional Languages
+                </h4>
+            </div>
+            <div class="card-body">
+                <p class="lead">Select any additional languages your character knows beyond their base languages.</p>
+                
+                <form method="POST" action="{{ url_for('select_languages') }}">
+                    
+                    <!-- Base Languages -->
+                    <div class="card mb-4">
+                        <div class="sub-card-header Source Sans Pro">
+                            <h6 class="card-title mb-0">Base Languages (Automatically Known)</h6>
+                        </div>
+                        <div class="card-body">
+                            <p class="mb-0">
+                                {% for language in base_languages %}
+                                <span class="badge bg-success me-2">{{ language }}</span>
+                                {% endfor %}
+                            </p>
+                            <small class="text-muted">These languages come from your species and background.</small>
+                        </div>
+                    </div>
+                    
+                    <!-- Additional Languages -->
+                    {% if available_languages %}
+                    <div class="card mb-4">
+                        <div class="sub-card-header bg-secondary">
+                            <h6 class="mb-0">Additional Languages (Optional)</h6>
+                        </div>
+                        <div class="card-body">
+                            <p class="small text-muted mb-3">Select any additional languages your character might know from their background, training, or adventures:</p>
+                            <div class="row">
+                                {% for language in available_languages %}
+                                <div class="col-md-4 mb-2">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" 
+                                               name="languages" value="{{ language }}" 
+                                               id="lang_{{ loop.index }}">
+                                        <label class="form-check-label" for="lang_{{ loop.index }}">
+                                            {{ language }}
+                                        </label>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Background Note -->
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>Note:</strong> Some backgrounds and features may grant additional language proficiencies. 
+                        These selections are for any extra languages your character might know from their personal history.
+                    </div>
+                    
+                    <div class="d-grid gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-arrow-right"></i> Continue to Ability Scores
+                        </button>
+                        <a href="{{ url_for('choose_species') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left"></i> Back to Species
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Update continue button text based on selected languages
+function updateButtonText() {
+    const selectedLanguages = document.querySelectorAll('input[name="languages"]:checked');
+    const button = document.querySelector('button[type="submit"]');
+    
+    if (selectedLanguages.length > 0) {
+        const count = selectedLanguages.length;
+        button.innerHTML = `<i class="fas fa-arrow-right"></i> Continue with ${count} additional language${count > 1 ? 's' : ''}`;
+    } else {
+        button.innerHTML = '<i class="fas fa-arrow-right"></i> Continue to Ability Scores';
+    }
+}
+
+// Add event listeners to checkboxes
+document.querySelectorAll('input[name="languages"]').forEach(checkbox => {
+    checkbox.addEventListener('change', updateButtonText);
+});
+
+// Initial update
+updateButtonText();
+</script>
+{% endblock %}

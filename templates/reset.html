@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resetting...</title>
+</head>
+<body>
+    <script>
+    // Clear all sessionStorage and redirect to index
+    sessionStorage.clear();
+    window.location.href = "{{ url_for('index') }}";
+    </script>
+</body>
+</html>

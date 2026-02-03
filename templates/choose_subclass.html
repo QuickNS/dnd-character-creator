@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+
+{% block title %}Choose Subclass - D&D 2024 Character Creator{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card shadow-lg">
+            <div class="card-header text-center">
+                <h2><i class="fas fa-scroll me-2"></i>Choose Your {{ class_name }} Subclass</h2>
+                <p class="mb-0 text-white">At level 3, you must choose a subclass specialization</p>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('select_subclass') }}">
+                    <div class="row">
+                        {% for subclass_name, subclass_data in subclasses.items() %}
+                        <div class="col-md-6 mb-3">
+                            <div class="card subclass-card" onclick="selectSubclass('{{ subclass_name }}')">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <h5 class="card-title mb-0 flex-grow-1">{{ subclass_name }}</h5>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="subclass" 
+                                                   value="{{ subclass_name }}" id="subclass_{{ loop.index }}">
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Scrollable content area including description and features -->
+                                    <div class="features-wrapper">
+                                        <div class="features-container">
+                                            <!-- Description first -->
+                                            <div class="subclass-description mb-3">
+                                                <p class="text-muted small mb-0">{{ subclass_data.description }}</p>
+                                            </div>
+                                            
+                                            <!-- All features -->
+                                            {% if subclass_data.features_by_level %}
+                                                {% for level in subclass_data.features_by_level.keys() | map('int') | sort %}
+                                                    {% set level_features = subclass_data.features_by_level[level|string] %}
+                                                    {% if level_features %}
+                                                        <div class="level-features mb-3">
+                                                            <h6 class="text-danger mb-2"><small>Level {{ level }} Features:</small></h6>
+                                                            {% for feature_name, feature_desc in level_features.items() %}
+                                                                <div class="small text-muted mb-2">
+                                                                    <strong>{{ feature_name }}:</strong>
+                                                                    {% if feature_desc is string %}
+                                                                        {{ feature_desc }}
+                                                                    {% elif feature_desc.description %}
+                                                                        {{ feature_desc.description }}
+                                                                    {% else %}
+                                                                        {{ feature_desc | string }}
+                                                                    {% endif %}
+                                                                </div>
+                                                            {% endfor %}
+                                                        </div>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div class="text-center d-grid gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary btn-lg" id="nextBtn" disabled>
+                            <i class="fas fa-arrow-right me-2"></i>Continue to Features
+                        </button>
+                        <a href="{{ url_for('choose_class') }}" class="btn btn-outline-secondary ms-2">
+                            <i class="fas fa-arrow-left me-2"></i>Back to Class Selection
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.subclass-card {
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 2px solid var(--dnd-medium-gray);
+    height: 480px;
+    margin-bottom: 20px;
+    overflow: hidden; /* Ensure nothing escapes the card */
+}
+
+.subclass-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--dnd-red);
+    box-shadow: 0 4px 16px rgba(220, 20, 60, 0.15);
+}
+
+.subclass-card.border-primary {
+    border-color: var(--dnd-red) !important;
+    border-width: 3px;
+    background: var(--dnd-light-gray);
+}
+
+.subclass-card .card-body {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 1rem;
+    overflow: hidden; /* Prevent body overflow */
+}
+
+.subclass-card .card-title {
+    flex-shrink: 0; /* Title never shrinks */
+    word-wrap: break-word; /* Wrap long titles */
+}
+
+.features-wrapper {
+    flex-grow: 1;
+    position: relative;
+    overflow: hidden; /* Contain the scrollable area */
+    margin-top: 0.5rem;
+}
+
+.features-wrapper::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 40px;
+    background: linear-gradient(transparent, white);
+    pointer-events: none;
+    z-index: 2;
+}
+
+.features-container {
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden; /* Prevent horizontal scroll */
+    padding-right: 8px;
+    margin-right: -8px;
+    word-wrap: break-word; /* Wrap long words */
+    overflow-wrap: break-word; /* Additional wrapping support */
+}
+
+.features-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+.features-container::-webkit-scrollbar-track {
+    background: var(--dnd-light-gray);
+    border-radius: 3px;
+}
+
+.features-container::-webkit-scrollbar-thumb {
+    background: var(--dnd-medium-gray);
+    border-radius: 3px;
+}
+
+.features-container::-webkit-scrollbar-thumb:hover {
+    background: var(--dnd-red);
+}
+
+.subclass-description {
+    border-bottom: 2px solid var(--dnd-red);
+    padding-bottom: 8px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+.level-features {
+    border-bottom: 1px solid var(--dnd-light-gray);
+    padding-bottom: 8px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+.level-features:last-child {
+    border-bottom: none;
+}
+
+.mb-3 {
+    margin-bottom: 0.75rem !important;
+}
+
+.mb-2 {
+    margin-bottom: 0.5rem !important;
+}
+</style>
+
+<script>
+function selectSubclass(subclassName) {
+    // Remove selection from all cards
+    document.querySelectorAll('.subclass-card').forEach(card => {
+        card.classList.remove('border-primary');
+    });
+    
+    // Add selection to clicked card
+    event.currentTarget.classList.add('border-primary');
+    
+    // Check the radio button
+    document.querySelector(`input[value="${subclassName}"]`).checked = true;
+    
+    // Enable the next button
+    document.getElementById('nextBtn').disabled = false;
+}
+
+// Handle radio button clicks directly
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('input[name="subclass"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            if (this.checked) {
+                document.getElementById('nextBtn').disabled = false;
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

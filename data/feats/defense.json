@@ -1,0 +1,8 @@
+{
+  "name": "Defense",
+  "description": "You gain a +1 bonus to Armor Class while you are wearing armor.",
+  "prerequisite": null,
+  "benefits": {
+    "ac_bonus": 1
+  }
+}

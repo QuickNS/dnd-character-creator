@@ -1,0 +1,311 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-11">
+        <div class="card shadow-lg">
+            <div class="card-header text-white d-flex justify-content-between align-items-center">
+                <h4 class="card-title mb-0">
+                    <i class="fas fa-check-circle"></i> Character Complete!
+                </h4>
+                <div class="btn-group" role="group">
+                    <a href="{{ url_for('download_character') }}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-download"></i> Download JSON
+                    </a>
+                    <a href="{{ url_for('reset') }}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-redo"></i> Start Over
+                    </a>
+                </div>
+            </div>
+            <div class="card-body">
+                        <h2>{{ character.name }}</h2>
+                        
+                        <!-- Character Information -->
+                        <div class="card mb-4">
+                            <div class="sub-card-header bg-secondary">
+                                <h5 class="mb-0">Character Information</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-sm-6">
+                                        <p><strong>Level:</strong> {{ character.level }}</p>
+                                        <p><strong>Class:</strong> {{ character.class }}{% if character.subclass %} ({{ character.subclass }}){% endif %}</p>
+                                        <p><strong>Background:</strong> {{ character.background }}</p>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <p><strong>Species:</strong> {{ character.species }}{% if character.lineage %} ({{ character.lineage }}){% endif %}</p>
+                                        <p><strong>Alignment:</strong> {{ character.alignment }}</p>
+                                        <p><strong>Languages:</strong> {{ character.languages | join(', ') }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Combat Statistics -->
+                        <div class="card mb-4">
+                            <div class="sub-card-header bg-secondary">
+                                <h5 class="mb-0">Combat Statistics</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-sm-6 col-md-4">
+                                        <p><strong>Hit Points:</strong> {{ character.max_hp }}</p>
+                                        <p><strong>Armor Class:</strong> {{ combat_stats.armor_class }}</p>
+                                        <p><strong>Initiative:</strong> {% if combat_stats.initiative >= 0 %}+{% endif %}{{ combat_stats.initiative }}</p>
+                                    </div>
+                                    <div class="col-sm-6 col-md-4">
+                                        <p><strong>Speed:</strong> {{ character.physical_attributes.speed }} feet</p>
+                                        {% if character.physical_attributes.darkvision > 0 %}
+                                        <p><strong>Darkvision:</strong> {{ character.physical_attributes.darkvision }} feet</p>
+                                        {% endif %}
+                                        <p><strong>Passive Perception:</strong> {{ combat_stats.passive_perception }}</p>
+                                    </div>
+                                    <div class="col-sm-6 col-md-4">
+                                        <p><strong>Hit Dice:</strong> {{ combat_stats.hit_dice }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Ability Scores and Skills side by side -->
+                        <div class="row mb-4">
+                            <div class="col-md-5">
+                                <div class="card mb-3">
+                                    <div class="sub-card-header bg-secondary">
+                                        <h5 class="mb-0">Ability Scores</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        {% for ability, score in character.ability_scores.items() %}
+                                        <div class="d-flex justify-content-between mb-2">
+                                            <span><strong>{{ ability }}:</strong></span>
+                                            <span>{{ score }} 
+                                                {% set modifier = (score - 10) // 2 %}
+                                                <small class="text-muted">({% if modifier >= 0 %}+{% endif %}{{ modifier }})</small>
+                                            </span>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                
+                                <!-- Saving Throws -->
+                                <div class="card mb-3">
+                                    <div class="sub-card-header bg-secondary">
+                                        <h5 class="mb-0">Saving Throws</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        {% for save in saving_throws %}
+                                        <div class="d-flex justify-content-between mb-2 {% if save.is_proficient %}fw-bold{% endif %}">
+                                            <span>
+                                                {{ save.ability }}{% if save.is_proficient %} ★{% endif %}
+                                            </span>
+                                            <span>{% if save.total_modifier >= 0 %}+{% endif %}{{ save.total_modifier }}</span>
+                                        </div>
+                                        {% endfor %}
+                                        <hr class="my-2">
+                                        <small class="text-muted">★ = Proficient</small>
+                                        
+                                        {% set saves_with_notes = saving_throws | selectattr('special_notes', 'defined') | selectattr('special_notes') | list %}
+                                        {% if saves_with_notes %}
+                                        <div class="mt-2">
+                                            <small class="text-success">
+                                                <strong>Special Notes:</strong><br/>
+                                                {% for save in saves_with_notes %}
+                                                    <strong>{{ save.ability }}:</strong> {{ save.special_notes | join(', ') }}<br/>
+                                                {% endfor %}
+                                            </small>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-7">
+                                <div class="card">
+                                    <div class="sub-card-header bg-secondary">
+                                        <h5 class="mb-0">Skills</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        {% for skill in skill_modifiers %}
+                                            <div class="d-flex justify-content-between mb-1 {% if skill.is_proficient or skill.special_bonus > 0 %}fw-bold{% endif %}">
+                                                <span>
+                                                    {% if skill.is_proficient %}{{ skill.name }} ★{% elif skill.special_bonus > 0 %}{{ skill.name }} ✦{% else %}{{ skill.name }}{% endif %}
+                                                    <small class="text-muted">({{ skill.ability[:3] }})</small>
+                                                    {% if skill.proficiency_source %}
+                                                        <small class="text-info" title="From {{ skill.proficiency_source }}">• {{ skill.proficiency_source }}</small>
+                                                    {% endif %}
+                                                    {% if skill.bonus_source %}
+                                                        <small class="text-warning" title="{{ skill.bonus_source }}">• {{ skill.bonus_source.split('(')[0].strip() }}</small>
+                                                    {% endif %}
+                                                </span>
+                                                <span>
+                                                    {% if skill.total_modifier >= 0 %}+{% endif %}{{ skill.total_modifier }}
+                                                </span>
+                                            </div>
+                                        {% endfor %}
+                                        
+                                        <hr class="my-2">
+                                        <small class="text-muted">
+                                            ★ = Proficient
+                                            {% if ability_bonuses %}| ✦ = Special Bonus{% endif %}
+                                        </small>
+                                        
+                                        {% if ability_bonuses %}
+                                        <div class="mt-2">
+                                            <small class="text-info">
+                                                <strong>Special Bonuses:</strong><br/>
+                                                {% for bonus in ability_bonuses %}
+                                                    +{{ bonus.value }} to {{ bonus.ability }} checks ({{ bonus.skills | join(', ') }}) from {{ bonus.source }}<br/>
+                                                {% endfor %}
+                                            </small>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Equipment Training & Proficiencies - Full Width -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <div class="card">
+                                    <div class="sub-card-header bg-secondary">
+                                        <h5 class="mb-0">Equipment Training & Proficiencies</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        {% if weapon_proficiencies %}
+                                        <div class="mb-2">
+                                            <strong>Weapon Proficiencies:</strong><br/>
+                                            <small>{{ weapon_proficiencies | join(', ') }}</small>
+                                        </div>
+                                        {% endif %}
+                                        
+                                        {% if armor_proficiencies %}
+                                        <div class="mb-2">
+                                            <strong>Armor Proficiencies:</strong><br/>
+                                            <small>{{ armor_proficiencies | join(', ') }}</small>
+                                        </div>
+                                        {% endif %}
+                                        
+                                        {% if character.tool_proficiencies %}
+                                        <div class="mb-2">
+                                            <strong>Tool Proficiencies:</strong><br/>
+                                            <small>{{ character.tool_proficiencies | join(', ') }}</small>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {% if character.features %}
+                        <div class="card mb-4">
+                            <div class="sub-card-header bg-secondary">
+                                <h5 class="mb-0">Features & Traits</h5>
+                            </div>
+                            <div class="card-body">
+                                {% for category in ['class', 'subclass', 'species', 'lineage', 'background', 'feats'] %}
+                                    {% if category in character.features and character.features[category] %}
+                                        {% for feature in character.features[category] %}
+                                        <div class="mb-3">
+                                            <p class="small mb-0">
+                                            <strong>{{ feature.name }}</strong>
+                                                {% if category == 'feats' %}
+                                                <span class="badge bg-success ms-1">Feat</span>
+                                                {% endif %}</br>
+                                            {{ feature.description }}</p>
+                                            {% if feature.benefits %}
+                                            <ul class="small mt-1 mb-0">
+                                                {% for benefit in feature.benefits %}
+                                                <li>{{ benefit }}</li>
+                                                {% endfor %}
+                                            </ul>
+                                            {% endif %}
+                                            {% if feature.source %}
+                                            <small class="text-muted">(from {{ feature.source }})</small>
+                                            {% endif %}
+                                        </div>
+                                        {% endfor %}
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if spells_by_level %}
+                        <div class="card mb-4">
+                            <div class="sub-card-header bg-secondary">
+                                <h5 class="mb-0">Spellcasting</h5>
+                            </div>
+                            <div class="card-body">
+                                {% for level in spells_by_level | dictsort %}
+                                    {% set level_num = level[0] %}
+                                    {% set spells = level[1] %}
+                                    {% if spells %}
+                                    <div class="mb-3">
+                                        <h6 class="text-primary">
+                                            {% if level_num == 0 %}
+                                                <strong>Cantrips</strong>
+                                            {% else %}
+                                                <strong>Level {{ level_num }} Spells</strong>
+                                            {% endif %}
+                                        </h6>
+                                        {% for spell in spells %}
+                                            {% if spell.get('is_note') %}
+                                                <div class="alert alert-info py-2 mb-2">
+                                                    <small><strong>{{ spell.name }}:</strong> {{ spell.description }}</small>
+                                                </div>
+                                            {% else %}
+                                                <div class="mb-2">
+                                                    <strong>{{ spell.name }}</strong>
+                                                    {% if spell.school %}
+                                                        <span class="badge bg-secondary">{{ spell.school }}</span>
+                                                    {% endif %}
+                                                    <br>
+                                                    <small class="text-muted">
+                                                        {% if spell.casting_time %}<strong>Casting Time:</strong> {{ spell.casting_time }} | {% endif %}
+                                                        {% if spell.range %}<strong>Range:</strong> {{ spell.range }} | {% endif %}
+                                                        {% if spell.components %}<strong>Components:</strong> {{ spell.components }} | {% endif %}
+                                                        {% if spell.duration %}<strong>Duration:</strong> {{ spell.duration }}{% endif %}
+                                                    </small>
+                                                    <br>
+                                                    <small>{{ spell.description }}</small>
+                                                    <br>
+                                                    <small class="text-muted"><em>Source: {{ spell.source }}</em></small>
+                                                </div>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+                
+                <!-- Debug: Choices Made - moved to bottom -->
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="card bg-light">
+                            <div class="card-header bg-secondary">
+                                <h6 class="mb-0 text-muted">Debug: Choices Made</h6>
+                            </div>
+                            <div class="card-body">
+                                <small class="text-muted">
+                                    {% for key, value in character.choices_made.items() %}
+                                    <div><strong>{{ key | title }}:</strong> 
+                                        {% if value is iterable and value is not string %}
+                                            {{ value | join(', ') }}
+                                        {% else %}
+                                            {{ value }}
+                                        {% endif %}
+                                    </div>
+                                    {% endfor %}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

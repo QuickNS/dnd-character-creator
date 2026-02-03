@@ -1,0 +1,22 @@
+{
+  "name": "Circle of the Land",
+  "class": "Druid",
+  "description": "Druids who draw power from the land itself, attuned to specific terrain types.",
+  "source": "Player's Handbook 2024",
+  "features_by_level": {
+    "2": {
+      "Bonus Cantrip": "You learn one additional Druid cantrip of your choice.",
+      "Natural Recovery": "During a Short Rest, you can recover expended spell slots with a combined level equal to or less than half your Druid level (rounded up). You can't use this feature again until you finish a Long Rest.",
+      "Circle Spells": "Choose one land type (Arctic, Coast, Desert, Forest, Grassland, Mountain, Swamp, Underdark). You always have certain spells prepared based on your chosen land."
+    },
+    "6": {
+      "Land's Stride": "Moving through nonmagical Difficult Terrain costs you no extra movement. You can pass through nonmagical plants without being slowed by them and without taking damage from them if they have thorns, spines, or a similar hazard."
+    },
+    "10": {
+      "Nature's Ward": "You can't be Charmed or Frightened by Elementals or Fey, and you are immune to poison and disease."
+    },
+    "14": {
+      "Nature's Sanctuary": "When a Beast or Plant creature attacks you, that creature must make a Wisdom saving throw against your spell save DC. On a failed save, the creature must choose a different target, or the attack automatically misses. On a successful save, the creature is immune to this effect for 24 hours."
+    }
+  }
+}

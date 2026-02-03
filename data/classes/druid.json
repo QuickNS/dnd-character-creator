@@ -1,0 +1,377 @@
+{
+  "name": "Druid",
+  "description": "Druids revere nature above all, gaining their spells and powers from the force of nature itself or from nature deities. They wield primal magic and can transform into beasts.",
+  "hit_die": 8,
+  "primary_ability": "Wisdom",
+  "saving_throw_proficiencies": [
+    "Intelligence",
+    "Wisdom"
+  ],
+  "armor_proficiencies": [
+    "Light armor",
+    "Medium armor",
+    "Shields (druids will not wear armor or use shields made of metal)"
+  ],
+  "weapon_proficiencies": [
+    "Simple weapons"
+  ],
+  "tool_proficiencies": [
+    "Herbalism Kit"
+  ],
+  "skill_proficiencies_count": 2,
+  "skill_options": [
+    "Arcana",
+    "Animal Handling",
+    "Insight",
+    "Medicine",
+    "Nature",
+    "Perception",
+    "Religion",
+    "Survival"
+  ],
+  "subclass_selection_level": 2,
+  "spellcasting_ability": "Wisdom",
+  "spellcasting_focus": [
+    "Druidic Focus"
+  ],
+  "proficiency_bonus_by_level": {
+    "1": 2,
+    "2": 2,
+    "3": 2,
+    "4": 2,
+    "5": 3,
+    "6": 3,
+    "7": 3,
+    "8": 3,
+    "9": 4,
+    "10": 4,
+    "11": 4,
+    "12": 4,
+    "13": 5,
+    "14": 5,
+    "15": 5,
+    "16": 5,
+    "17": 6,
+    "18": 6,
+    "19": 6,
+    "20": 6
+  },
+  "cantrips_by_level": {
+    "1": 2,
+    "2": 2,
+    "3": 2,
+    "4": 3,
+    "5": 3,
+    "6": 3,
+    "7": 3,
+    "8": 3,
+    "9": 3,
+    "10": 4,
+    "11": 4,
+    "12": 4,
+    "13": 4,
+    "14": 4,
+    "15": 4,
+    "16": 4,
+    "17": 4,
+    "18": 4,
+    "19": 4,
+    "20": 4
+  },
+  "prepared_spells_by_level": {
+    "1": 4,
+    "2": 5,
+    "3": 6,
+    "4": 7,
+    "5": 8,
+    "6": 9,
+    "7": 10,
+    "8": 11,
+    "9": 12,
+    "10": 13,
+    "11": 14,
+    "12": 15,
+    "13": 16,
+    "14": 17,
+    "15": 18,
+    "16": 19,
+    "17": 20,
+    "18": 21,
+    "19": 22,
+    "20": 23
+  },
+  "spell_slots_by_level": {
+    "1": [
+      2,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "2": [
+      3,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "3": [
+      4,
+      2,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "4": [
+      4,
+      3,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "5": [
+      4,
+      3,
+      2,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "6": [
+      4,
+      3,
+      3,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "7": [
+      4,
+      3,
+      3,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "8": [
+      4,
+      3,
+      3,
+      2,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "9": [
+      4,
+      3,
+      3,
+      3,
+      1,
+      0,
+      0,
+      0,
+      0
+    ],
+    "10": [
+      4,
+      3,
+      3,
+      3,
+      2,
+      0,
+      0,
+      0,
+      0
+    ],
+    "11": [
+      4,
+      3,
+      3,
+      3,
+      2,
+      1,
+      0,
+      0,
+      0
+    ],
+    "12": [
+      4,
+      3,
+      3,
+      3,
+      2,
+      1,
+      0,
+      0,
+      0
+    ],
+    "13": [
+      4,
+      3,
+      3,
+      3,
+      2,
+      1,
+      1,
+      0,
+      0
+    ],
+    "14": [
+      4,
+      3,
+      3,
+      3,
+      2,
+      1,
+      1,
+      0,
+      0
+    ],
+    "15": [
+      4,
+      3,
+      3,
+      3,
+      2,
+      1,
+      1,
+      1,
+      0
+    ],
+    "16": [
+      4,
+      3,
+      3,
+      3,
+      2,
+      1,
+      1,
+      1,
+      0
+    ],
+    "17": [
+      4,
+      3,
+      3,
+      3,
+      2,
+      1,
+      1,
+      1,
+      1
+    ],
+    "18": [
+      4,
+      3,
+      3,
+      3,
+      3,
+      1,
+      1,
+      1,
+      1
+    ],
+    "19": [
+      4,
+      3,
+      3,
+      3,
+      3,
+      2,
+      1,
+      1,
+      1
+    ],
+    "20": [
+      4,
+      3,
+      3,
+      3,
+      3,
+      2,
+      2,
+      1,
+      1
+    ]
+  },
+  "features_by_level": {
+    "1": {
+      "Druidic": "You know Druidic, the secret language of druids. You can speak the language and use it to leave hidden messages. Creatures that know Druidic automatically notice such messages. Others spot the message's presence with a successful DC 15 Wisdom (Perception) check but can't decipher it without magic.",
+      "Spellcasting": "Cast spells using Wisdom. Know 2 cantrips, prepare Wisdom modifier + Druid level spells from the Druid spell list. Use a Druidic Focus as Spellcasting Focus. Can cast prepared Druid spells as rituals."
+    },
+    "2": {
+      "Wild Shape": "As a Bonus Action, magically assume the shape of a beast you have seen. You can use this feature twice, regaining expended uses on Short or Long Rest. You can stay in beast shape for hours equal to half your Druid level (rounded down). CR limit: 1/4 at level 2, 1/2 at level 4, 1 at level 8.",
+      "Druid Circle": "Choose your Druid Circle subclass.",
+      "Wild Companion": "As an action, expend a spell slot to cast Find Familiar without material components. The familiar's form is determined by your Druid Circle."
+    },
+    "3": {},
+    "4": {
+      "Ability Score Improvement": "Increase one ability score by 2, or increase two ability scores by 1.",
+      "Wild Shape Improvement": "CR limit increases to 1/2."
+    },
+    "5": {},
+    "6": {
+      "Subclass Feature": "Gain a feature from your Druid Circle subclass."
+    },
+    "7": {},
+    "8": {
+      "Ability Score Improvement": "Increase one ability score by 2, or increase two ability scores by 1.",
+      "Wild Shape Improvement": "CR limit increases to 1."
+    },
+    "9": {},
+    "10": {
+      "Subclass Feature": "Gain a feature from your Druid Circle subclass."
+    },
+    "11": {},
+    "12": {
+      "Ability Score Improvement": "Increase one ability score by 2, or increase two ability scores by 1."
+    },
+    "13": {},
+    "14": {
+      "Subclass Feature": "Gain a feature from your Druid Circle subclass."
+    },
+    "15": {},
+    "16": {
+      "Ability Score Improvement": "Increase one ability score by 2, or increase two ability scores by 1."
+    },
+    "17": {},
+    "18": {
+      "Beast Spells": "While in Wild Shape, you can cast many Druid spells. You can perform somatic and verbal components while in beast form.",
+      "Timeless Body": "The primal magic you wield slows aging. For every 10 years that pass, your body ages only 1 year."
+    },
+    "19": {
+      "Epic Boon": "Gain an Epic Boon feat or another feat of your choice."
+    },
+    "20": {
+      "Archdruid": "You can use Wild Shape an unlimited number of times. You can ignore verbal and somatic components of Druid spells, and material components that lack a cost and aren't consumed."
+    }
+  }
+}

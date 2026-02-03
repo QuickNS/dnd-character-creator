@@ -1,0 +1,18 @@
+{
+  "name": "College of Valor",
+  "class": "Bard",
+  "description": "Bards who inspire bravery and valor through tales of heroes, excelling as warriors and leaders.",
+  "source": "Player's Handbook 2024",
+  "features_by_level": {
+    "3": {
+      "Combat Inspiration": "When a creature uses your Bardic Inspiration die, it can add the number rolled to a weapon damage roll, or add it to AC against one attack (before knowing if attack hits).",
+      "Bonus Proficiencies": "You gain proficiency with Medium armor, Shields, and Martial weapons."
+    },
+    "6": {
+      "Extra Attack": "You can attack twice, instead of once, when you take the Attack action on your turn."
+    },
+    "14": {
+      "Battle Magic": "When you cast a Bard spell using an action, you can make one weapon attack as a Bonus Action."
+    }
+  }
+}

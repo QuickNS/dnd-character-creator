@@ -1,0 +1,46 @@
+{
+  "name": "Oath of Vengeance",
+  "class": "Paladin",
+  "description": "Paladins who swear the Oath of Vengeance pledge to punish wrongdoers with the fury of a righteous storm, dedicating themselves to hunting down evildoers.",
+  "source": "Player's Handbook 2024",
+  "features_by_level": {
+    "3": {
+      "Oath Spells": {
+        "description": "You always have certain spells prepared.",
+        "spells": {
+          "3": [
+            "Bane",
+            "Hunter's Mark"
+          ],
+          "5": [
+            "Hold Person",
+            "Misty Step"
+          ],
+          "9": [
+            "Haste",
+            "Protection from Energy"
+          ],
+          "13": [
+            "Banishment",
+            "Dimension Door"
+          ],
+          "17": [
+            "Hold Monster",
+            "Scrying"
+          ]
+        }
+      },
+      "Abjure Enemy": "As a Channel Divinity action, choose one creature within 60 feet. The target must make a Wisdom save unless it's immune to being Frightened. On a failed save, it is Frightened for 1 minute or until it takes damage. While Frightened, the creature's Speed is 0, and it can't benefit from bonuses to its Speed. On a successful save, the creature's Speed is halved for 1 minute or until it takes damage.",
+      "Vow of Enmity": "As a Channel Divinity Bonus Action, you utter a vow of enmity against a creature within 10 feet. You gain Advantage on attack rolls against the creature for 1 minute or until it drops to 0 Hit Points or falls Unconscious."
+    },
+    "7": {
+      "Relentless Avenger": "When you hit a creature with an Opportunity Attack, you can move up to half your Speed immediately after the attack as part of the same Reaction. This movement doesn't provoke Opportunity Attacks."
+    },
+    "15": {
+      "Soul of Vengeance": "The authority you have established over your Vow of Enmity target allows you to strike with supernatural speed. When a creature under the effect of your Vow of Enmity makes an attack, you can use your Reaction to make a melee weapon attack against it."
+    },
+    "20": {
+      "Avenging Angel": "As a Bonus Action, you sprout spectral wings and transform for 1 hour. You gain a Flying Speed of 60 feet, and you emanate an aura of menace in a 30-foot radius. The first time any enemy creature enters the aura or starts its turn there during a battle, it must succeed on a Wisdom save or become Frightened for 1 minute or until it takes damage. Attack rolls against the Frightened creature have Advantage. Once used, can't use again until Long Rest."
+    }
+  }
+}

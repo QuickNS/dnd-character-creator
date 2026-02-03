@@ -1,0 +1,298 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-12">
+        <div class="card shadow">
+            <div class="card-header">
+                <h4 class="card-title mb-0">
+                    <i class="fas fa-star"></i> {{ character.class }}{% if character.subclass %} ({{ character.subclass }}){% endif %} Features
+                </h4>
+            </div>
+            <div class="card-body">
+                <p class="lead">Review your {{ character.class }}{% if character.subclass %} {{ character.subclass }}{% endif %} features and make required choices.</p>
+
+                <div class="card mb-4">
+                    <div class="card-header text-white">
+                        <h5 class="mb-0">Core {{ character.class }} Traits</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <table class="table mb-0">
+                            <tbody>
+                                {% for row in core_traits %}
+                                <tr>
+                                    <th scope="row" style="width: 35%;">{{ row.label }}</th>
+                                    <td>{{ row.value }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- Features Overview by Level -->
+                <div class="row">
+                    <!-- Features Display Column -->
+                    <div class="col-lg-6">
+                        <h5><i class="fas fa-list"></i> Features by Level</h5>
+                        {% for level in range(1, character_level + 1) %}
+                            {% set level_features = all_features_by_level.get(level, []) %}
+                            {% if level_features %}
+                            <div class="card mb-3">
+                                <div class="card-header bg-primary text-white">
+                                    <h6 class="mb-0"><i class="fas fa-trophy"></i> Level {{ level }}</h6>
+                                </div>
+                                <div class="card-body">
+                                    {% for feature in level_features %}
+                                    <div class="mb-3">
+                                        <div class="d-flex align-items-start">
+                                            <div class="me-2">
+                                                {% if feature.type == 'choice' %}
+                                                    <i class="fas fa-cog text-warning" title="Requires Choice"></i>
+                                                {% else %}
+                                                    <i class="fas fa-info-circle text-info" title="Information"></i>
+                                                {% endif %}
+                                            </div>
+                                            <div class="flex-grow-1">
+                                                <strong>{{ feature.name }}</strong>
+                                                <small class="text-muted ms-2">({{ feature.source }})</small>
+                                                {% if feature.type == 'choice' %}
+                                                    <span class="badge bg-warning text-dark ms-1">Choice Required</span>
+                                                {% endif %}
+                                                <br>
+                                                <small class="text-muted">{{ feature.description }}</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                    
+                    <!-- Choices Form Column -->
+                    <div class="col-lg-6">
+                        <h5><i class="fas fa-edit"></i> Make Your Choices</h5>
+                        
+                        {% if choices %}
+                        <form method="POST" action="{{ url_for('submit_class_choices') }}">
+                            {% for choice in choices %}
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <h6 class="card-title mb-0">
+                                        <i class="fas fa-cog"></i> {{ choice.title }}
+                                        {% if not choice.required %}<small class="text-muted ms-2">(Optional)</small>{% endif %}
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    {% if choice.description %}
+                                    <p class="card-text">{{ choice.description }}</p>
+                                    {% endif %}
+                                    
+                                    {% if choice.type == 'skills' %}
+                                        <div class="row">
+                                            {% for option in choice.options %}
+                                            <div class="col-md-6 mb-2">
+                                                <div class="form-check">
+                                                    <input class="form-check-input skill-choice" type="checkbox" 
+                                                           name="skills" value="{{ option }}" 
+                                                           id="skill_{{ loop.index }}"
+                                                           data-max="{{ choice.count }}" data-group="skills"
+                                                           {% if choices_made.get('skill_choices') and option in choices_made.get('skill_choices') %}checked{% endif %}>
+                                                    <label class="form-check-label" for="skill_{{ loop.index }}">
+                                                        {{ option }}
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                        <div class="text-muted small">
+                                            <span id="skill-counter">0</span> / {{ choice.count }} selected
+                                        </div>
+                                    
+                                    {% elif choice.type == 'feature' %}
+                                        {% if choice.options %}
+                                            {% if choice.count == 1 %}
+                                                <!-- Single choice - radio buttons -->
+                                                <div class="row">
+                                                    {% for option in choice.options %}
+                                                    <div class="col-12 mb-2">
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="radio" 
+                                                                   name="choice_{{ choice.feature_name }}" value="{{ option }}" 
+                                                                   id="{{ choice.feature_name }}_{{ loop.index }}" 
+                                                                   {% if choice.required %}required{% endif %}
+                                                                   {% if choices_made.get(choice.feature_name) == option %}checked{% endif %}>
+                                                            <label class="form-check-label" for="{{ choice.feature_name }}_{{ loop.index }}">
+                                                                <strong>{{ option }}</strong>
+                                                                {% if choice.option_descriptions and choice.option_descriptions[option] %}
+                                                                <br><small class="text-muted">{{ choice.option_descriptions[option] }}</small>
+                                                                {% endif %}
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                    {% endfor %}
+                                                </div>
+                                            {% else %}
+                                                <!-- Multiple choice - checkboxes -->
+                                                <div class="row">
+                                                    {% for option in choice.options %}
+                                                    <div class="col-12 mb-2">
+                                                        <div class="form-check">
+                                                            <input class="form-check-input feature-choice" type="checkbox" 
+                                                                   name="choice_{{ choice.feature_name }}" value="{{ option }}" 
+                                                                   id="{{ choice.feature_name }}_{{ loop.index }}"
+                                                                   data-max="{{ choice.count }}" data-group="{{ choice.feature_name }}"
+                                                                   {% if choice.required %}required{% endif %}
+                                                                   {% if choices_made.get(choice.feature_name) and option in choices_made.get(choice.feature_name) %}checked{% endif %}>
+                                                            <label class="form-check-label" for="{{ choice.feature_name }}_{{ loop.index }}">
+                                                                {{ option }}
+                                                                {% if choice.option_descriptions and choice.option_descriptions[option] %}
+                                                                <br><small class="text-muted">{{ choice.option_descriptions[option] }}</small>
+                                                                {% endif %}
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                    {% endfor %}
+                                                </div>
+                                                <div class="text-muted small">
+                                                    <span id="{{ choice.feature_name }}-counter">0</span> / {{ choice.count }} selected
+                                                </div>
+                                            {% endif %}
+                                        {% endif %}
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                            
+                            <div class="text-center d-grid gap-2 mt-4">
+                                 <button type="submit" class="btn btn-primary btn-lg" id="submit-btn">
+                                    <i class="fas fa-arrow-right"></i> Continue
+                                </button>
+                                <a href="{{ url_for('choose_subclass') }}" class="btn btn-secondary">
+                                    <i class="fas fa-arrow-left"></i> Back
+                                </a>
+                            </div>
+                        </form>
+                        {% else %}
+                        <!-- No choices needed -->
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> No choices required for your current level and class combination.
+                        </div>
+                        <div class="text-center d-grid gap-2 mt-4">
+                            <a href="{{ url_for('choose_background') }}" class="btn btn-primary btn-lg">
+                                <i class="fas fa-arrow-right"></i> Continue
+                            </a>
+                            <a href="{{ url_for('choose_subclass') }}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Back
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize counters
+    updateAllCounters();
+    
+    // Add event listeners to checkbox groups
+    document.querySelectorAll('.skill-choice').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            handleGroupChoice('skills', 'skill-counter');
+        });
+    });
+    
+    document.querySelectorAll('.feature-choice').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const group = this.dataset.group;
+            handleGroupChoice(group, group + '-counter');
+        });
+    });
+    
+    // Form submission validation
+    document.getElementById('submit-btn')?.addEventListener('click', function(e) {
+        if (!validateForm()) {
+            e.preventDefault();
+            alert('Please complete all required choices before continuing.');
+        }
+    });
+    
+    function handleGroupChoice(groupName, counterId) {
+        const checkboxes = document.querySelectorAll(`[data-group="${groupName}"]`);
+        const maxCount = parseInt(checkboxes[0]?.dataset.max || 0);
+        const checkedCount = document.querySelectorAll(`[data-group="${groupName}"]:checked`).length;
+        
+        // Update counter
+        const counter = document.getElementById(counterId);
+        if (counter) {
+            counter.textContent = checkedCount;
+        }
+        
+        // Enforce maximum selections
+        if (checkedCount >= maxCount) {
+            checkboxes.forEach(cb => {
+                if (!cb.checked) cb.disabled = true;
+            });
+        } else {
+            checkboxes.forEach(cb => cb.disabled = false);
+        }
+    }
+    
+    function updateAllCounters() {
+        // Update skill counter
+        handleGroupChoice('skills', 'skill-counter');
+        
+        // Update feature counters
+        document.querySelectorAll('.feature-choice').forEach(checkbox => {
+            const group = checkbox.dataset.group;
+            if (group) {
+                handleGroupChoice(group, group + '-counter');
+            }
+        });
+    }
+    
+    function validateForm() {
+        let valid = true;
+        
+        // Check required radio button groups
+        const requiredRadioGroups = new Set();
+        document.querySelectorAll('input[type="radio"][required]').forEach(radio => {
+            requiredRadioGroups.add(radio.name);
+        });
+        
+        requiredRadioGroups.forEach(groupName => {
+            const checked = document.querySelector(`input[name="${groupName}"]:checked`);
+            if (!checked) {
+                valid = false;
+            }
+        });
+        
+        // Check required checkbox groups that have minimum requirements
+        const requiredCheckboxGroups = new Set();
+        document.querySelectorAll('input[type="checkbox"][required]').forEach(checkbox => {
+            if (checkbox.dataset.group) {
+                requiredCheckboxGroups.add(checkbox.dataset.group);
+            }
+        });
+        
+        requiredCheckboxGroups.forEach(groupName => {
+            const checkboxes = document.querySelectorAll(`[data-group="${groupName}"]`);
+            const maxCount = parseInt(checkboxes[0]?.dataset.max || 0);
+            const checkedCount = document.querySelectorAll(`[data-group="${groupName}"]:checked`).length;
+            
+            if (maxCount > 0 && checkedCount !== maxCount) {
+                valid = false;
+            }
+        });
+        
+        return valid;
+    }
+});
+</script>
+{% endblock %}

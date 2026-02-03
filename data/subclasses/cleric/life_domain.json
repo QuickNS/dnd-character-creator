@@ -1,0 +1,43 @@
+{
+  "name": "Life Domain",
+  "class": "Cleric",
+  "description": "Clerics who focus on healing and protecting life, channeling vitality to sustain their allies.",
+  "source": "Player's Handbook 2024",
+  "features_by_level": {
+    "3": {
+      "Bonus Proficiencies": "You gain proficiency with Heavy armor.",
+      "Disciple of Life": "Whenever you cast a spell using a spell slot to restore Hit Points to a creature, the creature regains additional Hit Points equal to 2 + the spell's level.",
+      "Domain Spells": {
+        "description": "You always have certain spells prepared. They don't count against your number of prepared spells.",
+        "spells": {
+          "1": [
+            "Bless",
+            "Cure Wounds"
+          ],
+          "3": [
+            "Lesser Restoration",
+            "Spiritual Weapon"
+          ],
+          "5": [
+            "Mass Healing Word",
+            "Revivify"
+          ],
+          "7": [
+            "Death Ward",
+            "Guardian of Faith"
+          ],
+          "9": [
+            "Mass Cure Wounds",
+            "Raise Dead"
+          ]
+        }
+      }
+    },
+    "6": {
+      "Preserve Life": "As a Channel Divinity, restore Hit Points equal to 5 times your Cleric level. Choose creatures within 30 feet and divide HP among them. Can't bring a creature above half its HP maximum. Can't affect Undead or Constructs."
+    },
+    "17": {
+      "Supreme Healing": "When you would normally roll one or more dice to restore Hit Points with a spell, instead use the highest number possible for each die. Example: instead of restoring 2d6 HP, restore 12 HP."
+    }
+  }
+}

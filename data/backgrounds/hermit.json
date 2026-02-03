@@ -1,0 +1,19 @@
+{
+  "name": "Hermit",
+  "description": "You lived in seclusion—either in a sheltered community such as a monastery, or entirely alone—for a formative part of your life. In your time apart from the clamor of society, you found quiet, solitude, and perhaps some of the answers you were looking for.",
+  "ability_score_increase": {
+    "total": 3,
+    "options": ["Constitution", "Wisdom", "Intelligence"],
+    "suggested": {"Constitution": 1, "Wisdom": 2}
+  },
+  "feat": "Healer",
+  "skill_proficiencies": ["Medicine", "Religion"],
+  "tool_proficiencies": ["Herbalism Kit"],
+  "languages": 2,
+  "equipment": [
+    "Herbalism Kit",
+    "Bedroll",
+    "Traveler's Clothes",
+    "5 GP"
+  ]
+}

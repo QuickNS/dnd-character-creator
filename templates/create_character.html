@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h4 class="card-title mb-0">
+                    <i class="fas fa-user"></i> Character Details
+                </h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('create_character') }}">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Character Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="name" name="name" required 
+                               placeholder="Enter your character's name">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="level" class="form-label">Starting Level</label>
+                        <select class="form-select" id="level" name="level">
+                            {% for i in range(1, 21) %}
+                                <option value="{{ i }}" {% if i == 1 %}selected{% endif %}>Level {{ i }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">Most campaigns start at level 1.</div>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-arrow-right"></i> Continue to Class Selection
+                        </button>
+                        <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left"></i> Back to Home
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

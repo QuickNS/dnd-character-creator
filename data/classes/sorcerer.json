@@ -1,0 +1,119 @@
+{
+  "name": "Sorcerer",
+  "description": "Born with magic stamped into their being, Sorcerers wield innate power from draconic blessings, planar exposure, or glimpses into reality's workings. This churning magic creates an indelible mark that can be passed down through generations.",
+  "hit_die": 6,
+  "primary_ability": "Charisma",
+  "saving_throw_proficiencies": ["Constitution", "Charisma"],
+  "armor_proficiencies": [],
+  "weapon_proficiencies": ["Simple weapons"],
+  "skill_proficiencies_count": 2,
+  "skill_options": [
+    "Arcana",
+    "Deception",
+    "Insight",
+    "Intimidation",
+    "Persuasion",
+    "Religion"
+  ],
+  "subclass_selection_level": 1,
+  "spellcasting_ability": "Charisma",
+  "spellcasting_focus": ["Arcane Focus"],
+  "proficiency_bonus_by_level": {
+    "1": 2, "2": 2, "3": 2, "4": 2, "5": 3, "6": 3, "7": 3, "8": 3, "9": 4, "10": 4,
+    "11": 4, "12": 4, "13": 5, "14": 5, "15": 5, "16": 5, "17": 6, "18": 6, "19": 6, "20": 6
+  },
+  "spell_slots_by_level": {
+    "1": [2, 0, 0, 0, 0, 0, 0, 0, 0],
+    "2": [3, 0, 0, 0, 0, 0, 0, 0, 0],
+    "3": [4, 2, 0, 0, 0, 0, 0, 0, 0],
+    "4": [4, 3, 0, 0, 0, 0, 0, 0, 0],
+    "5": [4, 3, 2, 0, 0, 0, 0, 0, 0],
+    "6": [4, 3, 3, 0, 0, 0, 0, 0, 0],
+    "7": [4, 3, 3, 1, 0, 0, 0, 0, 0],
+    "8": [4, 3, 3, 2, 0, 0, 0, 0, 0],
+    "9": [4, 3, 3, 3, 1, 0, 0, 0, 0],
+    "10": [4, 3, 3, 3, 2, 0, 0, 0, 0],
+    "11": [4, 3, 3, 3, 2, 1, 0, 0, 0],
+    "12": [4, 3, 3, 3, 2, 1, 0, 0, 0],
+    "13": [4, 3, 3, 3, 2, 1, 1, 0, 0],
+    "14": [4, 3, 3, 3, 2, 1, 1, 0, 0],
+    "15": [4, 3, 3, 3, 2, 1, 1, 1, 0],
+    "16": [4, 3, 3, 3, 2, 1, 1, 1, 0],
+    "17": [4, 3, 3, 3, 2, 1, 1, 1, 1],
+    "18": [4, 3, 3, 3, 3, 1, 1, 1, 1],
+    "19": [4, 3, 3, 3, 3, 2, 1, 1, 1],
+    "20": [4, 3, 3, 3, 3, 2, 2, 1, 1]
+  },
+  "features_by_level": {
+    "1": {
+      "Spellcasting": "An event in your past left an indelible mark on you, infusing you with arcane magic. This magic comes from a draconic, fey, or other origin (choose when you select this class). You know four cantrips and two 1st-level spells of your choice from the Sorcerer spell list.",
+      "Sorcerer Subclass": "You gain a Sorcerer Subclass of your choice.",
+      "Innate Sorcery": "An event in your past (or the circumstances of your birth) left a magical mark on you. As a Bonus Action, you can unleash that magic for 1 minute, during which you gain the following benefits: The spell save DC of your Sorcerer spells increases by 1. You gain a bonus to one damage roll of each Sorcerer spell you cast equal to your Charisma modifier. You can use this feature a number of times equal to your Proficiency Bonus, and you regain all expended uses when you finish a Long Rest."
+    },
+    "2": {
+      "Font of Magic": "You can tap into the wellspring of magic within yourself. This wellspring is represented by Sorcery Points, which allow you to create a variety of magical effects. You have 2 Sorcery Points, and you gain more as you reach higher levels, as shown in the Sorcery Points column of the class features table."
+    },
+    "3": {
+      "Metamagic": "You gain the ability to alter your spells to suit your needs. You gain two Metamagic options of your choice. You gain an additional option at 10th and 17th level. Each time you gain a level in this class, you can replace one of your Metamagic options with another one."
+    },
+    "4": {
+      "Ability Score Improvement": "You gain the Ability Score Improvement feat or another feat of your choice for which you qualify."
+    },
+    "5": {
+      "Sorcerous Restoration": "When you finish a Short Rest, you can regain a number of expended Sorcery Points equal to half your Sorcerer level (minimum 1). You can't use this feature again until you finish a Long Rest."
+    },
+    "6": {
+      "Subclass Feature": "You gain a feature from your Sorcerer subclass."
+    },
+    "7": {
+      "Sorcery Points": "Your Sorcery Points increase to 7."
+    },
+    "8": {
+      "Ability Score Improvement": "You gain the Ability Score Improvement feat or another feat of your choice for which you qualify."
+    },
+    "9": {
+      "Sorcery Points": "Your Sorcery Points increase to 9."
+    },
+    "10": {
+      "Metamagic": "You gain an additional Metamagic option.",
+      "Sorcery Points": "Your Sorcery Points increase to 10."
+    },
+    "11": {
+      "Sorcery Points": "Your Sorcery Points increase to 11."
+    },
+    "12": {
+      "Ability Score Improvement": "You gain the Ability Score Improvement feat or another feat of your choice for which you qualify.",
+      "Sorcery Points": "Your Sorcery Points increase to 12."
+    },
+    "13": {
+      "Sorcery Points": "Your Sorcery Points increase to 13."
+    },
+    "14": {
+      "Subclass Feature": "You gain a feature from your Sorcerer subclass.",
+      "Sorcery Points": "Your Sorcery Points increase to 14."
+    },
+    "15": {
+      "Sorcery Points": "Your Sorcery Points increase to 15."
+    },
+    "16": {
+      "Ability Score Improvement": "You gain the Ability Score Improvement feat or another feat of your choice for which you qualify.",
+      "Sorcery Points": "Your Sorcery Points increase to 16."
+    },
+    "17": {
+      "Metamagic": "You gain an additional Metamagic option.",
+      "Sorcery Points": "Your Sorcery Points increase to 17."
+    },
+    "18": {
+      "Subclass Feature": "You gain a feature from your Sorcerer subclass.",
+      "Sorcery Points": "Your Sorcery Points increase to 18."
+    },
+    "19": {
+      "Epic Boon": "You gain an Epic Boon feat or another feat of your choice for which you qualify. Boon of Arcane Sight is recommended.",
+      "Sorcery Points": "Your Sorcery Points increase to 19."
+    },
+    "20": {
+      "Sorcerous Restoration": "When you roll Initiative and have no Sorcery Points remaining, you regain 4 Sorcery Points.",
+      "Sorcery Points": "Your Sorcery Points increase to 20."
+    }
+  }
+}

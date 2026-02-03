@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow">
+            <div class="card-header text-white">
+                <h2 class="card-title mb-0">
+                    <i class="fas fa-dna"></i> Choose Your {{ character.species }} Lineage
+                </h2>
+            </div>
+            <div class="card-body">
+                <p class="lead">Select your {{ character.species }} lineage to determine specific traits and abilities.</p>
+                
+                <form method="POST" action="{{ url_for('select_lineage') }}">
+                    {% for lineage_name, lineage_data in lineages.items() %}
+                    <div class="card border lineage-card mb-3" data-lineage="{{ lineage_name }}">
+                        <div class="card-body">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="lineage" 
+                                       id="lineage_{{ loop.index }}" value="{{ lineage_name }}" required>
+                                <label class="form-check-label w-100" for="lineage_{{ loop.index }}">
+                                    <h5 class="card-title">{{ lineage_name }}</h5>
+                                    <p class="card-text">
+                                        {{ lineage_data.get('description', 'A unique lineage with special traits.') }}
+                                    </p>
+                                    {% if lineage_data.get('traits') %}
+                                    <div class="text-muted small">
+                                        <strong>Special Traits:</strong>
+                                        <ul class="mb-0 mt-1">
+                                            {% for trait_name, trait_data in lineage_data.traits.items() %}
+                                            <li>{{ trait_name }}</li>
+                                            {% endfor %}
+                                        </ul>
+                                    </div>
+                                    {% endif %}
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    
+                    <!-- Spellcasting Ability Choice -->
+                    {% set has_spellcasting = False %}
+                    {% for name, lineage in lineages.items() %}
+                        {% if lineage.get('spellcasting_ability_choices') %}
+                            {% set has_spellcasting = True %}
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if has_spellcasting %}
+                    <div class="card mb-4" id="spellcasting-choice">
+                        <div class="card-header bg-secondary text-white">
+                            <h5 class="mb-0">Spellcasting Ability</h5>
+                        </div>
+                        <div class="card-body">
+                            <p>Choose your spellcasting ability for lineage spells (as mentioned in the Elven Lineage trait):</p>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="spellcasting_ability" value="Intelligence" id="spell_int" required>
+                                        <label class="form-check-label" for="spell_int">
+                                            <strong>Intelligence</strong><br>
+                                            <small class="text-muted">Logic and reasoning</small>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="spellcasting_ability" value="Wisdom" id="spell_wis" required>
+                                        <label class="form-check-label" for="spell_wis">
+                                            <strong>Wisdom</strong><br>
+                                            <small class="text-muted">Insight and perception</small>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="spellcasting_ability" value="Charisma" id="spell_cha" required>
+                                        <label class="form-check-label" for="spell_cha">
+                                            <strong>Charisma</strong><br>
+                                            <small class="text-muted">Force of personality</small>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="d-grid gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-arrow-right"></i> Continue to Ability Scores
+                        </button>
+                        <a href="{{ url_for('choose_species') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left"></i> Back to Species
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const submitButton = document.querySelector('button[type="submit"]');
+
+function validateForm() {
+    const lineageSelected = document.querySelector('input[name="lineage"]:checked');
+    const spellcastingSelected = document.querySelector('input[name="spellcasting_ability"]:checked');
+    const hasSpellcasting = document.querySelector('input[name="spellcasting_ability"]') !== null;
+    
+    const isValid = lineageSelected && (!hasSpellcasting || spellcastingSelected);
+    submitButton.disabled = !isValid;
+}
+
+document.querySelectorAll('.lineage-card').forEach(card => {
+    card.addEventListener('click', function() {
+        const radio = this.querySelector('input[type="radio"]');
+        radio.checked = true;
+        
+        // Update visual selection
+        document.querySelectorAll('.lineage-card').forEach(c => c.classList.remove('border-info'));
+        this.classList.add('border-info');
+        
+        validateForm();
+    });
+});
+
+document.querySelectorAll('input[name="spellcasting_ability"]').forEach(radio => {
+    radio.addEventListener('change', validateForm);
+});
+
+// Initial validation
+validateForm();
+</script>
+{% endblock %}
