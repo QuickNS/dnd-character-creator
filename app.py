@@ -897,6 +897,68 @@ def submit_class_choices():
     print(f"DEBUG: Feature names: {[f['name'] for f in character['features']['class']]}")  # Debug
     print(f"DEBUG: Choices made: {character.get('choices_made', {})}")  # Debug
     
+    # Initialize effects array if not exists
+    if 'effects' not in character:
+        character['effects'] = []
+    
+    # Collect effects from class features (non-choice features with effects)
+    if class_name in character_creator.classes:
+        class_data = character_creator.classes[class_name]
+        features_by_level = class_data.get('features_by_level', {})
+        for level in range(1, character_level + 1):
+            level_str = str(level)
+            if level_str in features_by_level:
+                level_features = features_by_level[level_str]
+                for feature_name, feature_data in level_features.items():
+                    # Skip choice-based features (those are handled separately)
+                    if isinstance(feature_data, dict) and 'choices' not in feature_data and 'effects' in feature_data:
+                        for effect in feature_data.get('effects', []):
+                            if isinstance(effect, dict):
+                                min_level = effect.get('min_level')
+                                if isinstance(min_level, int) and character.get('level', 1) < min_level:
+                                    continue
+                                effect_with_source = effect.copy()
+                                effect_with_source['source'] = feature_name
+                                # Check if effect already exists to avoid duplicates
+                                existing = any(
+                                    e.get('type') == effect_with_source.get('type') and 
+                                    e.get('spell') == effect_with_source.get('spell') and
+                                    e.get('source') == effect_with_source.get('source')
+                                    for e in character['effects']
+                                )
+                                if not existing:
+                                    character['effects'].append(effect_with_source)
+                                    print(f"DEBUG: Added class feature effect: {effect_with_source}")
+    
+    # Collect effects from subclass features (non-choice features with effects)
+    if subclass_name:
+        subclass_data = character_creator.get_subclasses_for_class(class_name).get(subclass_name, {})
+        subclass_features = subclass_data.get('features_by_level', {})
+        for level in range(1, character_level + 1):
+            level_str = str(level)
+            if level_str in subclass_features:
+                level_features = subclass_features[level_str]
+                for feature_name, feature_data in level_features.items():
+                    # Skip choice-based features (those are handled separately)
+                    if isinstance(feature_data, dict) and 'choices' not in feature_data and 'effects' in feature_data:
+                        for effect in feature_data.get('effects', []):
+                            if isinstance(effect, dict):
+                                min_level = effect.get('min_level')
+                                if isinstance(min_level, int) and character.get('level', 1) < min_level:
+                                    continue
+                                effect_with_source = effect.copy()
+                                effect_with_source['source'] = feature_name
+                                # Check if effect already exists to avoid duplicates
+                                existing = any(
+                                    e.get('type') == effect_with_source.get('type') and 
+                                    e.get('spell') == effect_with_source.get('spell') and
+                                    e.get('source') == effect_with_source.get('source')
+                                    for e in character['effects']
+                                )
+                                if not existing:
+                                    character['effects'].append(effect_with_source)
+                                    print(f"DEBUG: Added subclass feature effect: {effect_with_source}")
+    
     # Clear ability bonuses and proficiencies before re-applying to avoid duplicates
     character['ability_bonuses'] = []
     character['weapon_proficiencies'] = []
@@ -1696,6 +1758,14 @@ def _gather_character_spells(character: dict) -> dict:
     spells_by_level = {}
     choices_made = character.get('choices_made', {})
     class_name = character.get('class', '')
+    
+    # DEBUG: Check effects array
+    effects = character.get('effects', [])
+    print(f"DEBUG _gather_character_spells: Effects count: {len(effects)}")
+    if effects:
+        for i, effect in enumerate(effects[:10]):  # First 10
+            if effect.get('type') in ['grant_cantrip', 'grant_spell']:
+                print(f"DEBUG _gather_character_spells: Effect {i}: type={effect.get('type')}, spell={effect.get('spell')}, source={effect.get('source')}")
 
     def _load_cantrips_for_spell_list(spell_list_name: str) -> dict:
         """Load cantrip details for a given spell list name (e.g., 'Wizard')."""
