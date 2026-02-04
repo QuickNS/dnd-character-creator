@@ -50,24 +50,24 @@
 - ✅ Features with choices show chosen value in name
 - ✅ HTML rendering supported for feature descriptions (tables, etc.)
 
-### PDF Character Sheet Generation
-- ✅ Created PDF writer module (utils/pdf_writer.py)
-- ✅ Field mapping configuration (pdf_template/field_mapping_config.json)
-- ✅ Custom formatting system for features (checkboxes for limited-use abilities)
-- ✅ Flask download route (/download-character-pdf)
-- ✅ Download button added to character summary page
+### HTML Character Sheet Generation
+- ✅ Created HTML character sheet with background images (templates/character_sheet_pdf.html)
+- ✅ Background images extracted from PDF at high quality (300 DPI)
+- ✅ Positioned input fields overlay character sheet background
+- ✅ Flask route (/character-sheet) displays fillable sheet
+- ✅ Print to PDF functionality with browser print dialog
 - ✅ All calculated values included (combat stats, saves, skills, spell slots)
+- ✅ Basic field positioning (name, class, level, abilities, modifiers, AC, initiative, HP, size, passive perception)
 
 ## 🔄 IN PROGRESS / TODO
 
-### PDF Field Mapping Refinement
-- Verify field mappings match actual PDF layout
-- Test with multiple character types (different classes/species)
-- Refine which fields map to which PDF form fields
-- Consider multi-page PDF handling if needed
-
-### PDF Custom Formatting Expansion
-- Add more features to custom formatting overrides
+### HTML Character Sheet Refinement
+- Position remaining fields (saving throws, skills, proficiencies, features, spells)
+- Fine-tune field positions to align with background image
+- Add equipment section positioning
+- Test print output quality across browsers
+- Add helper tool for positioning fields visually
+- Consider responsive design for mobile viewing
 - Consider spell slot tracker formatting
 - Consider exhaustion tracker
 - Format equipment and inventory sections
@@ -113,11 +113,19 @@
 
 ## 📋 FUTURE ENHANCEMENTS
 
-### PDF Optimization
-- PDF compression for smaller file sizes
-- Embed fonts for better compatibility
-- Support for different character sheet templates
-- Spell cards and modular card generation
+### Equipment System
+- See EQUIPMENT_PLAN.md for detailed implementation plan
+- Equipment database (weapons, armor, adventuring gear)
+- Starting equipment selection from class/background
+- AC calculation from equipped armor
+- Attack/damage calculation from equipped weapons
+- Equipment display on character sheet
+
+### Character Sheet Export Formats
+- Spell cards generation
+- Modular cards (weapon cards, armor cards, feature cards)
+- Alternative character sheet templates
+- Multiple page support for complex characters
 
 ### Spell Preparation
 - Interface for selecting prepared spells from class list
