@@ -1,0 +1,13 @@
+{
+  "class": "Warlock",
+  "cantrips": [
+    "Prestidigitation",
+    "Toll the Dead"
+  ],
+  "spells_by_level": {
+    "2": [
+      "Darkness",
+      "Misty Step"
+    ]
+  }
+}

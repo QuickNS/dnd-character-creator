@@ -1,0 +1,8 @@
+{
+  "class": "Paladin",
+  "spells_by_level": {
+    "1": [
+      "Detect Magic"
+    ]
+  }
+}

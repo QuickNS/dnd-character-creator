@@ -237,6 +237,30 @@ Grants or improves darkvision.
 }
 ```
 
+#### bonus_hp
+Grants a bonus to hit points.
+
+```json
+{
+  "type": "bonus_hp",
+  "value": 1,
+  "scaling": "per_level"
+}
+```
+
+**Properties:**
+- `value`: The amount of HP bonus to grant
+- `scaling`: (Optional) How the bonus scales. Use "per_level" for bonuses that apply at each level (like Dwarven Toughness)
+
+**Example:** Dwarven Toughness
+```json
+{
+  "type": "bonus_hp",
+  "value": 1,
+  "scaling": "per_level"
+}
+```
+
 ## Feature Structure
 
 Features can include an `effects` array alongside their description:

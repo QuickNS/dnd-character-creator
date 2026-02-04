@@ -7,7 +7,7 @@ have multiple sub-variants that provide different features and abilities at vari
 
 import json
 from pathlib import Path
-from typing import Dict, List, Any, Optional, Tuple
+from typing import Dict, List, Any, Optional
 
 
 class VariantManager:
@@ -191,14 +191,14 @@ class VariantManager:
                 # Show level-based features
                 level_features = variant_data.get("level_features", {})
                 if level_features:
-                    print(f"   Level Features:")
+                    print("   Level Features:")
                     for level, features in sorted(level_features.items(), key=lambda x: int(x[0])):
                         print(f"     Level {level}: {', '.join(features)}")
                 
                 # Show spell progression
                 spells_by_level = variant_data.get("spells_by_level", {})
                 if spells_by_level:
-                    print(f"   Spell Progression:")
+                    print("   Spell Progression:")
                     for level, spells in sorted(spells_by_level.items()):
                         level_name = "Cantrips" if level == "cantrip" else f"Level {level}"
                         print(f"     {level_name}: {', '.join(spells)}")

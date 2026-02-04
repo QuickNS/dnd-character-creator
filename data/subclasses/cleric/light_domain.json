@@ -16,34 +16,24 @@
         ]
       },
       "Warding Flare": "When a creature you can see within 30 feet attacks you, use Reaction to impose Disadvantage on the attack roll, as divine light flares before them. Creature with Blindsight unaffected. Uses: Wisdom modifier times per Long Rest (minimum 1).",
-      "Domain Spells": {
+      "Light Domain Spells": {
         "description": "You always have certain spells prepared.",
-        "spells": {
-          "1": [
-            "Burning Hands",
-            "Faerie Fire"
-          ],
-          "3": [
-            "Flaming Sphere",
-            "Scorching Ray"
-          ],
-          "5": [
-            "Daylight",
-            "Fireball"
-          ],
-          "7": [
-            "Guardian of Faith",
-            "Wall of Fire"
-          ],
-          "9": [
-            "Flame Strike",
-            "Scrying"
-          ]
-        }
+        "effects": [
+          {"type": "grant_spell", "spell": "Burning Hands", "min_level": 3},
+          {"type": "grant_spell", "spell": "Faerie Fire", "min_level": 3},
+          {"type": "grant_spell", "spell": "Scorching Ray", "min_level": 3},
+          {"type": "grant_spell", "spell": "See Invisibility", "min_level": 3},
+          {"type": "grant_spell", "spell": "Daylight", "min_level": 5},
+          {"type": "grant_spell", "spell": "Fireball", "min_level": 5},
+          {"type": "grant_spell", "spell": "Arcane Eye", "min_level": 7},
+          {"type": "grant_spell", "spell": "Wall of Fire", "min_level": 7},
+          {"type": "grant_spell", "spell": "Flame Strike", "min_level": 9},
+          {"type": "grant_spell", "spell": "Scrying", "min_level": 9}
+        ]
       }
     },
     "6": {
-      "Improved Flare": "As a Channel Divinity, when you use Warding Flare on a creature, you can affect creatures within 30 feet of the attacker with the same effect (impose Disadvantage on attack rolls until end of your next turn)."
+      "Improved Warding Flare": "As a Channel Divinity, when you use Warding Flare on a creature, you can affect creatures within 30 feet of the attacker with the same effect (impose Disadvantage on attack rolls until end of your next turn)."
     },
     "17": {
       "Corona of Light": "As an action, create an aura of sunlight in 60-foot radius for 1 minute. Bright Light fills area. Each Hostile creature in area has Disadvantage on saves against Fire or Radiant damage spells you cast. Once used, can't use until Long Rest."

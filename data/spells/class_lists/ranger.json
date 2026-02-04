@@ -1,0 +1,12 @@
+{
+  "class": "Ranger",
+  "spells_by_level": {
+    "1": [
+      "Detect Magic",
+      "Longstrider"
+    ],
+    "2": [
+      "Pass without Trace"
+    ]
+  }
+}

@@ -4,7 +4,6 @@ Handles resolving choice options from various source types.
 """
 import json
 from pathlib import Path
-from typing import Dict, Any, List, Optional
 
 
 def resolve_choice_options(

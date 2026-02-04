@@ -1,5 +1,9 @@
 """Class and subclass selection routes."""
 from flask import Blueprint, render_template, request, session, redirect, url_for, current_app
+from modules.data_loader import DataLoader
+
+# Initialize data loader
+data_loader = DataLoader()
 
 class_selection_bp = Blueprint('class_selection', __name__)
 
@@ -14,8 +18,8 @@ def choose_class():
     
     character = session['character']
     print(f"Character found: {character.get('name', 'Unknown')}")
-    character_creator = current_app.config['CHARACTER_CREATOR']
-    classes = dict(sorted(character_creator.classes.items()))
+    
+    classes = dict(sorted(data_loader.classes.items()))
     return render_template('choose_class.html', classes=classes)
 
 
@@ -23,10 +27,10 @@ def choose_class():
 def select_class():
     """Handle class selection."""
     print(f"Select class accessed. Session keys: {list(session.keys())}")
-    character_creator = current_app.config['CHARACTER_CREATOR']
+    
     
     class_name = request.form.get('class')
-    if not class_name or class_name not in character_creator.classes:
+    if not class_name or class_name not in data_loader.classes:
         print(f"Invalid class selection: {class_name}")
         return redirect(url_for('class_selection.choose_class'))
     
@@ -54,12 +58,10 @@ def select_class():
                 "background": [],
                 "feats": []
             },
-            "physical_attributes": {
-                "creature_type": "Humanoid",
-                "size": "Medium",
-                "speed": 30,
-                "darkvision": 0
-            },
+            "creature_type": "Humanoid",
+            "size": "Medium",
+            "speed": 30,
+            "darkvision": 0,
             "choices_made": {},
             "step": "class"
         }
@@ -72,7 +74,7 @@ def select_class():
     character_level = character.get('level', 1)
     
     if character_level >= 3:
-        class_data = character_creator.classes[class_name]
+        class_data = data_loader.classes[class_name]
         subclass_level = class_data.get('subclass_selection_level', 3)
         
         if character_level >= subclass_level:
@@ -96,12 +98,12 @@ def choose_subclass():
     
     character = session['character']
     class_name = character.get('class', '')
-    character_creator = current_app.config['CHARACTER_CREATOR']
     
-    if not class_name or class_name not in character_creator.classes:
+    
+    if not class_name or class_name not in data_loader.classes:
         return redirect(url_for('class_selection.choose_class'))
     
-    subclasses = character_creator.get_subclasses_for_class(class_name)
+    subclasses = data_loader.get_subclasses_for_class(class_name)
     
     if not subclasses:
         character['step'] = 'class_choices'

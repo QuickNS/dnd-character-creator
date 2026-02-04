@@ -2,7 +2,7 @@
 Character sheet data converter for D&D 2024.
 Converts internal character data to comprehensive character sheet format.
 """
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List
 from datetime import datetime
 from .character_calculator import CharacterCalculator
 from .hp_calculator import HPCalculator
@@ -60,10 +60,9 @@ class CharacterSheetConverter:
             {'max_hp': max_hp, 'class': class_name}
         )
         
-        # Apply species physical attributes
-        physical_attrs = character_data.get('physical_attributes', {})
-        if 'speed' in physical_attrs:
-            combat_stats['speed'] = physical_attrs['speed']
+        # Apply speed from character data
+        if 'speed' in character_data:
+            combat_stats['speed'] = character_data['speed']
         
         # Convert proficiencies
         class_data = character_data.get('class_data', {})
@@ -134,50 +133,39 @@ class CharacterSheetConverter:
         return [save.lower() for save in saving_throws]
     
     def _extract_hp_bonuses(self, character_data: Dict[str, Any]) -> List[Dict[str, Any]]:
-        """Extract HP bonuses from character features."""
+        """Extract HP bonuses from character effects."""
         hp_bonuses = []
-        found_dwarven_toughness = False
         
-        # Check species traits in species_data (original structure)
-        species_data = character_data.get('species_data', {})
-        traits = species_data.get('traits', {})
+        # Use the effects system to find HP bonuses
+        effects = character_data.get('effects', [])
+        for effect in effects:
+            if isinstance(effect, dict) and effect.get('type') == 'bonus_hp':
+                hp_bonuses.append({
+                    "source": effect.get('source', 'Unknown'),
+                    "value": effect.get('value', 0),
+                    "scaling": effect.get('scaling', 'flat')
+                })
         
-        # Look for Dwarven Toughness in original structure
-        if 'Dwarven Toughness' in traits:
-            hp_bonuses.append({
-                "source": "Dwarven Toughness (species_data)",
-                "value": 1,
-                "scaling": "per_level"
-            })
-            found_dwarven_toughness = True
-        
-        # Check features structure for HP bonuses (new structure)
-        features = character_data.get('features', {})
-        if isinstance(features, dict):
-            for category, feature_list in features.items():
-                if isinstance(feature_list, list):
-                    for feature in feature_list:
-                        if isinstance(feature, dict):
-                            name = feature.get('name', '')
-                            desc = feature.get('description', '').lower()
-                            
-                            # Check for Dwarven Toughness specifically (avoid duplicates)
-                            if (name == 'Dwarven Toughness' or 'dwarven toughness' in desc) and not found_dwarven_toughness:
-                                hp_bonuses.append({
-                                    "source": f"{name} ({category})",
-                                    "value": 1,
-                                    "scaling": "per_level"
-                                })
-                                found_dwarven_toughness = True
-                            # Check for other HP bonuses
-                            elif ('hit point' in desc or 'hp' in desc) and ('level' in desc or 'per level' in desc):
-                                # Try to parse HP bonus amount (basic pattern matching)
-                                if '+1' in desc and ('level' in desc or 'per level' in desc):
-                                    hp_bonuses.append({
-                                        "source": name,
-                                        "value": 1,
-                                        "scaling": "per_level"
-                                    })
+        # Fallback: Check features structure for HP bonuses (legacy support)
+        if not hp_bonuses:
+            features = character_data.get('features', {})
+            if isinstance(features, dict):
+                for category, feature_list in features.items():
+                    if isinstance(feature_list, list):
+                        for feature in feature_list:
+                            if isinstance(feature, dict):
+                                name = feature.get('name', '')
+                                desc = feature.get('description', '').lower()
+                                
+                                # Generic parsing for HP bonuses from feature text
+                                if ('hit point' in desc or 'hp' in desc) and ('level' in desc or 'per level' in desc):
+                                    # Try to parse HP bonus amount (basic pattern matching)
+                                    if '+1' in desc and ('level' in desc or 'per level' in desc):
+                                        hp_bonuses.append({
+                                            "source": name,
+                                            "value": 1,
+                                            "scaling": "per_level"
+                                        })
         
         return hp_bonuses
     

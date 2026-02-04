@@ -1,6 +1,7 @@
 {
   "name": "Chthonic Tiefling",
   "parent_species": "Tiefling",
+  "description": "Chthonic tieflings are descended from fiends associated with death and the underworld, such as wraiths or specters. They often exhibit traits that reflect their eerie heritage, such as a ghostly appearance or an affinity for necromantic magic. Chthonic tieflings may possess abilities that allow them to manipulate life and death, making them mysterious and formidable beings.",
   "traits": {
     "Chthonic Magic": "You know the Chill Touch cantrip. Starting at 3rd level, you can cast the False Life spell with this trait. Starting at 5th level, you can also cast the Ray of Enfeeblement spell with it. Once you cast False Life or Ray of Enfeeblement with this trait, you can't cast that spell with it again until you finish a long rest. You can also cast these spells using spell slots you have of the appropriate level. Charisma is your spellcasting ability for these spells."
   },

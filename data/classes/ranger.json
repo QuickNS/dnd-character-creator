@@ -3,8 +3,14 @@
   "description": "Guardians of the wilderness who keep unending watch far from bustling cities. Rangers learn to track quarry like predators, moving stealthily through trackless forests and across wide plains, hiding in brush and rubble.",
   "hit_die": 10,
   "primary_ability": "Dexterity & Wisdom",
-  "saving_throw_proficiencies": ["Strength", "Dexterity"],
-  "armor_proficiencies": ["Light armor", "Medium armor", "Shields"],
+  "saving_throw_proficiencies": ["Strength", "Dexterity"],  "standard_array_assignment": {
+    "Strength": 12,
+    "Dexterity": 15,
+    "Constitution": 13,
+    "Intelligence": 8,
+    "Wisdom": 14,
+    "Charisma": 10
+  },  "armor_proficiencies": ["Light armor", "Medium armor", "Shields"],
   "weapon_proficiencies": ["Simple weapons", "Martial weapons"],
   "skill_proficiencies_count": 3,
   "skill_options": [
@@ -60,7 +66,7 @@
         "choices": {
           "type": "select_multiple",
           "count": 2,
-          "choice_id": "expertise_skills",
+          "name": "expertise_skills",
           "source": {
             "type": "computed",
             "from": "skill_proficiencies"

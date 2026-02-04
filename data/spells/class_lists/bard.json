@@ -1,0 +1,16 @@
+{
+  "class": "Bard",
+  "cantrips": [
+    "Dancing Lights",
+    "Light",
+    "Mending",
+    "Prestidigitation"
+  ],
+  "spells_by_level": {
+    "1": [
+      "Detect Magic",
+      "Faerie Fire",
+      "Longstrider"
+    ]
+  }
+}

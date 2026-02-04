@@ -36,12 +36,54 @@ if 'effects' in character:
 
 #### Available Effect Types
 See [FEATURE_EFFECTS.md](../FEATURE_EFFECTS.md) for complete documentation:
-- `grant_cantrip` / `grant_cantrip_choice` - Spell granting
+- `grant_cantrip` - Spell granting (specific cantrip)
+- `grant_spell` - Spell granting (leveled spell, always prepared)
 - `grant_weapon_proficiency` / `grant_armor_proficiency` - Proficiencies
-- `grant_save_advantage` - Saving throw advantages
+- `grant_skill_proficiency` / `grant_skill_expertise` - Skills
+- `grant_save_advantage` / `grant_save_proficiency` - Saving throws
 - `grant_damage_resistance` / `grant_damage_immunity` - Resistances
-- `ability_bonus` - Conditional ability bonuses
+- `ability_bonus` - Conditional ability bonuses (e.g., Thaumaturge's WIS to INT checks)
+- `bonus_hp` - Hit point bonuses (e.g., Dwarven Toughness)
 - And more...
+
+#### Spell Granting - CRITICAL FORMAT
+**ALL spell granting MUST use the effects system exclusively!**
+
+❌ **NEVER** use separate `spells` dict:
+```json
+{
+  "Light Domain Spells": {
+    "spells": {
+      "3": ["Burning Hands", "Faerie Fire"]
+    }
+  }
+}
+```
+
+✅ **ALWAYS** use effects array:
+```json
+{
+  "Light Domain Spells": {
+    "description": "You always have certain spells prepared.",
+    "effects": [
+      {"type": "grant_spell", "spell": "Burning Hands", "min_level": 3},
+      {"type": "grant_spell", "spell": "Faerie Fire", "min_level": 3}
+    ]
+  }
+}
+```
+
+**Spell Storage and Display:**
+- Domain/subclass spells → `character['spells']['prepared']` (always prepared, use slots)
+- Species/lineage spells → `character['spells']['prepared']` + `spell_metadata` (always prepared, 1/day free cast)
+- Spell metadata tracks source for display badges:
+  - Domain spells: "Always Prepared" badge (green)
+  - Species spells: "Always Prepared" + "1/Day (No Slot)" badges (green + blue)
+
+**Spell Table Display:**
+- Features with `grant_spell` effects at multiple levels automatically generate HTML tables
+- Tables show character level → spells available at that level
+- Current level spells marked with ✓ (green row), future with 🔒 (gray row)
 
 #### When Adding New Features
 1. **Define the effect in JSON data** - Add structured effects array to the feature
@@ -119,6 +161,7 @@ When fetching from live wiki (only if not cached):
 - Backgrounds: http://dnd2024.wikidot.com/background:acolyte
 - Species: http://dnd2024.wikidot.com/species:elf
 - Feats: http://dnd2024.wikidot.com/feat:alert
+- Spells: http://dnd2024.wikidot.com/spell:blade-ward
   
 ### Modular Architecture
 - **Each aspect of character creation must be in its own module** with clear separation of concerns

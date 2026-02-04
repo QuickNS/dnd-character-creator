@@ -6,7 +6,7 @@ Handles feature tracking, parsing, and application for D&D characters.
 
 import json
 from pathlib import Path
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any
 
 
 class FeatureManager:

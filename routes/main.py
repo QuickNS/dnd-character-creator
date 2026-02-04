@@ -13,8 +13,8 @@ def index():
 @main_bp.route('/create', methods=['GET', 'POST'])
 def create_character():
     """Start character creation process."""
-    from modules.character_creator import CharacterCreator
-    character_creator = CharacterCreator()
+    from modules.data_loader import DataLoader
+    data_loader = DataLoader()
     
     if request.method == 'POST':
         # Initialize character data
@@ -44,12 +44,10 @@ def create_character():
                 "background": [],
                 "feats": []
             },
-            "physical_attributes": {
-                "creature_type": "Humanoid",
-                "size": "Medium",
-                "speed": 30,
-                "darkvision": 0
-            },
+            "creature_type": "Humanoid",
+            "size": "Medium",
+            "speed": 30,
+            "darkvision": 0,
             "choices_made": {},
             "step": "class"
         }
@@ -63,7 +61,7 @@ def create_character():
         print(f"Session after save: {dict(session)}")
         
         # Instead of redirect, render the class selection page directly
-        classes = dict(sorted(character_creator.classes.items()))
+        classes = dict(sorted(data_loader.classes.items()))
         return render_template('choose_class.html', classes=classes, character_created=True)
     
     return render_template('create_character.html')

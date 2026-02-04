@@ -7,6 +7,14 @@
     "Dexterity",
     "Charisma"
   ],
+  "standard_array_assignment": {
+    "Strength": 8,
+    "Dexterity": 14,
+    "Constitution": 12,
+    "Intelligence": 13,
+    "Wisdom": 10,
+    "Charisma": 15
+  },
   "armor_proficiencies": [
     "Light armor"
   ],

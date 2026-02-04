@@ -7,6 +7,14 @@
     "Intelligence",
     "Wisdom"
   ],
+  "standard_array_assignment": {
+    "Strength": 8,
+    "Dexterity": 12,
+    "Constitution": 13,
+    "Intelligence": 15,
+    "Wisdom": 14,
+    "Charisma": 10
+  },
   "armor_proficiencies": [],
   "weapon_proficiencies": [
     "Simple weapons"
@@ -97,7 +105,7 @@
         "choices": {
           "type": "select_multiple",
           "count": 2,
-          "choice_id": "spell_mastery",
+          "name": "spell_mastery",
           "source": {
             "type": "computed",
             "from": "spellbook",
@@ -119,7 +127,7 @@
         "choices": {
           "type": "select_multiple",
           "count": 2,
-          "choice_id": "signature_spells",
+          "name": "signature_spells",
           "source": {
             "type": "computed",
             "from": "spellbook",

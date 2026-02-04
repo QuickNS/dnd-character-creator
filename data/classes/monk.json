@@ -7,6 +7,14 @@
     "Strength",
     "Dexterity"
   ],
+  "standard_array_assignment": {
+    "Strength": 12,
+    "Dexterity": 15,
+    "Constitution": 13,
+    "Intelligence": 10,
+    "Wisdom": 14,
+    "Charisma": 8
+  },
   "armor_proficiencies": [],
   "weapon_proficiencies": [
     "Simple weapons",

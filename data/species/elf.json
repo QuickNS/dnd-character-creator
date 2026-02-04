@@ -8,7 +8,18 @@
   "darkvision_range": 60,
   "traits": {
     "Darkvision": "You have Darkvision with a range of 60 feet.",
-    "Elven Lineage": "You are part of a lineage that grants you supernatural abilities. Choose a lineage from the Elven Lineages. You gain the level 1 benefit of that lineage. When you reach character levels 3 and 5, you learn a higher-level spell. You always have that spell prepared. You can cast it once without a spell slot, and you regain the ability to cast it in that way when you finish a Long Rest. Intelligence, Wisdom, or Charisma is your spellcasting ability for the spells you cast with this trait (choose when you select the lineage).",
+    "Elven Lineage": {
+      "description": "You are part of a lineage that grants you supernatural abilities. Intelligence, Wisdom of Charisma is your spellcasting ability for the spells you cast with this trait.",
+      "type": "choice",
+      "choices": {
+        "type": "select_single",
+        "count": 1,
+        "source": {
+          "type": "fixed_list",
+          "options": ["Intelligence", "Wisdom", "Charisma"]
+        }
+      }
+    },
     "Fey Ancestry": "You have Advantage on saving throws you make to avoid or end the Charmed condition.",
     "Keen Senses": {
       "description": "You have proficiency in the Insight, Perception, or Survival skill.",

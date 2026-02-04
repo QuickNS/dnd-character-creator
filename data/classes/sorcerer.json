@@ -4,6 +4,14 @@
   "hit_die": 6,
   "primary_ability": "Charisma",
   "saving_throw_proficiencies": ["Constitution", "Charisma"],
+  "standard_array_assignment": {
+    "Strength": 10,
+    "Dexterity": 13,
+    "Constitution": 14,
+    "Intelligence": 8,
+    "Wisdom": 12,
+    "Charisma": 15
+  },
   "armor_proficiencies": [],
   "weapon_proficiencies": ["Simple weapons"],
   "skill_proficiencies_count": 2,

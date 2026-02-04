@@ -1,0 +1,19 @@
+{
+  "class": "Cleric",
+  "cantrips": [
+    "Guidance",
+    "Light",
+    "Mending",
+    "Resistance",
+    "Sacred Flame",
+    "Spare the Dying",
+    "Thaumaturgy",
+    "Toll the Dead",
+    "Word of Radiance"
+  ],
+  "spells_by_level": {
+    "1": [
+      "Detect Magic"
+    ]
+  }
+}

@@ -1,39 +1,25 @@
 {
   "name": "Wood Elf",
   "parent_species": "Elf",
+  "description": "Wood elves are reclusive and deeply attuned to the natural world. They are known for their exceptional agility and stealth, often dwelling in dense forests where they can move unseen. Their connection to nature grants them unique magical abilities that aid them in protecting their woodland homes.",
   "speed": 35,
   "traits": {
     "Increased Speed": "Your Speed increases to 35 feet.",
-    "Druidcraft": {
-      "description": "You know the Druidcraft cantrip.",
+    "Wood Elf Spells": {
+      "description": "You know the Druidcraft cantrip. You also always have certain spells prepared and can cast them once per day without expending a spell slot. You can also cast them using spell slots you have of the appropriate level.",
       "effects": [
         {
           "type": "grant_cantrip",
-          "spell": "Druidcraft",
-          "spell_list": "Druid"
-        }
-      ]
-    },
-    "Longstrider (Level 3)": {
-      "description": "Starting at level 3, you always have Longstrider prepared.",
-      "effects": [
+          "spell": "Druidcraft"
+        },
         {
           "type": "grant_spell",
           "spell": "Longstrider",
-          "level": 1,
-          "spell_list": "Druid",
           "min_level": 3
-        }
-      ]
-    },
-    "Pass without Trace (Level 5)": {
-      "description": "Starting at level 5, you always have Pass without Trace prepared.",
-      "effects": [
+        },
         {
           "type": "grant_spell",
           "spell": "Pass without Trace",
-          "level": 2,
-          "spell_list": "Druid",
           "min_level": 5
         }
       ]

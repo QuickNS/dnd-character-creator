@@ -1,0 +1,19 @@
+{
+  "class": "Sorcerer",
+  "cantrips": [
+    "Dancing Lights",
+    "Light",
+    "Mending",
+    "Prestidigitation"
+  ],
+  "spells_by_level": {
+    "1": [
+      "Detect Magic",
+      "Ray of Sickness"
+    ],
+    "2": [
+      "Darkness",
+      "Misty Step"
+    ]
+  }
+}

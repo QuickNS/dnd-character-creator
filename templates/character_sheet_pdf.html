@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ character.name }} - Character Sheet</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Calibri', 'Arial', sans-serif;
+            background-color: #f5f5f5;
+        }
+
+        .no-print {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            z-index: 1000;
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+
+        .no-print button {
+            padding: 10px 20px;
+            margin: 0 5px;
+            cursor: pointer;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .print-btn {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .back-btn {
+            background-color: #6c757d;
+            color: white;
+        }
+
+        .sheet-container {
+            position: relative;
+            width: 8.5in;
+            height: 11in;
+            margin: 20px auto;
+            background-color: white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            page-break-after: always;
+        }
+
+        .sheet-container:last-child {
+            page-break-after: auto;
+        }
+
+        .sheet-background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+            z-index: 1;
+        }
+
+        .sheet-page1 {
+            background-image: url('/static/pdf_template/sheet1.png');
+        }
+
+        .sheet-page2 {
+            background-image: url('/static/pdf_template/sheet2.png');
+        }
+
+        .field-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+        }
+
+        .char-field {
+            position: absolute;
+            border: none;
+            background: transparent;
+            font-family: 'Source Sans Pro', sans-serif;
+            text-align: center;
+            font-size: 11pt;
+            padding: 2px;
+            
+        }
+
+        .char-field:focus {
+            outline: 1px solid #007bff;
+            background: rgba(0, 123, 255, 0.05);
+        }
+
+        .div-ability {
+            outline: 1px solid black;
+            position: absolute;
+        }
+
+        
+
+        /* General Info */
+        #character-name { top: 22px; left: 32px; width: 290px; height: 20px; font-size: 14pt; font-weight: normal; text-align: left;}
+        #class {top: 52px; left: 200px; width: 127px;  height: 20px; text-align: left}
+        #subclass {top: 82px; left: 200px; width: 127px; height: 20px; text-align: left}
+        #background {top: 52px; left: 32px; width: 150px; height: 20px; text-align: left}
+        #species {top: 82px; left: 32px; width: 150px; height: 20px; text-align: left }
+        #level {top: 39px; left: 358px; width: 30px; height: 20px; font-size: 14pt; }
+        #size { top: 182px; left: 589px; width: 48px; height: 20px; font-size: 9pt;}
+
+        /* Combat Stats */
+        #armor-class { top: 57px; left: 445px; width: 30px; height: 20px; font-size: 14pt; }
+        #initiative { top: 182px; left: 339px; width: 30px; height: 20px; }
+        #speed { top: 182px; left: 453px; width: 60px; height: 20px; }
+        #hp_max { top: 80px; left: 595px; width: 60px; height: 20px; }
+        #hit_dice { top: 80px; left: 665px; width: 56px; height: 20px; }
+        #passive-perception { top: 182px; left: 725px; width: 30px; height: 20px; }
+
+        /* Ability Scores - adjust positions as needed */
+        #ability-str { top: 258px; left: 13px;}
+        #ability-dex { top: 419px; left: 13px}
+        #ability-con  { top: 618px; left: 13px}
+        #ability-int { top: 152px; left: 157px}
+        #ability-wis { top: 390px; left: 157px}
+        #ability-cha { top: 627px; left: 157px}
+      
+        /* Ability Modifiers */
+     
+        /* Print styles */
+        @media print {
+            body {
+                background: white;
+            }
+
+            .no-print {
+                display: none !important;
+            }
+
+            .sheet-container {
+                margin: 0;
+                box-shadow: none;
+                page-break-after: always;
+            }
+
+            .sheet-container:last-child {
+                page-break-after: auto;
+            }
+
+            .char-field {
+                border: none;
+                background: transparent;
+            }
+
+            .char-field:focus {
+                outline: none;
+                background: transparent;
+            }
+
+            @page {
+                size: letter;
+                margin: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="no-print">
+        <button class="print-btn" onclick="window.print()">🖨️ Print to PDF</button>
+        <button class="back-btn" onclick="window.location.href='{{ url_for('character_summary') }}'">← Back to Summary</button>
+    </div>
+
+    <!-- Page 1 -->
+    <div class="sheet-container">
+        <div class="sheet-background sheet-page1"></div>
+        <div class="field-layer">
+            <!-- Basic Info -->
+            <input type="text" id="character-name" class="char-field" value="{{ character.name }}">
+            <input type="text" id="class" class="char-field" value="{{ character.class }}">
+            <input type="text" id="background" class="char-field" value="{{ character.background }}">
+            <input type="text" id="species" class="char-field" value="{{ character.species }}{% if character.lineage %} ({{ character.lineage }}){% endif %}">
+            <input type="text" id="subclass" class="char-field" value="{% if character.subclass %}{{ character.subclass }}{% endif %}">
+            <input type="text" id="level" class="char-field" value="{{ character.level }}">
+            <input type="text" id="size" class="char-field" value="{{ size }}">
+            
+            <!-- Combat Stats -->
+            <input type="text" id="armor-class" class="char-field" value="{{ combat_stats.armor_class }}">
+            <input type="text" id="initiative" class="char-field" value="{{ '+' if combat_stats.initiative >= 0 else '' }}{{ combat_stats.initiative }}">
+            <input type="text" id="speed" class="char-field" value="{{ combat_stats.speed }}ft">
+            <input type="text" id="hp_max" class="char-field" value="{{ combat_stats.hit_point_maximum }}">
+            <input type="text" id="hit_dice" class="char-field" value="{{ combat_stats.hit_dice.total }}">
+            <input type="text" id="passive-perception" class="char-field" value="{{ passive_perception }}">
+
+            <!-- Ability Scores -->
+            <div class="div-ability" id="ability-str">
+                 <input type="text" style="top: 37px; left: 65px; width: 40px; height: 30px; font-size: 11pt;" class="char-field" value="{{ character.ability_scores.Strength }}">
+                 <input type="text" style="top: 35px; left: 17px; width: 50px; height: 25px; font-size: 16pt;" class="char-field" value="{{ ability_modifiers.Strength }}">
+                 <input type="checkbox" style="position:absolute; top: 98px; left: 7px;" {% if 'Strength' in saving_throws and saving_throws['Strength'].proficient == True %}checked{% endif %}>
+                 <div style="position: absolute; top: 118px; left: 0px;">
+                    <input type="checkbox" style="position:absolute; top: 6px; left: 7px;" {% if 'Athletics' in skill_modifiers and skill_modifiers['Athletics'].proficient == True %}checked{% endif %}>
+                </div>
+            </div>
+
+            <div class="div-ability" id="ability-dex">
+                <input type="text" style="top: 37px; left: 65px; width: 40px; height: 30px; font-size: 11pt;" class="char-field" value="{{ character.ability_scores.Dexterity }}">
+                <input type="text" style="top: 35px; left: 17px; width: 50px; height: 25px; font-size: 16pt;" class="char-field" value="{{ ability_modifiers.Dexterity }}">
+                <input type="checkbox" style="position:absolute; top: 97px; left: 7px;" {% if 'Dexterity' in saving_throws and saving_throws['Dexterity'].proficient == True %}checked{% endif %}>
+                <div style="position: absolute; top: 118px; left: 0px;">
+                    <input type="checkbox" style="position: absolute; top: 6px; left: 7px;" {% if 'Acrobatics' in skill_modifiers and skill_modifiers['Acrobatics'].proficient == True %}checked{% endif %}>
+                    <input type="checkbox" style="position: absolute; top: 25px; left: 7px;" {% if 'Sleight of Hand' in skill_modifiers and skill_modifiers['Sleight of Hand'].proficient == True %}checked{% endif %}>
+                    <input type="checkbox" style="position: absolute; top: 44px; left: 7px;" {% if 'Stealth' in skill_modifiers and skill_modifiers['Stealth'].proficient == True %}checked{% endif %}>
+                </div>
+            </div>
+
+            <div class="div-ability" id="ability-con">
+                <input type="text" style="top: 37px; left: 65px; width: 40px; height: 30px; font-size: 11pt;" class="char-field" value="{{ character.ability_scores.Constitution }}">
+                <input type="text" style="top: 35px; left: 17px; width: 50px; height: 25px; font-size: 16pt;" class="char-field" value="{{ ability_modifiers.Constitution }}">
+                <input type="checkbox" style="position:absolute; top: 97px; left: 7px;" {% if 'Constitution' in saving_throws and saving_throws['Constitution'].proficient == True %}checked{% endif %}>
+                <div style="position: absolute; top: 118px; left: 0px;">
+                </div>
+            </div>
+            
+            <div class="div-ability" id="ability-int">
+                <input type="text" style="top: 37px; left: 65px; width: 40px; height: 30px; font-size: 11pt;" class="char-field" value="{{ character.ability_scores.Intelligence }}">
+                <input type="text" style="top: 35px; left: 17px; width: 50px; height: 25px; font-size: 16pt;" class="char-field" value="{{ ability_modifiers.Intelligence }}">
+                <input type="checkbox" style="position:absolute; top: 97px; left: 7px;" {% if 'Intelligence' in saving_throws and saving_throws['Intelligence'].proficient == True %}checked{% endif %}>
+                <div style="position: absolute; top: 118px; left: 0px;">
+                    <input type="checkbox" style="position: absolute; top: 6px; left: 7px;" {% if 'Arcana' in skill_modifiers and skill_modifiers['Arcana'].proficient == True %}checked{% endif %}>
+                    <input type="checkbox" style="position: absolute; top: 25px; left: 7px;" {% if 'History' in skill_modifiers and skill_modifiers['History'].proficient == True %}checked{% endif %}>
+                    <input type="checkbox" style="position: absolute; top: 44px; left: 7px;" {% if 'Investigation' in skill_modifiers and skill_modifiers['Investigation'].proficient == True %}checked{% endif %}>
+                    <input type="checkbox" style="position: absolute; top: 63px; left: 7px;" {% if 'Nature' in skill_modifiers and skill_modifiers['Nature'].proficient == True %}checked{% endif %}>
+                    <input type="checkbox" style="position: absolute; top: 83px; left: 7px;" {% if 'Religion' in skill_modifiers and skill_modifiers['Religion'].proficient == True %}checked{% endif %}>
+                </div>
+            </div>
+
+            <div class="div-ability" id="ability-wis">
+                <input type="text" style="top: 37px; left: 65px; width: 40px; height: 30px; font-size: 11pt;" class="char-field" value="{{ character.ability_scores.Wisdom }}">
+                <input type="text" style="top: 35px; left: 17px; width: 50px; height: 25px; font-size: 16pt;" class="char-field" value="{{ ability_modifiers.Wisdom }}">
+                <input type="checkbox" style="position:absolute; top: 97px; left: 7px;" {% if 'Wisdom' in saving_throws and saving_throws['Wisdom'].proficient == True %}checked{% endif %}>
+                <div style="position: absolute; top: 118px; left: 0px;">
+                    <input type="checkbox" style="position: absolute; top: 6px; left: 7px;" {% if 'Animal Handling' in skill_modifiers and skill_modifiers['Animal Handling'].proficient == True %}checked{% endif %}>
+                    <input type="checkbox" style="position: absolute; top: 25px; left: 7px;" {% if 'Insight' in skill_modifiers and skill_modifiers['Insight'].proficient == True %}checked{% endif %}>
+                    <input type="checkbox" style="position: absolute; top: 44px; left: 7px;" {% if 'Medicine' in skill_modifiers and skill_modifiers['Medicine'].proficient == True %}checked{% endif %}>
+                    <input type="checkbox" style="position: absolute; top: 63px; left: 7px;" {% if 'Perception' in skill_modifiers and skill_modifiers['Perception'].proficient == True %}checked{% endif %}>
+                    <input type="checkbox" style="position: absolute; top: 83px; left: 7px;" {% if 'Survival' in skill_modifiers and skill_modifiers['Survival'].proficient == True %}checked{% endif %}>
+                </div>
+            </div>
+
+            <div class="div-ability" id="ability-cha">
+                <input type="text" style="top: 37px; left: 65px; width: 40px; height: 30px; font-size: 11pt;" class="char-field" value="{{ character.ability_scores.Charisma }}">
+                <input type="text" style="top: 35px; left: 17px; width: 50px; height: 25px; font-size: 16pt;" class="char-field" value="{{ ability_modifiers.Charisma }}">
+                <input type="checkbox" style="position:absolute; top: 97px; left: 7px;" {% if 'Charisma' in saving_throws and saving_throws['Charisma'].proficient == True %}checked{% endif %}>
+                <div style="position: absolute; top: 118px; left: 0px;">
+                    <input type="checkbox" style="position: absolute; top: 6px; left: 7px;" {% if 'Deception' in skill_modifiers and skill_modifiers['Deception'].proficient == True %}checked{% endif %}>
+                    <input type="checkbox" style="position: absolute; top: 25px; left: 7px;" {% if 'Intimidation' in skill_modifiers and skill_modifiers['Intimidation'].proficient == True %}checked{% endif %}>
+                    <input type="checkbox" style="position: absolute; top: 44px; left: 7px;" {% if 'Performance' in skill_modifiers and skill_modifiers['Performance'].proficient == True %}checked{% endif %}>
+                    <input type="checkbox" style="position: absolute; top: 63px; left: 7px;" {% if 'Persuasion' in skill_modifiers and skill_modifiers['Persuasion'].proficient == True %}checked{% endif %}>
+                </div>
+            </div>
+
+
+          
+            <!-- Proficiency Markers -->
+            
+
+            <!-- Add more fields as needed with proper positioning -->
+        </div>
+    </div>
+
+    <!-- Page 2 -->
+    <div class="sheet-container">
+        <div class="sheet-background sheet-page2"></div>
+        <div class="field-layer">
+            <!-- Add fields for page 2 -->
+        </div>
+    </div>
+
+    <script>
+        // Auto-calculate modifiers when ability scores change
+        document.querySelectorAll('[id$="-score"]').forEach(input => {
+            input.addEventListener('input', function() {
+                const ability = this.id.replace('-score', '');
+                const score = parseInt(this.value) || 10;
+                const modifier = Math.floor((score - 10) / 2);
+                const modField = document.getElementById(ability + '-mod');
+                if (modField) {
+                    modField.value = (modifier >= 0 ? '+' : '') + modifier;
+                }
+            });
+        });
+
+        // Print instructions
+        window.addEventListener('beforeprint', function() {
+            console.log('Printing character sheet...');
+        });
+    </script>
+</body>
+</html>

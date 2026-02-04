@@ -9,9 +9,15 @@
                     <i class="fas fa-check-circle"></i> Character Complete!
                 </h4>
                 <div class="btn-group" role="group">
+                    <a href="{{ url_for('character_sheet') }}" class="btn btn-success btn-sm" target="_blank">
+                        <i class="fas fa-file-pdf"></i> View Character Sheet
+                    </a>
                     <a href="{{ url_for('download_character') }}" class="btn btn-primary btn-sm">
                         <i class="fas fa-download"></i> Download JSON
                     </a>
+                    <button type="button" class="btn btn-primary btn-sm" onclick="showChoicesMade()">
+                        <i class="fas fa-code"></i> Export Choices
+                    </button>
                     <a href="{{ url_for('reset') }}" class="btn btn-primary btn-sm">
                         <i class="fas fa-redo"></i> Start Over
                     </a>
@@ -54,9 +60,9 @@
                                         <p><strong>Initiative:</strong> {% if combat_stats.initiative >= 0 %}+{% endif %}{{ combat_stats.initiative }}</p>
                                     </div>
                                     <div class="col-sm-6 col-md-4">
-                                        <p><strong>Speed:</strong> {{ character.physical_attributes.speed }} feet</p>
-                                        {% if character.physical_attributes.darkvision > 0 %}
-                                        <p><strong>Darkvision:</strong> {{ character.physical_attributes.darkvision }} feet</p>
+                                        <p><strong>Speed:</strong> {{ character.speed | default(30) }} feet</p>
+                                        {% if character.darkvision and character.darkvision > 0 %}
+                                        <p><strong>Darkvision:</strong> {{ character.darkvision }} feet</p>
                                         {% endif %}
                                         <p><strong>Passive Perception:</strong> {{ combat_stats.passive_perception }}</p>
                                     </div>
@@ -77,7 +83,7 @@
                                     <div class="card-body">
                                         {% for ability, score in character.ability_scores.items() %}
                                         <div class="d-flex justify-content-between mb-2">
-                                            <span><strong>{{ ability }}:</strong></span>
+                                            <span>{{ ability }}:</span>
                                             <span>{{ score }} 
                                                 {% set modifier = (score - 10) // 2 %}
                                                 <small class="text-muted">({% if modifier >= 0 %}+{% endif %}{{ modifier }})</small>
@@ -210,9 +216,9 @@
                                             <p class="small mb-0">
                                             <strong>{{ feature.name }}</strong>
                                                 {% if category == 'feats' %}
-                                                <span class="badge bg-success ms-1">Feat</span>
+                                                <span class="badge bg-info ms-1">Feat</span>
                                                 {% endif %}</br>
-                                            {{ feature.description }}</p>
+                                            {{ feature.description | safe }}</p>
                                             {% if feature.benefits %}
                                             <ul class="small mt-1 mb-0">
                                                 {% for benefit in feature.benefits %}
@@ -237,6 +243,17 @@
                                 <h5 class="mb-0">Spellcasting</h5>
                             </div>
                             <div class="card-body">
+                                {% if spell_slots %}
+                                <div class="alert alert-info mb-3">
+                                    <strong>Spell Slots:</strong>
+                                    {% for slot_level, slot_count in spell_slots.items() | sort %}
+                                        <span class="badge bg-primary ms-2">Level {{ slot_level }}: {{ slot_count }} slots</span>
+                                    {% endfor %}
+                                    <br>
+                                    <small class="text-muted mt-1 d-block">You regain all expended slots when you finish a Long Rest.</small>
+                                </div>
+                                {% endif %}
+                                
                                 {% for level in spells_by_level | dictsort %}
                                     {% set level_num = level[0] %}
                                     {% set spells = level[1] %}
@@ -257,11 +274,15 @@
                                             {% else %}
                                                 <div class="mb-2">
                                                     <strong>{{ spell.name }}</strong>
-                                                    {% if spell.school %}
-                                                        <span class="badge bg-secondary">{{ spell.school }}</span>
+                                                    {% if spell.get('always_prepared') %}
+                                                        <span class="badge bg-info">Always Prepared</span>
+                                                    {% endif %}
+                                                    {% if spell.get('once_per_day') %}
+                                                        <span class="badge bg-info">1/Day (No Slot)</span>
                                                     {% endif %}
                                                     <br>
                                                     <small class="text-muted">
+                                                        {% if spell.school %}<strong>School:</strong> {{ spell.school }} | {% endif %}
                                                         {% if spell.casting_time %}<strong>Casting Time:</strong> {{ spell.casting_time }} | {% endif %}
                                                         {% if spell.range %}<strong>Range:</strong> {{ spell.range }} | {% endif %}
                                                         {% if spell.components %}<strong>Components:</strong> {{ spell.components }} | {% endif %}
@@ -308,4 +329,95 @@
         </div>
     </div>
 </div>
+
+<!-- Modal for Export Choices -->
+<style>
+#choicesModal {
+    z-index: 1060 !important;
+}
+#choicesModal .modal-dialog {
+    z-index: 1061 !important;
+    pointer-events: auto !important;
+}
+#choicesModal .modal-content {
+    pointer-events: auto !important;
+}
+#choicesModal .modal-content * {
+    pointer-events: auto !important;
+}
+.modal-backdrop {
+    z-index: 1059 !important;
+    pointer-events: none !important;
+}
+</style>
+
+<div class="modal fade" id="choicesModal" tabindex="-1" aria-labelledby="choicesModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="choicesModalLabel">Export Choices Made</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p>Copy this JSON to use with the <a href="{{ url_for('quick_test') }}" target="_blank">Quick Test</a> page:</p>
+        <textarea id="choicesJson" class="form-control" rows="15" readonly style="font-family: monospace; background: white;">{{ character.choices_made | tojson(indent=2) }}</textarea>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary" onclick="copyChoices(event)">
+          <i class="fas fa-copy"></i> Copy to Clipboard
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function showChoicesMade() {
+    const modalElement = document.getElementById('choicesModal');
+    const modal = new bootstrap.Modal(modalElement, {
+        backdrop: false,
+        keyboard: true,
+        focus: true
+    });
+    modal.show();
+}
+
+function copyChoices(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    const textarea = document.getElementById('choicesJson');
+    textarea.select();
+    textarea.setSelectionRange(0, 99999);
+    
+    // Use modern clipboard API if available
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(textarea.value).then(() => {
+            showCopyFeedback(event.target);
+        }).catch(() => {
+            document.execCommand('copy');
+            showCopyFeedback(event.target);
+        });
+    } else {
+        document.execCommand('copy');
+        showCopyFeedback(event.target);
+    }
+}
+
+function showCopyFeedback(btnElement) {
+    const btn = btnElement.closest('button');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+    btn.classList.remove('btn-primary');
+    btn.classList.add('btn-success');
+    
+    setTimeout(() => {
+        btn.innerHTML = originalText;
+        btn.classList.remove('btn-success');
+        btn.classList.add('btn-primary');
+    }, 2000);
+}
+</script>
+
 {% endblock %}

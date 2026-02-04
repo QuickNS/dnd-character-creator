@@ -11,7 +11,7 @@ Handles character level progression, including:
 
 import json
 from pathlib import Path
-from typing import Dict, List, Any, Optional, Tuple
+from typing import Dict, List, Any, Optional
 
 
 class LevelManager:

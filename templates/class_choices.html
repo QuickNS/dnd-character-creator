@@ -1,6 +1,23 @@
 {% extends "base.html" %}
 
 {% block content %}
+<style>
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.nested-choice {
+    transition: all 0.3s ease-in-out;
+}
+</style>
+
 <div class="row justify-content-center">
     <div class="col-lg-12">
         <div class="card shadow">
@@ -78,11 +95,17 @@
                         {% if choices %}
                         <form method="POST" action="{{ url_for('submit_class_choices') }}">
                             {% for choice in choices %}
-                            <div class="card mb-4">
+                            <div class="card mb-4{% if choice.get('is_nested') %} nested-choice{% endif %}" 
+                                 {% if choice.get('is_nested') %}
+                                 data-depends-on="{{ choice.get('depends_on') }}"
+                                 data-depends-on-value="{{ choice.get('depends_on_value') }}"
+                                 style="display: none;"
+                                 {% endif %}>
                                 <div class="card-header">
                                     <h6 class="card-title mb-0">
                                         <i class="fas fa-cog"></i> {{ choice.title }}
                                         {% if not choice.required %}<small class="text-muted ms-2">(Optional)</small>{% endif %}
+                                        {% if choice.get('is_nested') %}<span class="badge bg-info ms-2">Conditional</span>{% endif %}
                                     </h6>
                                 </div>
                                 <div class="card-body">
@@ -201,6 +224,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize counters
     updateAllCounters();
     
+    // Handle nested choices - show/hide based on parent selection
+    handleNestedChoices();
+    
     // Add event listeners to checkbox groups
     document.querySelectorAll('.skill-choice').forEach(checkbox => {
         checkbox.addEventListener('change', function() {
@@ -215,6 +241,13 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
+    // Add listeners for parent choices that trigger nested choices
+    document.querySelectorAll('input[type="radio"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            handleNestedChoices();
+        });
+    });
+    
     // Form submission validation
     document.getElementById('submit-btn')?.addEventListener('click', function(e) {
         if (!validateForm()) {
@@ -222,6 +255,49 @@ document.addEventListener('DOMContentLoaded', function() {
             alert('Please complete all required choices before continuing.');
         }
     });
+    
+    function handleNestedChoices() {
+        // Find all nested choice cards
+        const nestedChoices = document.querySelectorAll('.nested-choice');
+        
+        nestedChoices.forEach(nestedCard => {
+            const dependsOn = nestedCard.dataset.dependsOn;
+            const dependsOnValue = nestedCard.dataset.dependsOnValue;
+            
+            if (dependsOn && dependsOnValue) {
+                // Find the parent radio button selection
+                const parentInput = document.querySelector(`input[name="choice_${dependsOn}"]:checked`);
+                
+                if (parentInput && parentInput.value === dependsOnValue) {
+                    // Show nested choice with animation
+                    nestedCard.style.display = 'block';
+                    nestedCard.style.animation = 'fadeIn 0.3s ease-in';
+                    
+                    // Make nested choice inputs required
+                    nestedCard.querySelectorAll('input, select').forEach(input => {
+                        if (nestedCard.querySelector('.card-header').textContent.includes('Optional')) {
+                            input.removeAttribute('required');
+                        } else {
+                            input.setAttribute('required', 'required');
+                        }
+                    });
+                } else {
+                    // Hide nested choice
+                    nestedCard.style.display = 'none';
+                    
+                    // Remove required from hidden inputs and clear their values
+                    nestedCard.querySelectorAll('input, select').forEach(input => {
+                        input.removeAttribute('required');
+                        if (input.type === 'checkbox' || input.type === 'radio') {
+                            input.checked = false;
+                        } else {
+                            input.value = '';
+                        }
+                    });
+                }
+            }
+        });
+    }
     
     function handleGroupChoice(groupName, counterId) {
         const checkboxes = document.querySelectorAll(`[data-group="${groupName}"]`);

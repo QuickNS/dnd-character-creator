@@ -1,0 +1,18 @@
+{
+  "character_name": "Elenian Silverleaf",
+  "level": 3,
+  "class": "Fighter",
+  "subclass": "Champion",
+  "species": "Elf",
+  "lineage": "Wood Elf",
+  "background": "Soldier",
+  "ability_scores": "standard_array_recommended",
+  "background_ability_score_assignment": {
+    "Dexterity": 2,
+    "Strength": 1
+  },
+  "skill_choices": ["Acrobatics", "Perception"],
+  "Fighting_style": "Archery",
+  "species_trait_Elven Lineage": "Wisdom",
+  "species_trait_Keen Senses": "Survival"
+}

@@ -1,0 +1,22 @@
+{
+  "class": "Wizard",
+  "cantrips": [
+    "Dancing Lights",
+    "Light",
+    "Mending",
+    "Prestidigitation",
+    "Toll the Dead"
+  ],
+  "spells_by_level": {
+    "1": [
+      "Detect Magic",
+      "Faerie Fire",
+      "Longstrider",
+      "Ray of Sickness"
+    ],
+    "2": [
+      "Darkness",
+      "Misty Step"
+    ]
+  }
+}

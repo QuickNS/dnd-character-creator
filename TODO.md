@@ -1,0 +1,194 @@
+# D&D 2024 Character Creator - TODO List
+
+## 🚀 Missing Core Features
+
+### Character Sheet Generation
+- [ ] **PDF Character Sheet Export** - Generate official D&D 2024 character sheets
+- [ ] **Modular Card System** - Individual cards for different character aspects
+  - [ ] Character Info Card (stats, abilities, proficiencies)
+  - [ ] Weapon Cards (individual weapon stats and properties)
+  - [ ] Armor Cards (AC, properties, special effects)
+  - [ ] Spell Cards (spell details, components, effects)
+  - [ ] Feature Cards (class features, traits, abilities)
+  - [ ] Equipment Cards (non-combat items and tools)
+
+### Equipment System
+- [ ] **Weapon Database** - Complete D&D 2024 weapon list with properties
+- [ ] **Armor Database** - All armor types with AC calculations
+- [ ] **Equipment Database** - Adventuring gear, tools, and miscellaneous items
+- [ ] **Equipment Selection Interface** - Starting equipment from class/background
+- [ ] **Equipment Management** - Add/remove/manage equipment during play
+- [ ] **Encumbrance Calculation** - Weight and carrying capacity tracking
+
+### Combat Calculations
+- [ ] **Attack Roll Calculations** - Weapon attacks with all bonuses
+- [ ] **Damage Roll Calculations** - Weapon damage with ability modifiers
+- [ ] **Armor Class Calculation** - Base AC + armor + shield + bonuses
+- [ ] **Initiative Calculation** - Dexterity + bonuses
+- [ ] **Combat Actions** - Available actions, bonus actions, reactions
+
+### Spell System Enhancement
+- [ ] **Complete Spell Database** - All D&D 2024 spells with full details
+- [ ] **Spell Slot Management** - Track used/available spell slots
+- [ ] **Spell Preparation** - Manage prepared vs known spells
+- [ ] **Ritual Spells** - Special handling for ritual casting
+- [ ] **Spell Attack/Save DC Calculation** - Automatic calculation based on class
+
+### Character Progression
+- [ ] **Level Up System** - Guided level progression
+- [ ] **Multiclassing Support** - Prerequisites and progression rules
+- [ ] **Experience Point Tracking** - XP calculation and level thresholds
+- [ ] **Milestone Leveling** - Alternative progression system
+
+---
+
+## 📊 Data Validation Matrix
+
+### Species & Subspecies Data Validation
+
+| Species | Variants | Traits Validated | Effects Implemented | Status |
+|---------|----------|------------------|-------------------|---------|
+| **Aasimar** | - | ❌ | ❌ | Missing |
+| **Dragonborn** | Black, Blue, Brass, Bronze, Copper, Gold, Green, Red, Silver, White | ❌ | ❌ | Missing |
+| **Dwarf** | - | ❌ | ❌ | Missing |
+| **Elf** | High, Wood, Drow | ⚠️ Partial | ⚠️ Partial | In Progress |
+| **Gnome** | Forest, Rock | ❌ | ❌ | Missing |
+| **Goliath** | - | ❌ | ❌ | Missing |
+| **Halfling** | - | ❌ | ❌ | Missing |
+| **Human** | - | ❌ | ❌ | Missing |
+| **Orc** | - | ❌ | ❌ | Missing |
+| **Tiefling** | Abyssal, Chthonic, Infernal | ❌ | ❌ | Missing |
+
+**Priority Actions:**
+- [ ] Complete all missing species data files
+- [ ] Validate all species traits follow D&D 2024 rules
+- [ ] Implement effects system for all species features
+- [ ] Add darkvision, resistances, and special abilities
+- [ ] Verify speed modifications and size categories
+
+### Class & Subclass Data Validation
+
+| Class | Subclasses Available | Features Validated | Effects Implemented | Spell Lists Complete |
+|-------|---------------------|-------------------|-------------------|-------------------|
+| **Barbarian** | Path of the Berserker, Path of the Wild Heart, Path of the World Tree, Path of the Zealot | ❌ | ❌ | N/A |
+| **Bard** | College of Dance, College of Glamour, College of Lore, College of Valor | ❌ | ❌ | ⚠️ Partial |
+| **Cleric** | Life, Light, Trickery, War Domain | ❌ | ❌ | ⚠️ Partial |
+| **Druid** | Circle of the Land, Circle of the Moon, Circle of the Sea, Circle of the Stars | ❌ | ❌ | ⚠️ Partial |
+| **Fighter** | Battle Master, Champion, Eldritch Knight, Psi Warrior | ❌ | ❌ | ❌ |
+| **Monk** | Way of the Four Elements, Way of Mercy, Way of the Open Hand, Way of Shadow | ❌ | ❌ | ❌ |
+| **Paladin** | Oath of Devotion, Oath of the Ancients, Oath of Vengeance, Oath of Glory | ❌ | ❌ | ⚠️ Partial |
+| **Ranger** | Beast Master, Fey Wanderer, Gloom Stalker, Hunter | ❌ | ❌ | ⚠️ Partial |
+| **Rogue** | Arcane Trickster, Assassin, Soulknife, Thief | ❌ | ❌ | ❌ |
+| **Sorcerer** | Aberrant Mind, Clockwork Soul, Draconic Bloodline, Storm Sorcery | ❌ | ❌ | ⚠️ Partial |
+| **Warlock** | Archfey, Celestial, Fiend, Great Old One | ❌ | ❌ | ⚠️ Partial |
+| **Wizard** | Abjurer, Diviner, Evoker, Illusionist | ❌ | ❌ | ⚠️ Partial |
+
+**Priority Actions:**
+- [ ] Complete all missing subclass data files
+- [ ] Validate all class features follow D&D 2024 progression
+- [ ] Implement Choice Reference System for all class choices
+- [ ] Complete spell lists for all spellcasting classes
+- [ ] Add hit point calculation and proficiency bonuses
+
+### Background Data Validation
+
+| Background | Ability Score Increases | Skill Proficiencies | Features | Feat Options | Status |
+|------------|------------------------|-------------------|----------|-------------|---------|
+| **Acolyte** | ✅ | ✅ | ✅ | ❌ | Partial |
+| **Artisan** | ❌ | ❌ | ❌ | ❌ | Missing |
+| **Charlatan** | ✅ | ✅ | ✅ | ❌ | Partial |
+| **Criminal** | ✅ | ✅ | ✅ | ❌ | Partial |
+| **Entertainer** | ✅ | ✅ | ✅ | ❌ | Partial |
+| **Farmer** | ❌ | ❌ | ❌ | ❌ | Missing |
+| **Guard** | ❌ | ❌ | ❌ | ❌ | Missing |
+| **Guide** | ❌ | ❌ | ❌ | ❌ | Missing |
+| **Hermit** | ✅ | ✅ | ✅ | ❌ | Partial |
+| **Merchant** | ❌ | ❌ | ❌ | ❌ | Missing |
+| **Noble** | ✅ | ✅ | ✅ | ❌ | Partial |
+| **Sage** | ✅ | ✅ | ✅ | ❌ | Partial |
+| **Sailor** | ❌ | ❌ | ❌ | ❌ | Missing |
+| **Scribe** | ❌ | ❌ | ❌ | ❌ | Missing |
+| **Soldier** | ✅ | ✅ | ✅ | ❌ | Partial |
+| **Wayfarer** | ❌ | ❌ | ❌ | ❌ | Missing |
+
+**Priority Actions:**
+- [ ] Add all missing background data files
+- [ ] Implement feat options for all backgrounds
+- [ ] Validate background features follow D&D 2024 rules
+- [ ] Add tool proficiencies and languages
+- [ ] Implement background-specific equipment
+
+### Feat Data Validation
+
+| Feat Category | Total Count | Data Available | Effects Implemented | Choice System | Status |
+|---------------|-------------|----------------|-------------------|---------------|---------|
+| **Origin Feats** | 10 | ⚠️ Partial (8/10) | ❌ | ❌ | Partial |
+| **General Feats** | 44 | ❌ (0/44) | ❌ | ❌ | Missing |
+| **Fighting Style Feats** | 10 | ⚠️ Partial (4/10) | ❌ | ❌ | Partial |
+
+**Origin Feats (Available at Character Creation)**
+- ✅ Alert, ✅ Crafter, ✅ Healer, ❌ Lucky, ✅ Magic Initiate, ✅ Musician, ✅ Savage Attacker, ✅ Skilled, ❌ Tavern Brawler, ❌ Tough
+
+**General Feats (Available from Level 4+)**
+- ❌ All 44 feats missing: Ability Score Improvement, Actor, Athlete, Charger, Chef, Crossbow Expert, Crusher, Defensive Duelist, Dual Wielder, Durable, Elemental Adept, Fey Touched, Grappler, Great Weapon Master, Harper Teamwork, Heavily Armored, Heavy Armor Master, Inspiring Leader, Keen Mind, Lightly Armored, Mage Slayer, Martial Weapon Training, Medium Armor Master, Moderately Armored, Mounted Combatant, Observant, Piercer, Poisoner, Polearm Master, Resilient, Ritual Caster, Sentinel, Shadow Touched, Sharpshooter, Shield Master, Skill Expert, Skulker, Slasher, Speedy, Spell Sniper, Telekinetic, Telepathic, War Caster, Weapon Master
+
+**Fighting Style Feats (Class Features & Feat Options)**
+- ✅ Archery, ❌ Blind Fighting, ✅ Defense, ✅ Dueling, ❌ Great Weapon Fighting, ❌ Interception, ❌ Protection, ❌ Thrown Weapon Fighting, ❌ Two Weapon Fighting, ❌ Unarmed Fighting
+
+**Priority Actions:**
+- [ ] Complete all missing Origin feat data files (Lucky, Tavern Brawler, Tough)
+- [ ] Add all 44 General feat data files
+- [ ] Complete missing Fighting Style feats (6 remaining)
+- [ ] Implement effects system for all feat benefits
+- [ ] Add prerequisite validation for General feats
+- [ ] Implement feat choices using Choice Reference System
+- [ ] Add level restrictions and scaling effects
+
+---
+
+## 🔧 System Architecture Improvements
+
+### Code Quality & Maintainability
+- [ ] **Unit Testing** - Comprehensive test coverage for all modules
+- [ ] **Integration Testing** - End-to-end character creation tests
+- [ ] **Error Handling** - Graceful handling of malformed data
+- [ ] **Input Validation** - Validate all user inputs and data files
+- [ ] **Performance Optimization** - Cache frequently accessed data
+
+### User Experience
+- [ ] **Mobile Responsiveness** - Optimize for mobile devices
+- [ ] **Accessibility** - Screen reader support and keyboard navigation
+- [ ] **Character Import/Export** - Save and load character files
+- [ ] **Character Templates** - Pre-built character archetypes
+- [ ] **Tutorial Mode** - Guided character creation for new users
+
+### Development Tools
+- [ ] **Data Validation Scripts** - Automated checking of data file integrity
+- [ ] **Content Migration Tools** - Scripts to convert between data formats
+- [ ] **Development Documentation** - API documentation and contribution guides
+- [ ] **Automated Testing CI/CD** - Continuous integration and deployment
+
+---
+
+## 📋 Immediate Priorities (Next Sprint)
+
+1. **Complete Species Data** - Focus on Human, Dwarf, Halfling, and Dragonborn
+2. **Spell System Integration** - Update all existing spell references to use new system
+3. **Equipment Foundation** - Basic weapon and armor data structures
+4. **Character Sheet JSON** - Ensure complete character data export
+5. **Data Validation Tools** - Scripts to verify data file compliance
+
+---
+
+## 🎯 Long-term Goals
+
+1. **Official D&D 2024 Compliance** - 100% accurate implementation of all rules
+2. **Complete Content Coverage** - All species, classes, subclasses, backgrounds, and feats
+3. **Professional Character Sheets** - High-quality PDF generation
+4. **Campaign Integration** - Multi-character party management
+5. **Digital Integration** - API compatibility with popular D&D tools
+
+---
+
+*Last Updated: February 4, 2026*
+*Status Legend: ✅ Complete | ⚠️ Partial | ❌ Missing*

@@ -7,6 +7,14 @@
     "Wisdom",
     "Charisma"
   ],
+  "standard_array_assignment": {
+    "Strength": 14,
+    "Dexterity": 8,
+    "Constitution": 13,
+    "Intelligence": 10,
+    "Wisdom": 15,
+    "Charisma": 12
+  },
   "armor_proficiencies": [
     "Light armor",
     "Medium armor",
@@ -355,11 +363,11 @@
         "choices": {
           "type": "select_multiple",
           "count": 3,
-          "choice_id": "cantrips",
+          "name": "cantrips",
           "source": {
             "type": "external",
-            "file": "spells/cleric/0.json",
-            "list": "spells"
+            "file": "spells/class_lists/cleric.json",
+            "list": "cantrips"
           }
         }
       },
@@ -378,7 +386,25 @@
       }
     },
     "2": {
-      "Channel Divinity": "Use Divine Spark (heal 2d8 + Cleric level HP or deal Radiant/Necrotic damage) or Turn Undead (Wisdom save or turn for 1 minute). 2 uses per Short/Long Rest."
+      "Channel Divinity": {
+        "description": "Use Divine Spark (heal {heal_dice} + Cleric level HP or deal {damage_dice} Radiant/Necrotic damage) or Turn Undead (Wisdom save or turn for 1 minute). {uses} uses per Short/Long Rest.",
+        "scaling": {
+          "heal_dice": [
+            {"min_level": 2, "value": "2d8"}
+          ],
+          "damage_dice": [
+            {"min_level": 2, "value": "1d8"},
+            {"min_level": 7, "value": "2d8"},
+            {"min_level": 13, "value": "3d8"},
+            {"min_level": 18, "value": "4d8"}
+          ],
+          "uses": [
+            {"min_level": 2, "value": "2"},
+            {"min_level": 6, "value": "3"},
+            {"min_level": 17, "value": "4"}
+          ]
+        }
+      }
     },
     "3": {
       "Cleric Subclass": "Choose your Divine Domain subclass."
@@ -390,11 +416,18 @@
       "Sear Undead": "When you Turn Undead, affected undead also take 2d8 + Cleric level Radiant damage."
     },
     "6": {
-      "Channel Divinity": "Gain 3 uses per Short/Long Rest.",
       "Subclass Feature": "Gain a feature from your Divine Domain subclass."
     },
     "7": {
-      "Blessed Strikes": "Choose Divine Strike (+1d8 Necrotic/Radiant to weapon attacks once per turn) or Potent Spellcasting (add Wisdom to Cleric cantrip damage)."
+      "Blessed Strikes": {
+        "description": "Choose Divine Strike (+{strike_dice} Necrotic/Radiant to weapon attacks once per turn) or Potent Spellcasting (add Wisdom to Cleric cantrip damage).",
+        "scaling": {
+          "strike_dice": [
+            {"min_level": 7, "value": "1d8"},
+            {"min_level": 14, "value": "2d8"}
+          ]
+        }
+      }
     },
     "8": {
       "Ability Score Improvement": "Increase one ability score by 2, or increase two ability scores by 1."
@@ -408,16 +441,13 @@
       "Ability Score Improvement": "Increase one ability score by 2, or increase two ability scores by 1."
     },
     "13": {},
-    "14": {
-      "Improved Blessed Strikes": "Damage increases by 1d8 (total 2d8)."
-    },
+    "14": {},
     "15": {},
     "16": {
       "Ability Score Improvement": "Increase one ability score by 2, or increase two ability scores by 1."
     },
     "17": {
-      "Subclass Feature": "Gain a feature from your Divine Domain subclass.",
-      "Channel Divinity": "Gain 4 uses per Short/Long Rest."
+      "Subclass Feature": "Gain a feature from your Divine Domain subclass."
     },
     "18": {},
     "19": {

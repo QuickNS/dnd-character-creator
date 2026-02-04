@@ -7,6 +7,14 @@
     "Strength",
     "Constitution"
   ],
+  "standard_array_assignment": {
+    "Strength": 15,
+    "Dexterity": 13,
+    "Constitution": 14,
+    "Intelligence": 10,
+    "Wisdom": 12,
+    "Charisma": 8
+  },
   "armor_proficiencies": [
     "Light armor",
     "Medium armor",

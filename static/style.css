@@ -447,8 +447,11 @@ h1, h2, h3, h4, h5, h6 {
     border-radius: 4px;
 }
 
+span.badge.bg-info {
+    margin-left: 10px;
+}
+
 .bg-success {
-    background: var(--dnd-dark-gray) !important;
     color: var(--dnd-white) !important;
 }
 
@@ -463,8 +466,8 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .bg-info {
-    background: var(--dnd-accent-gray) !important;
-    color: var(--dnd-white) !important;
+    background: var(--dnd-medium-gray) !important;
+    color: var(--dnd-black) !important;
 }
 
 .bg-secondary {

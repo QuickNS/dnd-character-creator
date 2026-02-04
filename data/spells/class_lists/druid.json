@@ -1,0 +1,19 @@
+{
+  "class": "Druid",
+  "cantrips": [
+    "Druidcraft",
+    "Guidance",
+    "Mending",
+    "Resistance"
+  ],
+  "spells_by_level": {
+    "1": [
+      "Detect Magic",
+      "Faerie Fire",
+      "Longstrider"
+    ],
+    "2": [
+      "Pass without Trace"
+    ]
+  }
+}

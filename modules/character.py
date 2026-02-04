@@ -5,9 +5,8 @@ Simplified Character class that uses composition with other modules.
 """
 
 import json
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass
 from typing import Dict, List, Any, Optional
-from pathlib import Path
 
 from .ability_scores import AbilityScores
 from .feature_manager import FeatureManager

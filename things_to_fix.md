@@ -1,33 +1,140 @@
 # List of Identified Cases we are not handling
 
-## Character summary page should display list of known spells ✅ FIXED
+## ✅ COMPLETED
 
-- ✅ A section on Spellcasting has been added listing all the available spells, level and their sources (class, feat, species, etc.)
-- ✅ This includes all chosen cantrips and additional cantrips provided by feats, backgrounds, etc.
-- ✅ It includes spell slot information for spell levels 1-9
-- TODO: Add spells given by other features like species and species variants (when implemented)
+### Character Summary - Spellcasting Display
+- ✅ Spellcasting section added with spell slot information at the top
+- ✅ All spells displayed by level with proper details (school, casting time, range, components, duration, description)
+- ✅ Domain/subclass spells show "Always Prepared" badge
+- ✅ Species/lineage spells show both "Always Prepared" and "1/Day (No Slot)" badges
+- ✅ School of magic shown as property (not badge)
+- ✅ Spell slots display with Long Rest recovery note
 
-## Sub-species effects
+### Feature Scaling System
+- ✅ Created utility for resolving level-based feature scaling
+- ✅ Updated class data files with scaling metadata (Channel Divinity, Blessed Strikes)
+- ✅ Integrated scaling resolution into CharacterBuilder
+- ✅ Documented system in docs/FEATURE_SCALING.md
+- ✅ Verified scaling works correctly for level-dependent features
 
-- Cantrips and spells on species variants need to be added
+### Spell System Unification
+- ✅ Unified domain and species spell granting through effects system
+- ✅ All spell granting uses `grant_spell` effect type
+- ✅ Domain spells stored in `character['spells']['prepared']`
+- ✅ Species spells tracked with metadata for once-per-day indicator
+- ✅ Spell tables show availability by character level with ✓/🔒 indicators
+- ✅ Consolidated elf lineage spells into single traits (High Elf, Drow, Wood Elf)
 
-## Repetitions
+### Cleric Class
+- ✅ Divine Order → Protector: grants Martial weapons and Heavy Armor proficiencies
+- ✅ Divine Order → Thaumaturge: grants one extra Cleric cantrip
+- ✅ Divine Order choices display with specific descriptions (not generic prompt)
+- ✅ Thaumaturge bonus cantrip displayed in feature description
+- ✅ Light Domain: grants Light cantrip
+- ✅ Light Domain Spells: table display with level-based availability
+- ✅ Thaumaturge: WIS bonus to Intelligence checks (Arcana/Religion), minimum +1
+- ✅ Channel Divinity scales with level (damage and uses)
+- ✅ Blessed Strikes scales with level (damage dice)
 
-- Repeated Skill Proficiency: users may select proficiency on skills which are then given in the Background or through some Feat. We need to recognize repeated proficiencies and offer the user alternatives from the original class skill list (not fixed)
-- Repeated Cantrips: users may select Cantrips and then in a later feature get the same cantrip for free. We should allow users to specify an extra cantrip if that is the case. Example, user selects Light as a Cleric cantrip and then chooses the Light Domain which gives Light automatically.
-- These can possibly solved before choosing the alignment, an extra and optional step in the wizard, allowing the user to fix these issues.
+### Proficiency Display
+- ✅ Weapon proficiencies from choices display correctly
+- ✅ Armor proficiencies from choices display correctly  
+- ✅ Shields always displayed last in armor proficiency list
+- ✅ Proficiencies sorted: Light/Medium/Heavy armor, other items, then Shields
 
-## Tiefling
+### Feature Display System
+- ✅ Choice-specific descriptions replace generic prompts
+- ✅ Nested choices append to parent feature (bonus cantrips)
+- ✅ Source names display correctly (class/subclass/species/lineage)
+- ✅ Scaling values properly substituted in descriptions
+- ✅ Features with choices show chosen value in name
+- ✅ HTML rendering supported for feature descriptions (tables, etc.)
 
-- Tiefling sub species variants are not working
+### PDF Character Sheet Generation
+- ✅ Created PDF writer module (utils/pdf_writer.py)
+- ✅ Field mapping configuration (pdf_template/field_mapping_config.json)
+- ✅ Custom formatting system for features (checkboxes for limited-use abilities)
+- ✅ Flask download route (/download-character-pdf)
+- ✅ Download button added to character summary page
+- ✅ All calculated values included (combat stats, saves, skills, spell slots)
 
-## Cleric
+## 🔄 IN PROGRESS / TODO
 
-✅ Divine Order -> Protector : must grant proficiency with Martial weapons and Heavy Armor
-✅ Divine Order -> Thaumaturge: grants one extra Cleric cantrip
-✅ Light Domain -> gives the Light cantrip
-✅ Divine Order -> Thaumaturge: gives WIS bonus to Intelligence checks (Arcana or Religion), minimum of +1
+### PDF Field Mapping Refinement
+- Verify field mappings match actual PDF layout
+- Test with multiple character types (different classes/species)
+- Refine which fields map to which PDF form fields
+- Consider multi-page PDF handling if needed
 
-## Druid
+### PDF Custom Formatting Expansion
+- Add more features to custom formatting overrides
+- Consider spell slot tracker formatting
+- Consider exhaustion tracker
+- Format equipment and inventory sections
 
-Druid class and subclass files seems to mention many non-existant abilities (e.g Primal Strike). Need to regenerate data files.
+### Species Innate Spellcasting Abilities
+- Some species (Tiefling, Elf lineages) offer spellcasting with ability choice (Intelligence, Wisdom, or Charisma)
+- Need to implement choice system for spellcasting ability selection
+- Currently data files have `spellcasting_ability_choices` but not implemented in wizard
+
+### Repetitions & Conflicts
+- **Repeated Skill Proficiency**: Users may select skills that are later granted by Background/Feat
+- **Repeated Cantrips**: Users may select cantrips that are later granted by subclass/species
+- **Solution**: Add a pre-finalization step to detect and resolve conflicts
+- Allow users to swap duplicate proficiencies/cantrips before completing character
+
+### Tiefling Variants
+- Tiefling sub-species variants (Abyssal, Chthonic, Infernal) need testing
+- Verify Fiendish Legacy choices work correctly
+- May need spell data files for Tiefling-specific spells
+
+### Other Classes
+- Need to apply scaling system to other classes:
+  - Rogue: Sneak Attack damage scaling
+  - Barbarian: Rage Damage scaling
+  - Monk: Martial Arts Die scaling
+  - Warlock: Invocations and Pact Magic scaling
+- Verify all class features use effects system where applicable
+
+### Druid
+- Druid class and subclass files mention non-existent abilities (e.g., Primal Strike)
+- Need to regenerate data files from D&D 2024 sources
+- Verify Wild Shape mechanics
+
+### Data Validation
+- Add automated validation for all data files against schemas
+- Check for missing spell definitions
+- Verify all effect types are documented
+
+### Missing Spell Definitions
+- Need to create definition files for any spells referenced but not yet defined
+- Check Light Domain spells: Arcane Eye, Wall of Fire, Flame Strike, Scrying
+- Check elf lineage spells: all definitions needed
+
+## 📋 FUTURE ENHANCEMENTS
+
+### PDF Optimization
+- PDF compression for smaller file sizes
+- Embed fonts for better compatibility
+- Support for different character sheet templates
+- Spell cards and modular card generation
+
+### Spell Preparation
+- Interface for selecting prepared spells from class list
+- Track which spells are prepared vs. available
+- Enforce preparation limits
+
+### Long Rest / Short Rest Tracking
+- Track resource usage (spell slots, abilities, HP)
+- Implement rest mechanics for recovery
+- Session-based character state management
+
+### Multiclassing
+- Support for multiclass characters
+- Proper spell slot calculation for multiclass casters
+- Prerequisite validation
+
+### Homebrew Support
+- Interface for adding custom content
+- Validation for homebrew data
+- Separate storage for official vs. homebrew content

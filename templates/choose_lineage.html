@@ -1,44 +1,65 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-lg-8">
-        <div class="card shadow">
-            <div class="card-header text-white">
-                <h2 class="card-title mb-0">
-                    <i class="fas fa-dna"></i> Choose Your {{ character.species }} Lineage
+<div class="row">
+    <div class="col-xl-10 col-lg-11 mx-auto">
+        <div class="card shadow-lg">
+            <div class="card-header text-center">
+                <h2>
+                    <i class="fas fa-dna me-2"></i> Choose Your {{ character.species }} Lineage
                 </h2>
+                <p class="mb-0 text-white">Select your {{ character.species }} lineage to determine specific traits and abilities.</p>
             </div>
             <div class="card-body">
-                <p class="lead">Select your {{ character.species }} lineage to determine specific traits and abilities.</p>
                 
                 <form method="POST" action="{{ url_for('select_lineage') }}">
-                    {% for lineage_name, lineage_data in lineages.items() %}
-                    <div class="card border lineage-card selection-card mb-3" data-lineage="{{ lineage_name }}">
-                        <div class="card-body">
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="lineage" 
-                                       id="lineage_{{ loop.index }}" value="{{ lineage_name }}" required>
-                                <label class="form-check-label w-100" for="lineage_{{ loop.index }}">
-                                    <h5 class="card-title">{{ lineage_name }}</h5>
-                                    <p class="card-text">
-                                        {{ lineage_data.get('description', 'A unique lineage with special traits.') }}
-                                    </p>
-                                    {% if lineage_data.get('traits') %}
-                                    <div class="text-muted small">
-                                        <strong>Special Traits:</strong>
-                                        <ul class="mb-0 mt-1">
-                                            {% for trait_name, trait_data in lineage_data.traits.items() %}
-                                            <li>{{ trait_name }}</li>
-                                            {% endfor %}
-                                        </ul>
+                    <div class="row">
+                        {% for lineage_name, lineage_data in lineages.items() %}
+                        <div class="col-sm-6 col-lg-4 mb-3">
+                            <div class="card lineage-card" data-lineage="{{ lineage_name }}">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <h5 class="card-title mb-0 flex-grow-1">{{ lineage_name }}</h5>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="lineage" 
+                                                   id="lineage_{{ loop.index }}" value="{{ lineage_name }}" required>
+                                        </div>
                                     </div>
-                                    {% endif %}
-                                </label>
+                                    
+                                    <!-- Scrollable content area -->
+                                    <div class="features-wrapper">
+                                        <div class="features-container">
+                                            <!-- Description first -->
+                                            <div class="lineage-description mb-3">
+                                                <p class="text-muted small mb-0">{{ lineage_data.get('description', 'A unique lineage with special traits.') }}</p>
+                                            </div>
+                                            
+                                            <!-- Special Traits -->
+                                            {% if lineage_data.get('traits') %}
+                                            <div class="lineage-traits">
+                                                <h6 class="text-danger mb-2"><small>Special Traits:</small></h6>
+                                                {% for trait_name, trait_data in lineage_data.traits.items() %}
+                                                <div class="small text-muted mb-2">
+                                                    <strong>{{ trait_name }}:</strong>
+                                                    {% if trait_data is string %}
+                                                        {{ trait_data }}
+                                                    {% elif trait_data.description %}
+                                                        {{ trait_data.description }}
+                                                    {% else %}
+                                                        {{ trait_data | string }}
+                                                    {% endif %}
+                                                </div>
+                                                {% endfor %}
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
+                        {% endfor %}
                     </div>
-                    {% endfor %}
+                    </div>
                     
                     <!-- Spellcasting Ability Choice -->
                     {% set has_spellcasting = False %}
@@ -88,12 +109,12 @@
                     </div>
                     {% endif %}
                     
-                    <div class="d-grid gap-2 mt-4">
+                    <div class="text-center d-grid gap-2 mt-4">
                         <button type="submit" class="btn btn-primary btn-lg">
-                            <i class="fas fa-arrow-right"></i> Continue to Ability Scores
+                            <i class="fas fa-arrow-right me-2"></i>Continue to Ability Scores
                         </button>
                         <a href="{{ url_for('choose_species') }}" class="btn btn-outline-secondary">
-                            <i class="fas fa-arrow-left"></i> Back to Species
+                            <i class="fas fa-arrow-left me-2"></i>Back to Species
                         </a>
                     </div>
                 </form>
@@ -104,6 +125,107 @@
 {% endblock %}
 
 {% block scripts %}
+<style>
+.lineage-card {
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 2px solid var(--dnd-medium-gray);
+    height: 480px;
+    margin-bottom: 20px;
+    overflow: hidden;
+}
+
+.lineage-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--dnd-red);
+    box-shadow: 0 4px 16px rgba(220, 20, 60, 0.15);
+}
+
+.lineage-card.border-info {
+    border-color: var(--dnd-red) !important;
+    border-width: 3px;
+    background: var(--dnd-light-gray);
+}
+
+.lineage-card .card-body {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 1rem;
+    overflow: hidden;
+}
+
+.lineage-card .card-title {
+    flex-shrink: 0;
+    word-wrap: break-word;
+}
+
+.features-wrapper {
+    flex-grow: 1;
+    position: relative;
+    overflow: hidden;
+    margin-top: 0.5rem;
+}
+
+.features-wrapper::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 40px;
+    background: linear-gradient(transparent, white);
+    pointer-events: none;
+    z-index: 2;
+}
+
+.features-container {
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 8px;
+    margin-right: -8px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+.features-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+.features-container::-webkit-scrollbar-track {
+    background: var(--dnd-light-gray);
+    border-radius: 3px;
+}
+
+.features-container::-webkit-scrollbar-thumb {
+    background: var(--dnd-medium-gray);
+    border-radius: 3px;
+}
+
+.features-container::-webkit-scrollbar-thumb:hover {
+    background: var(--dnd-red);
+}
+
+.lineage-description {
+    border-bottom: 2px solid var(--dnd-red);
+    padding-bottom: 8px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+.lineage-traits {
+    border-bottom: 1px solid var(--dnd-light-gray);
+    padding-bottom: 8px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+.lineage-traits:last-child {
+    border-bottom: none;
+}
+</style>
+
 <script>
 const submitButton = document.querySelector('button[type="submit"]');
 

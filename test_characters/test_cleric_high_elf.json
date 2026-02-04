@@ -1,0 +1,20 @@
+{
+  "character_name": "Test Cleric",
+  "level": 3,
+  "class": "Cleric",
+  "subclass": "Light Domain",
+  "species": "Elf",
+  "lineage": "High Elf",
+  "background": "Sage",
+  "ability_scores": "standard_array_recommended",
+  "background_ability_score_assignment": {
+    "Intelligence": 2,
+    "Constitution": 1
+  },
+  "skill_choices": ["Insight", "Persuasion"],
+  "Spellcasting": ["Sacred Flame", "Thaumaturgy", "Toll the Dead"],
+  "Divine Order": "Thaumaturge",
+  "Thaumaturge_bonus_cantrip": "Guidance",
+  "species_trait_Elven Lineage": "Wisdom",
+  "species_trait_Keen Senses": "Perception"
+}
