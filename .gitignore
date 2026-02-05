@@ -47,3 +47,6 @@ wiki_data/
 
 # Character files (optional - remove if you want to track these)
 *_character.json
+
+# log files
+character_creator.log
