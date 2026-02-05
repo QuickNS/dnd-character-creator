@@ -2174,6 +2174,111 @@ def character_summary():
     session['character_sheet'] = comprehensive_character
     session.modified = True
     
+    # Build inventory from equipment selections
+    inventory = []
+    total_gold = 0
+    equipment_selections = character.get('choices_made', {}).get('equipment_selections', {})
+    
+    # Load equipment databases to identify equippable items
+    equipment_dir = Path(__file__).parent / "data" / "equipment"
+    weapons = {}
+    armor = {}
+    gear = {}
+    
+    try:
+        with open(equipment_dir / "weapons.json", 'r') as f:
+            weapons = json.load(f)
+        with open(equipment_dir / "armor.json", 'r') as f:
+            armor = json.load(f)
+        with open(equipment_dir / "adventuring_gear.json", 'r') as f:
+            gear = json.load(f)
+    except (json.JSONDecodeError, IOError) as e:
+        print(f"Error loading equipment data: {e}")
+    
+    if equipment_selections:
+        class_choice = equipment_selections.get('class_equipment')
+        background_choice = equipment_selections.get('background_equipment')
+        
+        # Get class equipment
+        if class_name and class_name in data_loader.classes:
+            class_data = data_loader.classes[class_name]
+            class_equipment = class_data.get('starting_equipment', {})
+            
+            if class_choice == 'option_a' and 'option_a' in class_equipment:
+                # Add items from class option A
+                for item in class_equipment['option_a'].get('items', []):
+                    # Determine item type
+                    is_weapon = item in weapons
+                    is_armor = item in armor or 'Shield' in item
+                    is_gear = item in gear
+                    is_equippable = is_weapon or is_armor
+                    
+                    if is_weapon:
+                        item_type = 'weapon'
+                    elif is_armor:
+                        item_type = 'armor'
+                    elif is_gear:
+                        item_type = 'gear'
+                    else:
+                        item_type = 'other'
+                    
+                    inventory.append({
+                        'name': item,
+                        'equippable': is_equippable,
+                        'type': item_type
+                    })
+                # Add gold from class option A
+                total_gold += class_equipment['option_a'].get('gold', 0)
+            elif class_choice == 'option_b' and 'option_b' in class_equipment:
+                # Add gold from class option B
+                total_gold += class_equipment['option_b'].get('gold', 0)
+        
+        # Get background equipment
+        if background_name and background_name in data_loader.backgrounds:
+            bg_data = data_loader.backgrounds[background_name]
+            bg_equipment = bg_data.get('starting_equipment', {})
+            
+            if background_choice == 'option_a' and 'option_a' in bg_equipment:
+                # Add items from background option A
+                for item in bg_equipment['option_a'].get('items', []):
+                    # Determine item type
+                    is_weapon = item in weapons
+                    is_armor = item in armor or 'Shield' in item
+                    is_gear = item in gear
+                    is_equippable = is_weapon or is_armor
+                    
+                    if is_weapon:
+                        item_type = 'weapon'
+                    elif is_armor:
+                        item_type = 'armor'
+                    elif is_gear:
+                        item_type = 'gear'
+                    else:
+                        item_type = 'other'
+                    
+                    inventory.append({
+                        'name': item,
+                        'equippable': is_equippable,
+                        'type': item_type
+                    })
+                # Add gold from background option A
+                total_gold += bg_equipment['option_a'].get('gold', 0)
+            elif background_choice == 'option_b' and 'option_b' in bg_equipment:
+                # Add gold from background option B
+                total_gold += bg_equipment['option_b'].get('gold', 0)
+    
+    # Sort inventory by type: weapons -> armor -> gear -> other -> currency
+    type_order = {'weapon': 1, 'armor': 2, 'gear': 3, 'other': 4, 'currency': 5}
+    inventory.sort(key=lambda x: type_order.get(x['type'], 99))
+    
+    # Add accumulated gold at the end if any
+    if total_gold > 0:
+        inventory.append({
+            'name': f'{total_gold} GP',
+            'equippable': False,
+            'type': 'currency'
+        })
+    
     return render_template('character_summary.html', 
                          character=character,
                          character_sheet=comprehensive_character,
@@ -2184,7 +2289,8 @@ def character_summary():
                          ability_bonuses=calculated_bonuses,
                          skill_modifiers=skill_modifiers,
                          saving_throws=saving_throws,
-                         combat_stats=combat_stats)
+                         combat_stats=combat_stats,
+                         inventory=inventory)
 
 @app.route('/download-character')
 def download_character():

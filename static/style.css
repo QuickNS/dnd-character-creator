@@ -449,6 +449,26 @@ h1, h2, h3, h4, h5, h6 {
     border-radius: 8px;
 }
 
+.btn-sm-active {
+    border-radius: 6px;
+    font-family: 'Segoe UI', sans-serif;
+    font-weight: normal;
+    font-size: 7pt;
+    background: var(--dnd-red);
+    color: var(--dnd-white);
+}
+
+.btn-sm-inactive {
+    border-radius: 6px;
+    font-family: 'Segoe UI', sans-serif;
+    font-weight: 600;
+    font-size: 7pt;
+    text-transform: uppercase;
+    border: 1px solid var(--dnd-red);
+    background: var(--dnd-white);
+    color: var(--dnd-red);
+}
+
 /* Enhanced Ability Score Display */
 .ability-scores .row > div {
     margin-bottom: 1rem;
