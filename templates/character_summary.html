@@ -9,14 +9,11 @@
                     <i class="fas fa-check-circle"></i> Character Complete!
                 </h4>
                 <div class="btn-group" role="group">
-                    <a href="{{ url_for('character_sheet') }}" class="btn btn-success btn-sm" target="_blank">
+                    <a href="{{ url_for('character_sheet') }}" class="btn btn-primary btn-sm" target="_blank">
                         <i class="fas fa-file-pdf"></i> View Character Sheet
                     </a>
-                    <a href="{{ url_for('download_character') }}" class="btn btn-primary btn-sm">
-                        <i class="fas fa-download"></i> Download JSON
-                    </a>
                     <button type="button" class="btn btn-primary btn-sm" onclick="showChoicesMade()">
-                        <i class="fas fa-code"></i> Export Choices
+                        <i class="fas fa-download"></i> Export Choices
                     </button>
                     <a href="{{ url_for('reset') }}" class="btn btn-primary btn-sm">
                         <i class="fas fa-redo"></i> Start Over
@@ -359,14 +356,18 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
-        <p>Copy this JSON to use with the <a href="{{ url_for('quick_test') }}" target="_blank">Quick Test</a> page:</p>
+        <p>This JSON allows you to recreate your character in a later session:</p>
         <textarea id="choicesJson" class="form-control" rows="15" readonly style="font-family: monospace; background: white;">{{ character.choices_made | tojson(indent=2) }}</textarea>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-success" onclick="downloadChoices()">
+          <i class="fas fa-download"></i> Download JSON
+        </button>
         <button type="button" class="btn btn-primary" onclick="copyChoices(event)">
           <i class="fas fa-copy"></i> Copy to Clipboard
         </button>
+
       </div>
     </div>
   </div>
@@ -417,6 +418,23 @@ function showCopyFeedback(btnElement) {
         btn.classList.remove('btn-success');
         btn.classList.add('btn-primary');
     }, 2000);
+}
+
+function downloadChoices() {
+    const textarea = document.getElementById('choicesJson');
+    const jsonContent = textarea.value;
+    const characterName = "{{ character.name | replace(' ', '_') }}";
+    const filename = `${characterName}_choices.json`;
+    
+    const blob = new Blob([jsonContent], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
 }
 </script>
 

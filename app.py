@@ -1978,20 +1978,21 @@ def character_sheet():
     builder = get_builder_from_session()
     character = builder.to_json()
     
-    # Calculate ability modifiers
+    # Get comprehensive character sheet data (all calculations already done)
+    character_sheet_data = character_sheet_converter.convert_to_character_sheet(session['character'])
+    
+    # Extract ability modifiers (already calculated)
     ability_modifiers = {}
-    for ability, score in character.get('ability_scores', {}).items():
-        modifier = (score - 10) // 2
-        ability_modifiers[ability] = f"{'+' if modifier >= 0 else ''}{modifier}"
+    for ability, data in character_sheet_data.get('ability_scores', {}).items():
+        modifier = data.get('modifier', 0)
+        # Capitalize ability name to match template expectations (Strength, Dexterity, etc.)
+        ability_modifiers[ability.capitalize()] = f"{'+' if modifier >= 0 else ''}{modifier}"
     
-    # Get character sheet data for additional calculations
-    character_sheet = character_sheet_converter.convert_to_character_sheet(session['character'])
+    # Extract combat stats (already calculated)
+    combat_stats = character_sheet_data['combat_stats']
     
-    # Extract combat stats
-    combat_stats = character_sheet['combat_stats']
-    
-    # Extract saving throws from ability_scores
-    ability_scores_data = character_sheet.get('ability_scores', {})
+    # Extract saving throws (already calculated)
+    ability_scores_data = character_sheet_data.get('ability_scores', {})
     saving_throws = {}
     for ability, data in ability_scores_data.items():
         saving_throws[ability.title()] = {
@@ -2000,8 +2001,8 @@ def character_sheet():
             'total': data.get('saving_throw', 0)
         }
     
-    # Extract skill modifiers from skills
-    skills_data = character_sheet.get('skills', {})
+    # Extract skill modifiers (already calculated)
+    skills_data = character_sheet_data.get('skills', {})
     skill_modifiers = {}
     for skill, data in skills_data.items():
         skill_name = skill.replace('_', ' ').title()
@@ -2012,16 +2013,18 @@ def character_sheet():
             'total': data.get('bonus', 0)
         }
     
-    # Get size from species data
-    species_name = character.get('species')
-    size = 'Medium'  # Default
-    if species_name and species_name in data_loader.species:
-        species_data = data_loader.species[species_name]
-        size = species_data.get('size', 'Medium')
+    # Get size from character data (already determined by builder)
+    size = character.get('size', 'Medium')
     
-    # Calculate passive perception (10 + Perception skill bonus)
+    # Get passive perception (already calculated - 10 + perception bonus)
     perception_data = skills_data.get('perception', {})
     passive_perception = 10 + perception_data.get('bonus', 0)
+    
+    # Get proficiency bonus (already calculated in combat_stats)
+    proficiency_bonus = combat_stats.get('proficiency_bonus', 2)
+    
+    # Extract features (already organized by category)
+    features = character_sheet_data.get('features_and_traits', {})
     
     return render_template('character_sheet_pdf.html',
                          character=character,
@@ -2030,7 +2033,9 @@ def character_sheet():
                          saving_throws=saving_throws,
                          skill_modifiers=skill_modifiers,
                          size=size,
-                         passive_perception=passive_perception)
+                         passive_perception=passive_perception,
+                         proficiency_bonus=proficiency_bonus,
+                         features=features)
 
 @app.route('/reset')
 def reset():
