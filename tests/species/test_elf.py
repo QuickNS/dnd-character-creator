@@ -140,6 +140,22 @@ class TestElfSpecies:
             # Verify the choice was successful
             assert result is True
     
+    def test_keen_senses_proficiency_source_tracking(self):
+        """Test that Keen Senses skill proficiency source is tracked correctly"""
+        builder = CharacterBuilder()
+        builder.set_species('Elf')
+        
+        # Apply the Keen Senses choice
+        result = builder.apply_choice('Keen Senses', 'Insight')
+        assert result is True
+        
+        # Check that the proficiency source is tracked
+        char_data = builder.character_data
+        proficiency_sources = char_data.get('proficiency_sources', {}).get('skills', {})
+        
+        assert 'Insight' in proficiency_sources
+        assert proficiency_sources['Insight'] == 'Elf'
+    
     def test_keen_senses_choice_display_update(self):
         """Test that Keen Senses feature display is updated when choice is made"""
         builder = CharacterBuilder()
@@ -320,6 +336,163 @@ class TestElfLineages:
         assert 'Misty Step' in spell_names
 
 
+class TestElfLineageCantrips:
+    """Test that elf lineages properly grant cantrips"""
+    
+    def test_high_elf_grants_prestidigitation_cantrip(self):
+        """Test that High Elf lineage grants Prestidigitation cantrip"""
+        builder = CharacterBuilder()
+        builder.set_species('Elf')
+        result = builder.set_lineage('High Elf', 'Intelligence')
+        
+        assert result is True
+        char_data = builder.character_data
+        
+        # Check that Prestidigitation is in cantrips
+        cantrips = char_data['spells']['cantrips']
+        assert 'Prestidigitation' in cantrips
+        
+        # Verify it came from the correct effect
+        applied_effects = getattr(builder, 'applied_effects', [])
+        cantrip_effects = [e for e in applied_effects if e['effect']['type'] == 'grant_cantrip']
+        
+        prestidigitation_effect = None
+        for effect in cantrip_effects:
+            if effect['effect']['spell'] == 'Prestidigitation':
+                prestidigitation_effect = effect
+                break
+        
+        assert prestidigitation_effect is not None
+        assert prestidigitation_effect['source_type'] == 'lineage'
+        assert prestidigitation_effect['source'] == 'High Elf Spells'
+    
+    def test_wood_elf_grants_druidcraft_cantrip(self):
+        """Test that Wood Elf lineage grants Druidcraft cantrip"""
+        builder = CharacterBuilder()
+        builder.set_species('Elf')
+        result = builder.set_lineage('Wood Elf', 'Wisdom')
+        
+        assert result is True
+        char_data = builder.character_data
+        
+        # Check that Druidcraft is in cantrips
+        cantrips = char_data['spells']['cantrips']
+        assert 'Druidcraft' in cantrips
+        
+        # Verify it came from the correct effect
+        applied_effects = getattr(builder, 'applied_effects', [])
+        cantrip_effects = [e for e in applied_effects if e['effect']['type'] == 'grant_cantrip']
+        
+        druidcraft_effect = None
+        for effect in cantrip_effects:
+            if effect['effect']['spell'] == 'Druidcraft':
+                druidcraft_effect = effect
+                break
+        
+        assert druidcraft_effect is not None
+        assert druidcraft_effect['source_type'] == 'lineage'
+        assert druidcraft_effect['source'] == 'Wood Elf Spells'
+    
+    def test_drow_grants_dancing_lights_cantrip(self):
+        """Test that Drow lineage grants Dancing Lights cantrip"""
+        builder = CharacterBuilder()
+        builder.set_species('Elf')
+        result = builder.set_lineage('Drow', 'Charisma')
+        
+        assert result is True
+        char_data = builder.character_data
+        
+        # Check that Dancing Lights is in cantrips
+        cantrips = char_data['spells']['cantrips']
+        assert 'Dancing Lights' in cantrips
+        
+        # Verify it came from the correct effect
+        applied_effects = getattr(builder, 'applied_effects', [])
+        cantrip_effects = [e for e in applied_effects if e['effect']['type'] == 'grant_cantrip']
+        
+        dancing_lights_effect = None
+        for effect in cantrip_effects:
+            if effect['effect']['spell'] == 'Dancing Lights':
+                dancing_lights_effect = effect
+                break
+        
+        assert dancing_lights_effect is not None
+        assert dancing_lights_effect['source_type'] == 'lineage'
+        assert dancing_lights_effect['source'] == 'Drow Spells'
+    
+    def test_elf_lineage_cantrip_with_class_cantrips(self):
+        """Test that elf lineage cantrips work alongside class cantrips"""
+        builder = CharacterBuilder()
+        builder.set_species('Elf')
+        builder.set_lineage('High Elf', 'Intelligence')
+        
+        # Set a class that also grants cantrips
+        builder.set_class('Wizard', 1)
+        
+        # Make cantrip choices for the class (Wizard needs cantrips chosen)
+        cantrip_choices = ['Mage Hand', 'Minor Illusion', 'Firebolt']
+        builder.apply_choice('Spellcasting', cantrip_choices)
+        
+        char_data = builder.character_data
+        cantrips = char_data['spells']['cantrips']
+        
+        # Should have the High Elf cantrip
+        assert 'Prestidigitation' in cantrips
+        
+        # Should have the chosen class cantrips
+        for cantrip in cantrip_choices:
+            assert cantrip in cantrips
+        
+        # Verify the character has both species and class cantrips
+        applied_effects = getattr(builder, 'applied_effects', [])
+        cantrip_effects = [e for e in applied_effects if e['effect']['type'] == 'grant_cantrip']
+        
+        # Should have at least the lineage cantrip effect
+        assert len(cantrip_effects) >= 1
+        
+        # Check that at least one cantrip comes from lineage
+        lineage_cantrip_found = False
+        for effect in cantrip_effects:
+            if effect['source_type'] == 'lineage':
+                lineage_cantrip_found = True
+                break
+        
+        assert lineage_cantrip_found
+    
+    def test_lineage_cantrip_persists_with_level_up(self):
+        """Test that lineage cantrips persist when character levels up"""
+        builder = CharacterBuilder()
+        builder.set_species('Elf')
+        builder.set_lineage('Drow', 'Charisma')
+        builder.set_class('Sorcerer', 1)
+        
+        # Check cantrips at level 1
+        char_data = builder.character_data
+        cantrips_l1 = char_data['spells']['cantrips'].copy()
+        assert 'Dancing Lights' in cantrips_l1
+        
+        # Level up to 2
+        builder.set_class('Sorcerer', 2)
+        char_data = builder.character_data
+        cantrips_l2 = char_data['spells']['cantrips']
+        
+        # Dancing Lights should still be present
+        assert 'Dancing Lights' in cantrips_l2
+        
+        # Verify it's still tracked as coming from lineage
+        applied_effects = getattr(builder, 'applied_effects', [])
+        cantrip_effects = [e for e in applied_effects if e['effect']['type'] == 'grant_cantrip']
+        
+        dancing_lights_effect = None
+        for effect in cantrip_effects:
+            if effect['effect']['spell'] == 'Dancing Lights':
+                dancing_lights_effect = effect
+                break
+        
+        assert dancing_lights_effect is not None
+        assert dancing_lights_effect['source_type'] == 'lineage'
+
+
 class TestElfIntegration:
     """Test Elf species integration with other systems"""
     
@@ -488,3 +661,46 @@ class TestElfDataValidation:
         builder_no_species = CharacterBuilder()
         result = builder_no_species.set_lineage('High Elf', 'Intelligence')
         assert result is False
+    
+    def test_drow_cleric_integration(self):
+        """Integration test: Drow Elf Cleric should have both lineage and class cantrips"""
+        builder = CharacterBuilder()
+        
+        # Create a Drow Elf Cleric like the test character file
+        builder.set_species('Elf')
+        builder.set_lineage('Drow', 'Charisma')
+        builder.set_class('Cleric', 1)
+        
+        # Make Cleric spellcasting choices
+        cleric_cantrips = ['Guidance', 'Sacred Flame', 'Thaumaturgy']
+        builder.apply_choice('Spellcasting', cleric_cantrips)
+        
+        char_data = builder.character_data
+        cantrips = char_data['spells']['cantrips']
+        
+        # Should have Drow lineage cantrip
+        assert 'Dancing Lights' in cantrips, f"Dancing Lights missing from {cantrips}"
+        
+        # Should have chosen Cleric cantrips
+        for cantrip in cleric_cantrips:
+            assert cantrip in cantrips, f"{cantrip} missing from {cantrips}"
+        
+        # Should have exactly 4 cantrips total (1 from Drow + 3 from Cleric)
+        assert len(cantrips) == 4, f"Expected 4 cantrips, got {len(cantrips)}: {cantrips}"
+        
+        # Verify effects tracking
+        applied_effects = getattr(builder, 'applied_effects', [])
+        cantrip_effects = [e for e in applied_effects if e['effect']['type'] == 'grant_cantrip']
+        
+        # Should have lineage cantrip effect
+        lineage_effects = [e for e in cantrip_effects if e['source_type'] == 'lineage']
+        assert len(lineage_effects) >= 1, "No lineage cantrip effects found"
+        
+        # Verify Dancing Lights comes from lineage
+        dancing_lights_from_lineage = False
+        for effect in lineage_effects:
+            if effect['effect']['spell'] == 'Dancing Lights':
+                dancing_lights_from_lineage = True
+                break
+        
+        assert dancing_lights_from_lineage, "Dancing Lights not found from lineage effects"

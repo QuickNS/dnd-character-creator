@@ -1388,6 +1388,25 @@ def _gather_character_spells(character: dict) -> dict:
                 metadata = spell_metadata.get(spell_name, {})
                 once_per_day = metadata.get('once_per_day', False)
                 
+                # Determine the source from metadata, fallback to generic
+                spell_source = metadata.get('source', 'always_prepared')
+                if spell_source == 'lineage':
+                    # Look up the lineage name for a more specific source
+                    lineage = character.get('lineage', '')
+                    if lineage:
+                        display_source = f"{lineage} Spells"
+                    else:
+                        display_source = "Lineage Spells"
+                elif spell_source == 'subclass':
+                    # Look up the subclass name for a more specific source  
+                    subclass = character.get('subclass', '')
+                    if subclass:
+                        display_source = f"{subclass} Spells"
+                    else:
+                        display_source = "Subclass Spells"
+                else:
+                    display_source = "Always Prepared"
+                
                 spells_by_level[spell_level].append({
                     'name': spell_name,
                     'school': spell_info.get('school', ''),
@@ -1396,7 +1415,7 @@ def _gather_character_spells(character: dict) -> dict:
                     'components': spell_info.get('components', ''),
                     'duration': spell_info.get('duration', ''),
                     'description': spell_info.get('description', ''),
-                    'source': 'Always Prepared',
+                    'source': display_source,
                     'always_prepared': True,  # Flag for template display
                     'once_per_day': once_per_day  # Flag for species/lineage spells
                 })
@@ -1724,6 +1743,11 @@ def character_summary():
     
     # Build skill sources map to show where proficiencies come from
     skill_sources = {}
+    
+    # Get species skill proficiencies from proficiency_sources
+    species_skill_sources = character.get('proficiency_sources', {}).get('skills', {})
+    for skill, source in species_skill_sources.items():
+        skill_sources[skill] = source
     
     # Get class skill choices
     class_skills = character.get('choices_made', {}).get('skill_choices', [])

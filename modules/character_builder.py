@@ -114,6 +114,14 @@ class CharacterBuilder:
                 'languages': [],
                 'saving_throws': []
             },
+            'proficiency_sources': {
+                'armor': {},
+                'weapons': {},
+                'tools': {},
+                'skills': {},
+                'languages': {},
+                'saving_throws': {}
+            },
             'speed': 30,
             'darkvision': 0,
             'resistances': [],
@@ -488,18 +496,43 @@ class CharacterBuilder:
             for prof in proficiencies:
                 if prof not in self.character_data['proficiencies']['weapons']:
                     self.character_data['proficiencies']['weapons'].append(prof)
+                    # Track the source of this weapon proficiency
+                    if source_type == 'species_choice':
+                        source_display = self.character_data.get('species', source_name)
+                    elif source_type in ['species', 'lineage']:
+                        source_display = self.character_data.get('species', source_name)
+                    else:
+                        source_display = source_name
+                    self.character_data['proficiency_sources']['weapons'][prof] = source_display
         
         elif effect_type == 'grant_armor_proficiency':
             proficiencies = effect.get('proficiencies', [])
             for prof in proficiencies:
                 if prof not in self.character_data['proficiencies']['armor']:
                     self.character_data['proficiencies']['armor'].append(prof)
+                    # Track the source of this armor proficiency
+                    if source_type == 'species_choice':
+                        source_display = self.character_data.get('species', source_name)
+                    elif source_type in ['species', 'lineage']:
+                        source_display = self.character_data.get('species', source_name)
+                    else:
+                        source_display = source_name
+                    self.character_data['proficiency_sources']['armor'][prof] = source_display
         
         elif effect_type == 'grant_skill_proficiency':
             skills = effect.get('skills', [])
             for skill in skills:
                 if skill not in self.character_data['proficiencies']['skills']:
                     self.character_data['proficiencies']['skills'].append(skill)
+                    # Track the source of this skill proficiency
+                    if source_type == 'species_choice':
+                        # For species choices, use just the species name
+                        source_display = self.character_data.get('species', source_name)
+                    elif source_type in ['species', 'lineage']:
+                        source_display = self.character_data.get('species', source_name)
+                    else:
+                        source_display = source_name
+                    self.character_data['proficiency_sources']['skills'][skill] = source_display
         
         elif effect_type == 'grant_damage_resistance':
             damage_type = effect.get('damage_type')
@@ -1158,11 +1191,27 @@ class CharacterBuilder:
         # Add ability scores from the AbilityScores module
         data['ability_scores'] = self.ability_scores.final_scores
         
+        # Add applied effects to character JSON so web app can use them
+        if hasattr(self, 'applied_effects') and self.applied_effects:
+            # Include both the effect and source information for web app
+            effects_for_export = []
+            for applied_effect in self.applied_effects:
+                effect = applied_effect['effect'].copy()
+                effect['source'] = applied_effect.get('source', 'Unknown')
+                effect['source_type'] = applied_effect.get('source_type', 'Unknown')
+                effects_for_export.append(effect)
+            data['effects'] = effects_for_export
+        else:
+            data['effects'] = []
+        
         # Flatten proficiencies for easier template access
         data['languages'] = data['proficiencies']['languages']
         data['skill_proficiencies'] = data['proficiencies']['skills']
         data['weapon_proficiencies'] = data['proficiencies']['weapons']
         data['armor_proficiencies'] = data['proficiencies']['armor']
+        
+        # Include choices_made for web app compatibility
+        data['choices_made'] = self.character_data.get('choices_made', {})
         
         return data
     

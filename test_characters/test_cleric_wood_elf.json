@@ -1,5 +1,5 @@
 {
-  "Divine Order": "Thaumaturge",
+  "Divine Order": "Protector",
   "Elven Lineage": "Wisdom",
   "Keen Senses": "Perception",
   "Spellcasting": [
@@ -7,7 +7,6 @@
     "Toll the Dead",
     "Word of Radiance"
   ],
-  "Thaumaturge_bonus_cantrip": "Guidance",
   "ability_scores_method": "recommended",
   "background": "Sage",
   "background_bonuses_method": "suggested",
@@ -16,7 +15,7 @@
   "language_choices_needed": 2,
   "languages": [],
   "level": 1,
-  "lineage": "High Elf",
+  "lineage": "Wood Elf",
   "skill_choices": [
     "Insight",
     "Persuasion"
