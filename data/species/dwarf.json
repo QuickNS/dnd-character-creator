@@ -5,7 +5,7 @@
   "size": "Medium",
   "size_description": "about 4-5 feet tall",
   "speed": 30,
-  "darkvision_range": 120,
+  "darkvision": 120,
   "traits": {
     "Darkvision": "You have Darkvision with a range of 120 feet.",
     "Dwarven Resilience": {
