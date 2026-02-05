@@ -85,22 +85,22 @@
     "2": 5,
     "3": 6,
     "4": 7,
-    "5": 8,
+    "5": 9,
     "6": 9,
-    "7": 10,
-    "8": 11,
-    "9": 12,
-    "10": 13,
-    "11": 14,
-    "12": 15,
-    "13": 16,
+    "7": 11,
+    "8": 12,
+    "9": 14,
+    "10": 15,
+    "11": 16,
+    "12": 16,
+    "13": 17,
     "14": 17,
     "15": 18,
-    "16": 19,
-    "17": 20,
-    "18": 21,
-    "19": 22,
-    "20": 23
+    "16": 18,
+    "17": 19,
+    "18": 20,
+    "19": 21,
+    "20": 22
   },
   "spell_slots_by_level": {
     "1": [
@@ -339,12 +339,12 @@
       ]
     },
     "Thaumaturge": {
-      "description": "You know one extra cantrip from the Cleric spell list. In addition, you gain a bonus to your Intelligence (Arcana or Religion) checks. The bonus equals your Wisdom modifier (minimum of +1).",
+      "description": "You know one extra cantrip from the Cleric spell list. In addition, your mystical connection to the divine gives you a bonus to your Intelligence (Arcana or Religion) checks. The bonus equals your Wisdom modifier (minimum of +1).",
       "effects": [
         {
           "type": "grant_cantrip_choice",
-          "spell_list": "Cleric",
-          "count": 1
+          "count": 1,
+          "spell_list": "Cleric"
         },
         {
           "type": "ability_bonus",
@@ -354,6 +354,26 @@
           "minimum": 1
         }
       ]
+    }
+  },
+  "blessed_strikes_options": {
+    "Divine Strike": {
+      "description": "Once on each of your turns when you hit a creature with an attack roll using a weapon, you can cause the target to take an extra {strike_dice} Necrotic or Radiant damage (your choice).",
+      "scaling": {
+        "strike_dice": [
+          {"min_level": 7, "value": "1d8"},
+          {"min_level": 14, "value": "2d8"}
+        ]
+      }
+    },
+    "Potent Spellcasting": {
+      "description": "Add your Wisdom modifier to the damage you deal with any Cleric cantrip. {improved_text}",
+      "scaling": {
+        "improved_text": [
+          {"min_level": 7, "value": ""},
+          {"min_level": 14, "value": "When you cast a Cleric cantrip and deal damage to a creature with it, you can give vitality to yourself or another creature within 60 feet of yourself, granting a number of Temporary Hit Points equal to twice your Wisdom modifier."}
+        ]
+      }
     }
   },
   "features_by_level": {
@@ -387,12 +407,9 @@
     },
     "2": {
       "Channel Divinity": {
-        "description": "Use Divine Spark (heal {heal_dice} + Cleric level HP or deal {damage_dice} Radiant/Necrotic damage) or Turn Undead (Wisdom save or turn for 1 minute). {uses} uses per Short/Long Rest.",
+        "description": "You can channel divine energy directly from the Outer Planes to fuel magical effects. You start with two such effects: Divine Spark and Turn Undead. You can use this class's Channel Divinity {uses} per Short/Long Rest. Divine Spark: Point your Holy Symbol at a creature within 30 feet, roll {spark_dice} + Wisdom modifier, restore HP or deal Necrotic/Radiant damage (Constitution save for half). Turn Undead: Present Holy Symbol, Undead within 30 feet make Wisdom save or be Frightened and Incapacitated for 1 minute.",
         "scaling": {
-          "heal_dice": [
-            {"min_level": 2, "value": "2d8"}
-          ],
-          "damage_dice": [
+          "spark_dice": [
             {"min_level": 2, "value": "1d8"},
             {"min_level": 7, "value": "2d8"},
             {"min_level": 13, "value": "3d8"},
@@ -401,7 +418,7 @@
           "uses": [
             {"min_level": 2, "value": "2"},
             {"min_level": 6, "value": "3"},
-            {"min_level": 17, "value": "4"}
+            {"min_level": 18, "value": "4"}
           ]
         }
       }
@@ -420,12 +437,16 @@
     },
     "7": {
       "Blessed Strikes": {
-        "description": "Choose Divine Strike (+{strike_dice} Necrotic/Radiant to weapon attacks once per turn) or Potent Spellcasting (add Wisdom to Cleric cantrip damage).",
-        "scaling": {
-          "strike_dice": [
-            {"min_level": 7, "value": "1d8"},
-            {"min_level": 14, "value": "2d8"}
-          ]
+        "description": "Divine power infuses you in battle. Choose one of the following options.",
+        "choices": {
+          "type": "select_single",
+          "count": 1,
+          "name": "blessed_strikes",
+          "source": {
+            "type": "internal",
+            "list": "blessed_strikes_options"
+          },
+          "optional": false
         }
       }
     },
@@ -441,7 +462,9 @@
       "Ability Score Improvement": "Increase one ability score by 2, or increase two ability scores by 1."
     },
     "13": {},
-    "14": {},
+    "14": {
+      "Improved Blessed Strikes": "The option you chose for Blessed Strikes grows more powerful. The effects are updated automatically based on your level."
+    },
     "15": {},
     "16": {
       "Ability Score Improvement": "Increase one ability score by 2, or increase two ability scores by 1."

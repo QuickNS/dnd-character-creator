@@ -458,6 +458,11 @@ class CharacterBuilder:
             if spell_name and spell_name not in self.character_data['spells']['cantrips']:
                 self.character_data['spells']['cantrips'].append(spell_name)
         
+        elif effect_type == 'grant_cantrip_choice':
+            # This effect requires a choice to be made - store for later processing
+            # The choice handling will add the cantrip when the choice is made
+            pass  # Handled by choice resolution system
+        
         elif effect_type == 'grant_spell':
             spell_name = effect.get('spell')
             min_level = effect.get('min_level', 1)
@@ -544,6 +549,11 @@ class CharacterBuilder:
         class_data = self._load_class_data(class_name)
         if not class_data:
             return False
+
+        # If class is changing or level is changing, clear existing class features
+        if (self.character_data.get('class') != class_name or 
+            self.character_data.get('level') != level):
+            self._clear_class_features()
         
         self.character_data['class'] = class_name
         self.character_data['class_data'] = class_data
@@ -560,6 +570,13 @@ class CharacterBuilder:
         # Apply class features
         self._apply_class_features(class_data, level)
         
+        # Re-apply subclass features if subclass exists
+        if self.character_data.get('subclass'):
+            subclass_data = self.character_data.get('subclass_data')
+            if subclass_data:
+                self._clear_subclass_features()
+                self._apply_subclass_features(subclass_data, level)
+        
         # Determine next step
         subclass_level = class_data.get('subclass_selection_level', 3)
         if level >= subclass_level:
@@ -568,6 +585,41 @@ class CharacterBuilder:
             self.character_data['step'] = 'background'
         
         return True
+    
+    def _clear_class_features(self):
+        """Clear all class-related features and effects before re-applying."""
+        # Clear class features
+        self.character_data['features']['class'] = []
+        
+        # Reset proficiencies to base level (before class was added)
+        self.character_data['proficiencies']['saving_throws'] = []
+        self.character_data['proficiencies']['weapons'] = []
+        self.character_data['proficiencies']['armor'] = []
+        
+        # Clear applied effects from class source
+        if hasattr(self, 'applied_effects'):
+            self.applied_effects = [e for e in self.applied_effects 
+                                  if e.get('source_type') not in ['class', 'class_choice']]
+    
+    def _clear_subclass_features(self):
+        """Clear all subclass-related features and effects before re-applying."""
+        # Clear subclass features
+        self.character_data['features']['subclass'] = []
+        
+        # Clear applied effects from subclass source
+        if hasattr(self, 'applied_effects'):
+            self.applied_effects = [e for e in self.applied_effects 
+                                  if e.get('source_type') != 'subclass']
+        
+        # Clear subclass spells from prepared list
+        spell_metadata = self.character_data.get('spell_metadata', {})
+        prepared_spells = self.character_data['spells']['prepared']
+        
+        # Remove spells that were from subclass
+        for spell_name in list(prepared_spells):
+            if spell_name in spell_metadata and spell_metadata[spell_name].get('source') == 'subclass':
+                prepared_spells.remove(spell_name)
+                del spell_metadata[spell_name]
     
     def set_subclass(self, subclass_name: str) -> bool:
         """

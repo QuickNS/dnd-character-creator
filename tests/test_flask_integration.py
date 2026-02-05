@@ -5,16 +5,19 @@ Flask Integration Tests
 Tests to verify Flask routes work correctly with CharacterBuilder backend.
 """
 
-import sys
-from pathlib import Path
-
-# Add parent directory to path
-sys.path.insert(0, str(Path(__file__).parent))
-
+import pytest
 from app import app
 
 
-def test_species_selection_integration():
+@pytest.fixture
+def client():
+    """Create a test client for the Flask app"""
+    app.config['TESTING'] = True
+    with app.test_client() as client:
+        yield client
+
+
+def test_species_selection_integration(client):
     """Test that species selection works through Flask with CharacterBuilder"""
     print("\n" + "="*60)
     print("TEST: Species Selection Integration")
@@ -86,7 +89,7 @@ def test_species_selection_integration():
     print("\n" + "="*60)
     print("✅ TEST PASSED: Species Selection Integration")
     print("="*60)
-    return True
+    # Test completed successfully
 
 
 def test_character_summary_with_builder():
@@ -155,7 +158,7 @@ def test_character_summary_with_builder():
     print("\n" + "="*60)
     print("✅ TEST PASSED: Character Summary with CharacterBuilder")
     print("="*60)
-    return True
+    # Test completed successfully
 
 
 def test_session_builder_round_trip():
@@ -203,7 +206,7 @@ def test_session_builder_round_trip():
     print("\n" + "="*60)
     print("✅ TEST PASSED: CharacterBuilder Basic Functionality")
     print("="*60)
-    return True
+    # Test completed successfully
 
 
 def run_all_tests():

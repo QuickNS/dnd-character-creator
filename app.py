@@ -769,7 +769,7 @@ def class_choices():
                                 }
                                 choices.append(choice)
                                 print(f"DEBUG: Pre-added potential nested choice: {bonus_feature_name}")
-    
+
     return render_template('class_choices.html', 
                          character=character, 
                          choices=choices,
