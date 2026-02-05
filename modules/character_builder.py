@@ -895,6 +895,11 @@ class CharacterBuilder:
             if isinstance(choice_value, dict):
                 self.ability_scores.apply_background_bonuses(choice_value)
             return True
+        elif choice_key_lower == 'background_bonuses':
+            # Apply background ability bonuses (alternate key name)
+            if isinstance(choice_value, dict):
+                self.ability_scores.apply_background_bonuses(choice_value)
+            return True
         elif choice_key_lower == 'background_bonuses_method':
             # Handle "suggested" background bonuses
             if choice_value == 'suggested':
@@ -1130,16 +1135,28 @@ class CharacterBuilder:
             'class',
             'subclass',
             'background',
-            'ability_scores', 'abilities',
+            # Ability scores: only apply method if no explicit scores provided
+            'ability_scores_method',  # This might apply standard array
+            'ability_scores', 'abilities',  # This overrides if present
+            # Background bonuses must come after base ability scores
             'background_ability_score_assignment',
+            'background_bonuses_method',
+            'background_bonuses',
             'skill_choices', 'skills',
             'spellcasting',
             'alignment'
         ]
         
+        # Special handling: if both ability_scores and ability_scores_method exist,
+        # skip ability_scores_method since ability_scores is the final value
+        apply_method = 'ability_scores_method' in choices and 'ability_scores' not in choices and 'abilities' not in choices
+        
         # First pass: apply ordered choices
         for key in order:
             if key in choices:
+                # Skip ability_scores_method if we have explicit ability_scores
+                if key == 'ability_scores_method' and not apply_method:
+                    continue
                 self.apply_choice(key, choices[key])
         
         # Second pass: apply remaining choices (class-specific features, etc.)

@@ -255,3 +255,165 @@ def test_ability_scores_persist_through_serialization():
     restored_data = new_builder.to_json()
     assert restored_data['ability_scores'] == expected_scores, \
         f"Ability scores not preserved through serialization. Expected {expected_scores}, got {restored_data['ability_scores']}"
+
+
+def test_rebuild_character_with_ability_scores_and_bonuses():
+    """
+    Regression test for bug where rebuilding from choices_made with both
+    ability_scores and ability_scores_method would incorrectly overwrite
+    custom scores and fail to apply background_bonuses.
+    """
+    choices_made = {
+        'character_name': 'Brianna',
+        'level': 3,
+        'class': 'Paladin',
+        'subclass': 'Oath of Vengeance',
+        'species': 'Tiefling',
+        'lineage': 'Chthonic Tiefling',
+        'background': 'Folk Hero',
+        'ability_scores': {
+            'Strength': 15,
+            'Dexterity': 12,
+            'Constitution': 13,
+            'Intelligence': 10,
+            'Wisdom': 8,
+            'Charisma': 14
+        },
+        'ability_scores_method': 'recommended',  # Should be ignored when ability_scores is present
+        'background_bonuses': {
+            'Strength': 2,
+            'Constitution': 1
+        },
+        'skill_choices': ['Insight', 'Persuasion']
+    }
+    
+    builder = CharacterBuilder()
+    builder.apply_choices(choices_made)
+    
+    result = builder.to_json()
+    
+    # Expected: custom ability_scores + background_bonuses
+    expected_scores = {
+        'Strength': 17,      # 15 + 2
+        'Dexterity': 12,     # 12 + 0
+        'Constitution': 14,  # 13 + 1
+        'Intelligence': 10,  # 10 + 0
+        'Wisdom': 8,         # 8 + 0
+        'Charisma': 14       # 14 + 0
+    }
+    
+    assert result['ability_scores'] == expected_scores, \
+        f"Expected {expected_scores}, got {result['ability_scores']}"
+
+
+def test_ability_scores_method_only():
+    """Test that ability_scores_method works when no explicit ability_scores provided"""
+    choices = {
+        'class': 'Wizard',
+        'level': 1,
+        'ability_scores_method': 'recommended',
+        'background': 'Sage',
+        'background_bonuses': {'Intelligence': 2, 'Wisdom': 1}
+    }
+    
+    builder = CharacterBuilder()
+    builder.apply_choices(choices)
+    
+    result = builder.to_json()
+    
+    # Should use Wizard standard array + background bonuses
+    # Wizard standard: STR=8, DEX=12, CON=13, INT=15, WIS=14, CHA=10
+    expected_scores = {
+        'Strength': 8,
+        'Dexterity': 12,
+        'Constitution': 13,
+        'Intelligence': 17,  # 15 + 2
+        'Wisdom': 15,        # 14 + 1
+        'Charisma': 10
+    }
+    
+    assert result['ability_scores'] == expected_scores, \
+        f"Expected {expected_scores}, got {result['ability_scores']}"
+
+
+def test_explicit_ability_scores_overrides_method():
+    """Test that explicit ability_scores takes precedence over ability_scores_method"""
+    choices = {
+        'class': 'Fighter',
+        'level': 1,
+        'ability_scores': {
+            'Strength': 14,
+            'Dexterity': 13,
+            'Constitution': 12,
+            'Intelligence': 11,
+            'Wisdom': 10,
+            'Charisma': 8
+        },
+        'ability_scores_method': 'recommended',  # Should be ignored
+        'background': 'Soldier',
+        'background_bonuses': {'Strength': 2, 'Constitution': 1}
+    }
+    
+    builder = CharacterBuilder()
+    builder.apply_choices(choices)
+    
+    result = builder.to_json()
+    
+    # Should use custom scores (NOT Fighter standard array) + bonuses
+    expected_scores = {
+        'Strength': 16,      # 14 + 2
+        'Dexterity': 13,
+        'Constitution': 13,  # 12 + 1
+        'Intelligence': 11,
+        'Wisdom': 10,
+        'Charisma': 8
+    }
+    
+    assert result['ability_scores'] == expected_scores, \
+        f"Expected {expected_scores}, got {result['ability_scores']}"
+
+
+def test_manual_ability_scores_method_tracking():
+    """
+    Regression test: When user selects manual ability scores, 
+    ability_scores_method should be set to 'manual', not left as 'recommended'
+    """
+    builder = CharacterBuilder()
+    
+    # User initially selects recommended
+    builder.apply_choice('class', 'Wizard')
+    builder.apply_choice('ability_scores_method', 'recommended')
+    
+    result1 = builder.to_json()
+    assert result1['choices_made']['ability_scores_method'] == 'recommended'
+    
+    # User goes back and changes to manual
+    manual_scores = {'Strength': 10, 'Dexterity': 12, 'Constitution': 13, 
+                     'Intelligence': 15, 'Wisdom': 14, 'Charisma': 8}
+    builder.apply_choice('ability_scores', manual_scores)
+    builder.apply_choice('ability_scores_method', 'manual')
+    
+    result2 = builder.to_json()
+    # Should now show 'manual', not 'recommended'
+    assert result2['choices_made']['ability_scores_method'] == 'manual', \
+        f"Expected 'manual' but got '{result2['choices_made']['ability_scores_method']}'"
+    
+    # Verify the manual scores are used
+    assert result2['ability_scores'] == manual_scores
+    
+    # Add background bonuses
+    builder.apply_choice('background', 'Sage')
+    builder.apply_choice('background_bonuses', {'Intelligence': 2, 'Wisdom': 1})
+    
+    result3 = builder.to_json()
+    
+    # Rebuild from choices_made and verify it works correctly
+    builder_new = CharacterBuilder()
+    builder_new.apply_choices(result3['choices_made'])
+    
+    result_rebuilt = builder_new.to_json()
+    expected = {'Strength': 10, 'Dexterity': 12, 'Constitution': 13,
+                'Intelligence': 17, 'Wisdom': 15, 'Charisma': 8}
+    
+    assert result_rebuilt['ability_scores'] == expected, \
+        f"Rebuild failed. Expected {expected}, got {result_rebuilt['ability_scores']}"

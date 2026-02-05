@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, session, redirect, url_for, j
 from flask_session import Session
 import json
 import os
+import logging
 from pathlib import Path
 from typing import Dict, List, Any, Optional
 from datetime import timedelta
@@ -9,6 +10,17 @@ from modules.data_loader import DataLoader
 from modules.character_builder import CharacterBuilder
 from modules.hp_calculator import HPCalculator
 from modules.character_sheet_converter import CharacterSheetConverter
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('character_creator.log'),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 app.secret_key = 'dnd-character-creator-secret-key-2024'  # Change this in production
@@ -24,6 +36,118 @@ app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 
 # Initialize Flask-Session
 Session(app)
+
+# ==================== Logging Helpers ====================
+
+def log_route_processing(route_name: str, choices_made: Dict[str, Any], builder_before: Optional[CharacterBuilder], builder_after: Optional[CharacterBuilder]):
+    """Log route processing with choices made and builder changes."""
+    logger.info(f"\n{'='*80}")
+    logger.info(f"Route: {route_name}")
+    logger.info(f"{'='*80}")
+    
+    # Log choices made in this route
+    if choices_made:
+        logger.info("Choices made:")
+        for key, value in choices_made.items():
+            if isinstance(value, list):
+                logger.info(f"  {key}: [{', '.join(str(v) for v in value)}]")
+            else:
+                logger.info(f"  {key}: {value}")
+    else:
+        logger.info("No choices made in this route")
+    
+    # Log builder state changes
+    if builder_before and builder_after:
+        log_builder_changes(builder_before, builder_after)
+    elif builder_after:
+        logger.info("\nBuilder created (new session)")
+        log_builder_state(builder_after)
+    
+    logger.info(f"{'='*80}\n")
+
+def log_builder_changes(before: CharacterBuilder, after: CharacterBuilder):
+    """Log changes between two builder states."""
+    before_data = before.to_json()
+    after_data = after.to_json()
+    
+    changes = []
+    
+    # Check for changes in main fields
+    for key in ['name', 'class', 'subclass', 'species', 'lineage', 'background', 'level', 'step']:
+        before_val = before_data.get(key)
+        after_val = after_data.get(key)
+        if before_val != after_val:
+            changes.append(f"  {key}: {before_val} → {after_val}")
+    
+    # Check ability scores
+    before_abilities = before_data.get('ability_scores', {})
+    after_abilities = after_data.get('ability_scores', {})
+    if before_abilities != after_abilities:
+        changes.append(f"  ability_scores: {before_abilities} → {after_abilities}")
+    
+    # Check proficiencies
+    before_skills = set(before_data.get('skill_proficiencies', []))
+    after_skills = set(after_data.get('skill_proficiencies', []))
+    new_skills = after_skills - before_skills
+    if new_skills:
+        changes.append(f"  +skill_proficiencies: {list(new_skills)}")
+    
+    # Check effects
+    before_effects_count = len(before_data.get('effects', []))
+    after_effects_count = len(after_data.get('effects', []))
+    if before_effects_count != after_effects_count:
+        new_effects = after_effects_count - before_effects_count
+        changes.append(f"  effects: {before_effects_count} → {after_effects_count} (+{new_effects})")
+        # Log new effects
+        if new_effects > 0:
+            recent_effects = after_data.get('effects', [])[-new_effects:]
+            for effect in recent_effects:
+                effect_type = effect.get('type', 'unknown')
+                effect_source = effect.get('source', 'unknown')
+                changes.append(f"    - {effect_type} from {effect_source}")
+    
+    # Check spells
+    before_prepared = set(before_data.get('spells', {}).get('prepared', []))
+    after_prepared = set(after_data.get('spells', {}).get('prepared', []))
+    new_prepared = after_prepared - before_prepared
+    if new_prepared:
+        changes.append(f"  +spells.prepared: {list(new_prepared)}")
+    
+    # Check languages
+    before_langs = set(before_data.get('languages', []))
+    after_langs = set(after_data.get('languages', []))
+    new_langs = after_langs - before_langs
+    if new_langs:
+        changes.append(f"  +languages: {list(new_langs)}")
+    
+    # Check choices_made
+    before_choices = before_data.get('choices_made', {})
+    after_choices = after_data.get('choices_made', {})
+    for key in after_choices:
+        if key not in before_choices or before_choices[key] != after_choices[key]:
+            changes.append(f"  choices_made.{key}: {after_choices[key]}")
+    
+    if changes:
+        logger.info("\nBuilder changes:")
+        for change in changes:
+            logger.info(change)
+    else:
+        logger.info("\nNo builder changes detected")
+
+def log_builder_state(builder: CharacterBuilder):
+    """Log current builder state summary."""
+    data = builder.to_json()
+    logger.info("Current builder state:")
+    logger.info(f"  Name: {data.get('name', 'N/A')}")
+    logger.info(f"  Class: {data.get('class', 'N/A')} (Level {data.get('level', 1)})")
+    logger.info(f"  Subclass: {data.get('subclass', 'N/A')}")
+    logger.info(f"  Species: {data.get('species', 'N/A')}")
+    logger.info(f"  Lineage: {data.get('lineage', 'N/A')}")
+    logger.info(f"  Background: {data.get('background', 'N/A')}")
+    logger.info(f"  Step: {data.get('step', 'N/A')}")
+    logger.info(f"  Effects: {len(data.get('effects', []))}")
+    logger.info(f"  Skill Proficiencies: {len(data.get('skill_proficiencies', []))}")
+    logger.info(f"  Languages: {len(data.get('languages', []))}")
 
 # ==================== CharacterBuilder Session Helpers ====================
 
@@ -237,19 +361,27 @@ def create_character():
         if selected_alignment and selected_alignment not in alignments:
             selected_alignment = ""
 
+        # Capture choices
+        choices = {
+            'name': request.form.get('name', 'Unnamed Character'),
+            'level': int(request.form.get('level', 1))
+        }
+        if selected_alignment:
+            choices['alignment'] = selected_alignment
+
         # Use CharacterBuilder from the start
         session.clear()  # Clear any existing session data
         builder = CharacterBuilder()
         
         # Set basic character info
-        builder.character_data['name'] = request.form.get('name', 'Unnamed Character')
-        builder.character_data['level'] = int(request.form.get('level', 1))
+        builder.character_data['name'] = choices['name']
+        builder.character_data['level'] = choices['level']
         if selected_alignment:
             builder.character_data['alignment'] = selected_alignment
         
         # Track choices
-        builder.character_data['choices_made']['character_name'] = request.form.get('name', 'Unnamed Character')
-        builder.character_data['choices_made']['level'] = int(request.form.get('level', 1))
+        builder.character_data['choices_made']['character_name'] = choices['name']
+        builder.character_data['choices_made']['level'] = choices['level']
         if selected_alignment:
             builder.character_data['choices_made']['alignment'] = selected_alignment
         
@@ -259,6 +391,9 @@ def create_character():
         # Save to session using builder
         save_builder_to_session(builder)
         session.permanent = True
+        
+        # Log route processing
+        log_route_processing('create_character', choices, None, builder)
         
         # Instead of redirect, render the class selection page directly
         classes = dict(sorted(data_loader.classes.items()))
@@ -283,6 +418,9 @@ def select_class():
     if not class_name or class_name not in data_loader.classes:
         return redirect(url_for('choose_class'))
     
+    builder_before = get_builder_from_session()
+    choices = {'class': class_name}
+    
     builder = get_builder_from_session()
     builder.apply_choice('class', class_name)
     
@@ -296,10 +434,16 @@ def select_class():
         if character_level >= subclass_level:
             builder.set_step('subclass')
             save_builder_to_session(builder)
+            # Log route processing
+            log_route_processing('select_class', choices, builder_before, builder)
             return redirect(url_for('choose_subclass'))
     
     builder.set_step('class_choices')
     save_builder_to_session(builder)
+    
+    # Log route processing
+    log_route_processing('select_class', choices, builder_before, builder)
+    
     return redirect(url_for('class_choices'))
 
 @app.route('/choose-subclass')
@@ -334,10 +478,17 @@ def select_subclass():
     if not subclass_name:
         return redirect(url_for('choose_subclass'))
     
+    builder_before = get_builder_from_session()
+    choices = {'subclass': subclass_name}
+    
     builder = get_builder_from_session()
     builder.apply_choice('subclass', subclass_name)
     builder.set_step('class_choices')
     save_builder_to_session(builder)
+    
+    # Log route processing
+    log_route_processing('select_subclass', choices, builder_before, builder)
+    
     return redirect(url_for('class_choices'))
 
 @app.route('/class-choices')
@@ -726,6 +877,7 @@ def class_choices():
 @app.route('/submit-class-choices', methods=['POST'])
 def submit_class_choices():
     """Process class choice submissions."""
+    builder_before = get_builder_from_session()
     builder = get_builder_from_session()
     
     # Collect all choices from the form
@@ -748,6 +900,10 @@ def submit_class_choices():
     
     builder.set_step('background')
     save_builder_to_session(builder)
+    
+    # Log route processing
+    log_route_processing('submit_class_choices', choices, builder_before, builder)
+    
     return redirect(url_for('choose_background'))
 
 @app.route('/choose-background')
@@ -776,10 +932,17 @@ def select_background():
     if not background_name or background_name not in data_loader.backgrounds:
         return redirect(url_for('choose_background'))
     
+    builder_before = get_builder_from_session()
+    choices = {'background': background_name}
+    
     builder = get_builder_from_session()
     builder.apply_choice('background', background_name)
     builder.set_step('species')
     save_builder_to_session(builder)
+    
+    # Log route processing
+    log_route_processing('select_background', choices, builder_before, builder)
+    
     return redirect(url_for('choose_species'))
 
 @app.route('/choose-species')
@@ -806,6 +969,9 @@ def select_species():
     if not species_name or species_name not in data_loader.species:
         return redirect(url_for('choose_species'))
     
+    builder_before = get_builder_from_session()
+    choices = {'species': species_name}
+    
     builder = get_builder_from_session()
     builder.apply_choice('species', species_name)
     
@@ -824,14 +990,22 @@ def select_species():
     if has_trait_choices:
         builder.set_step('species_traits')
         save_builder_to_session(builder)
+        # Log route processing
+        log_route_processing('select_species', choices, builder_before, builder)
         return redirect(url_for('choose_species_traits'))
     elif species_data.get('lineages'):
         builder.set_step('lineage')
         save_builder_to_session(builder)
+        # Log route processing
+        log_route_processing('select_species', choices, builder_before, builder)
         return redirect(url_for('choose_lineage'))
     else:
         builder.set_step('languages')
         save_builder_to_session(builder)
+        
+        # Log route processing
+        log_route_processing('select_species', choices, builder_before, builder)
+        
         return redirect(url_for('choose_languages'))
 
 @app.route('/choose-species-traits')
@@ -869,6 +1043,7 @@ def choose_species_traits():
 @app.route('/select-species-traits', methods=['POST'])
 def select_species_traits():
     """Handle species trait choices using CharacterBuilder."""
+    builder_before = get_builder_from_session()
     builder = get_builder_from_session()
     character = builder.to_json()
     species_name = character.get('species')
@@ -877,6 +1052,9 @@ def select_species_traits():
         return redirect(url_for('choose_species'))
     
     species_data = data_loader.species.get(species_name, {})
+    
+    # Collect trait choices
+    choices = {}
     
     # Process trait choices
     if 'traits' in species_data:
@@ -888,8 +1066,12 @@ def select_species_traits():
                 if selected_option:
                     # Apply the choice using just the trait name
                     builder.apply_choice(trait_name, selected_option)
+                    choices[trait_name] = selected_option
     
     save_builder_to_session(builder)
+    
+    # Log route processing
+    log_route_processing('select_species_traits', choices, builder_before, builder)
     
     # Check if species has lineages
     if species_data.get('lineages'):
@@ -946,21 +1128,31 @@ def select_lineage():
     lineage_name = request.form.get('lineage')
     spellcasting_ability = request.form.get('spellcasting_ability')
     
+    builder_before = get_builder_from_session()
     builder = get_builder_from_session()
+    
+    # Collect choices
+    choices = {}
     
     # Apply lineage choice
     if lineage_name:
         builder.apply_choice('lineage', lineage_name)
+        choices['lineage'] = lineage_name
     
     # Apply spellcasting ability choice if provided
     if spellcasting_ability:
         builder.apply_choice('lineage_spellcasting_ability', spellcasting_ability)
+        choices['lineage_spellcasting_ability'] = spellcasting_ability
     
     save_builder_to_session(builder)
     
     # Update session step
     builder.set_step('languages')
     save_builder_to_session(builder)
+    
+    # Log route processing
+    log_route_processing('select_lineage', choices, builder_before, builder)
+    
     return redirect(url_for('choose_languages'))
 
 @app.route('/choose-languages')
@@ -1016,10 +1208,17 @@ def select_languages():
     """Handle language selection."""
     selected_languages = request.form.getlist('languages')
     
+    builder_before = get_builder_from_session()
+    choices = {'languages': selected_languages}
+    
     builder = get_builder_from_session()
     builder.apply_choice('languages', selected_languages)
     builder.set_step('ability_scores')
     save_builder_to_session(builder)
+    
+    # Log route processing
+    log_route_processing('select_languages', choices, builder_before, builder)
+    
     return redirect(url_for('assign_ability_scores'))
 
 @app.route('/assign-ability-scores')
@@ -1065,7 +1264,10 @@ def submit_ability_scores():
     """Process ability score assignment."""
     assignment_method = request.form.get('assignment_method')
     
+    builder_before = get_builder_from_session()
     builder = get_builder_from_session()
+    
+    choices = {'assignment_method': assignment_method}
     
     if assignment_method == 'recommended':
         # Use recommended ability scores for the class
@@ -1078,13 +1280,22 @@ def submit_ability_scores():
             if score:
                 manual_scores[ability] = int(score)
         
+        # Apply manual scores
         builder.apply_choice('ability_scores', manual_scores)
+        choices['ability_scores'] = manual_scores
+        
+        # IMPORTANT: Mark that manual method was used to override any previous "recommended" choice
+        builder.apply_choice('ability_scores_method', 'manual')
     
     save_builder_to_session(builder)
     
     # Update step to background_bonuses
     builder.set_step('background_bonuses')
     save_builder_to_session(builder)
+    
+    # Log route processing
+    log_route_processing('submit_ability_scores', choices, builder_before, builder)
+    
     return redirect(url_for('background_bonuses'))
 
 @app.route('/background-bonuses')
@@ -1127,7 +1338,10 @@ def submit_background_bonuses():
     """Process background ability score bonuses."""
     assignment_method = request.form.get('assignment_method')
     
+    builder_before = get_builder_from_session()
     builder = get_builder_from_session()
+    
+    choices = {'assignment_method': assignment_method}
     
     if assignment_method == 'suggested':
         # Use suggested background bonuses
@@ -1141,12 +1355,17 @@ def submit_background_bonuses():
                 manual_bonuses[ability] = int(bonus)
         
         builder.apply_choice('background_bonuses', manual_bonuses)
+        choices['background_bonuses'] = manual_bonuses
     
     save_builder_to_session(builder)
     
     # Mark character creation as complete
     builder.set_step('complete')
     save_builder_to_session(builder)
+    
+    # Log route processing
+    log_route_processing('submit_background_bonuses', choices, builder_before, builder)
+    
     return redirect(url_for('character_summary'))
 
 def _gather_character_spells(character: dict) -> dict:
