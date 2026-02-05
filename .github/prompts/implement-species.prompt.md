@@ -1,6 +1,6 @@
 ---
 agent: 'agent'
-description: 'Implements class features'
+description: 'Implements species features'
 ---
 
 This details the execution plan for implementing the species features for species {{ species_name }} in accordance with:

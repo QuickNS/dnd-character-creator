@@ -12,7 +12,7 @@
             <div class="card-body">
                 <p class="lead">Your background represents your character's history and provides ability score increases, skill proficiencies, and special features.</p>
                 
-                <form method="POST" action="{{ url_for('select_background') }}">
+                <form method="POST" action="{{ url_for('background.select_background') }}">
                     <div class="row">
                         {% for bg_name, bg_data in backgrounds.items() %}
                         <div class="col-lg-6 mb-3">
@@ -34,7 +34,7 @@
                                             {% endif %}
                                             {% if bg_data.get('feat') %}
                                             <p class="text-muted small">
-                                                <strong>Feat:</strong> <span class="badge bg-success">{{ bg_data.feat }}</span>
+                                                <strong>Feat:</strong> <span class="badge bg-secondary">{{ bg_data.feat }}</span>
                                             </p>
                                             {% endif %}
                                         </label>
@@ -49,7 +49,7 @@
                         <button type="submit" class="btn btn-primary btn-lg">
                             <i class="fas fa-arrow-right"></i> Continue to Species Selection
                         </button>
-                        <a href="{{ url_for('class_choices') }}" class="btn btn-outline-secondary">
+                        <a href="{{ url_for('character_creation.class_choices') }}" class="btn btn-outline-secondary">
                             <i class="fas fa-arrow-left"></i> Back to Class Features
                         </a>
                     </div>

@@ -64,6 +64,10 @@
 ### High-Elf
 - Prestidigitation can be substituded by any Wizard Cantrip after a Long Rest - need to model this to offer options to choose from in character creator or later
 
+### Character Summary
+- Feat description is just where it comes from. We should list description and benefits.
+- Spellcasting feature should have a better output. It should be caracterized with properties to enable better output than a simple string.
+
 ### HTML Character Sheet Refinement
 - Position remaining fields (saving throws, skills, proficiencies, features, spells)
 - Fine-tune field positions to align with background image
@@ -144,8 +148,3 @@
 - Support for multiclass characters
 - Proper spell slot calculation for multiclass casters
 - Prerequisite validation
-
-### Homebrew Support
-- Interface for adding custom content
-- Validation for homebrew data
-- Separate storage for official vs. homebrew content

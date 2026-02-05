@@ -12,7 +12,7 @@
             <div class="card-body">
                 <p class="lead">Select any additional languages your character knows beyond their base languages.</p>
                 
-                <form method="POST" action="{{ url_for('select_languages') }}">
+                <form method="POST" action="{{ url_for('languages.select_languages') }}">
                     
                     <!-- Base Languages -->
                     <div class="card mb-4">
@@ -66,7 +66,7 @@
                         <button type="submit" class="btn btn-primary btn-lg">
                             <i class="fas fa-arrow-right"></i> Continue to Ability Scores
                         </button>
-                        <a href="{{ url_for('choose_species') }}" class="btn btn-outline-secondary">
+                        <a href="{{ url_for('species.choose_species') }}" class="btn btn-outline-secondary">
                             <i class="fas fa-arrow-left"></i> Back to Species
                         </a>
                     </div>

@@ -18,7 +18,7 @@
                     {% endif %}
                 </div>
                 
-                <form method="POST" action="{{ url_for('submit_ability_scores') }}">
+                <form method="POST" action="{{ url_for('ability_scores.submit_ability_scores') }}">
                     <div class="card mb-4">
                         <div class="card-header">
                             <h5 class="mb-0">Choose Assignment Method</h5>
@@ -77,7 +77,7 @@
                         <button type="submit" class="btn btn-danger btn-lg" id="submit-btn">
                             <i class="fas fa-arrow-right"></i> Continue to Background Bonuses
                         </button>
-                        <a href="{{ url_for('choose_species') if not character.get('lineage') else url_for('choose_lineage') }}" class="btn btn-outline-secondary">
+                        <a href="{{ url_for('species.choose_species') if not character.get('lineage') else url_for('species.choose_lineage') }}" class="btn btn-outline-secondary">
                             <i class="fas fa-arrow-left"></i> Back
                         </a>
                     </div>

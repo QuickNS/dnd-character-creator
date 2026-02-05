@@ -11,7 +11,7 @@
                 <p class="mb-0 text-white">At level 3, you must choose a subclass specialization</p>
             </div>
             <div class="card-body">
-                <form method="POST" action="{{ url_for('select_subclass') }}">
+                <form method="POST" action="{{ url_for('character_creation.select_subclass') }}">
                     <div class="row">
                         {% for subclass_name, subclass_data in subclasses.items() %}
                         <div class="col-md-6 mb-3">
@@ -67,7 +67,7 @@
                         <button type="submit" class="btn btn-primary btn-lg" id="nextBtn" disabled>
                             <i class="fas fa-arrow-right me-2"></i>Continue to Features
                         </button>
-                        <a href="{{ url_for('choose_class') }}" class="btn btn-outline-secondary ms-2">
+                        <a href="{{ url_for('character_creation.choose_class') }}" class="btn btn-outline-secondary ms-2">
                             <i class="fas fa-arrow-left me-2"></i>Back to Class Selection
                         </a>
                     </div>

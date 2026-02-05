@@ -93,7 +93,7 @@
                         <h5><i class="fas fa-edit"></i> Make Your Choices</h5>
                         
                         {% if choices %}
-                        <form method="POST" action="{{ url_for('submit_class_choices') }}">
+                        <form method="POST" action="{{ url_for('character_creation.submit_class_choices') }}">
                             {% for choice in choices %}
                             <div class="card mb-4{% if choice.get('is_nested') %} nested-choice{% endif %}" 
                                  {% if choice.get('is_nested') %}
@@ -193,7 +193,7 @@
                                  <button type="submit" class="btn btn-primary btn-lg" id="submit-btn">
                                     <i class="fas fa-arrow-right"></i> Continue
                                 </button>
-                                <a href="{{ url_for('choose_subclass') }}" class="btn btn-secondary">
+                                <a href="{{ url_for('character_creation.choose_subclass') }}" class="btn btn-secondary">
                                     <i class="fas fa-arrow-left"></i> Back
                                 </a>
                             </div>
@@ -204,10 +204,10 @@
                             <i class="fas fa-info-circle"></i> No choices required for your current level and class combination.
                         </div>
                         <div class="text-center d-grid gap-2 mt-4">
-                            <a href="{{ url_for('choose_background') }}" class="btn btn-primary btn-lg">
+                            <a href="{{ url_for('background.choose_background') }}" class="btn btn-primary btn-lg">
                                 <i class="fas fa-arrow-right"></i> Continue
                             </a>
-                            <a href="{{ url_for('choose_subclass') }}" class="btn btn-secondary">
+                            <a href="{{ url_for('character_creation.choose_subclass') }}" class="btn btn-secondary">
                                 <i class="fas fa-arrow-left"></i> Back
                             </a>
                         </div>

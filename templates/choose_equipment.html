@@ -4,7 +4,7 @@
 
 {% block content %}
 <div class="container mt-5">
-    <form method="POST" action="{{ url_for('select_equipment') }}">
+    <form method="POST" action="{{ url_for('equipment.select_equipment') }}">
         <!-- Class Equipment Choice -->
         {% if class_equipment %}
         <div class="card mb-4">
@@ -99,7 +99,7 @@
                         <button type="submit" class="btn btn-primary btn-lg">
                             <i class="fas fa-arrow-right"></i> Complete
                         </button>
-                        <a href="{{ url_for('choose_species') }}" class="btn btn-outline-secondary">
+                        <a href="{{ url_for('species.choose_species') }}" class="btn btn-outline-secondary">
                             <i class="fas fa-arrow-left"></i> Back to Species
                         </a>
                     </div>

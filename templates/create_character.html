@@ -10,7 +10,7 @@
                 </h4>
             </div>
             <div class="card-body">
-                <form method="POST" action="{{ url_for('create_character') }}">
+                <form method="POST" action="{{ url_for('character_creation.create_character') }}">
                     <div class="mb-3">
                         <label for="name" class="form-label">Character Name <span class="text-danger">*</span></label>
                         <input type="text" class="form-control" id="name" name="name" required 
@@ -42,7 +42,7 @@
                         <button type="submit" class="btn btn-primary btn-lg">
                             <i class="fas fa-arrow-right"></i> Continue to Class Selection
                         </button>
-                        <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+                        <a href="{{ url_for('index.index') }}" class="btn btn-outline-secondary">
                             <i class="fas fa-arrow-left"></i> Back to Home
                         </a>
                     </div>

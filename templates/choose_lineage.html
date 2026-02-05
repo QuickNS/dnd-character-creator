@@ -12,7 +12,7 @@
             </div>
             <div class="card-body">
                 
-                <form method="POST" action="{{ url_for('select_lineage') }}">
+                <form method="POST" action="{{ url_for('species.select_lineage') }}">
                     <div class="row">
                         {% for lineage_name, lineage_data in lineages.items() %}
                         <div class="col-sm-6 col-lg-4 mb-3">
@@ -113,7 +113,7 @@
                         <button type="submit" class="btn btn-primary btn-lg">
                             <i class="fas fa-arrow-right me-2"></i>Continue to Languages
                         </button>
-                        <a href="{{ url_for('choose_species') }}" class="btn btn-outline-secondary">
+                        <a href="{{ url_for('species.choose_species') }}" class="btn btn-outline-secondary">
                             <i class="fas fa-arrow-left me-2"></i>Back to Species
                         </a>
                     </div>

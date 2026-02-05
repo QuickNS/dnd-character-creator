@@ -74,7 +74,16 @@ def get_option_descriptions(
         if data_source and list_name in data_source:
             choice_list = data_source[list_name]
             if isinstance(choice_list, dict):
-                return choice_list
+                # Extract descriptions from structured objects (e.g., divine_orders with effects)
+                descriptions = {}
+                for key, value in choice_list.items():
+                    if isinstance(value, dict) and 'description' in value:
+                        descriptions[key] = value['description']
+                    elif isinstance(value, str):
+                        descriptions[key] = value
+                    else:
+                        descriptions[key] = str(value)
+                return descriptions
     
     return {}
 

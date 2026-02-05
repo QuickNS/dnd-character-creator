@@ -33,6 +33,12 @@ from .feature_manager import FeatureManager
 from .hp_calculator import HPCalculator
 from .variant_manager import VariantManager
 
+# Import choice resolver for feature processing
+import sys
+if str(Path(__file__).parent.parent) not in sys.path:
+    sys.path.insert(0, str(Path(__file__).parent.parent))
+from utils.choice_resolver import resolve_choice_options, get_option_descriptions
+
 
 class CharacterBuilder:
     """
@@ -1351,6 +1357,704 @@ class CharacterBuilder:
             List of proficiencies
         """
         return self.character_data['proficiencies'].get(prof_type, [])
+    
+    def get_all_spells(self) -> Dict[int, List[Dict[str, Any]]]:
+        """
+        Gather all spells known by the character from various sources.
+        
+        Returns a dictionary mapping spell level (0 for cantrips, 1-9 for leveled spells)
+        to a list of spell dictionaries containing name, school, components, description,
+        source, and other metadata.
+        
+        Sources include:
+        - Effects (grant_cantrip, grant_spell)
+        - Prepared spells (domain/species spells)
+        - Known spells
+        - Class cantrips from choices
+        - Bonus cantrips from grant_cantrip_choice effects
+        - Subclass spells from effects
+        
+        Returns:
+            Dictionary mapping spell level to list of spell dicts
+        """
+        spells_by_level = {}
+        character = self.to_json()
+        choices_made = character.get('choices_made', {})
+        class_name = character.get('class', '')
+        subclass_name = character.get('subclass')
+        character_level = character.get('level', 1)
+        
+        # Helper to load spell definition
+        def load_spell_definition(spell_name: str) -> Dict[str, Any]:
+            """Load spell details from definitions folder."""
+            spell_file = self.data_dir / "spells" / "definitions" / f"{spell_name.lower().replace(' ', '_')}.json"
+            if spell_file.exists():
+                spell_info = self._load_json_file(spell_file)
+                return spell_info or {}
+            return {}
+        
+        # 1) Add spells granted directly via character effects
+        effects = character.get('effects', [])
+        if isinstance(effects, list):
+            for effect in effects:
+                if not isinstance(effect, dict):
+                    continue
+                
+                # Check min_level requirement
+                min_level = effect.get('min_level')
+                if isinstance(min_level, int) and character_level < min_level:
+                    continue
+                
+                effect_type = effect.get('type')
+                
+                if effect_type == 'grant_cantrip':
+                    cantrip_name = effect.get('spell')
+                    if not cantrip_name:
+                        continue
+                    
+                    # Avoid duplicates
+                    if 0 in spells_by_level and any(s.get('name') == cantrip_name for s in spells_by_level[0]):
+                        continue
+                    
+                    cantrip_info = load_spell_definition(cantrip_name)
+                    
+                    if 0 not in spells_by_level:
+                        spells_by_level[0] = []
+                    
+                    spells_by_level[0].append({
+                        'name': cantrip_name,
+                        'school': cantrip_info.get('school', ''),
+                        'casting_time': cantrip_info.get('casting_time', ''),
+                        'range': cantrip_info.get('range', ''),
+                        'components': cantrip_info.get('components', ''),
+                        'duration': cantrip_info.get('duration', ''),
+                        'description': cantrip_info.get('description', ''),
+                        'source': effect.get('source', 'Effects')
+                    })
+                
+                elif effect_type == 'grant_spell':
+                    spell_name = effect.get('spell')
+                    spell_level = effect.get('level')
+                    if not spell_name or not isinstance(spell_level, int):
+                        continue
+                    
+                    # Avoid duplicates
+                    if spell_level in spells_by_level and any(s.get('name') == spell_name for s in spells_by_level[spell_level]):
+                        continue
+                    
+                    spell_info = load_spell_definition(spell_name)
+                    
+                    if spell_level not in spells_by_level:
+                        spells_by_level[spell_level] = []
+                    
+                    spells_by_level[spell_level].append({
+                        'name': spell_name,
+                        'school': spell_info.get('school', ''),
+                        'casting_time': spell_info.get('casting_time', ''),
+                        'range': spell_info.get('range', ''),
+                        'components': spell_info.get('components', ''),
+                        'duration': spell_info.get('duration', ''),
+                        'description': spell_info.get('description', ''),
+                        'source': effect.get('source', 'Effects')
+                    })
+        
+        # 2) Add spells from character['spells']['prepared'] (domain/species spells - always prepared)
+        prepared_spells = character.get('spells', {}).get('prepared', [])
+        spell_metadata = character.get('spell_metadata', {})
+        
+        if isinstance(prepared_spells, list):
+            for spell_name in prepared_spells:
+                if not spell_name or not isinstance(spell_name, str):
+                    continue
+                
+                spell_info = load_spell_definition(spell_name)
+                spell_level = spell_info.get('level', 1)
+                
+                if spell_level not in spells_by_level:
+                    spells_by_level[spell_level] = []
+                
+                if not any(s.get('name') == spell_name for s in spells_by_level[spell_level]):
+                    # Get metadata for this spell
+                    metadata = spell_metadata.get(spell_name, {})
+                    once_per_day = metadata.get('once_per_day', False)
+                    
+                    # Determine the source from metadata
+                    spell_source = metadata.get('source', 'always_prepared')
+                    if spell_source == 'lineage':
+                        lineage = character.get('lineage', '')
+                        display_source = f"{lineage} Spells" if lineage else "Lineage Spells"
+                    elif spell_source == 'subclass':
+                        display_source = f"{subclass_name} Spells" if subclass_name else "Subclass Spells"
+                    else:
+                        display_source = "Always Prepared"
+                    
+                    spells_by_level[spell_level].append({
+                        'name': spell_name,
+                        'school': spell_info.get('school', ''),
+                        'casting_time': spell_info.get('casting_time', ''),
+                        'range': spell_info.get('range', ''),
+                        'components': spell_info.get('components', ''),
+                        'duration': spell_info.get('duration', ''),
+                        'description': spell_info.get('description', ''),
+                        'source': display_source,
+                        'always_prepared': True,
+                        'once_per_day': once_per_day
+                    })
+        
+        # 3) Add spells from character['spells']['known']  
+        known_spells = character.get('spells', {}).get('known', [])
+        if isinstance(known_spells, list):
+            for spell_name in known_spells:
+                if not spell_name or not isinstance(spell_name, str):
+                    continue
+                
+                spell_info = load_spell_definition(spell_name)
+                spell_level = spell_info.get('level', 1)
+                
+                if spell_level not in spells_by_level:
+                    spells_by_level[spell_level] = []
+                
+                if not any(s.get('name') == spell_name for s in spells_by_level[spell_level]):
+                    spells_by_level[spell_level].append({
+                        'name': spell_name,
+                        'school': spell_info.get('school', ''),
+                        'casting_time': spell_info.get('casting_time', ''),
+                        'range': spell_info.get('range', ''),
+                        'components': spell_info.get('components', ''),
+                        'duration': spell_info.get('duration', ''),
+                        'description': spell_info.get('description', ''),
+                        'source': 'Known Spells'
+                    })
+        
+        # 4) Get class cantrips from choices
+        cantrips = choices_made.get('cantrips', [])
+        if not cantrips:
+            # Try common feature names
+            for key in ['Spellcasting', 'spellcasting', 'Cantrips']:
+                if key in choices_made:
+                    potential_cantrips = choices_made[key]
+                    if isinstance(potential_cantrips, list):
+                        cantrips = potential_cantrips
+                        break
+        
+        if cantrips and class_name:
+            if 0 not in spells_by_level:
+                spells_by_level[0] = []
+            
+            # Load class cantrip list
+            class_lower = class_name.lower()
+            spell_file = self.data_dir / "spells" / "class_lists" / f"{class_lower}.json"
+            
+            if spell_file.exists():
+                spell_data = self._load_json_file(spell_file)
+                if spell_data:
+                    available_cantrips = spell_data.get('cantrips', [])
+                    
+                    for cantrip_name in cantrips:
+                        if cantrip_name in available_cantrips:
+                            existing_names = [s['name'] for s in spells_by_level[0]]
+                            if cantrip_name not in existing_names:
+                                cantrip_info = load_spell_definition(cantrip_name)
+                                
+                                spells_by_level[0].append({
+                                    'name': cantrip_name,
+                                    'school': cantrip_info.get('school', ''),
+                                    'casting_time': cantrip_info.get('casting_time', ''),
+                                    'range': cantrip_info.get('range', ''),
+                                    'components': cantrip_info.get('components', ''),
+                                    'duration': cantrip_info.get('duration', ''),
+                                    'description': cantrip_info.get('description', ''),
+                                    'source': f"{class_name} Class"
+                                })
+        
+        # 5) Add bonus cantrips from grant_cantrip_choice effects
+        if class_name:
+            class_data = self._load_class_data(class_name)
+            if class_data:
+                # Scan for options with grant_cantrip_choice effects
+                for data_key, data_value in class_data.items():
+                    if isinstance(data_value, dict):
+                        for option_name, option_data in data_value.items():
+                            if isinstance(option_data, dict) and 'effects' in option_data:
+                                # Check if this option was selected
+                                for choice_key, choice_value in choices_made.items():
+                                    if choice_value == option_name:
+                                        # Check for grant_cantrip_choice effects
+                                        for effect in option_data.get('effects', []):
+                                            if effect.get('type') == 'grant_cantrip_choice':
+                                                bonus_cantrip_key = f'{option_name}_bonus_cantrip'
+                                                bonus_cantrips = choices_made.get(bonus_cantrip_key)
+                                                
+                                                if bonus_cantrips:
+                                                    spell_list = effect.get('spell_list', class_name)
+                                                    class_lower = spell_list.lower()
+                                                    spell_file = self.data_dir / "spells" / "class_lists" / f"{class_lower}.json"
+                                                    
+                                                    if spell_file.exists():
+                                                        spell_data = self._load_json_file(spell_file)
+                                                        if spell_data:
+                                                            available_cantrips = spell_data.get('cantrips', [])
+                                                            
+                                                            if 0 not in spells_by_level:
+                                                                spells_by_level[0] = []
+                                                            
+                                                            cantrip_list = bonus_cantrips if isinstance(bonus_cantrips, list) else [bonus_cantrips]
+                                                            
+                                                            for cantrip_name in cantrip_list:
+                                                                if cantrip_name in available_cantrips:
+                                                                    existing_names = [s['name'] for s in spells_by_level[0]]
+                                                                    if cantrip_name not in existing_names:
+                                                                        cantrip_info = load_spell_definition(cantrip_name)
+                                                                        
+                                                                        spells_by_level[0].append({
+                                                                            'name': cantrip_name,
+                                                                            'school': cantrip_info.get('school', ''),
+                                                                            'casting_time': cantrip_info.get('casting_time', ''),
+                                                                            'range': cantrip_info.get('range', ''),
+                                                                            'components': cantrip_info.get('components', ''),
+                                                                            'duration': cantrip_info.get('duration', ''),
+                                                                            'description': cantrip_info.get('description', ''),
+                                                                            'source': f"{option_name} ({data_key})"
+                                                                        })
+        
+        # 6) Add cantrips from subclass features with grant_cantrip effects
+        if subclass_name and class_name:
+            subclass_data = self._load_subclass_data(class_name, subclass_name)
+            if subclass_data:
+                features_by_level = subclass_data.get('features_by_level', {})
+                
+                # Load class cantrip list once for efficiency
+                class_lower = class_name.lower()
+                spell_file = self.data_dir / "spells" / "class_lists" / f"{class_lower}.json"
+                available_cantrips = []
+                
+                if spell_file.exists():
+                    spell_data = self._load_json_file(spell_file)
+                    if spell_data:
+                        available_cantrips = spell_data.get('cantrips', [])
+                
+                # Check each level up to character level for effects
+                for level in range(1, character_level + 1):
+                    level_str = str(level)
+                    if level_str in features_by_level:
+                        level_features = features_by_level[level_str]
+                        for feature_name, feature_data in level_features.items():
+                            if isinstance(feature_data, dict) and 'effects' in feature_data:
+                                for effect in feature_data.get('effects', []):
+                                    if effect.get('type') == 'grant_cantrip':
+                                        cantrip_name = effect.get('spell')
+                                        if cantrip_name and cantrip_name in available_cantrips:
+                                            if 0 not in spells_by_level:
+                                                spells_by_level[0] = []
+                                            
+                                            existing_names = [s['name'] for s in spells_by_level[0]]
+                                            if cantrip_name not in existing_names:
+                                                cantrip_info = load_spell_definition(cantrip_name)
+                                                
+                                                spells_by_level[0].append({
+                                                    'name': cantrip_name,
+                                                    'school': cantrip_info.get('school', ''),
+                                                    'casting_time': cantrip_info.get('casting_time', ''),
+                                                    'range': cantrip_info.get('range', ''),
+                                                    'components': cantrip_info.get('components', ''),
+                                                    'duration': cantrip_info.get('duration', ''),
+                                                    'description': cantrip_info.get('description', ''),
+                                                    'source': f"{subclass_name} (Level {level})"
+                                                })
+        
+        return spells_by_level
+    
+    def get_language_options(self) -> Dict[str, Any]:
+        """
+        Get language choices: base languages (already known) and available languages for selection.
+        
+        Returns:
+            dict with keys:
+                - base_languages: set of languages already known from species/class
+                - available_languages: list of languages available to choose from
+        """
+        species_name = self.character_data.get('species')
+        class_name = self.character_data.get('class')
+        
+        # Start with Common
+        base_languages = set(['Common'])
+        
+        # Add species languages
+        if species_name:
+            species_data = self._load_species_data(species_name)
+            if species_data and 'languages' in species_data:
+                base_languages.update(species_data['languages'])
+        
+        # Add class languages (if any)
+        if class_name:
+            class_data = self._load_class_data(class_name)
+            if class_data and 'languages' in class_data:
+                base_languages.update(class_data['languages'])
+        
+        # All available languages in D&D 2024
+        all_languages = [
+            'Abyssal', 'Celestial', 'Common', 'Deep Speech', 'Draconic', 'Dwarvish',
+            'Elvish', 'Giant', 'Gnomish', 'Goblin', 'Halfling', 'Infernal',
+            'Orc', 'Primordial', 'Sylvan', 'Undercommon'
+        ]
+        
+        # Languages available for selection (not already known)
+        available_languages = [lang for lang in all_languages if lang not in base_languages]
+        
+        return {
+            'base_languages': sorted(base_languages),
+            'available_languages': available_languages
+        }
+    
+    def get_background_asi_options(self) -> Dict[str, Any]:
+        """
+        Get background ability score increase options and suggested allocation.
+        
+        Returns:
+            dict with keys:
+                - total_points: Total ASI points to allocate (typically 3)
+                - suggested: Suggested allocation from background data
+                - ability_options: List of abilities available for allocation
+        """
+        background_name = self.character_data.get('background')
+        if not background_name:
+            return {
+                'total_points': 3,
+                'suggested': {},
+                'ability_options': ["Strength", "Dexterity", "Constitution", "Intelligence", "Wisdom", "Charisma"]
+            }
+        
+        background_data = self._load_background_data(background_name)
+        if not background_data:
+            return {
+                'total_points': 3,
+                'suggested': {},
+                'ability_options': ["Strength", "Dexterity", "Constitution", "Intelligence", "Wisdom", "Charisma"]
+            }
+        
+        # D&D 2024 standard
+        total_points = 3
+        suggested = {}
+        ability_options = ["Strength", "Dexterity", "Constitution", "Intelligence", "Wisdom", "Charisma"]
+        
+        if 'ability_score_increase' in background_data:
+            asi_data = background_data['ability_score_increase']
+            if 'suggested' in asi_data:
+                suggested = asi_data['suggested']
+            if 'options' in asi_data:
+                # Keep background-specific abilities in standard D&D order
+                bg_options = asi_data['options']
+                ability_options = [ability for ability in ability_options if ability in bg_options]
+        
+        return {
+            'total_points': total_points,
+            'suggested': suggested,
+            'ability_options': ability_options
+        }
+    
+    def get_species_trait_choices(self) -> Dict[str, Dict[str, Any]]:
+        """
+        Get trait choices for the character's species (e.g., Keen Senses for Elf).
+        
+        Returns:
+            dict mapping trait_name -> {description, options, count}
+        """
+        species_name = self.character_data.get('species')
+        if not species_name:
+            return {}
+        
+        species_data = self._load_species_data(species_name)
+        if not species_data or 'traits' not in species_data:
+            return {}
+        
+        # Find trait choices and extract options
+        trait_choices = {}
+        for trait_name, trait_data in species_data['traits'].items():
+            if isinstance(trait_data, dict) and trait_data.get('type') == 'choice':
+                # Extract options from the nested structure
+                choices_data = trait_data.get('choices', {})
+                source_data = choices_data.get('source', {})
+                options = source_data.get('options', [])
+                
+                # Create simplified structure
+                trait_choices[trait_name] = {
+                    'description': trait_data.get('description', ''),
+                    'options': options,
+                    'count': choices_data.get('count', 1)
+                }
+        
+        return trait_choices
+    
+    def get_class_features_and_choices(self) -> Dict[str, Any]:
+        """
+        Get all class and subclass features with their choices for character's level.
+        
+        This method processes:
+        - Skill proficiency selections
+        - Class features by level (informational and choice-based)
+        - Subclass features by level (informational and choice-based)
+        - Nested choices from effects (e.g., bonus cantrips from grant_cantrip_choice)
+        
+        Returns a dictionary with:
+        - 'features_by_level': Dict mapping level (int) to list of feature dicts
+        - 'choices': List of choice dicts for form processing
+        - 'skill_choice': Dict with skill selection info (or None)
+        
+        Returns:
+            Dictionary with features_by_level, choices, and skill_choice
+        """
+        character = self.to_json()
+        class_name = character.get('class')
+        subclass_name = character.get('subclass')
+        character_level = character.get('level', 1)
+        choices_made = character.get('choices_made', {})
+        
+        if not class_name:
+            return {'features_by_level': {}, 'choices': [], 'skill_choice': None}
+        
+        # Load class and subclass data
+        class_data = self._load_class_data(class_name)
+        if not class_data:
+            return {'features_by_level': {}, 'choices': [], 'skill_choice': None}
+        
+        subclass_data = None
+        if subclass_name:
+            subclass_data = self._load_subclass_data(class_name, subclass_name)
+        
+        all_features_by_level = {}
+        choices = []
+        skill_choice = None
+        
+        # All D&D skills - constant list
+        ALL_SKILLS = [
+            'Acrobatics', 'Animal Handling', 'Arcana', 'Athletics', 'Deception',
+            'History', 'Insight', 'Intimidation', 'Investigation', 'Medicine',
+            'Nature', 'Perception', 'Performance', 'Persuasion', 'Religion',
+            'Sleight of Hand', 'Stealth', 'Survival'
+        ]
+        
+        # 1) Add skill selection (level 1)
+        if 'skill_options' in class_data and 'skill_proficiencies_count' in class_data:
+            skill_options = class_data['skill_options']
+            
+            # Expand "Any" to all available skills
+            if skill_options == ['Any'] or (len(skill_options) == 1 and skill_options[0] == 'Any'):
+                skill_options = ALL_SKILLS
+            
+            if 1 not in all_features_by_level:
+                all_features_by_level[1] = []
+            
+            all_features_by_level[1].append({
+                'name': 'Skill Proficiencies',
+                'type': 'choice',
+                'description': f'Choose {class_data["skill_proficiencies_count"]} skill proficiencies from the available options.',
+                'level': 1,
+                'source': 'Class'
+            })
+            
+            skill_choice = {
+                'title': 'Skill Proficiencies',
+                'type': 'skills',
+                'description': f'Choose {class_data["skill_proficiencies_count"]} skill proficiencies from the available options.',
+                'options': skill_options,
+                'count': class_data['skill_proficiencies_count'],
+                'required': True,
+                'level': 1
+            }
+            choices.append(skill_choice)
+        
+        # Get class and subclass features
+        class_features_by_level = class_data.get('features_by_level', {})
+        subclass_features_by_level = {}
+        if subclass_data:
+            subclass_features_by_level = subclass_data.get('features_by_level', {})
+        
+        # 2) Process all levels up to character level
+        for level in range(1, character_level + 1):
+            level_str = str(level)
+            
+            if level not in all_features_by_level:
+                all_features_by_level[level] = []
+            
+            # Process class features for this level
+            self._process_level_features(
+                level, level_str, class_features_by_level.get(level_str, {}),
+                all_features_by_level, choices, character, class_data, None,
+                source_name='Class'
+            )
+            
+            # Process subclass features for this level
+            if subclass_name and level_str in subclass_features_by_level:
+                self._process_level_features(
+                    level, level_str, subclass_features_by_level[level_str],
+                    all_features_by_level, choices, character, class_data, subclass_data,
+                    source_name=subclass_name
+                )
+        
+        # 3) Add nested choices from effects (e.g., bonus cantrips from grant_cantrip_choice)
+        self._add_nested_choices_from_effects(choices, choices_made, class_data, character, class_name)
+        
+        return {
+            'features_by_level': all_features_by_level,
+            'choices': choices,
+            'skill_choice': skill_choice
+        }
+    
+    def _process_level_features(
+        self,
+        level: int,
+        level_str: str,
+        level_features: Dict[str, Any],
+        all_features_by_level: Dict[int, List[Dict]],
+        choices: List[Dict],
+        character: Dict,
+        class_data: Dict,
+        subclass_data: Optional[Dict],
+        source_name: str
+    ):
+        """
+        Process features for a specific level (class or subclass).
+        
+        Adds features to all_features_by_level and choices lists.
+        """
+        for feature_name, feature_data in level_features.items():
+            if isinstance(feature_data, dict) and 'choices' in feature_data:
+                # Choice-based feature
+                all_features_by_level[level].append({
+                    'name': feature_name,
+                    'type': 'choice',
+                    'description': feature_data.get('description', ''),
+                    'level': level,
+                    'source': source_name
+                })
+                
+                # Add to choices for form processing
+                choices_data = feature_data['choices']
+                if isinstance(choices_data, list):
+                    # Multiple choices
+                    for idx, choice_item in enumerate(choices_data):
+                        choice_name_suffix = choice_item.get("name", f"Choice {idx+1}")
+                        feature_key = f'{feature_name}_{choice_item.get("name", f"choice_{idx}")}'
+                        
+                        # For subclass features, prefix with 'subclass_'
+                        if subclass_data:
+                            feature_key = f'subclass_{feature_key}'
+                        
+                        choice = {
+                            'title': f'{feature_name} - {choice_name_suffix} ({source_name}, Level {level})',
+                            'type': 'feature',
+                            'description': feature_data.get('description', ''),
+                            'options': resolve_choice_options(choice_item, character, class_data, subclass_data),
+                            'count': choice_item.get('count', 1),
+                            'required': not choice_item.get('optional', False),
+                            'level': level,
+                            'feature_name': feature_key,
+                            'option_descriptions': get_option_descriptions(feature_data, choice_item, class_data, subclass_data)
+                        }
+                        
+                        # Skip subclass-related features in class-only context
+                        if source_name == 'Class' and 'subclass' not in feature_name.lower():
+                            choices.append(choice)
+                        elif source_name != 'Class':
+                            choices.append(choice)
+                else:
+                    # Single choice
+                    feature_key = feature_name
+                    if subclass_data:
+                        feature_key = f'subclass_{feature_name}'
+                    
+                    choice = {
+                        'title': f'{feature_name} ({source_name}, Level {level})',
+                        'type': 'feature',
+                        'description': feature_data.get('description', ''),
+                        'options': resolve_choice_options(choices_data, character, class_data, subclass_data),
+                        'count': choices_data.get('count', 1),
+                        'required': not choices_data.get('optional', False),
+                        'level': level,
+                        'feature_name': feature_key,
+                        'option_descriptions': get_option_descriptions(feature_data, choices_data, class_data, subclass_data)
+                    }
+                    
+                    # Skip subclass-related features in class-only context
+                    if source_name == 'Class' and 'subclass' not in feature_name.lower():
+                        choices.append(choice)
+                    elif source_name != 'Class':
+                        choices.append(choice)
+            else:
+                # Feature without choices (simple informational)
+                description = feature_data if isinstance(feature_data, str) else feature_data.get('description', '')
+                all_features_by_level[level].append({
+                    'name': feature_name,
+                    'type': 'info',
+                    'description': description,
+                    'level': level,
+                    'source': source_name
+                })
+    
+    def _add_nested_choices_from_effects(
+        self,
+        choices: List[Dict],
+        choices_made: Dict[str, Any],
+        class_data: Dict,
+        character: Dict,
+        class_name: str
+    ):
+        """
+        Add nested choices triggered by grant_cantrip_choice effects.
+        
+        Scans class_data for options with grant_cantrip_choice effects and adds
+        the corresponding bonus cantrip choices to the choices list.
+        """
+        # Scan all keys in class_data for option lists that might have effects
+        for data_key, data_value in class_data.items():
+            if isinstance(data_value, dict):
+                # This could be a choice list (e.g., divine_orders, fighting_styles, etc.)
+                for option_name, option_data in data_value.items():
+                    if isinstance(option_data, dict) and 'effects' in option_data:
+                        # Check if this option was selected
+                        for choice_key, choice_value in choices_made.items():
+                            if choice_value == option_name:
+                                # This option was selected! Check for grant_cantrip_choice effects
+                                for effect in option_data.get('effects', []):
+                                    if effect.get('type') == 'grant_cantrip_choice':
+                                        cantrip_count = effect.get('count', 1)
+                                        spell_list = effect.get('spell_list', class_name)
+                                        
+                                        # Load cantrip options
+                                        class_lower = spell_list.lower()
+                                        spell_file_path = f"spells/class_lists/{class_lower}.json"
+                                        cantrip_options = resolve_choice_options(
+                                            {'source': {'type': 'external', 'file': spell_file_path, 'list': 'cantrips'}},
+                                            character,
+                                            class_data,
+                                            None
+                                        )
+                                        
+                                        # Create unique feature name based on the option that grants it
+                                        bonus_feature_name = f'{option_name}_bonus_cantrip'
+                                        
+                                        # Only add if not already in choices
+                                        if not any(c.get('feature_name') == bonus_feature_name for c in choices):
+                                            choice = {
+                                                'title': f'{option_name} - Bonus Cantrip (Level 1)',
+                                                'type': 'feature',
+                                                'description': f'Choose {cantrip_count} additional cantrip from the {spell_list} spell list.',
+                                                'options': cantrip_options,
+                                                'count': cantrip_count,
+                                                'required': True,
+                                                'level': 1,
+                                                'feature_name': bonus_feature_name,
+                                                'depends_on': choice_key,
+                                                'depends_on_value': choice_value,
+                                                'is_nested': True,
+                                                'option_descriptions': get_option_descriptions(
+                                                    {'choices': {'source': {'type': 'external', 'file': spell_file_path, 'list': 'cantrips'}}},
+                                                    {'source': {'type': 'external', 'file': spell_file_path, 'list': 'cantrips'}},
+                                                    class_data,
+                                                    None
+                                                )
+                                            }
+                                            choices.append(choice)
     
     def validate(self) -> Dict[str, List[str]]:
         """

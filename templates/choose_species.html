@@ -12,7 +12,7 @@
             <div class="card-body">
                 <p class="lead">Your species determines your physical characteristics, natural abilities, and racial traits.</p>
                 
-                <form method="POST" action="{{ url_for('select_species') }}">
+                <form method="POST" action="{{ url_for('species.select_species') }}">
                     <div class="row">
                         {% for species_name, species_data in species.items() %}
                         <div class="col-lg-6 mb-3">
@@ -52,7 +52,7 @@
                         <button type="submit" class="btn btn-primary btn-lg">
                             <i class="fas fa-arrow-right"></i> Continue
                         </button>
-                        <a href="{{ url_for('choose_background') }}" class="btn btn-outline-secondary">
+                        <a href="{{ url_for('background.choose_background') }}" class="btn btn-outline-secondary">
                             <i class="fas fa-arrow-left"></i> Back to Background
                         </a>
                     </div>

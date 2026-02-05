@@ -9,13 +9,13 @@
                     <i class="fas fa-check-circle"></i> Character Complete!
                 </h4>
                 <div class="btn-group" role="group">
-                    <a href="{{ url_for('character_sheet') }}" class="btn btn-primary btn-sm" target="_blank">
+                    <a href="{{ url_for('character_summary.character_sheet') }}" class="btn btn-primary btn-sm" target="_blank">
                         <i class="fas fa-file-pdf"></i> View Character Sheet
                     </a>
                     <button type="button" class="btn btn-primary btn-sm" onclick="showChoicesMade()">
                         <i class="fas fa-download"></i> Export Choices
                     </button>
-                    <a href="{{ url_for('reset') }}" class="btn btn-primary btn-sm">
+                    <a href="{{ url_for('index.reset') }}" class="btn btn-primary btn-sm">
                         <i class="fas fa-redo"></i> Start Over
                     </a>
                 </div>

@@ -17,7 +17,7 @@
                     <p class="mb-0">Increase one of these scores by 2 and another one by 1, or increase all three by 1. None of these increases can raise a score above 20.</p>
                 </div>
                 
-                <form method="POST" action="{{ url_for('submit_background_bonuses') }}">
+                <form method="POST" action="{{ url_for('ability_scores.submit_background_bonuses') }}">
                     <div class="card mb-4">
                        <div class="sub-card-header bg-secondary">
                             <h6 class="card-title mb-0">Choose Assignment Method</h6>
@@ -82,7 +82,7 @@
                         <button type="submit" class="btn btn-primary btn-lg" id="submit-bg-btn">
                             <i class="fas fa-arrow-right"></i> Continue to Equipment
                         </button>
-                        <a href="{{ url_for('assign_ability_scores') }}" class="btn btn-outline-secondary">
+                        <a href="{{ url_for('ability_scores.assign_ability_scores') }}" class="btn btn-outline-secondary">
                             <i class="fas fa-arrow-left"></i> Back to Ability Scores
                         </a>
                     </div>
