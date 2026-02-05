@@ -10,11 +10,18 @@
   "skill_proficiencies": ["Insight", "Religion"],
   "tool_proficiencies": ["Calligrapher's Supplies"],
   "languages": 2,
-  "equipment": [
-    "Calligrapher's Supplies",
-    "Book (prayers)",
-    "Incense (10 uses)",
-    "Traveler's Clothes",
-    "22 GP"
-  ]
+  "starting_equipment": {
+    "option_a": {
+      "items": [
+        "Calligrapher's Supplies",
+        "Book (prayers)",
+        "Incense (10 uses)",
+        "Traveler's Clothes"
+      ],
+      "gold": 22
+    },
+    "option_b": {
+      "gold": 50
+    }
+  }
 }

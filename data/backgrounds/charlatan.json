@@ -10,10 +10,17 @@
   "skill_proficiencies": ["Deception", "Sleight of Hand"],
   "tool_proficiencies": ["Forgery Kit"],
   "languages": 2,
-  "equipment": [
-    "Forgery Kit",
-    "Fine Clothes",
-    "Signet Ring (fake)",
-    "15 GP"
-  ]
+  "starting_equipment": {
+    "option_a": {
+      "items": [
+        "Forgery Kit",
+        "Fine Clothes",
+        "Signet Ring (fake)"
+      ],
+      "gold": 15
+    },
+    "option_b": {
+      "gold": 50
+    }
+  }
 }

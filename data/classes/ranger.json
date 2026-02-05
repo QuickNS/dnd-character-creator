@@ -23,6 +23,22 @@
     "Stealth",
     "Survival"
   ],
+  "starting_equipment": {
+    "option_a": {
+      "items": [
+        "Scale Mail",
+        "Shortsword (2)",
+        "Longbow",
+        "Arrow (20)",
+        "Druidic Focus",
+        "Explorer's Pack"
+      ],
+      "gold": 10
+    },
+    "option_b": {
+      "gold": 150
+    }
+  },
   "subclass_selection_level": 3,
   "spellcasting_ability": "Wisdom",
   "spellcasting_focus": ["Druidcraft Focus"],

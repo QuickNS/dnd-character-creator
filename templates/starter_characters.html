@@ -1,0 +1,250 @@
+{% extends "base.html" %}
+
+{% block title %}Starter Characters{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="text-center mb-5">
+        <h1 class="display-4 text-fantasy mb-3">
+            <i class="fas fa-users me-3"></i>
+            Choose Your Hero
+        </h1>
+        <p class="lead">Select a pre-made character to jump right into the adventure!</p>
+        <p class="text-muted">These iconic heroes are fully built and ready for action.</p>
+    </div>
+    
+    <div class="row">
+        {% for starter in starters %}
+        <div class="col-lg-4 col-md-6 col-sm-12 mb-4">
+            <div class="card shadow starter-card" data-class="{{ starter.class }}" style="background-image: url('{{ url_for('static', filename='background/' + starter.image) }}');">
+                <div class="card-info-sidebar">
+                    <div class="sidebar-content">
+                        <div class="class-badge mb-3">
+                            <span class="badge bg-dark">{{ starter.class }}</span>
+                        </div>
+                        <h5 class="card-title mb-3">{{ starter.name }}</h5>
+                        <p class="card-text mb-4">{{ starter.description }}</p>
+                        <div class="text-center mt-auto">
+                            <span class="badge bg-primary px-3 py-2">
+                                <i class="fas fa-clock me-2"></i>Coming Soon
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <div class="text-center mt-5">
+        <a href="{{ url_for('index') }}" class="btn btn-secondary btn-lg">
+            <i class="fas fa-arrow-left me-2"></i> Back to Home
+        </a>
+    </div>
+</div>
+
+<style>
+.starter-card {
+    position: relative;
+    width: 100%;
+    padding-bottom: 100%; /* 1:1 aspect ratio - square */
+    background-size: cover;
+    background-position: top center;
+    background-repeat: no-repeat;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border: 2px solid #dee2e6;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+.starter-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+    border-color: var(--dnd-gold);
+}
+
+.starter-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.3) 70%, rgba(0, 0, 0, 0.6) 100%);
+    transition: opacity 0.3s ease;
+}
+
+.starter-card:hover::before {
+    background: linear-gradient(90deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.2) 70%, rgba(0, 0, 0, 0.5) 100%);
+}
+
+.card-info-sidebar {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 45%;
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(8px);
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    z-index: 1;
+    transition: background 0.3s ease;
+}
+
+.starter-card:hover .card-info-sidebar {
+    background: rgba(255, 255, 255, 0.95);
+}
+
+.sidebar-content {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.class-badge {
+    text-align: center;
+}
+
+.class-badge .badge {
+    font-size: 0.85rem;
+    padding: 0.4rem 0.8rem;
+    font-family: 'Cinzel', serif;
+    letter-spacing: 1px;
+    background-color: rgba(0, 0, 0, 0.8) !important;
+}
+
+.card-title {
+    font-family: 'Cinzel', serif;
+    font-size: 1.2rem;
+    color: var(--dnd-burgundy);
+    font-weight: bold;
+    text-align: center;
+    line-height: 1.3;
+}
+
+.card-text {
+    font-size: 0.9rem;
+    line-height: 1.6;
+    color: #333;
+    text-align: center;
+    flex-grow: 1;
+}
+
+.badge {
+    font-size: 0.9rem;
+    letter-spacing: 0.5px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 992px) {
+    .card-info-sidebar {
+        width: 50%;
+        padding: 1.2rem;
+    }
+    
+    .card-title {
+        font-size: 1.1rem;
+    }
+    
+    .card-text {
+        font-size: 0.85rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .card-info-sidebar {
+        padding: 1rem;
+    }
+    
+    .card-title {
+        font-size: 1rem;
+    }
+    
+    .card-text {
+        font-size: 0.8rem;
+    }
+    
+    .class-badge .badge {
+        font-size: 0.75rem;
+        padding: 0.3rem 0.6rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .card-info-sidebar {
+        width: 100%;
+        top: auto;
+        bottom: 0;
+        height: 50%;
+        padding: 1rem;
+        background: rgba(255, 255, 255, 0.95);
+    }
+    
+    .starter-card::before {
+        background: linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.3) 50%, rgba(0, 0, 0, 0.6) 100%);
+    }
+}
+
+/* Class-specific hover colors */
+.starter-card[data-class="Barbarian"]:hover {
+    border-color: #dc3545;
+}
+
+.starter-card[data-class="Bard"]:hover {
+    border-color: #e83e8c;
+}
+
+.starter-card[data-class="Cleric"]:hover {
+    border-color: #ffc107;
+}
+
+.starter-card[data-class="Druid"]:hover {
+    border-color: #28a745;
+}
+
+.starter-card[data-class="Fighter"]:hover {
+    border-color: #6c757d;
+}
+
+.starter-card[data-class="Monk"]:hover {
+    border-color: #17a2b8;
+}
+
+.starter-card[data-class="Paladin"]:hover {
+    border-color: #f0ad4e;
+}
+
+.starter-card[data-class="Ranger"]:hover {
+    border-color: #5cb85c;
+}
+
+.starter-card[data-class="Rogue"]:hover {
+    border-color: #6c757d;
+}
+
+.starter-card[data-class="Sorcerer"]:hover {
+    border-color: #9b59b6;
+}
+
+.starter-card[data-class="Warlock"]:hover {
+    border-color: #8e44ad;
+}
+
+.starter-card[data-class="Wizard"]:hover {
+    border-color: #3498db;
+}
+</style>
+
+<script>
+// Future: Add click handlers to load starter characters
+document.querySelectorAll('.starter-card').forEach(card => {
+    card.addEventListener('click', function() {
+        const characterClass = this.dataset.class;
+        console.log('Selected starter character:', characterClass);
+        // TODO: Implement character loading when data files are ready
+    });
+});
+</script>
+{% endblock %}

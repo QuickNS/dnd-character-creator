@@ -23,6 +23,21 @@
     "Persuasion",
     "Religion"
   ],
+  "starting_equipment": {
+    "option_a": {
+      "items": [
+        "Light Crossbow",
+        "Bolt (20)",
+        "Arcane Focus",
+        "Dagger (2)",
+        "Dungeoneer's Pack"
+      ],
+      "gold": 5
+    },
+    "option_b": {
+      "gold": 75
+    }
+  },
   "subclass_selection_level": 1,
   "spellcasting_ability": "Charisma",
   "spellcasting_focus": ["Arcane Focus"],

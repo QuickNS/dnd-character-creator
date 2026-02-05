@@ -1,0 +1,228 @@
+{% extends "base.html" %}
+
+{% block title %}Load Character{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-10 col-lg-8">
+            <h1 class="mb-4">Load Character from JSON</h1>
+            
+            <p class="lead">Upload a character JSON file or paste the JSON content to load your character.</p>
+            
+            <ul class="nav nav-tabs mb-4" id="loadTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="upload-tab" data-bs-toggle="tab" data-bs-target="#upload" type="button" role="tab">
+                        <i class="bi bi-upload"></i> Upload File
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="paste-tab" data-bs-toggle="tab" data-bs-target="#paste" type="button" role="tab">
+                        <i class="bi bi-clipboard"></i> Paste JSON
+                    </button>
+                </li>
+            </ul>
+            
+            <div class="tab-content" id="loadTabContent">
+                <!-- Upload Tab -->
+                <div class="tab-pane fade show active" id="upload" role="tabpanel">
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <form id="uploadForm">
+                                <div class="mb-3">
+                                    <label for="json_file" class="form-label">Select JSON File</label>
+                                    <input type="file" class="form-control" id="json_file" name="json_file" accept=".json,application/json" required>
+                                    <div class="form-text">Upload a character JSON file exported from this application.</div>
+                                </div>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-upload"></i> Load Character
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Paste Tab -->
+                <div class="tab-pane fade" id="paste" role="tabpanel">
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <form id="pasteForm">
+                                <div class="mb-3">
+                                    <label for="json_content" class="form-label">Paste JSON Content</label>
+                                    <textarea class="form-control font-monospace" id="json_content" name="json_content" rows="15" placeholder='Paste your character JSON here...'></textarea>
+                                    <div class="form-text">Paste the complete JSON object from a character file.</div>
+                                </div>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-clipboard-check"></i> Load Character
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Result Messages -->
+            <div id="result"></div>
+            
+            <!-- Example -->
+            <div class="card bg-light">
+                <div class="card-header">
+                    <h5 class="mb-0">Example Character JSON</h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-2">Your JSON should contain an object with character selections:</p>
+                    <pre class="bg-white p-3 border rounded"><code>{
+  "character_name": "Thorin Sunforge",
+  "class": "Cleric",
+  "level": 1,
+  "Divine Order": "Protector",
+  "species": "Dwarf",
+  "background": "Soldier",
+  "alignment": "Lawful Good",
+  "Spellcasting": [
+    "Guidance",
+    "Sacred Flame",
+    "Thaumaturgy"
+  ],
+  "ability_scores": "standard_array_recommended",
+  "background_ability_score_assignment": {
+    "Constitution": 1,
+    "Strength": 2
+  },
+  "skill_choices": [
+    "Insight",
+    "Persuasion"
+  ]
+}</code></pre>
+            <p class="mt-3 mb-0 text-muted">This can be obtained by exporting your character from the application.</p>               </div>
+            </div>
+            
+            <div class="mt-4">
+                <a href="{{ url_for('index') }}" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to Home
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.font-monospace {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.9rem;
+}
+
+.alert-loading {
+    display: none;
+}
+
+.spinner-border-sm {
+    width: 1rem;
+    height: 1rem;
+    border-width: 0.15em;
+}
+</style>
+
+<script>
+// Loading spinner HTML
+const loadingHTML = `
+    <div class="alert alert-info alert-loading" role="alert">
+        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+        Loading character...
+    </div>
+`;
+
+// Handle file upload
+document.getElementById('uploadForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const resultDiv = document.getElementById('result');
+    const fileInput = document.getElementById('json_file');
+    const file = fileInput.files[0];
+    
+    if (!file) {
+        resultDiv.innerHTML = '<div class="alert alert-danger" role="alert">Please select a file.</div>';
+        return;
+    }
+    
+    resultDiv.innerHTML = loadingHTML;
+    document.querySelector('.alert-loading').style.display = 'block';
+    
+    const formData = new FormData();
+    formData.append('json_file', file);
+    
+    try {
+        const response = await fetch('/api/rebuild-character', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            resultDiv.innerHTML = '<div class="alert alert-success" role="alert">Character loaded successfully! Redirecting...</div>';
+            setTimeout(() => {
+                window.location.href = data.redirect_url;
+            }, 500);
+        } else {
+            resultDiv.innerHTML = `<div class="alert alert-danger" role="alert"><strong>Error:</strong> ${data.error}</div>`;
+            if (data.traceback) {
+                console.error('Traceback:', data.traceback);
+            }
+        }
+    } catch (error) {
+        resultDiv.innerHTML = `<div class="alert alert-danger" role="alert"><strong>Error:</strong> ${error.message}</div>`;
+    }
+});
+
+// Handle paste
+document.getElementById('pasteForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const resultDiv = document.getElementById('result');
+    const jsonContent = document.getElementById('json_content').value.trim();
+    
+    if (!jsonContent) {
+        resultDiv.innerHTML = '<div class="alert alert-danger" role="alert">Please paste JSON content.</div>';
+        return;
+    }
+    
+    // Validate JSON
+    try {
+        JSON.parse(jsonContent);
+    } catch (error) {
+        resultDiv.innerHTML = `<div class="alert alert-danger" role="alert"><strong>Invalid JSON:</strong> ${error.message}</div>`;
+        return;
+    }
+    
+    resultDiv.innerHTML = loadingHTML;
+    document.querySelector('.alert-loading').style.display = 'block';
+    
+    const formData = new FormData();
+    formData.append('json_content', jsonContent);
+    
+    try {
+        const response = await fetch('/api/rebuild-character', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            resultDiv.innerHTML = '<div class="alert alert-success" role="alert">Character loaded successfully! Redirecting...</div>';
+            setTimeout(() => {
+                window.location.href = data.redirect_url;
+            }, 500);
+        } else {
+            resultDiv.innerHTML = `<div class="alert alert-danger" role="alert"><strong>Error:</strong> ${data.error}</div>`;
+            if (data.traceback) {
+                console.error('Traceback:', data.traceback);
+            }
+        }
+    } catch (error) {
+        resultDiv.innerHTML = `<div class="alert alert-danger" role="alert"><strong>Error:</strong> ${error.message}</div>`;
+    }
+});
+</script>
+{% endblock %}

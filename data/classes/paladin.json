@@ -34,6 +34,22 @@
     "Persuasion",
     "Religion"
   ],
+  "starting_equipment": {
+    "option_a": {
+      "items": [
+        "Longsword",
+        "Shield",
+        "Chain Mail",
+        "Holy Symbol",
+        "Javelin (5)",
+        "Priest's Pack"
+      ],
+      "gold": 10
+    },
+    "option_b": {
+      "gold": 175
+    }
+  },
   "subclass_selection_level": 3,
   "spellcasting_ability": "Charisma",
   "spellcasting_focus": [

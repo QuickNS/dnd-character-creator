@@ -28,6 +28,21 @@
   "skill_options": [
     "Any"
   ],
+  "starting_equipment": {
+    "option_a": {
+      "items": [
+        "Rapier",
+        "Leather Armor",
+        "Dagger",
+        "Musical Instrument",
+        "Entertainer's Pack"
+      ],
+      "gold": 10
+    },
+    "option_b": {
+      "gold": 100
+    }
+  },
   "subclass_selection_level": 3,
   "spellcasting_ability": "Charisma",
   "spellcasting_focus": [

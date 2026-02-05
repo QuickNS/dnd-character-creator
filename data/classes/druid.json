@@ -37,6 +37,22 @@
     "Religion",
     "Survival"
   ],
+  "starting_equipment": {
+    "option_a": {
+      "items": [
+        "Wooden Shield",
+        "Scimitar",
+        "Leather Armor",
+        "Druidic Focus",
+        "Herbalism Kit",
+        "Explorer's Pack"
+      ],
+      "gold": 5
+    },
+    "option_b": {
+      "gold": 75
+    }
+  },
   "subclass_selection_level": 2,
   "spellcasting_ability": "Wisdom",
   "spellcasting_focus": [

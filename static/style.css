@@ -183,6 +183,27 @@ h1, h2, h3, h4, h5, h6 {
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15) !important;
 }
 
+.equipment-option {
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.equipment-option:hover {
+    background-color: var(--dnd-light-gray);
+}
+
+.equipment-option input[type="radio"]:checked + label {
+    border-color: var(--dnd-red) !important;
+}
+
+.equipment-option input[type="radio"]:checked {
+    border-color: var(--dnd-red) !important;
+}
+
+.form-check-input {
+    margin-top: 0.5rem;
+}
+
 /* Interactive Card Styling */
 .class-card, .background-card, .species-card, .lineage-card, .alignment-card {
     transition: all 0.2s ease;

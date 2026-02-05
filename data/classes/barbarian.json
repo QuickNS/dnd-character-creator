@@ -33,6 +33,20 @@
     "Perception",
     "Survival"
   ],
+  "starting_equipment": {
+    "option_a": {
+      "items": [
+        "Greataxe",
+        "Handaxe (2)",
+        "Javelin (4)",
+        "Explorer's Pack"
+      ],
+      "gold": 5
+    },
+    "option_b": {
+      "gold": 75
+    }
+  },
   "subclass_selection_level": 3,
   "proficiency_bonus_by_level": {
     "1": 2,

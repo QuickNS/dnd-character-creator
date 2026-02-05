@@ -10,10 +10,17 @@
   "skill_proficiencies": ["Acrobatics", "Performance"],
   "tool_proficiencies": ["Musical Instrument"],
   "languages": 2,
-  "equipment": [
-    "Musical Instrument",
-    "Costume",
-    "Traveler's Clothes",
-    "15 GP"
-  ]
+  "starting_equipment": {
+    "option_a": {
+      "items": [
+        "Musical Instrument",
+        "Costume",
+        "Traveler's Clothes"
+      ],
+      "gold": 15
+    },
+    "option_b": {
+      "gold": 50
+    }
+  }
 }

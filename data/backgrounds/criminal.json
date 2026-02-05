@@ -10,10 +10,17 @@
   "skill_proficiencies": ["Deception", "Stealth"],
   "tool_proficiencies": ["Thieves' Tools"],
   "languages": 1,
-  "equipment": [
-    "Crowbar",
-    "Thieves' Tools",
-    "Traveler's Clothes",
-    "16 GP"
-  ]
+  "starting_equipment": {
+    "option_a": {
+      "items": [
+        "Crowbar",
+        "Thieves' Tools",
+        "Traveler's Clothes"
+      ],
+      "gold": 16
+    },
+    "option_b": {
+      "gold": 50
+    }
+  }
 }

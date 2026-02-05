@@ -32,6 +32,19 @@
     "Religion",
     "Stealth"
   ],
+  "starting_equipment": {
+    "option_a": {
+      "items": [
+        "Quarterstaff",
+        "Dart (10)",
+        "Explorer's Pack"
+      ],
+      "gold": 5
+    },
+    "option_b": {
+      "gold": 50
+    }
+  },
   "subclass_selection_level": 3,
   "proficiency_bonus_by_level": {
     "1": 2,

@@ -61,6 +61,9 @@
 
 ## 🔄 IN PROGRESS / TODO
 
+### High-Elf
+- Prestidigitation can be substituded by any Wizard Cantrip after a Long Rest - need to model this to offer options to choose from in character creator or later
+
 ### HTML Character Sheet Refinement
 - Position remaining fields (saving throws, skills, proficiencies, features, spells)
 - Fine-tune field positions to align with background image

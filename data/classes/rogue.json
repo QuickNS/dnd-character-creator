@@ -38,6 +38,23 @@
     "Sleight of Hand",
     "Stealth"
   ],
+  "starting_equipment": {
+    "option_a": {
+      "items": [
+        "Rapier",
+        "Shortbow",
+        "Arrow (20)",
+        "Leather Armor",
+        "Dagger (2)",
+        "Thieves' Tools",
+        "Burglar's Pack"
+      ],
+      "gold": 10
+    },
+    "option_b": {
+      "gold": 125
+    }
+  },
   "subclass_selection_level": 3,
   "proficiency_bonus_by_level": {
     "1": 2,

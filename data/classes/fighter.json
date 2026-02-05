@@ -37,6 +37,20 @@
     "Perception",
     "Survival"
   ],
+  "starting_equipment": {
+    "option_a": {
+      "items": [
+        "Chain Mail",
+        "Greatsword",
+        "Handaxe (2)",
+        "Explorer's Pack"
+      ],
+      "gold": 5
+    },
+    "option_b": {
+      "gold": 155
+    }
+  },
   "subclass_selection_level": 3,
   "proficiency_bonus_by_level": {
     "1": 2,

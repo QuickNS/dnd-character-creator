@@ -10,11 +10,19 @@
   "skill_proficiencies": ["Arcana", "History"],
   "tool_proficiencies": ["Calligrapher's Supplies"],
   "languages": 2,
-  "equipment": [
-    "Calligrapher's Supplies",
-    "Book (history)",
-    "Ink (1 ounce)",
-    "Traveler's Clothes",
-    "8 GP"
-  ]
+  "starting_equipment": {
+    "option_a": {
+      "items": [
+        "Quarterstaff",
+        "Calligrapher's Supplies",
+        "Book (history)",
+        "Parchment (8 sheets)",
+        "Robe"
+      ],
+      "gold": 8
+    },
+    "option_b": {
+      "gold": 50
+    }
+  }
 }

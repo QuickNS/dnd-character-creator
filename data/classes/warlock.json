@@ -24,6 +24,22 @@
     "Nature",
     "Religion"
   ],
+  "starting_equipment": {
+    "option_a": {
+      "items": [
+        "Light Crossbow",
+        "Bolt (20)",
+        "Leather Armor",
+        "Dagger (2)",
+        "Arcane Focus",
+        "Scholar's Pack"
+      ],
+      "gold": 10
+    },
+    "option_b": {
+      "gold": 100
+    }
+  },
   "subclass_selection_level": 1,
   "spellcasting_ability": "Charisma",
   "spellcasting_focus": ["Arcane Focus"],

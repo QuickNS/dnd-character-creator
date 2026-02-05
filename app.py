@@ -291,14 +291,14 @@ def index():
 
 # ==================== Quick Test & Rebuild API ====================
 
-@app.route('/quick-test')
-def quick_test():
+@app.route('/load-character')
+def load_character():
     """
-    Quick testing page to rebuild characters from choices_made JSON.
-    Useful for development and testing - paste a choices_made dict to instantly
-    see the character summary without going through the full wizard.
+    Load a character from JSON file or paste.
+    Allows users to upload a character JSON file or paste JSON content
+    to rebuild and view their character.
     """
-    return render_template('quick_test.html')
+    return render_template('load_character.html')
 
 @app.route('/api/rebuild-character', methods=['POST'])
 def api_rebuild_character():
@@ -306,20 +306,47 @@ def api_rebuild_character():
     API endpoint to rebuild a character from a choices_made dictionary.
     Uses CharacterBuilder to create character from choices.
     
-    POST body should be JSON with:
-    {
-        "choices_made": { ... }  # choices_made must include "level" field
-    }
+    POST body can be either:
+    1. JSON with {"choices_made": {...}}
+    2. Form data with 'json_content' field
+    3. File upload with 'json_file' field
     
     Returns the rebuilt character and stores it in session.
     """
     from modules.character_builder import CharacterBuilder
     
-    data = request.get_json()
-    if not data or 'choices_made' not in data:
-        return jsonify({"error": "Missing choices_made in request body"}), 400
+    choices_made = None
     
-    choices_made = data['choices_made']
+    # Handle different input methods
+    if request.is_json:
+        # JSON POST body
+        data = request.get_json()
+        if not data or 'choices_made' not in data:
+            return jsonify({"error": "Missing choices_made in request body"}), 400
+        choices_made = data['choices_made']
+    else:
+        # Form data (file upload or textarea)
+        if 'json_file' in request.files:
+            file = request.files['json_file']
+            if file and file.filename:
+                try:
+                    content = file.read().decode('utf-8')
+                    data = json.loads(content)
+                    choices_made = data.get('choices_made', data)
+                except Exception as e:
+                    return jsonify({"error": f"Invalid JSON file: {str(e)}"}), 400
+        elif 'json_content' in request.form:
+            try:
+                content = request.form.get('json_content')
+                data = json.loads(content)
+                choices_made = data.get('choices_made', data)
+            except Exception as e:
+                return jsonify({"error": f"Invalid JSON content: {str(e)}"}), 400
+        else:
+            return jsonify({"error": "No JSON data provided"}), 400
+    
+    if not choices_made:
+        return jsonify({"error": "No choices_made data found"}), 400
     
     try:
         # Create character using CharacterBuilder
@@ -338,13 +365,101 @@ def api_rebuild_character():
         
         return jsonify({
             "success": True,
-            "message": "Character rebuilt successfully",
+            "message": "Character loaded successfully",
             "character": character,
             "redirect_url": "/character-summary"
         }), 200
     
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        import traceback
+        return jsonify({
+            "error": str(e),
+            "traceback": traceback.format_exc()
+        }), 500
+
+@app.route('/starter-characters')
+def starter_characters():
+    """
+    Display pre-made starter characters for quick play.
+    Shows a gallery of iconic characters, one for each class.
+    """
+    # Define starter characters with names and descriptions
+    starters = [
+        {
+            "class": "Barbarian",
+            "name": "Krag Ironhide",
+            "description": "A fierce warrior from the northern wastes who channels primal fury in battle.",
+            "image": "barbarian.png"
+        },
+        {
+            "class": "Bard",
+            "name": "Lyra Songweaver",
+            "description": "A charismatic performer whose music inspires allies and confounds enemies.",
+            "image": "bard.png"
+        },
+        {
+            "class": "Cleric",
+            "name": "Brother Aldric",
+            "description": "A devoted priest of light who heals the wounded and smites the wicked.",
+            "image": "cleric.png"
+        },
+        {
+            "class": "Druid",
+            "name": "Liara Swiftgazer",
+            "description": "A guardian of nature who communes with beasts and wields primal magic.",
+            "image": "druid.png"
+        },
+        {
+            "class": "Fighter",
+            "name": "Captain Valen Steel",
+            "description": "A master of arms and tactics, equally deadly with sword or bow.",
+            "image": "fighter.png"
+        },
+        {
+            "class": "Monk",
+            "name": "Zen Master Kuai",
+            "description": "A martial artist who has achieved perfect harmony of body and mind.",
+            "image": "monk.png"
+        },
+        {
+            "class": "Paladin",
+            "name": "Lady Brianna Darflame",
+            "description": "A holy knight sworn to protect the innocent and vanquish evil.",
+            "image": "paladin.png"
+        },
+        {
+            "class": "Ranger",
+            "name": "Elara Swiftarrow",
+            "description": "A skilled tracker and hunter who protects the borderlands from threats.",
+            "image": "ranger.png"
+        },
+        {
+            "class": "Rogue",
+            "name": "Shadow",
+            "description": "A cunning operative who strikes from the shadows with deadly precision.",
+            "image": "rogue.png"
+        },
+        {
+            "class": "Sorcerer",
+            "name": "Zephyr Stormborn",
+            "description": "Born with innate magic flowing through their veins, raw power incarnate.",
+            "image": "sorcerer.png"
+        },
+        {
+            "class": "Warlock",
+            "name": "Malakai Hexblade",
+            "description": "Bound by a dark pact, wielding eldritch powers from beyond the veil.",
+            "image": "warlock.png"
+        },
+        {
+            "class": "Wizard",
+            "name": "Archmage Thalion",
+            "description": "A scholarly spellcaster who has mastered the arcane arts through study.",
+            "image": "wizard.png"
+        }
+    ]
+    
+    return render_template('starter_characters.html', starters=starters)
 
 @app.route('/create', methods=['GET', 'POST'])
 def create_character():
@@ -1359,12 +1474,67 @@ def submit_background_bonuses():
     
     save_builder_to_session(builder)
     
+    # Next step: equipment selection
+    builder.set_step('equipment')
+    save_builder_to_session(builder)
+    
+    # Log route processing
+    log_route_processing('submit_background_bonuses', choices, builder_before, builder)
+    
+    return redirect(url_for('choose_equipment'))
+
+@app.route('/choose-equipment')
+def choose_equipment():
+    """Equipment selection step."""
+    builder = get_builder_from_session()
+    if not builder:
+        return redirect(url_for('index'))
+    
+    character = builder.to_json()
+    
+    # Allow access if at equipment step or later
+    if character.get('step') not in ['equipment', 'complete']:
+        return redirect(url_for('index'))
+    
+    class_name = character.get('class', '')
+    background_name = character.get('background', '')
+    
+    # Get starting equipment from class
+    class_data = data_loader.classes.get(class_name, {})
+    class_equipment = class_data.get('starting_equipment', {})
+    
+    # Get starting equipment from background
+    background_data = data_loader.backgrounds.get(background_name, {})
+    background_equipment = background_data.get('starting_equipment', {})
+    
+    return render_template('choose_equipment.html',
+                         character=character,
+                         class_equipment=class_equipment,
+                         background_equipment=background_equipment)
+
+@app.route('/select-equipment', methods=['POST'])
+def select_equipment():
+    """Handle equipment selection."""
+    builder_before = get_builder_from_session()
+    builder = get_builder_from_session()
+    
+    # Collect equipment choices from form
+    equipment_choices = {
+        'class_equipment': request.form.get('class_equipment'),
+        'background_equipment': request.form.get('background_equipment')
+    }
+    
+    # Store equipment selections
+    builder.apply_choice('equipment_selections', equipment_choices)
+    
+    save_builder_to_session(builder)
+    
     # Mark character creation as complete
     builder.set_step('complete')
     save_builder_to_session(builder)
     
     # Log route processing
-    log_route_processing('submit_background_bonuses', choices, builder_before, builder)
+    log_route_processing('select_equipment', equipment_choices, builder_before, builder)
     
     return redirect(url_for('character_summary'))
 

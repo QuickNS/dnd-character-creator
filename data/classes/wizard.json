@@ -29,6 +29,20 @@
     "Nature",
     "Religion"
   ],
+  "starting_equipment": {
+    "option_a": {
+      "items": [
+        "Quarterstaff",
+        "Arcane Focus",
+        "Spellbook",
+        "Scholar's Pack"
+      ],
+      "gold": 5
+    },
+    "option_b": {
+      "gold": 50
+    }
+  },
   "spellcasting_ability": "Intelligence",
   "spellcasting_focus": [
     "Arcane focus",

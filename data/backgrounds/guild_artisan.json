@@ -10,10 +10,17 @@
   "skill_proficiencies": ["Insight", "Persuasion"],
   "tool_proficiencies": ["Artisan's Tools"],
   "languages": 2,
-  "equipment": [
-    "Artisan's Tools",
-    "Traveler's Clothes",
-    "Pouch",
-    "32 GP"
-  ]
+  "starting_equipment": {
+    "option_a": {
+      "items": [
+        "Artisan's Tools",
+        "Traveler's Clothes",
+        "Pouch"
+      ],
+      "gold": 32
+    },
+    "option_b": {
+      "gold": 50
+    }
+  }
 }

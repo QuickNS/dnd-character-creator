@@ -10,11 +10,18 @@
   "skill_proficiencies": ["Animal Handling", "Survival"],
   "tool_proficiencies": ["Carpenter's Tools", "Vehicles (Land)"],
   "languages": 1,
-  "equipment": [
-    "Carpenter's Tools",
-    "Shovel",
-    "Iron Pot",
-    "Traveler's Clothes",
-    "23 GP"
-  ]
+  "starting_equipment": {
+    "option_a": {
+      "items": [
+        "Carpenter's Tools",
+        "Shovel",
+        "Iron Pot",
+        "Traveler's Clothes"
+      ],
+      "gold": 23
+    },
+    "option_b": {
+      "gold": 50
+    }
+  }
 }

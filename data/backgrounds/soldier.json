@@ -10,10 +10,17 @@
   "skill_proficiencies": ["Athletics", "Intimidation"],
   "tool_proficiencies": ["Gaming Set", "Vehicles (Land)"],
   "languages": 1,
-  "equipment": [
-    "Gaming Set",
-    "Healer's Kit (10 uses)",
-    "Traveler's Clothes",
-    "14 GP"
-  ]
+  "starting_equipment": {
+    "option_a": {
+      "items": [
+        "Gaming Set",
+        "Healer's Kit (10 uses)",
+        "Traveler's Clothes"
+      ],
+      "gold": 14
+    },
+    "option_b": {
+      "gold": 50
+    }
+  }
 }

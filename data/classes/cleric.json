@@ -31,6 +31,21 @@
     "Persuasion",
     "Religion"
   ],
+  "starting_equipment": {
+    "option_a": {
+      "items": [
+        "Chain Shirt",
+        "Shield",
+        "Mace",
+        "Holy Symbol",
+        "Priest's Pack"
+      ],
+      "gold": 7
+    },
+    "option_b": {
+      "gold": 110
+    }
+  },
   "subclass_selection_level": 3,
   "spellcasting_ability": "Wisdom",
   "spellcasting_focus": [

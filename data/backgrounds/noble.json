@@ -10,10 +10,17 @@
   "skill_proficiencies": ["History", "Persuasion"],
   "tool_proficiencies": ["Gaming Set"],
   "languages": 2,
-  "equipment": [
-    "Gaming Set",
-    "Fine Clothes",
-    "Perfume",
-    "29 GP"
-  ]
+  "starting_equipment": {
+    "option_a": {
+      "items": [
+        "Gaming Set",
+        "Fine Clothes",
+        "Perfume"
+      ],
+      "gold": 29
+    },
+    "option_b": {
+      "gold": 50
+    }
+  }
 }
