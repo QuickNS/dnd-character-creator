@@ -35,9 +35,9 @@
                                                     <strong>Speed:</strong> {{ species_data.get('speed', 30) }} ft
                                                 </div>
                                             </div>
-                                            {% if species_data.get('darkvision_range') and species_data.darkvision_range > 0 %}
+                                            {% if species_data.get('darkvision') and species_data.darkvision > 0 %}
                                             <div class="text-muted small">
-                                                <strong>Darkvision:</strong> {{ species_data.darkvision_range }} feet
+                                                <strong>Darkvision:</strong> {{ species_data.darkvision }} feet
                                             </div>
                                             {% endif %}
                                         </label>

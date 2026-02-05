@@ -872,27 +872,29 @@ def select_species():
     builder = get_builder_from_session()
     builder.apply_choice('species', species_name)
     
-    # Handle species trait choices (like Keen Senses, Elven Lineage)
+    save_builder_to_session(builder)
+    
+    # Check if species has trait choices that need to be made
     species_data = data_loader.species[species_name]
+    has_trait_choices = False
     if 'traits' in species_data:
         for trait_name, trait_data in species_data['traits'].items():
             if isinstance(trait_data, dict) and trait_data.get('type') == 'choice':
-                choice_key = f'species_trait_{trait_name}'
-                selected_option = request.form.get(choice_key)
-                
-                if selected_option:
-                    builder.apply_choice(choice_key, selected_option)
+                has_trait_choices = True
+                break
     
-    save_builder_to_session(builder)
-    
-    # Update session step
-    session['character']['step'] = 'lineage' if species_data.get('lineages') else 'languages'
-    session.modified = True
-    
-    # Check if species has lineages
-    if species_data.get('lineages'):
+    # Update session step based on what comes next
+    if has_trait_choices:
+        session['character']['step'] = 'species_traits'
+        session.modified = True
+        return redirect(url_for('choose_species_traits'))
+    elif species_data.get('lineages'):
+        session['character']['step'] = 'lineage'
+        session.modified = True
         return redirect(url_for('choose_lineage'))
     else:
+        session['character']['step'] = 'languages'
+        session.modified = True
         return redirect(url_for('choose_languages'))
 
 @app.route('/choose-species-traits')
@@ -946,7 +948,8 @@ def select_species_traits():
                 selected_option = request.form.get(choice_key)
                 
                 if selected_option:
-                    builder.apply_choice(f'species_trait_{trait_name}', selected_option)
+                    # Apply the choice using just the trait name
+                    builder.apply_choice(trait_name, selected_option)
     
     save_builder_to_session(builder)
     

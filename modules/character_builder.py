@@ -260,6 +260,10 @@ class CharacterBuilder:
         # Override speed if lineage specifies it
         if 'speed' in lineage_data:
             self.character_data['speed'] = lineage_data['speed']
+            
+        # Override darkvision if lineage specifies it
+        if 'darkvision' in lineage_data:
+            self.character_data['darkvision'] = lineage_data['darkvision']
         
         # Store lineage data for later re-application when level changes
         self.character_data['_lineage_traits'] = lineage_data.get('traits', {})
@@ -970,11 +974,15 @@ class CharacterBuilder:
             # Update feature display name if this is a choice for an existing feature
             self._update_feature_choice_display(choice_key, choice_value)
             
-            # Check if this is a class feature choice with effects
+            # Check if this is a feature choice with effects
             if self.character_data.get('class_data'):
                 self._apply_choice_effects(choice_key, choice_value, self.character_data['class_data'])
             if self.character_data.get('subclass_data'):
                 self._apply_choice_effects(choice_key, choice_value, self.character_data['subclass_data'])
+            if self.character_data.get('species_data'):
+                self._apply_species_choice_effects(choice_key, choice_value, self.character_data['species_data'])
+            if self.character_data.get('lineage_data'):
+                self._apply_species_choice_effects(choice_key, choice_value, self.character_data['lineage_data'])
             # Just store it
             return True
     
@@ -1071,6 +1079,31 @@ class CharacterBuilder:
                     # Apply each effect
                     for effect in option_data['effects']:
                         self._apply_effect(effect, choice_value, 'class_choice')
+                    return
+    
+    def _apply_species_choice_effects(self, choice_key: str, choice_value: Any, source_data: Dict[str, Any]):
+        """
+        Look up and apply effects from a choice made in species/lineage traits.
+        
+        Args:
+            choice_key: The choice identifier (e.g., 'Keen Senses', 'Elven Lineage')
+            choice_value: The chosen value (e.g., 'Insight', 'Intelligence')
+            source_data: Species or lineage data to search for effects
+        """
+        # Look for traits with choice_effects
+        traits = source_data.get('traits', {})
+        for trait_name, trait_data in traits.items():
+            # Check if this trait matches the choice key and has choice_effects
+            if (trait_name == choice_key and 
+                isinstance(trait_data, dict) and 
+                'choice_effects' in trait_data):
+                
+                choice_effects = trait_data['choice_effects']
+                if choice_value in choice_effects:
+                    effects = choice_effects[choice_value]
+                    # Apply each effect
+                    for effect in effects:
+                        self._apply_effect(effect, f"{trait_name}: {choice_value}", 'species_choice')
                     return
     
     def apply_choices(self, choices: Dict[str, Any]) -> bool:

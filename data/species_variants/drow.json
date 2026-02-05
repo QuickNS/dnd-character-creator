@@ -2,7 +2,7 @@
   "name": "Drow",
   "parent_species": "Elf",
   "description": "Drow, also known as dark elves, are a subrace of elves that dwell in the Underdark. They are known for their dark skin, white hair, and affinity for magic and stealth.",
-  "darkvision_range": 120,
+  "darkvision": 120,
   "traits": {
     "Extended Darkvision": "The range of your Darkvision increases to 120 feet.",
     "Drow Spells": {
