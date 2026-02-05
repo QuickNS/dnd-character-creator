@@ -33,6 +33,7 @@
     "History",
     "Insight",
     "Intimidation",
+    "Persuasion",
     "Perception",
     "Survival"
   ],
@@ -127,10 +128,20 @@
           "optional": true
         }
       },
-      "Second Wind": "As a Bonus Action, regain Hit Points equal to 1d10 + Fighter level. Once per Short or Long Rest."
+      "Second Wind": {
+        "description": "As a Bonus Action, regain Hit Points equal to 1d10 + Fighter level. You can use this feature {uses} times, regaining one use on Short Rest and all uses on Long Rest.",
+        "scaling": {
+          "uses": [
+            {"min_level": 1, "value": "2"},
+            {"min_level": 4, "value": "3"},
+            {"min_level": 10, "value": "4"}
+          ]
+        }
+      }
     },
     "2": {
-      "Action Surge": "On your turn, take one additional action. Once per Short or Long Rest. Gain second use at level 17."
+      "Action Surge": "On your turn, take one additional action, except the Magic action. Once per Short or Long Rest. Starting at level 17, you can use it twice before a rest but only once on a turn.",
+      "Tactical Mind": "When you fail an ability check, you can expend a use of your Second Wind to push yourself toward success. Rather than regaining Hit Points, you roll 1d10 and add the number rolled to the ability check, potentially turning it into a success. If the check still fails, this use of Second Wind isn't expended."
     },
     "3": {
       "Fighter Subclass": "Choose your Martial Archetype subclass."
@@ -148,15 +159,14 @@
           }
         }
       },
-      "Ability Score Improvement": "Increase one ability score by 2, or increase two ability scores by 1.",
-      "Tactical Mind": "When you fail an ability check, you can expend a use of Second Wind to add 1d10 to the check, potentially turning it into a success."
+      "Ability Score Improvement": "Increase one ability score by 2, or increase two ability scores by 1."
     },
     "5": {
-      "Extra Attack": "Attack twice, instead of once, when you take the Attack action on your turn. Increases to 3 attacks at level 11, and 4 attacks at level 20."
+      "Extra Attack": "You can attack twice instead of once whenever you take the Attack action on your turn.",
+      "Tactical Shift": "Whenever you activate your Second Wind with a Bonus Action, you can move up to half your Speed without provoking Opportunity Attacks."
     },
     "6": {
-      "Ability Score Improvement": "Increase one ability score by 2, or increase two ability scores by 1.",
-      "Tactical Shift": "When you activate Second Wind, you can move up to half your Speed without provoking Opportunity Attacks."
+      "Ability Score Improvement": "Increase one ability score by 2, or increase two ability scores by 1."
     },
     "7": {
       "Subclass Feature": "Gain a feature from your Martial Archetype subclass."
@@ -165,7 +175,17 @@
       "Ability Score Improvement": "Increase one ability score by 2, or increase two ability scores by 1."
     },
     "9": {
-      "Indomitable": "Reroll a failed saving throw. Must use new roll. Once per Long Rest. Gain second use at level 13, third use at level 17."
+      "Indomitable": {
+        "description": "If you fail a saving throw, you can reroll it with a bonus equal to your Fighter level. You must use the new roll. You can use this feature {uses} before a Long Rest.",
+        "scaling": {
+          "uses": [
+            {"min_level": 9, "value": "once"},
+            {"min_level": 13, "value": "twice"},
+            {"min_level": 17, "value": "three times"}
+          ]
+        }
+      },
+      "Tactical Master": "When you attack with a weapon whose mastery property you can use, you can replace that property with the Push, Sap, or Slow property for that attack."
     },
     "10": {
       "Weapon Mastery": {
@@ -183,13 +203,14 @@
       "Subclass Feature": "Gain a feature from your Martial Archetype subclass."
     },
     "11": {
-      "Extra Attack (2)": "Attack three times when you take the Attack action on your turn."
+      "Two Extra Attacks": "You can attack three times instead of once whenever you take the Attack action on your turn."
     },
     "12": {
       "Ability Score Improvement": "Increase one ability score by 2, or increase two ability scores by 1."
     },
     "13": {
-      "Indomitable (2 uses)": "Gain second use of Indomitable per Long Rest."
+      "Indomitable (Two Uses)": "You can use Indomitable twice before a Long Rest.",
+      "Studied Attacks": "You study your opponents and learn from each attack you make. If you make an attack roll against a creature and miss, you have Advantage on your next attack roll against that creature before the end of your next turn."
     },
     "14": {
       "Ability Score Improvement": "Increase one ability score by 2, or increase two ability scores by 1."
@@ -213,8 +234,8 @@
       "Ability Score Improvement": "Increase one ability score by 2, or increase two ability scores by 1."
     },
     "17": {
-      "Action Surge (2 uses)": "Gain second use of Action Surge per Short or Long Rest.",
-      "Indomitable (3 uses)": "Gain third use of Indomitable per Long Rest."
+      "Action Surge (Two Uses)": "You can use Action Surge twice before a rest but only once on a turn.",
+      "Indomitable (Three Uses)": "You can use Indomitable three times before a Long Rest."
     },
     "18": {
       "Subclass Feature": "Gain a feature from your Martial Archetype subclass."
@@ -223,7 +244,7 @@
       "Epic Boon": "Gain an Epic Boon feat or another feat of your choice."
     },
     "20": {
-      "Extra Attack (3)": "Attack four times when you take the Attack action on your turn."
+      "Three Extra Attacks": "You can attack four times instead of once whenever you take the Attack action on your turn."
     }
   }
 }

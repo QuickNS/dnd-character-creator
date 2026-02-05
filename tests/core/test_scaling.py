@@ -10,7 +10,7 @@ from utils.feature_scaling import resolve_scaling_feature
 def test_cleric_scaling():
     """Test Channel Divinity scaling at different levels."""
     # Load cleric data
-    cleric_path = Path(__file__).parent.parent / 'data' / 'classes' / 'cleric.json'
+    cleric_path = Path(__file__).parent.parent.parent / 'data' / 'classes' / 'cleric.json'
     with open(cleric_path, 'r') as f:
         cleric_data = json.load(f)
     

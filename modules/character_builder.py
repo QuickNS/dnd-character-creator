@@ -1006,6 +1006,7 @@ class CharacterBuilder:
         
         # Try to find the choice-specific description from class/subclass data
         choice_description = None
+        choice_scaling = None
         for data_source_key in ['class_data', 'subclass_data']:
             source_data = self.character_data.get(data_source_key, {})
             if source_data:
@@ -1013,9 +1014,11 @@ class CharacterBuilder:
                 for data_key, data_value in source_data.items():
                     if isinstance(data_value, dict) and choice_value in data_value:
                         option_data = data_value[choice_value]
-                        if isinstance(option_data, dict) and 'description' in option_data:
-                            choice_description = option_data['description']
-                            break
+                        if isinstance(option_data, dict):
+                            if 'description' in option_data:
+                                choice_description = option_data['description']
+                                choice_scaling = option_data.get('scaling')
+                                break
                         elif isinstance(option_data, str):
                             choice_description = option_data
                             break
@@ -1037,6 +1040,9 @@ class CharacterBuilder:
                         
                         # Update description if we found a choice-specific one
                         if choice_description:
+                            # Apply scaling if present
+                            if choice_scaling:
+                                choice_description = self._apply_feature_scaling(choice_description, choice_scaling)
                             feature['description'] = choice_description
                         return
     
