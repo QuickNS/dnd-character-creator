@@ -18,6 +18,11 @@ Test Coverage:
   * Fighter class features (Fighting Style selection)
   * Champion archetype features (Improved Critical)
 
+- Level 3 Infernal Tiefling Warlock (Fiend) - Verifies:
+    * Tiefling species traits (Darkvision, Otherworldly Presence)
+    * Infernal Tiefling lineage traits (Fire resistance, Infernal Legacy spells)
+    * Warlock class features and Fiend patron features
+
 These tests serve as comprehensive integration tests that exercise:
 1. Character building pipeline from choices_made
 2. Species/lineage effect application
@@ -156,6 +161,130 @@ class TestCharacterRecreation:
         
         print(f"✅ Wood Elf Fighter Champion Level 3 - All effects verified!")
 
+    def test_infernal_tiefling_warlock_fiend_level_3(self):
+        """Test Level 3 Infernal Tiefling Warlock with Fiend patron - comprehensive effect verification."""
+        
+        # Define the character choices
+        choices_made = {
+            'character_name': 'Zazriel Infernus',
+            'species': 'Tiefling',
+            'lineage': 'Infernal Tiefling',
+            'class': 'Warlock',
+            'level': 3,
+            'subclass': 'The Fiend',
+            'background': 'Charlatan',
+            'skill_choices': ['Deception', 'Sleight of Hand'],
+            'abilities': {
+                'Strength': 10,
+                'Dexterity': 14,
+                'Constitution': 15,
+                'Intelligence': 12,
+                'Wisdom': 13,
+                'Charisma': 16
+            }
+        }
+        
+        # Recreate character
+        builder = CharacterBuilder()
+        result = builder.apply_choices(choices_made)
+        
+        assert result is True, "Character building should succeed"
+        
+        character_json = builder.to_json()
+        
+        # Verify basic character info
+        assert character_json['name'] == 'Zazriel Infernus'
+        assert character_json['species'] == 'Tiefling'
+        assert character_json['lineage'] == 'Infernal Tiefling'
+        assert character_json['class'] == 'Warlock'
+        assert character_json['level'] == 3
+        assert character_json['subclass'] == 'The Fiend'
+        
+        # Verify Tiefling species effects
+        self._verify_tiefling_effects(character_json)
+        
+        # Verify Infernal Tiefling lineage effects
+        self._verify_infernal_tiefling_effects(character_json)
+        
+        # Verify HP, ability modifiers, skill modifiers, and proficiencies
+        self._verify_hp_calculation(character_json, expected_base_hp=24)  # Base 8 + 2d8 avg(5ea) + 3×Con mod(+2) = 8+10+6=24
+        self._verify_ability_modifiers(character_json)
+        self._verify_skill_modifiers_and_proficiencies(character_json, 'warlock')
+        
+        print(f"✅ Infernal Tiefling Warlock Fiend Level 3 - All effects verified!")
+    def test_infernal_tiefling_paladin_level_2(self):
+        """Test Level 2 Infernal Tiefling Paladin - verifying early level features."""
+        
+        # Define the character choices
+        choices_made = {
+            'character_name': 'Valthara Flameborn',
+            'species': 'Tiefling',
+            'lineage': 'Infernal Tiefling',
+            'class': 'Paladin',
+            'level': 2,
+            'background': 'Noble',
+            'skill_choices': ['History', 'Persuasion'],
+            'abilities': {
+                'Strength': 16,
+                'Dexterity': 10,
+                'Constitution': 14,
+                'Intelligence': 12,
+                'Wisdom': 13,
+                'Charisma': 15
+            }
+        }
+        
+        # Recreate character
+        builder = CharacterBuilder()
+        result = builder.apply_choices(choices_made)
+        
+        assert result is True, "Character building should succeed"
+        
+        character_json = builder.to_json()
+        
+        # Verify basic character info
+        assert character_json['name'] == 'Valthara Flameborn'
+        assert character_json['species'] == 'Tiefling'
+        assert character_json['lineage'] == 'Infernal Tiefling'
+        assert character_json['class'] == 'Paladin'
+        assert character_json['level'] == 2
+        
+        # Verify Tiefling species effects
+        self._verify_tiefling_effects(character_json)
+        
+        # Verify Infernal Tiefling lineage effects (but no level 3+ spells yet)
+        self._verify_infernal_tiefling_effects_level_2(character_json)
+        
+        # Verify paladin features
+        features = character_json.get('features', {})
+        expected_features = [
+            'Lay On Hands',
+            'Spellcasting',
+            'Fighting Style',
+            "Paladin's Smite"
+        ]
+        
+        # Extract all feature names from the nested structure
+        all_feature_names = []
+        for level_features in features.values():
+            if isinstance(level_features, list):
+                for feature in level_features:
+                    if isinstance(feature, dict) and 'name' in feature:
+                        all_feature_names.append(feature['name'])
+        
+        for feature in expected_features:
+            assert feature in all_feature_names, f"Missing paladin feature: {feature}. Found: {all_feature_names}"
+        
+        # Level 2 Paladin should not have subclass yet
+        assert character_json.get('subclass') is None, "Level 2 Paladin should not have subclass"
+        
+        # Verify HP calculation for level 2 Paladin
+        # Paladin d10 hit die: 10 + 1d10 avg(5.5→6) + 2×Con mod(+2) = 10 + 6 + 4 = 20
+        self._verify_hp_calculation(character_json, expected_base_hp=20)
+        self._verify_ability_modifiers(character_json)
+        self._verify_skill_modifiers_and_proficiencies(character_json, 'paladin')
+        
+        print(f"✅ Infernal Tiefling Paladin Level 2 - All effects verified!")
     def _verify_dwarf_effects(self, character_json):
         """Verify all Dwarf species effects are applied."""
         effects = character_json.get('effects', [])
@@ -179,7 +308,7 @@ class TestCharacterRecreation:
         # Verify speed (Dwarf speed should be 30 - base speed)
         # Note: Some Dwarf variants might have 25, but baseline is 30
         speed = character_json.get('speed', 30)
-        assert speed in [25, 30], f"Dwarf speed should be 25 or 30, got {speed}"
+        assert speed == 30, f"Dwarf speed should be 30, got {speed}"
         
         # Verify darkvision (Dwarf can have 60 or 120 depending on variant)
         darkvision = character_json.get('darkvision', 0)
@@ -296,6 +425,85 @@ class TestCharacterRecreation:
         # This test should be adjusted based on how critical hit improvements are implemented
         
         print(f"Champion archetype verification complete")
+
+    def _verify_tiefling_effects(self, character_json):
+        """Verify all Tiefling species effects are applied."""
+        effects = character_json.get('effects', [])
+        
+        # Check for Darkvision
+        darkvision_effects = [e for e in effects if e.get('type') == 'grant_darkvision']
+        assert len(darkvision_effects) >= 1, "Should have Darkvision effect"
+        
+        # Verify darkvision range
+        darkvision = character_json.get('darkvision', 0)
+        assert darkvision == 60, f"Tiefling should have 60ft darkvision, got {darkvision}"
+        
+        # Check for Otherworldly Presence (Thaumaturgy cantrip)
+        thaumaturgy_effects = [e for e in effects if e.get('type') == 'grant_cantrip' 
+                              and e.get('spell') == 'Thaumaturgy']
+        assert len(thaumaturgy_effects) >= 1, "Should have Thaumaturgy cantrip from Otherworldly Presence"
+        
+        # Verify speed (Tiefling speed should be 30)
+        speed = character_json.get('speed', 30)
+        assert speed == 30, f"Tiefling speed should be 30, got {speed}"
+
+    def _verify_infernal_tiefling_effects(self, character_json):
+        """Verify all Infernal Tiefling lineage effects are applied."""
+        effects = character_json.get('effects', [])
+        
+        # Check for Fire resistance
+        fire_resistance = [e for e in effects if e.get('type') == 'grant_damage_resistance'
+                          and e.get('damage_type') == 'Fire']
+        assert len(fire_resistance) >= 1, "Should have Fire resistance from Infernal Legacy"
+        
+        # Check for Fire Bolt cantrip
+        fire_bolt_effects = [e for e in effects if e.get('type') == 'grant_cantrip' 
+                            and e.get('spell') == 'Fire Bolt']
+        assert len(fire_bolt_effects) >= 1, "Should have Fire Bolt cantrip from Infernal Legacy"
+        
+        # Check for level-based spell effects
+        hellish_rebuke = [e for e in effects if e.get('type') == 'grant_spell'
+                         and e.get('spell') == 'Hellish Rebuke'
+                         and e.get('min_level') == 3]
+        assert len(hellish_rebuke) >= 1, "Should have Hellish Rebuke spell at level 3"
+        
+        # Check resistances are properly tracked
+        resistances = character_json.get('resistances', [])
+        assert 'Fire' in resistances, f"Should have Fire resistance tracked, got {resistances}"
+
+    def _verify_infernal_tiefling_effects_level_2(self, character_json):
+        """Verify Infernal Tiefling lineage effects for level 2 character (no level 3+ spells)."""
+        effects = character_json.get('effects', [])
+        
+        # Check for Fire resistance
+        fire_resistance = [e for e in effects if e.get('type') == 'grant_damage_resistance'
+                          and e.get('damage_type') == 'Fire']
+        assert len(fire_resistance) >= 1, "Should have Fire resistance from Infernal Legacy"
+        
+        # Check for Fire Bolt cantrip
+        fire_bolt_effects = [e for e in effects if e.get('type') == 'grant_cantrip' 
+                            and e.get('spell') == 'Fire Bolt']
+        assert len(fire_bolt_effects) >= 1, "Should have Fire Bolt cantrip from Infernal Legacy"
+        
+        # Check that level 3+ spell effects exist but are not active yet
+        hellish_rebuke = [e for e in effects if e.get('type') == 'grant_spell'
+                         and e.get('spell') == 'Hellish Rebuke'
+                         and e.get('min_level') == 3]
+        assert len(hellish_rebuke) >= 1, "Should have Hellish Rebuke spell effect (but not active at level 2)"
+        
+        darkness = [e for e in effects if e.get('type') == 'grant_spell'
+                   and e.get('spell') == 'Darkness'
+                   and e.get('min_level') == 5]
+        assert len(darkness) >= 1, "Should have Darkness spell effect (but not active at level 2)"
+        
+        # Check resistances are properly tracked
+        resistances = character_json.get('resistances', [])
+        assert 'Fire' in resistances, f"Should have Fire resistance tracked, got {resistances}"
+        
+        # Verify level 3+ spells are NOT in prepared spells yet
+        prepared = character_json.get('spells', {}).get('prepared', [])
+        assert 'Hellish Rebuke' not in prepared, "Hellish Rebuke should not be prepared at level 2"
+        assert 'Darkness' not in prepared, "Darkness should not be prepared at level 2"
 
     def _verify_hp_calculation(self, character_json, expected_base_hp):
         """Verify HP calculation using HPCalculator.calculate_total_hp()."""

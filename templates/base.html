@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTE2IDJMMjAgMTJIMzBMMjIuNSAyMEwyNiAzMEwxNiAyNkw2IDMwTDkuNSAyMEwyIDEySDE2VjJaIiBmaWxsPSIjRDRBRjM3Ii8+CjxwYXRoIGQ9Ik0xNiA2TDE4IDEySDI0TDE5LjUgMTZMMjEgMjJMMTYgMjBMMTEgMjJMMTIuNSAxNkw4IDEySDE2VjZaIiBmaWxsPSIjMUUzQThBIi8+Cjwvc3ZnPgo=">
 </head>
-<body data-selected-class="{{ (session.get('character') or {}).get('class', '') }}">
+<body data-selected-class="{{ character.class if character is defined else '' }}">
     <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container">
             <a class="navbar-brand" href="{{ url_for('index') }}">

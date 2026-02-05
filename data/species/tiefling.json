@@ -7,9 +7,17 @@
   "speed": 30,
   "darkvision_range": 60,
   "traits": {
-    "Darkvision": "You have Darkvision with a range of 60 feet.",
+    "Darkvision": {
+      "description": "You have Darkvision with a range of 60 feet.",
+      "effects": [
+        {
+          "type": "grant_darkvision",
+          "range": 60
+        }
+      ]
+    },
     "Fiendish Legacy": {
-      "description": "You are the recipient of a legacy that grants you supernatural abilities. Choose the spellcasting ability to use:",
+      "description": "You are the recipient of a legacy that grants you supernatural abilities. Intelligence, Wisdom, or Charisma is your spellcasting ability for the spells you cast with this trait.",
       "type": "choice",
       "choices": {
         "type": "select_single",
@@ -21,12 +29,11 @@
       }
     },
     "Otherworldly Presence": { 
-      "description": "You know the Thaumaturgy cantrip.",
+      "description": "You know the Thaumaturgy cantrip. When you cast it with this trait, the spell uses the same spellcasting ability you use for your Fiendish Legacy trait.",
       "effects": [
         {
           "type": "grant_cantrip",
-          "spell": "Thaumaturgy",
-          "spell_list": "Cleric"
+          "spell": "Thaumaturgy"
         }
       ]
     }
@@ -37,7 +44,7 @@
   ],
   "lineages": [
     "Abyssal Tiefling",
-    "Chthonic Tiefling",
+    "Chthonic Tiefling", 
     "Infernal Tiefling"
   ]
 }

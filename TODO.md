@@ -50,14 +50,14 @@
 |---------|----------|------------------|-------------------|---------|
 | **Aasimar** | - | ❌ | ❌ | Missing |
 | **Dragonborn** | Black, Blue, Brass, Bronze, Copper, Gold, Green, Red, Silver, White | ❌ | ❌ | Missing |
-| **Dwarf** | - | ❌ | ❌ | Missing |
-| **Elf** | High, Wood, Drow | ⚠️ Partial | ⚠️ Partial | In Progress |
+| **Dwarf** | - | ✅ Complete | ✅ Complete | Complete |
+| **Elf** | High, Wood, Drow | ✅ Complete | ✅ Complete | Complete |
 | **Gnome** | Forest, Rock | ❌ | ❌ | Missing |
 | **Goliath** | - | ❌ | ❌ | Missing |
 | **Halfling** | - | ❌ | ❌ | Missing |
 | **Human** | - | ❌ | ❌ | Missing |
 | **Orc** | - | ❌ | ❌ | Missing |
-| **Tiefling** | Abyssal, Chthonic, Infernal | ❌ | ❌ | Missing |
+| **Tiefling** | Abyssal, Chthonic, Infernal | ✅ Complete | ✅ Complete | Complete |
 
 **Priority Actions:**
 - [ ] Complete all missing species data files
@@ -150,7 +150,14 @@
 
 ### Code Quality & Maintainability
 - [ ] **Unit Testing** - Comprehensive test coverage for all modules
-- [ ] **Integration Testing** - End-to-end character creation tests
+- [x] **Integration Testing** - End-to-end character recreation tests ✅ *COMPLETED*
+  - [x] Level 3 Dwarf Cleric (Light Domain) comprehensive verification
+  - [x] Level 3 Wood Elf Fighter (Champion) comprehensive verification
+  - [x] HP calculation testing using HPCalculator.calculate_total_hp()
+  - [x] Ability modifier testing using CharacterCalculator.calculate_ability_scores()
+  - [x] Skill modifier testing using CharacterCalculator.calculate_skills()
+  - [x] Effects system verification (species, class, subclass features)
+  - [x] Spell system verification (domain spells, lineage cantrips)
 - [ ] **Error Handling** - Graceful handling of malformed data
 - [ ] **Input Validation** - Validate all user inputs and data files
 - [ ] **Performance Optimization** - Cache frequently accessed data
@@ -172,11 +179,11 @@
 
 ## 📋 Immediate Priorities (Next Sprint)
 
-1. **Complete Species Data** - Focus on Human, Dwarf, Halfling, and Dragonborn
-2. **Spell System Integration** - Update all existing spell references to use new system
+1. **Complete Species Data** - Focus on Human, Halfling, and Dragonborn (Dwarf and Elf now complete)
+2. **Unit Testing Coverage** - Add unit tests for individual modules (CharacterBuilder, HPCalculator, etc.)
 3. **Equipment Foundation** - Basic weapon and armor data structures
-4. **Character Sheet JSON** - Ensure complete character data export
-5. **Data Validation Tools** - Scripts to verify data file compliance
+4. **Data Validation Tools** - Scripts to verify data file compliance
+5. **More Integration Tests** - Add tests for different class/species combinations
 
 ---
 
@@ -190,5 +197,36 @@
 
 ---
 
-*Last Updated: February 4, 2026*
+## 📈 Recent Accomplishments (February 5, 2026)
+
+### ✅ Integration Testing Framework
+- **Character Recreation Tests** - Comprehensive tests that recreate characters from `choices_made` dictionaries
+- **Effects System Verification** - Tests validate all species, class, and subclass effects are properly applied
+- **Calculator Integration** - Tests use actual calculation modules instead of duplicating logic
+- **Realistic Test Cases** - Level 3 Dwarf Cleric (Light Domain) and Wood Elf Fighter (Champion)
+
+### ✅ Spell System Fixes
+- **Lineage Cantrip UI Display** - Fixed elf lineage cantrips not appearing in web interface
+- **Spell Source Attribution** - Corrected Faerie Fire showing proper "Drow Spells" source instead of "Always Prepared"
+- **Effects Export** - CharacterBuilder now exports effects and choices_made for web app integration
+
+### ✅ Species Implementation  
+- **Complete Dwarf Species** - Dwarven Resilience, Toughness (+1 HP/level), Poison Resistance, Darkvision
+- **Complete Elf Lineage System** - High Elf, Wood Elf, and Drow lineages fully implemented
+- **Complete Tiefling Lineage System** - Abyssal, Chthonic, and Infernal lineages with proper D&D 2024 compliance
+- **Cantrip Effects** - Prestidigitation (High Elf), Druidcraft (Wood Elf), Dancing Lights (Drow), Thaumaturgy (All Tieflings)
+- **Lineage Cantrips** - Poison Spray (Abyssal), Chill Touch (Chthonic), Fire Bolt (Infernal)
+- **Damage Resistances** - Poison (Dwarf + Abyssal), Fire (Infernal), Necrotic (Chthonic)
+- **Speed Bonuses** - Wood Elf 35ft speed correctly implemented
+- **Weapon Proficiencies** - Elf weapon training properly applied
+- **Spell Progression** - All Tiefling variants get level-based spells (L3 and L5 always prepared)
+
+### ✅ Calculator Architecture
+- **Proper Module Usage** - Tests now use HPCalculator, CharacterCalculator methods correctly
+- **DRY Principle** - Eliminated duplicated calculation logic in tests
+- **Maintainability** - Changes to calculation logic only need to happen in one place
+
+---
+
+*Last Updated: February 5, 2026*
 *Status Legend: ✅ Complete | ⚠️ Partial | ❌ Missing*

@@ -881,43 +881,14 @@ class CharacterBuilder:
         elif choice_key_lower == 'ability_scores_method':
             # Handle "recommended" or "manual" ability score method
             if choice_value == 'recommended':
-                # Get the recommended ability scores from class data
+                # Use the predefined standard_array_assignment from class data
                 class_data = self.character_data.get('class_data', {})
-                if class_data:
-                    # Calculate standard array assignment
-                    standard_array = [15, 14, 13, 12, 10, 8]
-                    abilities = ["Strength", "Dexterity", "Constitution", "Intelligence", "Wisdom", "Charisma"]
-                    primary_ability_data = class_data.get('primary_ability', '')
-                    
-                    # Parse primary abilities
-                    if isinstance(primary_ability_data, list):
-                        primary_abilities = primary_ability_data
-                    elif isinstance(primary_ability_data, str):
-                        primary_abilities = primary_ability_data.split(', ') if primary_ability_data else []
-                    else:
-                        primary_abilities = []
-                    
-                    ability_mapping = {}
-                    remaining_values = standard_array.copy()
-                    remaining_abilities = abilities.copy()
-                    
-                    # Assign primary abilities first
-                    for primary_ability in primary_abilities:
-                        if primary_ability in remaining_abilities and remaining_values:
-                            ability_mapping[primary_ability] = remaining_values.pop(0)
-                            remaining_abilities.remove(primary_ability)
-                    
-                    # Assign Constitution next (if not already assigned)
-                    if "Constitution" in remaining_abilities and remaining_values:
-                        ability_mapping["Constitution"] = remaining_values.pop(0)
-                        remaining_abilities.remove("Constitution")
-                    
-                    # Assign remaining values
-                    for ability in remaining_abilities:
-                        if remaining_values:
-                            ability_mapping[ability] = remaining_values.pop(0)
-                    
-                    return self.set_abilities(ability_mapping)
+                
+                if 'standard_array_assignment' in class_data:
+                    return self.set_abilities(class_data['standard_array_assignment'])
+                else:
+                    print(f"Warning: Class {class_data.get('name', 'Unknown')} missing standard_array_assignment")
+                    return False
             return True
         elif choice_key_lower == 'background_ability_score_assignment':
             # Apply background ability bonuses
@@ -1273,6 +1244,20 @@ class CharacterBuilder:
                 self.ability_scores.apply_species_bonuses(abilities['species_bonuses'])
             if 'background_bonuses' in abilities:
                 self.ability_scores.apply_background_bonuses(abilities['background_bonuses'])
+        
+        # Restore applied_effects from exported effects array
+        # This is critical for preserving effects across session save/restore cycles
+        self.applied_effects = []
+        if 'effects' in data and isinstance(data['effects'], list):
+            for effect in data['effects']:
+                if isinstance(effect, dict):
+                    # Reconstruct the applied_effect structure
+                    applied_effect = {
+                        'effect': {k: v for k, v in effect.items() if k not in ['source', 'source_type']},
+                        'source': effect.get('source', 'Unknown'),
+                        'source_type': effect.get('source_type', 'Unknown')
+                    }
+                    self.applied_effects.append(applied_effect)
     
     @classmethod
     def quick_create(cls, species: str, char_class: str, background: str,
@@ -1320,6 +1305,15 @@ class CharacterBuilder:
     def get_current_step(self) -> str:
         """Get the current creation step."""
         return self.character_data['step']
+    
+    def set_step(self, step: str) -> None:
+        """
+        Set the current creation step.
+        
+        Args:
+            step: The step name ('class', 'species', 'lineage', etc.)
+        """
+        self.character_data['step'] = step
     
     def get_cantrips(self) -> List[str]:
         """Get list of known cantrips."""

@@ -1,47 +1,31 @@
 {
   "name": "Abyssal Tiefling",
   "parent_species": "Tiefling",
-  "description": "Abyssal tieflings are descended from fiends of the Abyss, such as demons. They often exhibit traits associated with their chaotic and malevolent heritage, such as a more wild and untamed appearance. Abyssal tieflings may possess abilities that reflect the chaotic nature of the Abyss, making them formidable and unpredictable beings.",
+  "description": "The entropy of the Abyss, the chaos of Pandemonium, and the despair of Carceri call to tieflings who have the abyssal legacy. Horns, fur, tusks, and peculiar scents are common physical features of such tieflings, most of whom have the blood of demons coursing through their veins.",
   "traits": {
-    "Poison Spray": {
-      "description": "You know the Poison Spray cantrip.",
+    "Abyssal Legacy": {
+      "description": "You have Resistance to Poison damage. You know the Poison Spray cantrip. You also always have certain spells prepared and can cast them once per day without expending a spell slot. You can also cast them using spell slots you have of the appropriate level.",
       "effects": [
         {
+          "type": "grant_damage_resistance",
+          "damage_type": "Poison"
+        },
+        {
           "type": "grant_cantrip",
-          "spell": "Poison Spray",
-          "spell_list": "Warlock"
-        }
-      ]
-    },
-    "Ray of Sickness (Level 3)": {
-      "description": "Starting at level 3, you always have Ray of Sickness prepared. You can also cast it using spell slots you have of the appropriate level.",
-      "effects": [
+          "spell": "Poison Spray"
+        },
         {
           "type": "grant_spell",
           "spell": "Ray of Sickness",
-          "level": 1,
-          "spell_list": "Wizard",
           "min_level": 3
-        }
-      ]
-    },
-    "Hold Person (Level 5)": {
-      "description": "Starting at level 5, you always have Hold Person prepared. You can also cast it using spell slots you have of the appropriate level.",
-      "effects": [
+        },
         {
           "type": "grant_spell",
           "spell": "Hold Person",
-          "level": 2,
-          "spell_list": "Wizard",
           "min_level": 5
         }
       ]
     }
   },
-  "spellcasting_ability": "Charisma",
-  "spells_by_level": {
-    "cantrip": ["Poison Spray"],
-    "3": ["Ray of Sickness"],
-    "5": ["Hold Person"]
-  }
+  "spellcasting_ability_choice": ["Intelligence", "Wisdom", "Charisma"]
 }

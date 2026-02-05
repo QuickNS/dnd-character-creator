@@ -1,0 +1,18 @@
+{
+  "Fiendish Legacy": "Charisma",
+  "ability_scores_method": "recommended",
+  "alignment": "Neutral Good",
+  "background": "Soldier",
+  "background_bonuses_method": "suggested",
+  "character_name": "Brianna",
+  "class": "Paladin",
+  "language_choices_needed": 1,
+  "languages": [],
+  "level": 2,
+  "lineage": "Infernal Tiefling",
+  "skill_choices": [
+    "Insight",
+    "Persuasion"
+  ],
+  "species": "Tiefling"
+}

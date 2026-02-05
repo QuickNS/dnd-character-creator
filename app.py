@@ -27,42 +27,28 @@ Session(app)
 
 # ==================== CharacterBuilder Session Helpers ====================
 
-def get_builder_from_session() -> CharacterBuilder:
-    """Get CharacterBuilder from session, creating new one if needed."""
-    if 'builder_state' in session:
-        builder = CharacterBuilder()
-        builder.from_json(session['builder_state'])
-        return builder
+def get_builder_from_session() -> Optional[CharacterBuilder]:
+    """
+    Get CharacterBuilder from session.
     
-    # Fall back to wizard session data if builder_state doesn't exist
-    if 'character' in session:
-        character_data = session['character']
-        builder = CharacterBuilder()
-        
-        # Initialize builder with wizard's level and alignment
-        if 'level' in character_data:
-            builder.character_data['level'] = character_data['level']
-        if 'alignment' in character_data:
-            builder.character_data['alignment'] = character_data['alignment']
-        if 'name' in character_data:
-            builder.character_data['name'] = character_data['name']
-        
-        # Apply any choices already made in wizard
-        if 'choices_made' in character_data and character_data['choices_made']:
-            try:
-                builder.apply_choices(character_data['choices_made'])
-            except Exception as e:
-                # If apply_choices fails, at least preserve the level
-                print(f"Warning: Could not apply wizard choices: {e}")
-        
-        return builder
+    Returns:
+        CharacterBuilder if found in session, None otherwise
+    """
+    if 'builder_state' not in session:
+        return None
     
-    return CharacterBuilder()
+    builder = CharacterBuilder()
+    builder.from_json(session['builder_state'])
+    return builder
 
 def save_builder_to_session(builder: CharacterBuilder):
-    """Save CharacterBuilder state to session."""
+    """
+    Save CharacterBuilder state to session.
+    
+    Args:
+        builder: The CharacterBuilder instance to save
+    """
     session['builder_state'] = builder.to_json()
-    session['character'] = builder.to_json()  # Keep for compatibility
     session.modified = True
 
 # ==================== Legacy Helper Functions ====================
@@ -217,15 +203,14 @@ def api_rebuild_character():
         builder.apply_choices(choices_made)
         
         # Mark as complete
-        builder.character_data['step'] = 'complete'
-        
-        # Get character JSON
-        character = builder.to_json()
+        builder.set_step('complete')
         
         # Store in session
-        session['character'] = character
+        save_builder_to_session(builder)
         session.permanent = True
-        session.modified = True
+        
+        # Get character JSON for response
+        character = builder.to_json()
         
         return jsonify({
             "success": True,
@@ -252,55 +237,28 @@ def create_character():
         if selected_alignment and selected_alignment not in alignments:
             selected_alignment = ""
 
-        # Initialize character data
-        character_data = {
-            "name": request.form.get('name', 'Unnamed Character'),
-            "level": int(request.form.get('level', 1)),
-            "class": "",
-            "background": "",
-            "species": "",
-            "lineage": "",
-            "alignment": selected_alignment,
-            "ability_scores": {
-                "Strength": 10,
-                "Dexterity": 10, 
-                "Constitution": 10,
-                "Intelligence": 10,
-                "Wisdom": 10,
-                "Charisma": 10
-            },
-            "skill_proficiencies": [],
-            "languages": ["Common"],
-            "equipment": [],
-            "features": {
-                "class": [],
-                "species": [],
-                "lineage": [],
-                "background": [],
-                "feats": []
-            },
-            "creature_type": "Humanoid",
-            "size": "Medium",
-            "speed": 30,
-            "darkvision": 0,
-            "choices_made": {
-                "character_name": request.form.get('name', 'Unnamed Character'),
-                "level": int(request.form.get('level', 1))
-            },
-            "step": "class"
-        }
-
-        if selected_alignment:
-            character_data["choices_made"]["alignment"] = selected_alignment
-        
+        # Use CharacterBuilder from the start
         session.clear()  # Clear any existing session data
-        session['character'] = character_data
-        session.permanent = True
-        session.modified = True
-        print(f"DEBUG choices_made after create: {character_data['choices_made']}")
+        builder = CharacterBuilder()
         
-        print(f"Session created with character: {character_data['name']}")
-        print(f"Session after save: {dict(session)}")
+        # Set basic character info
+        builder.character_data['name'] = request.form.get('name', 'Unnamed Character')
+        builder.character_data['level'] = int(request.form.get('level', 1))
+        if selected_alignment:
+            builder.character_data['alignment'] = selected_alignment
+        
+        # Track choices
+        builder.character_data['choices_made']['character_name'] = request.form.get('name', 'Unnamed Character')
+        builder.character_data['choices_made']['level'] = int(request.form.get('level', 1))
+        if selected_alignment:
+            builder.character_data['choices_made']['alignment'] = selected_alignment
+        
+        # Set initial step
+        builder.set_step('class')
+        
+        # Save to session using builder
+        save_builder_to_session(builder)
+        session.permanent = True
         
         # Instead of redirect, render the class selection page directly
         classes = dict(sorted(data_loader.classes.items()))
@@ -311,13 +269,10 @@ def create_character():
 @app.route('/choose-class')
 def choose_class():
     """Class selection step."""
-    print(f"Choose class accessed. Session keys: {list(session.keys())}")  # Debug
-    if 'character' not in session:
-        print("No character in session, redirecting to index")  # Debug
+    builder = get_builder_from_session()
+    if not builder:
         return redirect(url_for('index'))
     
-    character = session['character']
-    print(f"Character found: {character.get('name', 'Unknown')}")  # Debug
     classes = dict(sorted(data_loader.classes.items()))
     return render_template('choose_class.html', classes=classes)
 
@@ -339,25 +294,22 @@ def select_class():
         subclass_level = class_data.get('subclass_selection_level', 3)
         
         if character_level >= subclass_level:
+            builder.set_step('subclass')
             save_builder_to_session(builder)
-            # Update step in session character
-            session['character']['step'] = 'subclass'
-            session.modified = True
             return redirect(url_for('choose_subclass'))
     
+    builder.set_step('class_choices')
     save_builder_to_session(builder)
-    # Update step in session character
-    session['character']['step'] = 'class_choices'
-    session.modified = True
     return redirect(url_for('class_choices'))
 
 @app.route('/choose-subclass')
 def choose_subclass():
     """Dedicated subclass selection step."""
-    if 'character' not in session or session['character']['step'] != 'subclass':
+    builder = get_builder_from_session()
+    if not builder or builder.get_current_step() != 'subclass':
         return redirect(url_for('index'))
     
-    character = session['character']
+    character = builder.to_json()
     class_name = character.get('class', '')
     
     if not class_name or class_name not in data_loader.classes:
@@ -368,9 +320,8 @@ def choose_subclass():
     
     if not subclasses:
         # No subclasses available, skip to class choices
-        character['step'] = 'class_choices'
-        session['character'] = character
-    print(f"DEBUG choices_made after subclass selection: {character.get('choices_made', {})}")
+        builder.set_step('class_choices')
+        save_builder_to_session(builder)
     return render_template('choose_subclass.html', 
                          subclasses=subclasses, 
                          class_name=class_name,
@@ -385,24 +336,18 @@ def select_subclass():
     
     builder = get_builder_from_session()
     builder.apply_choice('subclass', subclass_name)
+    builder.set_step('class_choices')
     save_builder_to_session(builder)
-    
-    # Update session step
-    character = session['character']
-    character['step'] = 'class_choices'
-    session.modified = True
     return redirect(url_for('class_choices'))
 
 @app.route('/class-choices')
 def class_choices():
     """Display all class and subclass features with choices."""
-    print(f"Class choices accessed. Session keys: {list(session.keys())}")  # Debug
-    
-    if 'character' not in session:
-        print("No character in session during class choices")  # Debug
+    builder = get_builder_from_session()
+    if not builder:
         return redirect(url_for('index'))
     
-    character = session['character']
+    character = builder.to_json()
     class_name = character.get('class', 'Fighter')
     character_level = character.get('level', 1)
     subclass_name = character.get('subclass')
@@ -801,31 +746,25 @@ def submit_class_choices():
     if choices:
         builder.apply_choices(choices)
     
+    builder.set_step('background')
     save_builder_to_session(builder)
-    
-    # Update session step
-    character = session['character']
-    character['step'] = 'background'
-    session.modified = True
     return redirect(url_for('choose_background'))
 
 @app.route('/choose-background')
 def choose_background():
     """Background selection step."""
-    if 'character' not in session:
-        print("DEBUG: No character in session, redirecting to index")  # Debug
+    builder = get_builder_from_session()
+    if not builder:
         return redirect(url_for('index'))
     
-    character = session['character']
+    character = builder.to_json()
     # Ensure class is selected before accessing backgrounds
     if not character.get('class'):
-        print("DEBUG: No class selected, redirecting to choose_class")  # Debug
         return redirect(url_for('choose_class'))
     
     # Update step to background when accessing this page
-    character['step'] = 'background'
-    session.modified = True
-    print("DEBUG: Updated step to 'background'")  # Debug
+    builder.set_step('background')
+    save_builder_to_session(builder)
     
     backgrounds = dict(sorted(data_loader.backgrounds.items()))
     return render_template('choose_background.html', backgrounds=backgrounds, character=character)
@@ -839,24 +778,22 @@ def select_background():
     
     builder = get_builder_from_session()
     builder.apply_choice('background', background_name)
+    builder.set_step('species')
     save_builder_to_session(builder)
-    
-    # Update session step
-    character = session['character']
-    character['step'] = 'species'
-    session.modified = True
     return redirect(url_for('choose_species'))
 
 @app.route('/choose-species')
 def choose_species():
     """Species selection step."""
     builder = get_builder_from_session()
-    character = builder.to_json()
+    if not builder:
+        return redirect(url_for('index'))
     
+    character = builder.to_json()
     if not character.get('background'):
         return redirect(url_for('choose_background'))
     
-    character['step'] = 'species'
+    builder.set_step('species')
     save_builder_to_session(builder)
     
     species = dict(sorted(data_loader.species.items()))
@@ -885,25 +822,26 @@ def select_species():
     
     # Update session step based on what comes next
     if has_trait_choices:
-        session['character']['step'] = 'species_traits'
-        session.modified = True
+        builder.set_step('species_traits')
+        save_builder_to_session(builder)
         return redirect(url_for('choose_species_traits'))
     elif species_data.get('lineages'):
-        session['character']['step'] = 'lineage'
-        session.modified = True
+        builder.set_step('lineage')
+        save_builder_to_session(builder)
         return redirect(url_for('choose_lineage'))
     else:
-        session['character']['step'] = 'languages'
-        session.modified = True
+        builder.set_step('languages')
+        save_builder_to_session(builder)
         return redirect(url_for('choose_languages'))
 
 @app.route('/choose-species-traits')
 def choose_species_traits():
     """Species trait choice step (e.g., Keen Senses)."""
-    if 'character' not in session or session['character']['step'] != 'species_traits':
+    builder = get_builder_from_session()
+    if not builder or builder.get_current_step() != 'species_traits':
         return redirect(url_for('index'))
     
-    character = session['character']
+    character = builder.to_json()
     species_name = character['species']
     species_data = data_loader.species.get(species_name, {})
     
@@ -963,12 +901,14 @@ def select_species_traits():
 def choose_lineage():
     """Lineage selection step."""
     builder = get_builder_from_session()
+    if not builder:
+        return redirect(url_for('index'))
+    
     character = builder.to_json()
     
     if character.get('step') != 'lineage' and not character.get('species'):
         return redirect(url_for('index'))
     
-    character = session['character']
     species_name = character['species']
     
     # Get available lineages directly from species data
@@ -998,11 +938,6 @@ def choose_lineage():
     
     print(f"Total lineages loaded: {len(lineages)}")  # Debug
     
-    # Debug: Check spellcasting ability detection
-    for name, lineage in lineages.items():
-        spellcasting_choices = lineage.get('spellcasting_ability_choices', [])
-        print(f"Lineage {name}: spellcasting_ability_choices = {spellcasting_choices}")  # Debug
-    
     return render_template('choose_lineage.html', character=character, lineages=lineages)
 
 @app.route('/select-lineage', methods=['POST'])
@@ -1024,27 +959,27 @@ def select_lineage():
     save_builder_to_session(builder)
     
     # Update session step
-    character = session['character']
-    character['step'] = 'languages'
-    session.modified = True
+    builder.set_step('languages')
+    save_builder_to_session(builder)
     return redirect(url_for('choose_languages'))
 
 @app.route('/choose-languages')
 def choose_languages():
     """Language selection step."""
-    if 'character' not in session:
+    builder = get_builder_from_session()
+    if not builder:
         return redirect(url_for('index'))
     
     # Allow access if step is 'languages' or we're navigating back from later steps  
-    character_step = session['character'].get('step')
-    if character_step not in ['languages', 'ability_scores', 'background_bonuses', 'complete']:
+    current_step = builder.get_current_step()
+    if current_step not in ['languages', 'ability_scores', 'background_bonuses', 'complete']:
         return redirect(url_for('index'))
     
     # Update step to languages when accessing this page
-    session['character']['step'] = 'languages'
-    session.modified = True
+    builder.set_step('languages')
+    save_builder_to_session(builder)
     
-    character = session['character']
+    character = builder.to_json()
     
     # Get base languages from species and class
     species_data = data_loader.species.get(character['species'], {})
@@ -1083,64 +1018,41 @@ def select_languages():
     
     builder = get_builder_from_session()
     builder.apply_choice('languages', selected_languages)
+    builder.set_step('ability_scores')
     save_builder_to_session(builder)
-    
-    # Update session step
-    character = session['character']
-    character['step'] = 'ability_scores'
-    session.modified = True
     return redirect(url_for('assign_ability_scores'))
 
 @app.route('/assign-ability-scores')
 def assign_ability_scores():
     """Ability score assignment step."""
-    if 'character' not in session:
+    builder = get_builder_from_session()
+    if not builder:
         return redirect(url_for('index'))
     
-    character = session['character']
+    character = builder.to_json()
     
     # Allow access if we're at ability_scores step or later
     if character.get('step') not in ['ability_scores', 'background_bonuses', 'complete']:
         return redirect(url_for('index'))
     
-    character = session['character']
     class_name = character['class']
     
-    # Get class recommendations
+    # Get class data
     class_data = data_loader.classes.get(class_name, {})
-    primary_ability_data = class_data.get('primary_ability', '')
     
-    # Handle both string and list formats for primary_ability
+    # Use predefined standard_array_assignment from class JSON
+    recommended_allocation = class_data.get('standard_array_assignment', {})
+    
+    standard_array = [15, 14, 13, 12, 10, 8]
+    
+    # Get primary abilities for display purposes
+    primary_ability_data = class_data.get('primary_ability', '')
     if isinstance(primary_ability_data, list):
         primary_abilities = primary_ability_data
     elif isinstance(primary_ability_data, str):
         primary_abilities = primary_ability_data.split(', ') if primary_ability_data else []
     else:
         primary_abilities = []
-    
-    standard_array = [15, 14, 13, 12, 10, 8]
-    
-    # Calculate recommended allocation
-    abilities = ["Strength", "Dexterity", "Constitution", "Intelligence", "Wisdom", "Charisma"]
-    recommended_allocation = {}
-    remaining_values = standard_array.copy()
-    remaining_abilities = abilities.copy()
-    
-    # Assign primary abilities first
-    for primary_ability in primary_abilities:
-        if primary_ability in remaining_abilities and remaining_values:
-            recommended_allocation[primary_ability] = remaining_values.pop(0)
-            remaining_abilities.remove(primary_ability)
-    
-    # Assign Constitution next (if not already assigned)
-    if "Constitution" in remaining_abilities and remaining_values:
-        recommended_allocation["Constitution"] = remaining_values.pop(0)
-        remaining_abilities.remove("Constitution")
-    
-    # Assign remaining values
-    for ability in remaining_abilities:
-        if remaining_values:
-            recommended_allocation[ability] = remaining_values.pop(0)
     
     return render_template('assign_ability_scores.html', 
                          character=character, 
@@ -1170,25 +1082,23 @@ def submit_ability_scores():
     
     save_builder_to_session(builder)
     
-    # Update session step
-    character = session['character']
-    character['step'] = 'background_bonuses'
-    session.modified = True
+    # Update step to background_bonuses
+    builder.set_step('background_bonuses')
+    save_builder_to_session(builder)
     return redirect(url_for('background_bonuses'))
 
 @app.route('/background-bonuses')
 def background_bonuses():
     """Background ability score bonuses step."""
-    if 'character' not in session:
+    builder = get_builder_from_session()
+    if not builder:
         return redirect(url_for('index'))
     
-    character = session['character']
+    character = builder.to_json()
     
     # Allow access if we're at background_bonuses step or later
     if character.get('step') not in ['background_bonuses', 'complete']:
         return redirect(url_for('index'))
-    
-    character = session['character']
     background_name = character['background']
     background_data = data_loader.backgrounds.get(background_name, {})
     
@@ -1234,10 +1144,9 @@ def submit_background_bonuses():
     
     save_builder_to_session(builder)
     
-    # Update session step
-    character = session['character']
-    character['step'] = 'complete'
-    session.modified = True
+    # Mark character creation as complete
+    builder.set_step('complete')
+    save_builder_to_session(builder)
     return redirect(url_for('character_summary'))
 
 def _gather_character_spells(character: dict) -> dict:
@@ -1657,10 +1566,11 @@ def _gather_character_spells(character: dict) -> dict:
 @app.route('/character-summary')
 def character_summary():
     """Display final character summary."""
-    if 'character' not in session or session['character']['step'] != 'complete':
+    builder = get_builder_from_session()
+    if not builder or builder.get_current_step() != 'complete':
         return redirect(url_for('index'))
     
-    character = session['character']
+    character = builder.to_json()
     
     # Convert to comprehensive character sheet format
     comprehensive_character = character_sheet_converter.convert_to_character_sheet(character)
@@ -1871,8 +1781,7 @@ def character_summary():
             'special_notes': special_notes
         })
     
-    # Store both formats in session
-    session['character'] = character
+    # Store character sheet in session for templates
     session['character_sheet'] = comprehensive_character
     session.modified = True
     
@@ -1891,10 +1800,11 @@ def character_summary():
 @app.route('/download-character')
 def download_character():
     """Download character as comprehensive JSON file."""
-    if 'character' not in session:
+    builder = get_builder_from_session()
+    if not builder:
         return redirect(url_for('index'))
     
-    character = session['character']
+    character = builder.to_json()
     
     # Convert to comprehensive character sheet format
     comprehensive_character = character_sheet_converter.convert_to_character_sheet(character)
@@ -1912,10 +1822,11 @@ def download_character():
 @app.route('/api/character-sheet')
 def api_character_sheet():
     """Return comprehensive character sheet as JSON API response."""
-    if 'character' not in session:
+    builder = get_builder_from_session()
+    if not builder:
         return jsonify({"error": "No character in session"}), 400
     
-    character = session['character']
+    character = builder.to_json()
     comprehensive_character = character_sheet_converter.convert_to_character_sheet(character)
     
     return jsonify(comprehensive_character)
@@ -1923,19 +1834,19 @@ def api_character_sheet():
 @app.route('/download-character-pdf')
 def download_character_pdf():
     """Download character as filled PDF character sheet."""
-    if 'character' not in session or session['character']['step'] != 'complete':
+    builder = get_builder_from_session()
+    if not builder or builder.get_current_step() != 'complete':
         return redirect(url_for('index'))
     
     from utils.pdf_writer import generate_character_sheet_pdf
     from flask import send_file
     import io
     
-    # Get character builder from session
-    builder = get_builder_from_session()
+    # Get character data
     character = builder.to_json()
     
     # Add calculated values from character_summary
-    character_sheet = character_sheet_converter.convert_to_character_sheet(session['character'])
+    character_sheet = character_sheet_converter.convert_to_character_sheet(character)
     
     # Extract combat stats
     character['combat_stats'] = character_sheet['combat_stats']
@@ -1998,15 +1909,15 @@ def download_character_pdf():
 @app.route('/character-sheet')
 def character_sheet():
     """Display fillable HTML character sheet."""
-    if 'character' not in session or session['character']['step'] != 'complete':
+    builder = get_builder_from_session()
+    if not builder or builder.get_current_step() != 'complete':
         return redirect(url_for('index'))
     
-    # Get character builder from session
-    builder = get_builder_from_session()
+    # Get character data
     character = builder.to_json()
     
     # Get comprehensive character sheet data (all calculations already done)
-    character_sheet_data = character_sheet_converter.convert_to_character_sheet(session['character'])
+    character_sheet_data = character_sheet_converter.convert_to_character_sheet(character)
     
     # Extract ability modifiers (already calculated)
     ability_modifiers = {}
