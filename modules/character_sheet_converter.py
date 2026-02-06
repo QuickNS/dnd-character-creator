@@ -171,18 +171,20 @@ class CharacterSheetConverter:
     
     def _convert_equipment(self, character_data: Dict[str, Any]) -> Dict[str, Any]:
         """Convert equipment to detailed format."""
-        # For now, return basic structure
-        # Will be enhanced when equipment system is implemented
+        # Get equipment from character data (Phase 3 & 4 integration)
+        source_equipment = character_data.get('equipment', {})
+        
         return {
-            "armor": [],
-            "weapons": [],
-            "other_equipment": [],
+            "armor": source_equipment.get('armor', []),
+            "shields": source_equipment.get('shields', []),
+            "weapons": source_equipment.get('weapons', []),
+            "other": source_equipment.get('other', []),
             "money": {
-                "copper": 0,
-                "silver": 0,
-                "electrum": 0,
-                "gold": character_data.get('gold', 0),
-                "platinum": 0
+                "copper": source_equipment.get('currency', {}).get('copper', 0),
+                "silver": source_equipment.get('currency', {}).get('silver', 0),
+                "electrum": source_equipment.get('currency', {}).get('electrum', 0),
+                "gold": source_equipment.get('currency', {}).get('gold', character_data.get('gold', 0)),
+                "platinum": source_equipment.get('currency', {}).get('platinum', 0)
             }
         }
     

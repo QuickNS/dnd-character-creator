@@ -637,6 +637,170 @@ class TestCharacterRecreation:
         print(f"Calculated skill bonuses using CharacterCalculator: {proficient_skills}")
         print(f"Proficiency bonus for level {level}: +{proficiency_bonus}")
 
+    def test_fighter_with_equipment_option_a(self):
+        """Test Fighter with equipment option A - Chain Mail and Greatsword."""
+        
+        choices_made = {
+            'character_name': 'Grom Ironhide',
+            'species': 'Dwarf',
+            'class': 'Fighter',
+            'level': 1,
+            'background': 'Soldier',
+            'Fighting Style': 'Great Weapon Fighting',
+            'skill_choices': ['Athletics', 'Intimidation'],
+            'abilities': {
+                'Strength': 16,
+                'Dexterity': 12,
+                'Constitution': 15,
+                'Intelligence': 10,
+                'Wisdom': 13,
+                'Charisma': 8
+            },
+            'equipment_selections': {
+                'class_equipment': 'option_a',
+                'background_equipment': 'option_a'
+            }
+        }
+        
+        builder = CharacterBuilder()
+        result = builder.apply_choices(choices_made)
+        
+        assert result is True, "Character building should succeed"
+        character_json = builder.to_json()
+        
+        # Verify equipment selections were stored
+        assert 'choices_made' in character_json
+        assert 'equipment_selections' in character_json['choices_made']
+        equipment_selections = character_json['choices_made']['equipment_selections']
+        assert equipment_selections['class_equipment'] == 'option_a'
+        assert equipment_selections['background_equipment'] == 'option_a'
+        
+        print("✅ Fighter with equipment option A - Equipment selections stored correctly!")
+
+    def test_fighter_with_equipment_option_b(self):
+        """Test Fighter with equipment option B - Studded Leather and Ranged weapons."""
+        
+        choices_made = {
+            'character_name': 'Elara Swiftshot',
+            'species': 'Elf',
+            'lineage': 'Wood Elf',
+            'class': 'Fighter',
+            'level': 3,
+            'subclass': 'Champion',
+            'background': 'Soldier',
+            'Elven Lineage': 'Wisdom',
+            'Fighting Style': 'Archery',
+            'Weapon Mastery': ['Longsword', 'Longbow', 'Shortsword'],
+            'skill_choices': ['Acrobatics', 'Perception'],
+            'abilities': {
+                'Strength': 13,
+                'Dexterity': 16,
+                'Constitution': 14,
+                'Intelligence': 10,
+                'Wisdom': 15,
+                'Charisma': 12
+            },
+            'equipment_selections': {
+                'class_equipment': 'option_b',
+                'background_equipment': 'option_b'
+            }
+        }
+        
+        builder = CharacterBuilder()
+        result = builder.apply_choices(choices_made)
+        
+        assert result is True, "Character building should succeed"
+        character_json = builder.to_json()
+        
+        # Verify equipment selections
+        equipment_selections = character_json['choices_made']['equipment_selections']
+        assert equipment_selections['class_equipment'] == 'option_b'
+        assert equipment_selections['background_equipment'] == 'option_b'
+        
+        # Verify weapon mastery choices (Fighter gets Weapon Mastery at level 1)
+        assert 'Weapon Mastery' in character_json['choices_made']
+        masteries = character_json['choices_made']['Weapon Mastery']
+        assert 'Longsword' in masteries or 'Longbow' in masteries or 'Shortsword' in masteries
+        
+        print("✅ Fighter with equipment option B - Equipment and Weapon Mastery stored correctly!")
+
+    def test_fighter_with_equipment_option_c(self):
+        """Test Fighter with equipment option C - Gold only."""
+        
+        choices_made = {
+            'character_name': 'Marcus Goldhand',
+            'species': 'Human',
+            'class': 'Fighter',
+            'level': 1,
+            'background': 'Merchant',
+            'Fighting Style': 'Defense',
+            'skill_choices': ['Athletics', 'Perception'],
+            'abilities': {
+                'Strength': 15,
+                'Dexterity': 14,
+                'Constitution': 13,
+                'Intelligence': 12,
+                'Wisdom': 10,
+                'Charisma': 16
+            },
+            'equipment_selections': {
+                'class_equipment': 'option_c',
+                'background_equipment': 'option_b'
+            }
+        }
+        
+        builder = CharacterBuilder()
+        result = builder.apply_choices(choices_made)
+        
+        assert result is True, "Character building should succeed"
+        character_json = builder.to_json()
+        
+        # Verify equipment selections
+        equipment_selections = character_json['choices_made']['equipment_selections']
+        assert equipment_selections['class_equipment'] == 'option_c'
+        
+        # Option C is gold-only, should work without items
+        print("✅ Fighter with equipment option C (gold) - Equipment selection stored correctly!")
+
+    def test_cleric_with_equipment(self):
+        """Test Cleric with equipment selections."""
+        
+        choices_made = {
+            'character_name': 'Brother Aldric',
+            'species': 'Human',
+            'class': 'Cleric',
+            'level': 1,
+            'background': 'Acolyte',
+            'Divine Order': 'Protector',
+            'Spellcasting': ['Light', 'Sacred Flame', 'Thaumaturgy'],
+            'skill_choices': ['Insight', 'Religion'],
+            'abilities': {
+                'Strength': 14,
+                'Dexterity': 10,
+                'Constitution': 15,
+                'Intelligence': 12,
+                'Wisdom': 16,
+                'Charisma': 13
+            },
+            'equipment_selections': {
+                'class_equipment': 'option_a',
+                'background_equipment': 'option_a'
+            }
+        }
+        
+        builder = CharacterBuilder()
+        result = builder.apply_choices(choices_made)
+        
+        assert result is True, "Character building should succeed"
+        character_json = builder.to_json()
+        
+        # Verify equipment selections stored
+        equipment_selections = character_json['choices_made']['equipment_selections']
+        assert equipment_selections['class_equipment'] == 'option_a'
+        assert equipment_selections['background_equipment'] == 'option_a'
+        
+        print("✅ Cleric with equipment - Equipment selections stored correctly!")
+
 
 if __name__ == "__main__":
     # Run tests manually for debugging
@@ -655,5 +819,30 @@ if __name__ == "__main__":
         print("PASSED: Wood Elf Fighter Champion")
     except Exception as e:
         print(f"FAILED: Wood Elf Fighter Champion - {e}")
+    
+    print("\n=== Testing Equipment Integration ===")
+    try:
+        tester.test_fighter_with_equipment_option_a()
+        print("PASSED: Fighter Equipment Option A")
+    except Exception as e:
+        print(f"FAILED: Fighter Equipment Option A - {e}")
+    
+    try:
+        tester.test_fighter_with_equipment_option_b()
+        print("PASSED: Fighter Equipment Option B")
+    except Exception as e:
+        print(f"FAILED: Fighter Equipment Option B - {e}")
+    
+    try:
+        tester.test_fighter_with_equipment_option_c()
+        print("PASSED: Fighter Equipment Option C")
+    except Exception as e:
+        print(f"FAILED: Fighter Equipment Option C - {e}")
+    
+    try:
+        tester.test_cleric_with_equipment()
+        print("PASSED: Cleric Equipment")
+    except Exception as e:
+        print(f"FAILED: Cleric Equipment - {e}")
     
     print("\n=== All Tests Complete ===")

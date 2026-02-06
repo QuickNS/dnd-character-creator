@@ -900,11 +900,19 @@ class CharacterBuilder:
             # Apply background ability bonuses
             if isinstance(choice_value, dict):
                 self.ability_scores.apply_background_bonuses(choice_value)
+                # Update character_data so it persists across session save/restore
+                if 'abilities' not in self.character_data:
+                    self.character_data['abilities'] = {}
+                self.character_data['abilities']['background_bonuses'] = choice_value
             return True
         elif choice_key_lower == 'background_bonuses':
             # Apply background ability bonuses (alternate key name)
             if isinstance(choice_value, dict):
                 self.ability_scores.apply_background_bonuses(choice_value)
+                # Update character_data so it persists across session save/restore
+                if 'abilities' not in self.character_data:
+                    self.character_data['abilities'] = {}
+                self.character_data['abilities']['background_bonuses'] = choice_value
             return True
         elif choice_key_lower == 'background_bonuses_method':
             # Handle "suggested" background bonuses

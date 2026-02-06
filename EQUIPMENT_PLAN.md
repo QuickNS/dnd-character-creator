@@ -18,9 +18,46 @@
 - ❌ Starting equipment selection UI
 - ❌ Equipment choices from class/background
 - ❌ Equipment storage in character data
-- ❌ AC calculation from equipped armor
-- ❌ Attack/damage calculation from equipped weapons
+- ❌ AC Options Calculator (all possible combinations)
+- ❌ AC Options Card display
+- ❌ Weapon attack stats calculation
 - ❌ Equipment display on character sheet
+
+## 🎯 Key Design Decision: AC Options System
+
+**IMPORTANT**: This implementation uses a **simplified, transparent approach** instead of traditional "equipped" item management.
+
+### Design Philosophy
+Rather than tracking which armor is "equipped," we:
+1. **Store all equipment in inventory** (no equipped flags)
+2. **Calculate ALL possible AC combinations** from available armor/shields
+3. **Display them ranked** in an "AC Options Card" on character summary
+4. **Show full formulas** so players understand the math
+5. **Include warnings** about stealth disadvantage, STR requirements, etc.
+
+### Benefits
+- ✅ **Simpler implementation** - No equip/unequip UI complexity
+- ✅ **More transparent** - Players see all their defensive options at once
+- ✅ **Educational** - Formulas help players understand D&D mechanics
+- ✅ **Better decision-making** - Trade-offs are clear (AC vs stealth, etc.)
+- ✅ **Future-proof** - Easy to add magic items, temporary effects, etc.
+
+### Example Display
+```
+┌─ Armor Class Options ───────────────┐
+│ 🛡️ BEST: AC 18                      │
+│ Chain Mail + Shield                  │
+│ 16 (armor) + 2 (shield) = 18        │
+│ ⚠️ Disadvantage on Stealth           │
+├──────────────────────────────────────┤
+│ AC 16 - Chain Mail                   │
+│ AC 14 - Leather Armor + Shield       │
+│ AC 14 - Leather Armor                │
+│ AC 13 - Unarmored                    │
+└──────────────────────────────────────┘
+```
+
+This approach focuses on **information over automation**, empowering players to understand their choices.
 
 ## Implementation Phases
 
@@ -202,18 +239,19 @@ Create `/choose-equipment` route:
 - Store selections in character data
 - Validate proficiency requirements
 
-### Phase 3: Equipment Storage & Management
+### Phase 3: Equipment Storage & Inventory (SIMPLIFIED)
 
-**Goal**: Store and manage equipment in character data
+**Goal**: Store equipment inventory (no "equipped" system needed)
 
-#### 3.1 Character Data Structure
+**Design Philosophy**: Rather than tracking what's "equipped", we calculate ALL possible AC combinations from inventory and present them to the player. This is simpler, more transparent, and more useful.
+
+#### 3.1 Character Data Structure (Simplified)
 ```json
 {
   "equipment": {
     "weapons": [
       {
         "name": "Longsword",
-        "equipped": true,
         "quantity": 1,
         "properties": {...}
       }
@@ -221,15 +259,19 @@ Create `/choose-equipment` route:
     "armor": [
       {
         "name": "Chain Mail",
-        "equipped": true,
+        "properties": {...}
+      },
+      {
+        "name": "Leather Armor",
         "properties": {...}
       }
     ],
-    "shield": {
-      "name": "Shield",
-      "equipped": true,
-      "properties": {...}
-    },
+    "shields": [
+      {
+        "name": "Shield",
+        "properties": {...}
+      }
+    ],
     "other": [
       {
         "name": "Rope, Hempen (50 feet)",
@@ -248,75 +290,266 @@ Create `/choose-equipment` route:
 }
 ```
 
+**Note**: No `equipped` flags. All armor/shields in inventory are potential options.
+
 #### 3.2 Equipment Manager Module
 Create `modules/equipment_manager.py`:
 ```python
 class EquipmentManager:
     def add_item(self, item_name, category, quantity=1)
-    def equip_item(self, item_name, category)
-    def unequip_item(self, item_name, category)
-    def get_equipped_armor(self)
-    def get_equipped_weapons(self)
-    def can_equip(self, item_name, character_proficiencies)
+    def remove_item(self, item_name, category, quantity=1)
+    def get_all_armor(self)
+    def get_all_shields(self)
+    def get_all_weapons(self)
+    def can_use_armor(self, armor_name, character_proficiencies)
+    def can_use_weapon(self, weapon_name, character_proficiencies)
     def calculate_total_weight(self)
-    def calculate_armor_class(self, dex_modifier, equipped_armor, equipped_shield)
 ```
 
-### Phase 4: Combat Statistics Integration
+### Phase 4: AC Options Calculator
 
-**Goal**: Calculate AC, attacks, and damage from equipment
+**Goal**: Calculate ALL possible AC combinations and present them as options
 
-#### 4.1 Armor Class Calculation
+**Design Philosophy**: Instead of calculating a single AC, we generate all valid AC combinations from inventory and show them ranked by AC value. This gives players complete transparency about their defensive options.
+
+#### 4.1 AC Options Calculation
 Update `modules/character_calculator.py`:
 ```python
-def calculate_armor_class(self, character):
-    equipped_armor = character['equipment']['armor']
-    equipped_shield = character['equipment']['shield']
+def calculate_all_ac_options(self, character):
+    """
+    Calculate all possible AC combinations from inventory.
+    Returns a list of AC options sorted by AC value (highest first).
+    """
+    options = []
+    dex_modifier = character['ability_modifiers']['Dexterity']
+    proficiencies = character['proficiencies']
+    
+    # Get all armor and shields from inventory
+    all_armor = character['equipment'].get('armor', [])
+    all_shields = character['equipment'].get('shields', [])
+    
+    # Calculate armor options (with and without shield)
+    for armor in all_armor:
+        armor_data = self.load_armor_data(armor['name'])
+        
+        # Check proficiency
+        if not self.has_proficiency(armor_data, proficiencies):
+            continue
+        
+        # Calculate AC for this armor
+        ac_without_shield = self._calculate_armor_ac(armor_data, dex_modifier, character)
+        
+        # Option 1: Armor without shield
+        options.append({
+            'ac': ac_without_shield,
+            'armor': armor['name'],
+            'shield': None,
+            'formula': self._get_ac_formula(armor_data, dex_modifier, None, character),
+            'notes': self._get_armor_notes(armor_data, character),
+            'valid': True
+        })
+        
+        # Option 2: Armor with each shield
+        for shield in all_shields:
+            if not self.has_proficiency(shield, proficiencies):
+                continue
+            
+            shield_data = self.load_armor_data(shield['name'])
+            ac_with_shield = ac_without_shield + shield_data.get('ac_bonus', 0)
+            
+            options.append({
+                'ac': ac_with_shield,
+                'armor': armor['name'],
+                'shield': shield['name'],
+                'formula': self._get_ac_formula(armor_data, dex_modifier, shield_data, character),
+                'notes': self._get_armor_notes(armor_data, character),
+                'valid': True
+            })
+    
+    # Unarmored options (with and without shield)
+    unarmored_ac = self._calculate_unarmored_ac(character)
+    
+    # Unarmored without shield
+    options.append({
+        'ac': unarmored_ac,
+        'armor': None,
+        'shield': None,
+        'formula': self._get_unarmored_formula(character),
+        'notes': [],
+        'valid': True,
+        'is_unarmored': True
+    })
+    
+    # Unarmored with shields
+    for shield in all_shields:
+        if not self.has_proficiency(shield, proficiencies):
+            continue
+        
+        shield_data = self.load_armor_data(shield['name'])
+        options.append({
+            'ac': unarmored_ac + shield_data.get('ac_bonus', 0),
+            'armor': None,
+            'shield': shield['name'],
+            'formula': f"{self._get_unarmored_formula(character)} + Shield ({shield_data.get('ac_bonus', 0)})",
+            'notes': [],
+            'valid': True,
+            'is_unarmored': True
+        })
+    
+    # Sort by AC (highest first), then by complexity (simpler first)
+    options.sort(key=lambda x: (-x['ac'], x['armor'] is None))
+    
+    return options
+
+def _calculate_armor_ac(self, armor_data, dex_modifier, character):
+    """Calculate AC for a specific armor"""
+    category = armor_data.get('category')
+    base_ac = armor_data.get('ac_base', 0)
+    
+    if category == 'Light Armor':
+        return base_ac + dex_modifier
+    elif category == 'Medium Armor':
+        return base_ac + min(dex_modifier, 2)
+    else:  # Heavy Armor
+        return base_ac
+
+def _calculate_unarmored_ac(self, character):
+    """Calculate unarmored AC (may be overridden by class features)"""
     dex_modifier = character['ability_modifiers']['Dexterity']
     
-    if not equipped_armor:
-        # Unarmored: 10 + DEX
-        return 10 + dex_modifier
+    # Check for special unarmored defense
+    # Barbarian: 10 + DEX + CON
+    if 'Unarmored Defense' in character.get('features', {}):
+        feature_desc = character['features']['Unarmored Defense']
+        if 'Constitution' in feature_desc:
+            con_modifier = character['ability_modifiers']['Constitution']
+            return 10 + dex_modifier + con_modifier
+        # Monk: 10 + DEX + WIS
+        elif 'Wisdom' in feature_desc:
+            wis_modifier = character['ability_modifiers']['Wisdom']
+            return 10 + dex_modifier + wis_modifier
     
-    armor_data = self.load_armor_data(equipped_armor['name'])
+    # Default: 10 + DEX
+    return 10 + dex_modifier
+
+def _get_ac_formula(self, armor_data, dex_modifier, shield_data, character):
+    """Generate human-readable AC formula"""
+    category = armor_data.get('category')
+    base_ac = armor_data.get('ac_base', 0)
     
-    if armor_data['category'] == 'Light Armor':
-        # Light: AC + DEX
-        ac = armor_data['ac_base'] + dex_modifier
-    elif armor_data['category'] == 'Medium Armor':
-        # Medium: AC + DEX (max 2)
-        ac = armor_data['ac_base'] + min(dex_modifier, 2)
+    if category == 'Light Armor':
+        formula = f"{base_ac} (armor) + {dex_modifier} (DEX)"
+    elif category == 'Medium Armor':
+        dex_bonus = min(dex_modifier, 2)
+        formula = f"{base_ac} (armor) + {dex_bonus} (DEX, max +2)"
     else:  # Heavy Armor
-        # Heavy: AC only
-        ac = armor_data['ac_base']
+        formula = f"{base_ac} (armor)"
     
-    # Add shield
-    if equipped_shield and equipped_shield.get('equipped'):
-        shield_data = self.load_armor_data('Shield')
-        ac += shield_data['ac_bonus']
+    if shield_data:
+        shield_bonus = shield_data.get('ac_bonus', 0)
+        formula += f" + {shield_bonus} (shield)"
     
-    return ac
+    return formula
+
+def _get_unarmored_formula(self, character):
+    """Get formula for unarmored AC"""
+    dex_modifier = character['ability_modifiers']['Dexterity']
+    
+    if 'Unarmored Defense' in character.get('features', {}):
+        feature_desc = character['features']['Unarmored Defense']
+        if 'Constitution' in feature_desc:
+            con_modifier = character['ability_modifiers']['Constitution']
+            return f"10 + {dex_modifier} (DEX) + {con_modifier} (CON)"
+        elif 'Wisdom' in feature_desc:
+            wis_modifier = character['ability_modifiers']['Wisdom']
+            return f"10 + {dex_modifier} (DEX) + {wis_modifier} (WIS)"
+    
+    return f"10 + {dex_modifier} (DEX)"
+
+def _get_armor_notes(self, armor_data, character):
+    """Get warnings/notes about armor"""
+    notes = []
+    
+    if armor_data.get('stealth_disadvantage'):
+        notes.append('⚠️ Disadvantage on Stealth checks')
+    
+    str_req = armor_data.get('strength_requirement')
+    if str_req:
+        str_score = character['ability_scores']['Strength']
+        if str_score < str_req:
+            notes.append(f'⚠️ Requires STR {str_req} (you have {str_score})')
+    
+    return notes
 ```
 
-#### 4.2 Attack Calculations
+#### 4.2 AC Options Display Component
+The character summary will include a prominent "**Armor Class Options**" card showing all combinations.
+
+**Display Structure**:
+```
+┌─ Armor Class Options ─────────────────────┐
+│                                             │
+│ 🛡️ BEST OPTION: AC 18                      │
+│ Chain Mail + Shield                         │
+│ 16 (armor) + 2 (shield) = 18               │
+│ ⚠️ Disadvantage on Stealth checks          │
+│                                             │
+│ ── Alternative Options ───────────────────  │
+│                                             │
+│ AC 16 - Chain Mail                          │
+│ 16 (armor) = 16                            │
+│ ⚠️ Disadvantage on Stealth checks          │
+│                                             │
+│ AC 14 - Leather Armor + Shield              │
+│ 11 (armor) + 3 (DEX) + 2 (shield) = 16     │
+│                                             │
+│ AC 14 - Leather Armor                       │
+│ 11 (armor) + 3 (DEX) = 14                  │
+│                                             │
+│ AC 13 - Unarmored                           │
+│ 10 + 3 (DEX) = 13                          │
+│                                             │
+└────────────────────────────────────────────┘
+```
+
+#### 4.3 Server-Side Integration
+In `app.py`, add AC options to character summary:
+```python
+@app.route('/character-summary')
+def character_summary():
+    character = session.get('character', {})
+    
+    # Calculate all AC options
+    ac_options = calculator.calculate_all_ac_options(character)
+    
+    # Get the best AC
+    best_ac = ac_options[0]['ac'] if ac_options else 10
+    
+    return render_template(
+        'character_summary.html',
+        character=character,
+        ac_options=ac_options,
+        best_ac=best_ac
+    )
+```
+
+#### 4.4 Weapon Attack Calculations
+For weapons, we'll show all available weapons with their stats (no "equipped" flag needed):
 ```python
 def calculate_weapon_attacks(self, character):
+    """Calculate attack stats for all weapons in inventory"""
     attacks = []
-    equipped_weapons = character['equipment']['weapons']
+    all_weapons = character['equipment'].get('weapons', [])
     
-    for weapon in equipped_weapons:
-        if not weapon.get('equipped'):
-            continue
-            
+    for weapon in all_weapons:
         weapon_data = self.load_weapon_data(weapon['name'])
         
         # Determine ability modifier
         if 'Finesse' in weapon_data['properties']:
-            ability_mod = max(
-                character['ability_modifiers']['Strength'],
-                character['ability_modifiers']['Dexterity']
-            )
-            ability_name = 'STR/DEX'
+            str_mod = character['ability_modifiers']['Strength']
+            dex_mod = character['ability_modifiers']['Dexterity']
+            ability_mod = max(str_mod, dex_mod)
+            ability_name = f'STR/DEX ({"STR" if str_mod >= dex_mod else "DEX"})'
         elif weapon_data['category'].endswith('Ranged'):
             ability_mod = character['ability_modifiers']['Dexterity']
             ability_name = 'DEX'
@@ -338,12 +571,22 @@ def calculate_weapon_attacks(self, character):
         damage_dice = weapon_data['damage']
         damage_bonus = ability_mod
         
+        # Handle versatile weapons
+        versatile_damage = None
+        for prop in weapon_data.get('properties', []):
+            if prop.startswith('Versatile'):
+                # Extract damage from "Versatile (1d10)"
+                versatile_damage = prop.split('(')[1].split(')')[0]
+        
         attacks.append({
             'name': weapon['name'],
-            'attack_bonus': f"+{attack_bonus}",
+            'attack_bonus': f"+{attack_bonus}" if attack_bonus >= 0 else str(attack_bonus),
             'damage': f"{damage_dice} + {damage_bonus}",
+            'versatile_damage': f"{versatile_damage} + {damage_bonus}" if versatile_damage else None,
             'damage_type': weapon_data['damage_type'],
-            'properties': weapon_data['properties']
+            'properties': weapon_data['properties'],
+            'ability': ability_name,
+            'proficient': is_proficient
         })
     
     return attacks
@@ -363,20 +606,87 @@ Template: `templates/choose_equipment.html`
 
 #### 5.2 Character Summary Updates
 Update `templates/character_summary.html`:
+
+**AC Options Card** (prominent display):
 ```html
-<!-- Equipment Section -->
+<!-- Armor Class Options Card -->
 <div class="card mb-4">
-    <div class="sub-card-header bg-secondary">
-        <h5 class="mb-0">Equipment</h5>
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">🛡️ Armor Class Options</h5>
     </div>
     <div class="card-body">
-        <h6>Armor & Shield</h6>
+        {% if ac_options %}
+            <!-- Best AC Option -->
+            <div class="best-ac-option p-3 mb-3 border border-success rounded bg-light">
+                <h6 class="text-success mb-2">
+                    <strong>BEST OPTION: AC {{ ac_options[0].ac }}</strong>
+                </h6>
+                <p class="mb-1">
+                    {% if ac_options[0].armor %}
+                        {{ ac_options[0].armor }}
+                    {% else %}
+                        Unarmored
+                    {% endif %}
+                    {% if ac_options[0].shield %}
+                        + {{ ac_options[0].shield }}
+                    {% endif %}
+                </p>
+                <p class="text-muted mb-2">{{ ac_options[0].formula }}</p>
+                {% if ac_options[0].notes %}
+                    {% for note in ac_options[0].notes %}
+                        <div class="text-warning">{{ note }}</div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+            
+            <!-- Alternative Options -->
+            {% if ac_options|length > 1 %}
+                <h6 class="border-top pt-3 mb-3">Alternative Options</h6>
+                {% for option in ac_options[1:] %}
+                    <div class="ac-option p-2 mb-2 border rounded">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>AC {{ option.ac }}</strong> - 
+                                {% if option.armor %}
+                                    {{ option.armor }}
+                                {% else %}
+                                    Unarmored
+                                {% endif %}
+                                {% if option.shield %}
+                                    + {{ option.shield }}
+                                {% endif %}
+                            </div>
+                        </div>
+                        <small class="text-muted">{{ option.formula }}</small>
+                        {% if option.notes %}
+                            {% for note in option.notes %}
+                                <div class="text-warning small">{{ note }}</div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% else %}
+            <p class="text-muted">No armor in inventory. AC = 10 + DEX modifier</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Equipment Inventory -->
+<div class="card mb-4">
+    <div class="sub-card-header bg-secondary">
+        <h5 class="mb-0">Equipment Inventory</h5>
+    </div>
+    <div class="card-body">
+        <h6>Armor</h6>
         <ul>
             {% for armor in character.equipment.armor %}
-            <li>{{ armor.name }} (AC: {{ armor.properties.ac_base }})</li>
+            <li>{{ armor.name }}</li>
             {% endfor %}
-            {% if character.equipment.shield %}
-            <li>{{ character.equipment.shield.name }} (+{{ character.equipment.shield.properties.ac_bonus }} AC)</li>
+            {% if character.equipment.shields %}
+                {% for shield in character.equipment.shields %}
+                <li>{{ shield.name }}</li>
+                {% endfor %}
             {% endif %}
         </ul>
         
@@ -467,44 +777,59 @@ Update `templates/character_sheet_pdf.html`:
 - [ ] Can select from weapon/armor categories
 - [ ] Equipment stored in character data
 
-### Phase 3: Calculations
-- [ ] AC calculates correctly for Light armor
-- [ ] AC calculates correctly for Medium armor (DEX max +2)
-- [ ] AC calculates correctly for Heavy armor (no DEX)
-- [ ] Shield bonus applies correctly
+### Phase 3: Storage & Display (SIMPLIFIED)
+- [ ] Equipment stored in inventory (no "equipped" flags)
+- [ ] All armor pieces stored in `armor` array
+- [ ] All shields stored in `shields` array
+- [ ] All weapons stored in `weapons` array
+
+### Phase 4: AC Options Calculator
+- [ ] AC calculates correctly for all Light armor options
+- [ ] AC calculates correctly for all Medium armor options (DEX max +2)
+- [ ] AC calculates correctly for all Heavy armor options (no DEX)
+- [ ] Shield bonus applies correctly to all options
+- [ ] Unarmored AC calculated correctly
+- [ ] Special unarmored defense (Barbarian/Monk) works
+- [ ] AC options sorted by value (highest first)
+- [ ] Proficiency checks prevent invalid options
+- [ ] STR requirement warnings display correctly
+- [ ] Stealth disadvantage warnings display correctly
 - [ ] Attack bonuses correct for STR weapons
 - [ ] Attack bonuses correct for DEX weapons
 - [ ] Attack bonuses correct for Finesse weapons
 - [ ] Proficiency bonus applies when proficient
 - [ ] No proficiency bonus when not proficient
 
-### Phase 4: UI Integration
-- [ ] Equipment displays on character summary
-- [ ] AC shown with breakdown
-- [ ] Attacks shown with bonuses
+### Phase 5: UI Integration
+- [ ] AC Options card displays prominently on character summary
+- [ ] Best AC option highlighted at top
+- [ ] Alternative AC options listed below
+- [ ] Formula breakdown shown for each option
+- [ ] Warnings/notes display correctly (stealth, STR req)
+- [ ] Equipment inventory displays all items
+- [ ] Weapon stats shown correctly
 - [ ] Equipment selection UI intuitive
-- [ ] Character sheet PDF includes equipment
+- [ ] Character sheet PDF includes AC options
 
 ## Technical Considerations
 
 ### Performance
 - Cache equipment data in data_loader
-- Don't recalculate AC/attacks on every page load
-- Store calculated values in session
+- Calculate AC options once per page load
+- Store AC options in session if needed
 
 ### Validation
-- Check proficiency before allowing equipment
+- Check proficiency before showing AC option
 - Validate STR requirement for heavy armor
-- Prevent equipping multiple armor pieces
-- Allow multiple weapons (main hand + off hand)
+- Show warnings for invalid options (don't hide them, educate the player)
 
 ### Edge Cases
 - Unarmored AC (10 + DEX)
-- Versatile weapons (1d8 or 1d10)
-- Two-weapon fighting
-- Monk unarmored defense (10 + DEX + WIS)
 - Barbarian unarmored defense (10 + DEX + CON)
-- Magic armor/weapons (future)
+- Monk unarmored defense (10 + DEX + WIS)
+- Multiple armor pieces in inventory (show all combinations)
+- Multiple shields in inventory (show each option)
+- No armor in inventory (show only unarmored options)
 
 ## Future Enhancements (Post-MVP)
 
@@ -531,24 +856,27 @@ Update `templates/character_sheet_pdf.html`:
 ## Implementation Priority
 
 **Must Have (MVP)**:
-1. Weapon database
-2. Armor database
-3. Starting equipment selection
-4. Equipment storage
-5. AC calculation from armor
-6. Basic attack display
+1. Weapon database (`data/equipment/weapons.json`)
+2. Armor database (`data/equipment/armor.json`)
+3. Starting equipment selection UI
+4. Equipment inventory storage (no "equipped" flags)
+5. **AC Options Calculator** - calculate ALL possible AC combinations
+6. **AC Options Card** - display all AC options on character summary
+7. Weapon attack stats display
 
 **Should Have (v1.1)**:
-7. Adventuring gear database
-8. Equipment weight tracking
-9. Full attack/damage calculation
-10. Equipment on character sheet PDF
+8. Adventuring gear database
+9. Equipment weight tracking
+10. Detailed weapon properties display (reach, thrown, etc.)
+11. Equipment on character sheet PDF
+12. Starting equipment packs (Explorer's Pack, etc.)
 
 **Could Have (v2.0)**:
-11. Magic items
-12. Buy/sell interface
-13. Encumbrance rules
-14. Equipment cards generation
+13. Magic items
+14. Buy/sell interface
+15. Encumbrance rules
+16. Equipment cards generation
+17. Versatile weapon two-hand mode toggle
 
 ## Resources Needed
 
@@ -564,12 +892,12 @@ Update `templates/character_sheet_pdf.html`:
 
 ## Progress Tracking
 
-- [ ] Phase 1: Equipment Database
-- [ ] Phase 2: Starting Equipment
-- [ ] Phase 3: Storage & Management
-- [ ] Phase 4: Combat Integration
-- [ ] Phase 5: UI Integration
-- [ ] Phase 6: Wizard Flow
+- [✅] Phase 1: Equipment Database (weapons, armor, shields)
+- [✅] Phase 2: Starting Equipment Selection System  
+- [✅] Phase 3: Equipment Inventory Storage (SIMPLIFIED - no equipping)
+- [✅] Phase 4: AC Options Calculator & Weapon Stats
+- [✅] Phase 5: UI Integration (AC Options Card + Inventory Display)
+- [ ] Phase 6: Wizard Flow Integration
 - [ ] Testing Complete
 - [ ] Documentation Updated
 
@@ -577,7 +905,13 @@ Update `templates/character_sheet_pdf.html`:
 
 **Next Steps When Resuming**:
 1. Start with Phase 1.1 - Create weapons.json with 10-15 common weapons
-2. Test loading weapons in data_loader
-3. Create Phase 1.2 - armor.json with all armor types
-4. Implement basic equipment selection UI
-5. Integrate AC calculation
+2. Test loading weapons in data_loader  
+3. Create Phase 1.2 - armor.json with all armor types + shields
+4. Implement basic equipment selection UI (Phase 2)
+5. Create AC Options Calculator (Phase 4.1)
+6. Design and implement AC Options Card UI (Phase 5.2)
+
+**Key Design Decision**:
+✅ **No "equipped" system** - Calculate and display ALL possible AC options from inventory
+✅ **Transparency over automation** - Show players all their choices with full calculations
+✅ **Educational approach** - Display formulas and warnings to help players understand mechanics

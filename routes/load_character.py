@@ -1,10 +1,12 @@
 """Character loading and rebuild API routes."""
 from flask import Blueprint, render_template, request, session, jsonify
 import json
+import logging
 from modules.character_builder import CharacterBuilder
 from utils.route_helpers import get_builder_from_session, save_builder_to_session
 
 load_character_bp = Blueprint('load_character', __name__)
+logger = logging.getLogger(__name__)
 
 
 @load_character_bp.route('/load-character')
@@ -67,6 +69,11 @@ def api_rebuild_character():
         # Create character using CharacterBuilder
         builder = CharacterBuilder()
         builder.apply_choices(choices_made)
+        
+        # Debug: Check ability scores after applying choices
+        char_data = builder.to_json()
+        logger.debug(f"After apply_choices - ability_scores: {char_data.get('ability_scores')}")
+        logger.debug(f"Background bonuses from choices: {choices_made.get('background_bonuses')}")
         
         # Mark as complete
         builder.set_step('complete')

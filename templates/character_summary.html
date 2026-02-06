@@ -52,8 +52,11 @@
                             <div class="card-body">
                                 <div class="row">
                                     <div class="col-sm-6 col-md-4">
-                                        <p><strong>Hit Points:</strong> {{ character.max_hp }}</p>
-                                        <p><strong>Armor Class:</strong> {{ combat_stats.armor_class }}</p>
+                                        <p><strong>Hit Points:</strong> {{ character.max_hp }}
+                                            {% if character.level and character.class %}
+                                            <small class="text-muted">({{ character.level }}d{{ character_sheet.combat_stats.hit_dice.total.split('d')[1] }} + CON)</small>
+                                            {% endif %}
+                                        </p>
                                         <p><strong>Initiative:</strong> {% if combat_stats.initiative >= 0 %}+{% endif %}{{ combat_stats.initiative }}</p>
                                     </div>
                                     <div class="col-sm-6 col-md-4">
@@ -64,9 +67,140 @@
                                         <p><strong>Passive Perception:</strong> {{ combat_stats.passive_perception }}</p>
                                     </div>
                                     <div class="col-sm-6 col-md-4">
-                                        <p><strong>Hit Dice:</strong> {{ combat_stats.hit_dice }}</p>
+                                        <p><strong>Hit Dice:</strong> {{ combat_stats.hit_dice.total }} ({{ combat_stats.hit_dice.current }} remaining)</p>
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+                        
+                        <!-- AC Options and Weapon Attacks side by side -->
+                        <div class="row mb-4">
+                            <!-- AC Options Card (Phase 5) -->
+                            <div class="col-lg-6">
+                                {% if ac_options %}
+                                <div class="card mb-4 h-100">
+                                    <div class="card-header bg-primary text-white">
+                                        <h5 class="mb-0"><i class="fas fa-shield-alt"></i> Armor Class Options</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <!-- Best AC Option -->
+                                        {% if ac_options[0] %}
+                                        <div class="p-3 mb-3 border border-success rounded" style="background-color: #f0f9f0;">
+                                            <h6 class="text-success mb-2">
+                                                <strong><i class="fas fa-star" style="color: orange"></i> BEST OPTION: AC {{ ac_options[0].ac }}</strong>
+                                            </h6>
+                                            <p class="mb-1">
+                                                {% if ac_options[0].armor %}
+                                                    {{ ac_options[0].armor }}
+                                                {% else %}
+                                                    <em>Unarmored</em>
+                                                {% endif %}
+                                                {% if ac_options[0].shield %}
+                                                    + {{ ac_options[0].shield }}
+                                                {% endif %}
+                                            </p>
+                                            <p class="text-muted mb-2"><small>{{ ac_options[0].formula }}</small></p>
+                                            {% if ac_options[0].notes %}
+                                                {% for note in ac_options[0].notes %}
+                                                    <div class="text-warning"><small>{{ note }}</small></div>
+                                                {% endfor %}
+                                            {% endif %}
+                                        </div>
+                                        {% endif %}
+                                        
+                                        <!-- Alternative Options -->
+                                        {% if ac_options|length > 1 %}
+                                            <h6 class="border-top pt-3 mb-3">Alternative Options</h6>
+                                            <div style="max-height: 300px; overflow-y: auto;">
+                                                {% for option in ac_options[1:] %}
+                                                    <div class="p-2 mb-2 border rounded">
+                                                        <div class="d-flex justify-content-between align-items-start">
+                                                            <div style="flex-grow: 1;">
+                                                                <strong>AC {{ option.ac }}</strong> - 
+                                                                {% if option.armor %}
+                                                                    {{ option.armor }}
+                                                                {% else %}
+                                                                    <em>Unarmored</em>
+                                                                {% endif %}
+                                                                {% if option.shield %}
+                                                                    + {{ option.shield }}
+                                                                {% endif %}
+                                                            </div>
+                                                        </div>
+                                                        <small class="text-muted">{{ option.formula }}</small>
+                                                        {% if option.notes %}
+                                                            {% for note in option.notes %}
+                                                                <div class="text-warning"><small>{{ note }}</small></div>
+                                                            {% endfor %}
+                                                        {% endif %}
+                                                    </div>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Weapon Attacks -->
+                            <div class="col-lg-6">
+                                {% if weapon_attacks %}
+                                <div class="card mb-4 h-100">
+                                    <div class="card-header bg-primary text-white" >
+                                        <h5 class="mb-0">
+                                            <i class="fas fa-burst"></i> Weapon Attacks
+                                        </h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div style="max-height: 500px; overflow-y: auto;">
+                                            {% for weapon in weapon_attacks %}
+                                                <div class="weapon-attack p-3 mb-3 border rounded">
+                                                    <h6 class="mb-2">
+                                                        <img src="{{ weapon.icon }}" alt="{{ weapon.name }}" style="width: 24px; height: 24px; margin-right: 8px; vertical-align: middle;">
+                                                        {{ weapon.name }}
+                                                    </h6>
+                                                    <p class="mb-1">
+                                                        <strong>Attack:</strong> {{ weapon.attack_bonus }} to hit
+                                                        <small class="text-muted">({{ weapon.ability }}{% if weapon.proficient %} + prof{% endif %})</small>
+                                                    </p>
+                                                    <p class="mb-1">
+                                                        <strong>Damage:</strong> {{ weapon.damage }} {{ weapon.damage_type }}
+                                                        <small class="text-muted">(Avg: {{ weapon.avg_damage }}, Crit: {{ weapon.avg_crit }})</small>
+                                                    </p>
+                                                    {% if weapon.versatile_damage %}
+                                                        <p class="mb-1">
+                                                            <strong>2-handed:</strong> {{ weapon.versatile_damage }} {{ weapon.damage_type }}
+                                                            <small class="text-muted">(Avg: {{ weapon.versatile_avg_damage }}, Crit: {{ weapon.versatile_avg_crit }})</small>
+                                                        </p>
+                                                    {% endif %}
+                                                    {% if weapon.offhand_damage %}
+                                                        <p class="mb-1">
+                                                            <strong>Offhand (Bonus Action):</strong> {{ weapon.offhand_damage }} {{ weapon.damage_type }}
+                                                            <small class="text-muted">(Avg: {{ weapon.offhand_avg_damage }}, Crit: {{ weapon.offhand_avg_crit }})</small>
+                                                        </p>
+                                                    {% endif %}
+                                                    {% if weapon.properties %}
+                                                        <p class="mb-1"><strong>Properties:</strong>
+                                                            <small class="text-muted">{{ weapon.properties | join(', ') }}</small>
+                                                        </p>
+                                                    {% endif %}
+                                                    {% if has_weapon_mastery and weapon.mastery %}
+                                                        <p class="mb-1">
+                                                            <strong>Mastery:</strong>
+                                                            <span class="badge bg-success">{{ weapon.mastery }}</span>
+                                                        </p>
+                                                    {% endif %}
+                                                    {% if not weapon.proficient %}
+                                                        <div class="text-warning mt-2">
+                                                            <small><i class="fas fa-exclamation-triangle"></i> Not proficient - no proficiency bonus applied</small>
+                                                        </div>
+                                                    {% endif %}
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endif %}
                             </div>
                         </div>
                         

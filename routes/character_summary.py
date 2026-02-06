@@ -3,17 +3,20 @@ from flask import Blueprint, render_template, request, session, redirect, url_fo
 import json
 import io
 import logging
+import re
 from pathlib import Path
 from typing import Dict, Any
 from modules.character_builder import CharacterBuilder
 from modules.data_loader import DataLoader
 from modules.character_sheet_converter import CharacterSheetConverter
+from modules.character_calculator import CharacterCalculator
 from utils.pdf_writer import generate_character_sheet_pdf
 from utils.route_helpers import get_builder_from_session
 
 character_summary_bp = Blueprint('character_summary', __name__)
 data_loader = DataLoader()
 character_sheet_converter = CharacterSheetConverter()
+calculator = CharacterCalculator()
 logger = logging.getLogger(__name__)
 
 
@@ -27,6 +30,9 @@ def character_summary():
         return redirect(url_for('index.index'))
     
     character = builder.to_json()
+    logger.debug(f"Character summary - ability_scores from builder: {character.get('ability_scores')}")
+    logger.debug(f"Character summary - builder.ability_scores.final_scores: {builder.ability_scores.final_scores}")
+    logger.debug(f"Character summary - background_bonuses from choices: {character.get('choices_made', {}).get('background_bonuses')}")
     
     # Convert to comprehensive character sheet format
     comprehensive_character = character_sheet_converter.convert_to_character_sheet(character)
@@ -188,6 +194,13 @@ def character_summary():
             'total_modifier': total_modifier
         })
     
+    # Calculate Passive Perception using Perception skill modifier
+    perception_skill = next((s for s in skill_modifiers if s['name'] == 'Perception'), None)
+    passive_perception = 10 + (perception_skill['total_modifier'] if perception_skill else ability_scores_data.get('wisdom', {}).get('modifier', 0))
+    
+    # Override passive perception in combat_stats with the accurate calculation
+    combat_stats['passive_perception'] = passive_perception
+    
     # Combat stats already calculated in comprehensive_character (no need to recalculate)
     # combat_stats extracted above from comprehensive_character['combat_stats']
     
@@ -265,9 +278,11 @@ def character_summary():
             class_data = data_loader.classes[class_name]
             class_equipment = class_data.get('starting_equipment', {})
             
-            if class_choice == 'option_a' and 'option_a' in class_equipment:
-                # Add items from class option A
-                for item in class_equipment['option_a'].get('items', []):
+            # Process whichever option was selected
+            if class_choice and class_choice in class_equipment:
+                selected_option = class_equipment[class_choice]
+                # Add items if they exist
+                for item in selected_option.get('items', []):
                     # Determine item type
                     is_weapon = item in weapons
                     is_armor = item in armor or 'Shield' in item
@@ -288,20 +303,19 @@ def character_summary():
                         'equippable': is_equippable,
                         'type': item_type
                     })
-                # Add gold from class option A
-                total_gold += class_equipment['option_a'].get('gold', 0)
-            elif class_choice == 'option_b' and 'option_b' in class_equipment:
-                # Add gold from class option B
-                total_gold += class_equipment['option_b'].get('gold', 0)
+                # Add gold
+                total_gold += selected_option.get('gold', 0)
         
         # Get background equipment
         if background_name and background_name in data_loader.backgrounds:
             bg_data = data_loader.backgrounds[background_name]
             bg_equipment = bg_data.get('starting_equipment', {})
             
-            if background_choice == 'option_a' and 'option_a' in bg_equipment:
-                # Add items from background option A
-                for item in bg_equipment['option_a'].get('items', []):
+            # Process whichever option was selected
+            if background_choice and background_choice in bg_equipment:
+                selected_option = bg_equipment[background_choice]
+                # Add items if they exist
+                for item in selected_option.get('items', []):
                     # Determine item type
                     is_weapon = item in weapons
                     is_armor = item in armor or 'Shield' in item
@@ -322,11 +336,8 @@ def character_summary():
                         'equippable': is_equippable,
                         'type': item_type
                     })
-                # Add gold from background option A
-                total_gold += bg_equipment['option_a'].get('gold', 0)
-            elif background_choice == 'option_b' and 'option_b' in bg_equipment:
-                # Add gold from background option B
-                total_gold += bg_equipment['option_b'].get('gold', 0)
+                # Add gold
+                total_gold += selected_option.get('gold', 0)
     
     # Sort inventory by type: weapons -> armor -> gear -> other -> currency
     type_order = {'weapon': 1, 'armor': 2, 'gear': 3, 'other': 4, 'currency': 5}
@@ -340,6 +351,180 @@ def character_summary():
             'type': 'currency'
         })
     
+    # ========== BUILD PROPER EQUIPMENT STRUCTURE FOR AC CALCULATOR ==========
+    # Convert inventory into structured equipment format expected by AC calculator
+    structured_equipment = {
+        'armor': [],
+        'shields': [],
+        'weapons': [],
+        'other': []
+    }
+    
+    logger.debug(f"Building structured equipment from {len(inventory)} inventory items")
+    
+    for item in inventory:
+        item_name = item['name']
+        item_type = item.get('type', 'other')
+        
+        logger.debug(f"Processing inventory item: '{item_name}' (type: {item_type})")
+        
+        # Parse quantity from item name (e.g., "Handaxe (2)" -> name="Handaxe", quantity=2)
+        quantity_match = re.match(r'^(.+?)\s*\((\d+)\)$', item_name)
+        if quantity_match:
+            base_name = quantity_match.group(1)
+            quantity = int(quantity_match.group(2))
+            logger.debug(f"  Parsed quantity: '{base_name}' x{quantity}")
+        else:
+            base_name = item_name
+            quantity = 1
+        
+        if item_type == 'weapon' and base_name in weapons:
+            structured_equipment['weapons'].append({
+                'name': base_name,
+                'quantity': quantity,
+                'properties': weapons[base_name]
+            })
+            logger.debug(f"  Added weapon: {base_name} x{quantity}")
+        elif item_type == 'armor':
+            if 'Shield' in base_name and base_name in armor:
+                structured_equipment['shields'].append({
+                    'name': base_name,
+                    'quantity': quantity,
+                    'properties': armor[base_name]
+                })
+            elif base_name in armor:
+                structured_equipment['armor'].append({
+                    'name': base_name,
+                    'quantity': quantity,
+                    'properties': armor[base_name]
+                })
+        elif item_type == 'gear' and base_name in gear:
+            structured_equipment['other'].append({
+                'name': base_name,
+                'quantity': quantity,
+                'properties': gear[base_name]
+            })
+    
+    # Update comprehensive_character with structured equipment
+    comprehensive_character['equipment'] = structured_equipment
+    logger.debug(f"Structured equipment for AC calculator: armor={len(structured_equipment['armor'])}, shields={len(structured_equipment['shields'])}, weapons={len(structured_equipment['weapons'])}")
+    
+    # ========== AC OPTIONS & WEAPON ATTACKS (Phase 4 & 5) ==========
+    # Debug logging for equipment and ability scores
+    logger.debug(f"Character structure keys: {list(character.keys())}")
+    logger.debug(f"Equipment in character: {character.get('equipment', 'NOT FOUND')}")
+    logger.debug(f"Equipment selections: {character.get('choices_made', {}).get('equipment_selections', 'NOT FOUND')}")
+    logger.debug(f"Equipment in comprehensive_character: {comprehensive_character.get('equipment', {})}") 
+    logger.debug(f"Ability scores in comprehensive_character: {comprehensive_character.get('ability_scores', {})}") 
+    
+    # Calculate all possible AC combinations from inventory
+    ac_options = calculator.calculate_all_ac_options(comprehensive_character)
+    logger.debug(f"AC options calculated: {len(ac_options)} options")
+    if ac_options:
+        logger.debug(f"Best AC option: {ac_options[0]}")
+    
+    best_ac = ac_options[0]['ac'] if ac_options else combat_stats.get('armor_class', 10)
+    
+    # Calculate weapon attack stats for all weapons in inventory
+    weapon_attacks = calculator.calculate_weapon_attacks(comprehensive_character)
+    logger.debug(f"Calculated {len(weapon_attacks)} weapon attacks")
+    for attack in weapon_attacks:
+        logger.debug(f"  Weapon: {attack['name']}, Mastery: {attack.get('mastery', 'None')}")
+    
+    # Add weapon icons to weapon attacks
+    weapon_icon_map = {
+        # Simple Melee
+        'club': 'club.svg',
+        'dagger': 'dagger.svg',
+        'greatclub': 'club.svg',
+        'handaxe': 'handaxe.svg',
+        'javelin': 'spear.svg',
+        'light hammer': 'hammer.svg',
+        'mace': 'mace.svg',
+        'quarterstaff': 'staff.svg',
+        'sickle': 'sickle.svg',
+        'spear': 'spear.svg',
+        # Simple Ranged
+        'light crossbow': 'crossbow.svg',
+        'dart': 'arrow.svg',
+        'shortbow': 'bow.svg',
+        'sling': 'sling.svg',
+        # Martial Melee
+        'battleaxe': 'battleaxe.svg',
+        'flail': 'flail.svg',
+        'glaive': 'glaive.svg',
+        'greataxe': 'battleaxe.svg',
+        'greatsword': 'sword.svg',
+        'halberd': 'halberd.svg',
+        'lance': 'lance.svg',
+        'longsword': 'sword.svg',
+        'maul': 'hammer.svg',
+        'morningstar': 'morningstar.svg',
+        'pike': 'pike.svg',
+        'rapier': 'rapier.svg',
+        'scimitar': 'scimitar.svg',
+        'shortsword': 'sword.svg',
+        'trident': 'trident.svg',
+        'war pick': 'hammer.svg',
+        'warhammer': 'hammer.svg',
+        'whip': 'whip.svg',
+        # Martial Ranged
+        'blowgun': 'arrow.svg',
+        'hand crossbow': 'crossbow.svg',
+        'heavy crossbow': 'crossbow.svg',
+        'longbow': 'bow.svg',
+        'net': 'strike.svg',
+        # Firearms
+        'musket': 'musket.svg',
+        'pistol': 'pistol.svg',
+    }
+    
+    for weapon in weapon_attacks:
+        weapon_name_lower = weapon['name'].lower()
+        icon_filename = weapon_icon_map.get(weapon_name_lower, 'sword.svg')  # Default to sword
+        weapon['icon'] = f'/static/images/weapons/{icon_filename}'
+    
+    # Check if character has access to Weapon Mastery
+    has_weapon_mastery = False
+    
+    # Check in original character features (from CharacterBuilder)
+    if 'features' in character:
+        logger.debug(f"Character features type: {type(character['features'])}")
+        logger.debug(f"Character features: {character['features']}")
+        features_list = character['features']
+        if isinstance(features_list, dict):
+            # Features organized by source (class, species, etc.)
+            for source, source_features in features_list.items():
+                for feature in source_features:
+                    feature_name = feature.get('name', '') if isinstance(feature, dict) else feature
+                    if 'Weapon Mastery' in feature_name:
+                        has_weapon_mastery = True
+                        logger.debug(f"Found Weapon Mastery in {source}: {feature_name}")
+                        break
+        elif isinstance(features_list, list):
+            # Features as flat list
+            for feature in features_list:
+                feature_name = feature.get('name', '') if isinstance(feature, dict) else feature
+                if 'Weapon Mastery' in feature_name:
+                    has_weapon_mastery = True
+                    logger.debug(f"Found Weapon Mastery: {feature_name}")
+                    break
+    
+    # Also check comprehensive character features
+    if not has_weapon_mastery and 'features_and_traits' in comprehensive_character:
+        logger.debug(f"Checking comprehensive character features_and_traits")
+        traits = comprehensive_character['features_and_traits']
+        for source, source_features in traits.items():
+            if isinstance(source_features, list):
+                for feature in source_features:
+                    feature_name = feature.get('name', '') if isinstance(feature, dict) else feature
+                    if 'Weapon Mastery' in feature_name:
+                        has_weapon_mastery = True
+                        logger.debug(f"Found Weapon Mastery in features_and_traits.{source}: {feature_name}")
+                        break
+    
+    logger.debug(f"Final has_weapon_mastery: {has_weapon_mastery}")
+    
     return render_template('character_summary.html', 
                          character=character,
                          character_sheet=comprehensive_character,
@@ -351,7 +536,11 @@ def character_summary():
                          skill_modifiers=skill_modifiers,
                          saving_throws=saving_throws,
                          combat_stats=combat_stats,
-                         inventory=inventory)
+                         inventory=inventory,
+                         ac_options=ac_options,
+                         best_ac=best_ac,
+                         weapon_attacks=weapon_attacks,
+                         has_weapon_mastery=has_weapon_mastery)
 
 
 @character_summary_bp.route('/download-character')

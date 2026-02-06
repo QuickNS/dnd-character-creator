@@ -42,12 +42,25 @@
       "items": [
         "Chain Mail",
         "Greatsword",
-        "Handaxe (2)",
-        "Explorer's Pack"
+        "Flail",
+        "Javelin (8)",
+        "Dungeoneer's Pack"
       ],
-      "gold": 5
+      "gold": 4
     },
     "option_b": {
+      "items": [
+        "Studded Leather Armor",
+        "Scimitar",
+        "Shortsword",
+        "Longbow",
+        "20 Arrows",
+        "Quiver",
+        "Dungeoneer's Pack"
+      ],
+      "gold": 11
+    },
+    "option_c": {
       "gold": 155
     }
   },

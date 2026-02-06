@@ -1,18 +1,41 @@
 {
-  "character_name": "Elenian Silverleaf",
-  "level": 3,
-  "class": "Fighter",
-  "subclass": "Champion",
-  "species": "Elf",
-  "lineage": "Wood Elf",
+  "Elven Lineage": "Wisdom",
+  "Fighting Style": "Archery",
+  "Keen Senses": "Survival",
+  "Weapon Mastery": [
+    "Greatsword",
+    "Longbow",
+    "Shortsword"
+  ],
+  "ability_scores": {
+    "Charisma": 10,
+    "Constitution": 14,
+    "Dexterity": 15,
+    "Intelligence": 8,
+    "Strength": 13,
+    "Wisdom": 12
+  },
+  "ability_scores_method": "manual",
+  "alignment": "Neutral Good",
   "background": "Soldier",
-  "ability_scores": "standard_array_recommended",
-  "background_ability_score_assignment": {
+  "background_bonuses": {
     "Dexterity": 2,
     "Strength": 1
   },
-  "skill_choices": ["Acrobatics", "Perception"],
-  "Fighting_style": "Archery",
-  "species_trait_Elven Lineage": "Wisdom",
-  "species_trait_Keen Senses": "Survival"
+  "character_name": "Elenian Silverleaf",
+  "class": "Fighter",
+  "equipment_selections": {
+    "background_equipment": "option_b",
+    "class_equipment": "option_b"
+  },
+  "language_choices_needed": 1,
+  "languages": [],
+  "level": 3,
+  "lineage": "Wood Elf",
+  "skill_choices": [
+    "Acrobatics",
+    "Perception"
+  ],
+  "species": "Elf",
+  "subclass": "Champion"
 }
