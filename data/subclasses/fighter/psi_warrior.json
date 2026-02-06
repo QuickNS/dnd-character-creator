@@ -1,7 +1,7 @@
 {
   "name": "Psi Warrior",
   "class": "Fighter",
-  "description": "Fighters who augment their physical might with psionic energy.",
+  "description": "Psi Warriors awaken the power of their minds to augment their physical might.",
   "source": "Player's Handbook 2024",
   "features_by_level": {
     "3": {

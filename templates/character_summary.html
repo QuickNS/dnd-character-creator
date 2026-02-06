@@ -13,8 +13,7 @@
                         <i class="fas fa-file-pdf"></i> View Character Sheet
                     </a>
                     <button type="button" class="btn btn-primary btn-sm" onclick="showChoicesMade()">
-                        <i class="fas fa-download"></i> Export Choices
-                    </button>
+                        <i class="fas fa-download"></i> Export Choices                    </button>
                     <a href="{{ url_for('index.reset') }}" class="btn btn-primary btn-sm">
                         <i class="fas fa-redo"></i> Start Over
                     </a>
@@ -23,7 +22,7 @@
             <div class="card-body">
                         <h2>{{ character.name }}</h2>
                         
-                        <!-- Character Information -->
+                        <!-- Character Information (V2) -->
                         <div class="card mb-4">
                             <div class="sub-card-header bg-secondary">
                                 <h5 class="mb-0">Character Information</h5>
@@ -37,37 +36,33 @@
                                     </div>
                                     <div class="col-sm-6">
                                         <p><strong>Species:</strong> {{ character.species }}{% if character.lineage %} ({{ character.lineage }}){% endif %}</p>
-                                        <p><strong>Alignment:</strong> {{ character.alignment }}</p>
+                                        <p><strong>Alignment:</strong> {{ character.alignment if character.alignment else 'Unspecified' }}</p>
                                         <p><strong>Languages:</strong> {{ character.languages | join(', ') }}</p>
                                     </div>
                                 </div>
                             </div>
                         </div>
                         
-                        <!-- Combat Statistics -->
+                        <!-- Combat Statistics (V2) -->
                         <div class="card mb-4">
                             <div class="sub-card-header bg-secondary">
-                                <h5 class="mb-0">Combat Statistics</h5>
+                                <h5 class="mb-0">Character Stats</h5>
                             </div>
                             <div class="card-body">
                                 <div class="row">
                                     <div class="col-sm-6 col-md-4">
-                                        <p><strong>Hit Points:</strong> {{ character.max_hp }}
-                                            {% if character.level and character.class %}
-                                            <small class="text-muted">({{ character.level }}d{{ character_sheet.combat_stats.hit_dice.total.split('d')[1] }} + CON)</small>
-                                            {% endif %}
+                                        <p><strong>Hit Points:</strong> {{ character.combat.hit_points.maximum }}
+                                            <small class="text-muted">({{ character.level }}d{{ character.class_data.hit_die }})</small>
                                         </p>
-                                        <p><strong>Initiative:</strong> {% if combat_stats.initiative >= 0 %}+{% endif %}{{ combat_stats.initiative }}</p>
+                                        <p><strong>Initiative:</strong> {% if character.combat.initiative_bonus >= 0 %}+{% endif %}{{ character.combat.initiative_bonus }}</p>
                                     </div>
                                     <div class="col-sm-6 col-md-4">
-                                        <p><strong>Speed:</strong> {{ character.speed | default(30) }} feet</p>
-                                        {% if character.darkvision and character.darkvision > 0 %}
-                                        <p><strong>Darkvision:</strong> {{ character.darkvision }} feet</p>
-                                        {% endif %}
-                                        <p><strong>Passive Perception:</strong> {{ combat_stats.passive_perception }}</p>
+                                        <p><strong>Speed:</strong> {{ character.speed }} feet</p>
+                                        <p><strong>Passive Perception:</strong> {{ character.combat.passive_perception }}</p>
                                     </div>
                                     <div class="col-sm-6 col-md-4">
-                                        <p><strong>Hit Dice:</strong> {{ combat_stats.hit_dice.total }} ({{ combat_stats.hit_dice.current }} remaining)</p>
+                                        <p><strong>Hit Dice:</strong> {{ character.level }}d{{ character.class_data.hit_die }}</p>
+                                        <p><strong>Proficiency Bonus:</strong> +{{ character.proficiency_bonus }}</p>
                                     </div>
                                 </div>
                             </div>
@@ -77,31 +72,33 @@
                         <div class="row mb-4">
                             <!-- AC Options Card (Phase 5) -->
                             <div class="col-lg-6">
-                                {% if ac_options %}
+                                {% if character.ac_options %}
                                 <div class="card mb-4 h-100">
-                                    <div class="card-header bg-primary text-white">
-                                        <h5 class="mb-0"><i class="fas fa-shield-alt"></i> Armor Class Options</h5>
+                                    <div class="sub-card-header bg-secondary">
+                                        <h5 class="mb-0">
+                                            Armor Class
+                                        </h5>
                                     </div>
                                     <div class="card-body">
                                         <!-- Best AC Option -->
-                                        {% if ac_options[0] %}
+                                        {% if character.ac_options[0] %}
                                         <div class="p-3 mb-3 border border-success rounded" style="background-color: #f0f9f0;">
                                             <h6 class="text-success mb-2">
-                                                <strong><i class="fas fa-star" style="color: orange"></i> BEST OPTION: AC {{ ac_options[0].ac }}</strong>
+                                                <strong><i class="fas fa-star" style="color: orange"></i> BEST OPTION: AC {{ character.ac_options[0].ac }}</strong>
                                             </h6>
                                             <p class="mb-1">
-                                                {% if ac_options[0].armor %}
-                                                    {{ ac_options[0].armor }}
+                                                {% if character.ac_options[0].armor %}
+                                                    {{ character.ac_options[0].armor }}
                                                 {% else %}
                                                     <em>Unarmored</em>
                                                 {% endif %}
-                                                {% if ac_options[0].shield %}
-                                                    + {{ ac_options[0].shield }}
+                                                {% if character.ac_options[0].shield %}
+                                                    + Shield
                                                 {% endif %}
                                             </p>
-                                            <p class="text-muted mb-2"><small>{{ ac_options[0].formula }}</small></p>
-                                            {% if ac_options[0].notes %}
-                                                {% for note in ac_options[0].notes %}
+                                            <p class="text-muted mb-2"><small>{{ character.ac_options[0].formula }}</small></p>
+                                            {% if character.ac_options[0].notes %}
+                                                {% for note in character.ac_options[0].notes %}
                                                     <div class="text-warning"><small>{{ note }}</small></div>
                                                 {% endfor %}
                                             {% endif %}
@@ -109,10 +106,10 @@
                                         {% endif %}
                                         
                                         <!-- Alternative Options -->
-                                        {% if ac_options|length > 1 %}
+                                        {% if character.ac_options|length > 1 %}
                                             <h6 class="border-top pt-3 mb-3">Alternative Options</h6>
                                             <div style="max-height: 300px; overflow-y: auto;">
-                                                {% for option in ac_options[1:] %}
+                                                {% for option in character.ac_options[1:] %}
                                                     <div class="p-2 mb-2 border rounded">
                                                         <div class="d-flex justify-content-between align-items-start">
                                                             <div style="flex-grow: 1;">
@@ -123,7 +120,7 @@
                                                                     <em>Unarmored</em>
                                                                 {% endif %}
                                                                 {% if option.shield %}
-                                                                    + {{ option.shield }}
+                                                                    + Shield
                                                                 {% endif %}
                                                             </div>
                                                         </div>
@@ -144,39 +141,39 @@
                             
                             <!-- Weapon Attacks -->
                             <div class="col-lg-6">
-                                {% if weapon_attacks %}
+                                {% if character.attacks %}
                                 <div class="card mb-4 h-100">
-                                    <div class="card-header bg-primary text-white" >
+                                   <div class="sub-card-header bg-secondary">
                                         <h5 class="mb-0">
-                                            <i class="fas fa-burst"></i> Weapon Attacks
+                                            Weapon Attacks
                                         </h5>
                                     </div>
                                     <div class="card-body">
                                         <div style="max-height: 500px; overflow-y: auto;">
-                                            {% for weapon in weapon_attacks %}
+                                            {% for weapon in character.attacks %}
                                                 <div class="weapon-attack p-3 mb-3 border rounded">
                                                     <h6 class="mb-2">
                                                         <img src="{{ weapon.icon }}" alt="{{ weapon.name }}" style="width: 24px; height: 24px; margin-right: 8px; vertical-align: middle;">
                                                         {{ weapon.name }}
                                                     </h6>
                                                     <p class="mb-1">
-                                                        <strong>Attack:</strong> {{ weapon.attack_bonus }} to hit
-                                                        <small class="text-muted">({{ weapon.ability }}{% if weapon.proficient %} + prof{% endif %})</small>
+                                                        <strong>Attack:</strong> {% if weapon.attack_bonus >= 0 %}+{% endif %}{{ weapon.attack_bonus }} to hit
+                                                        {% if weapon.range %}
+                                                        <small class="text-muted">(Range: {{ weapon.range }})</small>
+                                                        {% endif %}
                                                     </p>
                                                     <p class="mb-1">
-                                                        <strong>Damage:</strong> {{ weapon.damage }} {{ weapon.damage_type }}
+                                                        <strong>Damage:</strong> {{ weapon.damage_main }} {{ weapon.damage_type }}
                                                         <small class="text-muted">(Avg: {{ weapon.avg_damage }}, Crit: {{ weapon.avg_crit }})</small>
                                                     </p>
-                                                    {% if weapon.versatile_damage %}
+                                                    {% if weapon.damage_versatile %}
                                                         <p class="mb-1">
-                                                            <strong>2-handed:</strong> {{ weapon.versatile_damage }} {{ weapon.damage_type }}
-                                                            <small class="text-muted">(Avg: {{ weapon.versatile_avg_damage }}, Crit: {{ weapon.versatile_avg_crit }})</small>
+                                                            <strong>2-handed:</strong> {{ weapon.damage_versatile }} {{ weapon.damage_type }}
                                                         </p>
                                                     {% endif %}
-                                                    {% if weapon.offhand_damage %}
+                                                    {% if weapon.damage_offhand %}
                                                         <p class="mb-1">
-                                                            <strong>Offhand (Bonus Action):</strong> {{ weapon.offhand_damage }} {{ weapon.damage_type }}
-                                                            <small class="text-muted">(Avg: {{ weapon.offhand_avg_damage }}, Crit: {{ weapon.offhand_avg_crit }})</small>
+                                                            <strong>Offhand (Bonus Action):</strong> {{ weapon.damage_offhand }} {{ weapon.damage_type }}
                                                         </p>
                                                     {% endif %}
                                                     {% if weapon.properties %}
@@ -184,10 +181,15 @@
                                                             <small class="text-muted">{{ weapon.properties | join(', ') }}</small>
                                                         </p>
                                                     {% endif %}
-                                                    {% if has_weapon_mastery and weapon.mastery %}
+                                                    {% if weapon.mastery and character.class in ['Fighter', 'Rogue', 'Barbarian', 'Ranger', 'Paladin'] %}
                                                         <p class="mb-1">
                                                             <strong>Mastery:</strong>
                                                             <span class="badge bg-success">{{ weapon.mastery }}</span>
+                                                        </p>
+                                                    {% endif %}
+                                                    {% if weapon.notes %}
+                                                        <p class="mb-1">
+                                                            <small class="text-info"><i class="fas fa-info-circle"></i> {{ weapon.notes }}</small>
                                                         </p>
                                                     {% endif %}
                                                     {% if not weapon.proficient %}
@@ -204,7 +206,7 @@
                             </div>
                         </div>
                         
-                        <!-- Ability Scores and Skills side by side -->
+                        <!-- Ability Scores and Skills side by side (V2) -->
                         <div class="row mb-4">
                             <div class="col-md-5">
                                 <div class="card mb-3">
@@ -212,46 +214,35 @@
                                         <h5 class="mb-0">Ability Scores</h5>
                                     </div>
                                     <div class="card-body">
-                                        {% for ability, score in character.ability_scores.items() %}
+                                        {% for ability_name in ['strength', 'dexterity', 'constitution', 'intelligence', 'wisdom', 'charisma'] %}
+                                        {% set ability = character.abilities[ability_name] %}
                                         <div class="d-flex justify-content-between mb-2">
-                                            <span>{{ ability }}:</span>
-                                            <span>{{ score }} 
-                                                {% set modifier = (score - 10) // 2 %}
-                                                <small class="text-muted">({% if modifier >= 0 %}+{% endif %}{{ modifier }})</small>
+                                            <span>{{ ability_name | capitalize }}:</span>
+                                            <span>{{ ability.score }} 
+                                                <small class="text-muted">({% if ability.modifier >= 0 %}+{% endif %}{{ ability.modifier }})</small>
                                             </span>
                                         </div>
                                         {% endfor %}
                                     </div>
                                 </div>
                                 
-                                <!-- Saving Throws -->
+                                <!-- Saving Throws (V2) -->
                                 <div class="card mb-3">
                                     <div class="sub-card-header bg-secondary">
                                         <h5 class="mb-0">Saving Throws</h5>
                                     </div>
                                     <div class="card-body">
-                                        {% for save in saving_throws %}
-                                        <div class="d-flex justify-content-between mb-2 {% if save.is_proficient %}fw-bold{% endif %}">
+                                        {% for ability_name in ['strength', 'dexterity', 'constitution', 'intelligence', 'wisdom', 'charisma'] %}
+                                        {% set ability = character.abilities[ability_name] %}
+                                        <div class="d-flex justify-content-between mb-2 {% if ability.saving_throw_proficient %}fw-bold{% endif %}">
                                             <span>
-                                                {{ save.ability }}{% if save.is_proficient %} ★{% endif %}
+                                                {{ ability_name | capitalize }}{% if ability.saving_throw_proficient %} ★{% endif %}
                                             </span>
-                                            <span>{% if save.total_modifier >= 0 %}+{% endif %}{{ save.total_modifier }}</span>
+                                            <span>{% if ability.saving_throw >= 0 %}+{% endif %}{{ ability.saving_throw }}</span>
                                         </div>
                                         {% endfor %}
                                         <hr class="my-2">
                                         <small class="text-muted">★ = Proficient</small>
-                                        
-                                        {% set saves_with_notes = saving_throws | selectattr('special_notes', 'defined') | selectattr('special_notes') | list %}
-                                        {% if saves_with_notes %}
-                                        <div class="mt-2">
-                                            <small class="text-success">
-                                                <strong>Special Notes:</strong><br/>
-                                                {% for save in saves_with_notes %}
-                                                    <strong>{{ save.ability }}:</strong> {{ save.special_notes | join(', ') }}<br/>
-                                                {% endfor %}
-                                            </small>
-                                        </div>
-                                        {% endif %}
                                     </div>
                                 </div>
                             </div>
@@ -262,75 +253,103 @@
                                         <h5 class="mb-0">Skills</h5>
                                     </div>
                                     <div class="card-body">
-                                        {% for skill in skill_modifiers %}
-                                            <div class="d-flex justify-content-between mb-1 {% if skill.is_proficient or skill.special_bonus > 0 %}fw-bold{% endif %}">
+                                        {% for skill_key in ['acrobatics', 'animal_handling', 'arcana', 'athletics', 'deception', 'history', 'insight', 'intimidation', 'investigation', 'medicine', 'nature', 'perception', 'performance', 'persuasion', 'religion', 'sleight_of_hand', 'stealth', 'survival'] %}
+                                        {% set skill = character.skills[skill_key] %}
+                                        {% set skill_name = skill_key.replace('_', ' ') | title %}
+                                            <div class="d-flex justify-content-between mb-1 {% if skill.proficient or skill.expertise %}fw-bold{% endif %}">
                                                 <span>
-                                                    {% if skill.is_proficient %}{{ skill.name }} ★{% elif skill.special_bonus > 0 %}{{ skill.name }} ✦{% else %}{{ skill.name }}{% endif %}
-                                                    <small class="text-muted">({{ skill.ability[:3] }})</small>
-                                                    {% if skill.proficiency_source %}
-                                                        <small class="text-info" title="From {{ skill.proficiency_source }}">• {{ skill.proficiency_source }}</small>
-                                                    {% endif %}
-                                                    {% if skill.bonus_source %}
-                                                        <small class="text-warning" title="{{ skill.bonus_source }}">• {{ skill.bonus_source.split('(')[0].strip() }}</small>
+                                                    {{ skill_name }}{% if skill.expertise %} ⭐{% elif skill.proficient %} ★{% endif %}
+                                                    <small class="text-muted">({{ skill.ability[:3] | upper }})</small>
+                                                    {% if skill.proficient and skill.source and skill.source != 'None' %}
+                                                        <small class="badge bg-info text-dark">{{ skill.source }}</small>
                                                     {% endif %}
                                                 </span>
                                                 <span>
-                                                    {% if skill.total_modifier >= 0 %}+{% endif %}{{ skill.total_modifier }}
+                                                    {% if skill.modifier >= 0 %}+{% endif %}{{ skill.modifier }}
                                                 </span>
                                             </div>
                                         {% endfor %}
                                         
                                         <hr class="my-2">
                                         <small class="text-muted">
-                                            ★ = Proficient
-                                            {% if ability_bonuses %}| ✦ = Special Bonus{% endif %}
+                                            ★ = Proficient | ⭐ = Expertise
                                         </small>
-                                        
-                                        {% if ability_bonuses %}
-                                        <div class="mt-2">
-                                            <small class="text-info">
-                                                <strong>Special Bonuses:</strong><br/>
-                                                {% for bonus in ability_bonuses %}
-                                                    +{{ bonus.value }} to {{ bonus.ability }} checks ({{ bonus.skills | join(', ') }}) from {{ bonus.source }}<br/>
-                                                {% endfor %}
-                                            </small>
-                                        </div>
-                                        {% endif %}
                                     </div>
                                 </div>
                             </div>
                         </div>
                         
-                        <!-- Equipment Training & Proficiencies + Inventory - Side by Side -->
+                        <!-- Equipment Training & Background/Feats + Inventory (spans both) - Side by Side -->
                         <div class="row mb-4">
                             <div class="col-lg-6 mb-4 mb-lg-0">
-                                <div class="card h-100">
+                                <!-- Equipment Training & Proficiencies -->
+                                <div class="card mb-3">
                                     <div class="sub-card-header bg-secondary">
                                         <h5 class="mb-0">Equipment Training & Proficiencies</h5>
                                     </div>
                                     <div class="card-body">
-                                        {% if weapon_proficiencies %}
+                                        {% if character.weapon_proficiencies %}
                                         <div class="mb-2">
                                             <strong>Weapon Proficiencies:</strong><br/>
-                                            <small>{{ weapon_proficiencies | join(', ') }}</small>
+                                            <small>{{ character.weapon_proficiencies | join(', ') }}</small>
                                         </div>
                                         {% endif %}
                                         
-                                        {% if armor_proficiencies %}
+                                        {% if character.armor_proficiencies %}
                                         <div class="mb-2">
                                             <strong>Armor Proficiencies:</strong><br/>
-                                            <small>{{ armor_proficiencies | join(', ') }}</small>
-                                        </div>
-                                        {% endif %}
-                                        
-                                        {% if character.tool_proficiencies %}
-                                        <div class="mb-2">
-                                            <strong>Tool Proficiencies:</strong><br/>
-                                            <small>{{ character.tool_proficiencies | join(', ') }}</small>
+                                            <small>{{ character.armor_proficiencies | join(', ') }}</small>
                                         </div>
                                         {% endif %}
                                     </div>
                                 </div>
+                                
+                                <!-- Background & Feats Card -->
+                                {% set background_feats = (character.features.background or []) + (character.features.feats or []) %}
+                                {% if background_feats %}
+                                <div class="card">
+                                    <div class="sub-card-header bg-secondary">
+                                        <h5 class="mb-0">
+                                            Background & Feats
+                                        </h5>
+                                    </div>
+                                    <div class="card-body">
+                                        {% if character.features.background %}
+                                            <h6 class="mb-2 text-primary">Background Features</h6>
+                                            {% for feature in character.features.background %}
+                                                {% if feature.name %}
+                                                <div class="mb-3">
+                                                    <p class="small mb-0">
+                                                    <strong>{{ feature.name }}</strong>
+                                                        {% if feature.source %}
+                                                        <span class="badge bg-warning text-dark ms-1">{{ feature.source }}</span>
+                                                        {% endif %}
+                                                        </br>
+                                                    {{ feature.description | safe }}</p>
+                                                </div>
+                                                {% endif %}
+                                            {% endfor %}
+                                        {% endif %}
+                                        {% if character.features.feats %}
+                                            {% if character.features.background %}<hr>{% endif %}
+                                            <h6 class="mb-2 text-primary">Feats</h6>
+                                            {% for feature in character.features.feats %}
+                                                {% if feature.name %}
+                                                <div class="mb-3">
+                                                    <p class="small mb-0">
+                                                    <strong>{{ feature.name }}</strong>
+                                                        {% if feature.source %}
+                                                        <span class="badge bg-danger ms-1">{{ feature.source }}</span>
+                                                        {% endif %}
+                                                        </br>
+                                                    {{ feature.description | safe }}</p>
+                                                </div>
+                                                {% endif %}
+                                            {% endfor %}
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                {% endif %}
                             </div>
                             
                             <div class="col-lg-6">
@@ -339,76 +358,169 @@
                                         <h5 class="mb-0">Inventory</h5>
                                     </div>
                                     <div class="card-body">
-                                        {% if inventory %}
-                                        <ul class="list-unstyled mb-0">
-                                            {% for item in inventory %}
-                                            <li class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
-                                                <div>
-                                                    <strong>{{ item.name }}</strong>
-                                                    {% if quantity in item and item.quantity > 1 %}
-                                                        <span class="badge bg-secondary ms-1">x{{ item.quantity }}</span>
-                                                    {% endif %}
-                                                </div>
-                                                {% if item.equippable %}
-                                                <button class="btn-sm-inactive btn-outline-primary" disabled>
-                                                    Equip
-                                                </button>
-                                                {% endif %}
-                                            </li>
-                                            {% endfor %}
-                                        </ul>
+                                        {% if character.equipment %}
+                                        <div>
+                                            <!-- Weapons -->
+                                            {% if character.equipment['weapons'] %}
+                                            <strong>Weapons</strong><br/>
+                                            <ul class="list-unstyled mb-3">
+                                                {% for weapon in character.equipment['weapons'] %}
+                                                <li class="d-flex justify-content-between align-items-center mb-1 small">
+                                                    <span>
+                                                        {{ weapon.name }}
+                                                        {% if weapon.quantity and weapon.quantity > 1 %}
+                                                            <span class="badge bg-secondary ms-1">x{{ weapon.quantity }}</span>
+                                                        {% endif %}
+                                                    </span>
+                                                </li>
+                                                {% endfor %}
+                                            </ul>
+                                            {% endif %}
+                                            
+                                            <!-- Armor -->
+                                            {% if character.equipment['armor'] %}
+                                            <strong>Armor & Shields</strong><br/>
+                                            <ul class="list-unstyled mb-3">
+                                                {% for armor in character.equipment['armor'] %}
+                                                <li class="d-flex justify-content-between align-items-center mb-1 small">
+                                                    <span>
+                                                        {{ armor.name }}
+                                                        {% if armor.quantity and armor.quantity > 1 %}
+                                                            <span class="badge bg-secondary ms-1">x{{ armor.quantity }}</span>
+                                                        {% endif %}
+                                                    </span>
+                                                </li>
+                                                {% endfor %}
+                                            </ul>
+                                            {% endif %}
+                                            
+                                            <!-- Items -->
+                                            {% if character.equipment['items'] %}
+                                            <strong>Equipment & Items</strong><br/>
+                                            <ul class="list-unstyled mb-3">
+                                                {% for item in character.equipment['items'] %}
+                                                <li class="d-flex justify-content-between align-items-center mb-1 small">
+                                                    <span>
+                                                        {{ item.name }}
+                                                        {% if item.quantity and item.quantity > 1 %}
+                                                            <span class="badge bg-secondary ms-1">x{{ item.quantity }}</span>
+                                                        {% endif %}
+                                                    </span>
+                                                </li>
+                                                {% endfor %}
+                                            </ul>
+                                            {% endif %}
+                                            
+                                            <!-- Gold -->
+                                            {% if character.equipment['gold'] and character.equipment['gold'] > 0 %}
+                                            <strong>Wealth</strong><br/>
+                                            <p class="mb-0 small">
+                                                {{ character.equipment['gold'] }} gp
+                                            </p>
+                                            {% endif %}
+                                        </div>
                                         {% else %}
-                                        <p class="text-muted mb-0">No equipment selected yet.</p>
+                                        <p class="text-muted mb-0">No equipment available.</p>
                                         {% endif %}
                                     </div>
                                 </div>
                             </div>
                         </div>
                         
-                        {% if character.features %}
+                        <!-- Class Features Card -->
+                        {% set class_features = (character.features.class or []) + (character.features.subclass or []) %}
+                        {% if class_features %}
                         <div class="card mb-4">
                             <div class="sub-card-header bg-secondary">
-                                <h5 class="mb-0">Features & Traits</h5>
+                                <h5 class="mb-0">
+                                    {{ character.class }} Features
+                                </h5>
                             </div>
                             <div class="card-body">
-                                {% for category in ['class', 'subclass', 'species', 'lineage', 'background', 'feats'] %}
-                                    {% if category in character.features and character.features[category] %}
-                                        {% for feature in character.features[category] %}
+                                {% if character.features.class %}
+                                    {% for feature in character.features.class %}
+                                        {% if feature.name %}
                                         <div class="mb-3">
                                             <p class="small mb-0">
                                             <strong>{{ feature.name }}</strong>
-                                                {% if category == 'feats' %}
-                                                <span class="badge bg-info ms-1">Feat</span>
-                                                {% endif %}</br>
+                                                </br>
                                             {{ feature.description | safe }}</p>
-                                            {% if feature.benefits %}
-                                            <ul class="small mt-1 mb-0">
-                                                {% for benefit in feature.benefits %}
-                                                <li>{{ benefit }}</li>
-                                                {% endfor %}
-                                            </ul>
-                                            {% endif %}
-                                            {% if feature.source %}
-                                            <small class="text-muted">(from {{ feature.source }})</small>
-                                            {% endif %}
                                         </div>
-                                        {% endfor %}
-                                    {% endif %}
-                                {% endfor %}
+                                        {% endif %}
+                                    {% endfor %}
+                                {% endif %}
+                                {% if character.features.subclass %}
+                                    {% for feature in character.features.subclass %}
+                                        {% if feature.name %}
+                                        <div class="mb-3">
+                                            <p class="small mb-0">
+                                            <strong>{{ feature.name }}</strong>
+                                                {% if feature.source %}
+                                                <span class="badge bg-info ms-1">{{ feature.source }}</span>
+                                                {% endif %}
+                                                </br>
+                                            {{ feature.description | safe }}</p>
+                                        </div>
+                                        {% endif %}
+                                    {% endfor %}
+                                {% endif %}
                             </div>
                         </div>
                         {% endif %}
+
+                        <!-- Species Features Card -->
+                        {% set species_features = (character.features.species or []) + (character.features.lineage or []) %}
+                        {% if species_features %}
+                        <div class="card mb-4">
+                            <div class="sub-card-header bg-secondary">
+                                <h5 class="mb-0">
+                                    {{ character.species }} Features
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                {% if character.features.species %}
+                                    {% for feature in character.features.species %}
+                                        {% if feature.name %}
+                                        <div class="mb-3">
+                                            <p class="small mb-0">
+                                            <strong>{{ feature.name }}</strong>
+                                                </br>
+                                            {{ feature.description | safe }}</p>
+                                        </div>
+                                        {% endif %}
+                                    {% endfor %}
+                                {% endif %}
+                                {% if character.features.lineage %}
+                                    {% for feature in character.features.lineage %}
+                                        {% if feature.name %}
+                                        <div class="mb-3">
+                                            <p class="small mb-0">
+                                            <strong>{{ feature.name }}</strong>
+                                                {% if feature.source %}
+                                                <span class="badge bg-info ms-1">{{ feature.source }}</span>
+                                                {% endif %}
+                                                </br>
+                                            {{ feature.description | safe }}</p>
+                                        </div>
+                                        {% endif %}
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+
+
                         
-                        {% if spells_by_level %}
+                        {% if character.spells_by_level %}
                         <div class="card mb-4">
                             <div class="sub-card-header bg-secondary">
                                 <h5 class="mb-0">Spellcasting</h5>
                             </div>
                             <div class="card-body">
-                                {% if spell_slots %}
+                                {% if character.spell_slots %}
                                 <div class="alert alert-info mb-3">
                                     <strong>Spell Slots:</strong>
-                                    {% for slot_level, slot_count in spell_slots.items() | sort %}
+                                    {% for slot_level, slot_count in character.spell_slots.items() | sort %}
                                         <span class="badge bg-primary ms-2">Level {{ slot_level }}: {{ slot_count }} slots</span>
                                     {% endfor %}
                                     <br>
@@ -416,7 +528,7 @@
                                 </div>
                                 {% endif %}
                                 
-                                {% for level in spells_by_level | dictsort %}
+                                {% for level in character.spells_by_level | dictsort %}
                                     {% set level_num = level[0] %}
                                     {% set spells = level[1] %}
                                     {% if spells %}
@@ -436,7 +548,7 @@
                                             {% else %}
                                                 <div class="mb-2">
                                                     <strong>{{ spell.name }}</strong>
-                                                    {% if spell.get('always_prepared') %}
+                                                    {% if spell.get('always_prepared') and level_num > 0 %}
                                                         <span class="badge bg-info">Always Prepared</span>
                                                     {% endif %}
                                                     {% if spell.get('once_per_day') %}

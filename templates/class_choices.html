@@ -265,8 +265,21 @@ document.addEventListener('DOMContentLoaded', function() {
             const dependsOnValue = nestedCard.dataset.dependsOnValue;
             
             if (dependsOn && dependsOnValue) {
-                // Find the parent radio button selection
-                const parentInput = document.querySelector(`input[name="choice_${dependsOn}"]:checked`);
+                // Try multiple name formats to find the parent radio button
+                // Format 1: As-is from depends_on (e.g., "divine_order")
+                // Format 2: Title case with spaces (e.g., "Divine Order")
+                // Format 3: Title case with underscores (e.g., "Divine_Order")
+                const possibleNames = [
+                    `choice_${dependsOn}`,
+                    `choice_${dependsOn.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}`,
+                    `choice_${dependsOn.replace(/_/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join('_')}`
+                ];
+                
+                let parentInput = null;
+                for (const name of possibleNames) {
+                    parentInput = document.querySelector(`input[name="${name}"]:checked`);
+                    if (parentInput) break;
+                }
                 
                 if (parentInput && parentInput.value === dependsOnValue) {
                     // Show nested choice with animation

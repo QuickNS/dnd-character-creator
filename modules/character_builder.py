@@ -35,6 +35,7 @@ from .variant_manager import VariantManager
 
 # Import choice resolver for feature processing
 import sys
+import math
 if str(Path(__file__).parent.parent) not in sys.path:
     sys.path.insert(0, str(Path(__file__).parent.parent))
 from utils.choice_resolver import resolve_choice_options, get_option_descriptions
@@ -79,6 +80,35 @@ class CharacterBuilder:
         self.feature_manager = FeatureManager()
         self.hp_calculator = HPCalculator()
         self.variant_manager = VariantManager()
+        
+        # Load weapon and armor data for equipment processing
+        self._weapon_data = self._load_weapon_data()
+        self._armor_data = self._load_armor_data()
+        
+        # Spell definitions cache
+        self._spell_definitions_cache = {}
+        
+        # D&D 2024 skill to ability mappings for calculations
+        self.skill_abilities = {
+            'acrobatics': 'dexterity',
+            'animal_handling': 'wisdom',
+            'arcana': 'intelligence',
+            'athletics': 'strength',
+            'deception': 'charisma',
+            'history': 'intelligence',
+            'insight': 'wisdom',
+            'intimidation': 'charisma',
+            'investigation': 'intelligence',
+            'medicine': 'wisdom',
+            'nature': 'intelligence',
+            'perception': 'wisdom',
+            'performance': 'charisma',
+            'persuasion': 'charisma',
+            'religion': 'intelligence',
+            'sleight_of_hand': 'dexterity',
+            'stealth': 'dexterity',
+            'survival': 'wisdom'
+        }
         
         # Character data storage
         self.character_data = {
@@ -132,6 +162,7 @@ class CharacterBuilder:
             'darkvision': 0,
             'resistances': [],
             'immunities': [],
+            'equipment': None,  # Will be initialized when equipment_selections are processed
             'step': 'species'  # Track current step
         }
         
@@ -475,6 +506,25 @@ class CharacterBuilder:
             spell_name = effect.get('spell')
             if spell_name and spell_name not in self.character_data['spells']['cantrips']:
                 self.character_data['spells']['cantrips'].append(spell_name)
+                
+                # Track metadata for species/lineage cantrips (always prepared)
+                if source_type in ['species', 'lineage']:
+                    if 'spell_metadata' not in self.character_data:
+                        self.character_data['spell_metadata'] = {}
+                    
+                    # Map source_type to actual name
+                    if source_type == 'species':
+                        display_source = self.character_data.get('species', source_name)
+                    elif source_type == 'lineage':
+                        display_source = self.character_data.get('lineage', source_name)
+                    else:
+                        display_source = source_name
+                    
+                    self.character_data['spell_metadata'][spell_name] = {
+                        'source': display_source,
+                        'always_prepared': True,
+                        'once_per_day': False  # Cantrips are at-will
+                    }
         
         elif effect_type == 'grant_cantrip_choice':
             # This effect requires a choice to be made - store for later processing
@@ -489,12 +539,29 @@ class CharacterBuilder:
                 if spell_name not in self.character_data['spells']['prepared']:
                     self.character_data['spells']['prepared'].append(spell_name)
                 
-                # Track spell metadata for display (source type for once-per-day indicator)
+                # Track spell metadata for display
                 if 'spell_metadata' not in self.character_data:
                     self.character_data['spell_metadata'] = {}
+                
+                # Map source_type to actual name for display
+                if source_type == 'species':
+                    display_source = self.character_data.get('species', source_name)
+                elif source_type == 'lineage':
+                    display_source = self.character_data.get('lineage', source_name)
+                elif source_type == 'class':
+                    display_source = self.character_data.get('class', source_name)
+                elif source_type == 'subclass':
+                    display_source = self.character_data.get('subclass', source_name)
+                elif source_type == 'background':
+                    display_source = self.character_data.get('background', source_name)
+                else:
+                    display_source = source_name
+                
                 self.character_data['spell_metadata'][spell_name] = {
-                    'source': source_type,
-                    'once_per_day': source_type in ['species', 'lineage']
+                    'source': display_source,
+                    'source_type': source_type,  # Store source_type for clearing logic
+                    'once_per_day': source_type in ['species', 'lineage'],
+                    'always_prepared': True
                 }
         
         elif effect_type == 'grant_weapon_proficiency':
@@ -658,9 +725,9 @@ class CharacterBuilder:
         spell_metadata = self.character_data.get('spell_metadata', {})
         prepared_spells = self.character_data['spells']['prepared']
         
-        # Remove spells that were from subclass
+        # Remove spells that were from subclass (using source_type)
         for spell_name in list(prepared_spells):
-            if spell_name in spell_metadata and spell_metadata[spell_name].get('source') == 'subclass':
+            if spell_name in spell_metadata and spell_metadata[spell_name].get('source_type') == 'subclass':
                 prepared_spells.remove(spell_name)
                 del spell_metadata[spell_name]
     
@@ -683,6 +750,10 @@ class CharacterBuilder:
         )
         if not subclass_data:
             return False
+        
+        # If subclass is changing, clear existing subclass features first
+        if self.character_data.get('subclass') and self.character_data.get('subclass') != subclass_name:
+            self._clear_subclass_features()
         
         self.character_data['subclass'] = subclass_name
         self.character_data['subclass_data'] = subclass_data
@@ -800,6 +871,276 @@ class CharacterBuilder:
             }
             if not any(f['name'] == feat for f in self.character_data['features']['feats']):
                 self.character_data['features']['feats'].append(feat_entry)
+    
+    def _process_equipment_selections(self, equipment_selections: Dict[str, str]) -> bool:
+        """
+        Process equipment selections to generate actual equipment items.
+        
+        Args:
+            equipment_selections: Dict with 'class_equipment' and 'background_equipment' choices
+            
+        Returns:
+            True if equipment was processed successfully
+        """
+        if not isinstance(equipment_selections, dict):
+            return False
+            
+        # Initialize equipment if not already present
+        if 'equipment' not in self.character_data or self.character_data['equipment'] is None:
+            self.character_data['equipment'] = {
+                'weapons': [],
+                'armor': [],
+                'items': [],
+                'gold': 0
+            }
+        
+        # Check if equipment has already been processed to avoid duplicates
+        equipment = self.character_data['equipment']
+        has_class_equipment = any(item.get('source') == 'Class' for item in 
+                                 equipment['weapons'] + equipment['armor'] + equipment['items'])
+        has_background_equipment = any(item.get('source') == 'Background' for item in 
+                                      equipment['weapons'] + equipment['armor'] + equipment['items'])
+        
+        # Process class equipment selection
+        class_choice = equipment_selections.get('class_equipment')
+        if class_choice and self.character_data.get('class_data') and not has_class_equipment:
+            class_equipment = self.character_data['class_data'].get('starting_equipment', {})
+            if class_choice in class_equipment:
+                option_data = class_equipment[class_choice]
+                self._add_equipment_from_option(option_data, 'Class')
+        
+        # Process background equipment selection  
+        background_choice = equipment_selections.get('background_equipment')
+        if background_choice and self.character_data.get('background_data') and not has_background_equipment:
+            background_equipment = self.character_data['background_data'].get('starting_equipment', {})
+            if background_choice in background_equipment:
+                option_data = background_equipment[background_choice]
+                self._add_equipment_from_option(option_data, 'Background')
+        
+        return True
+    
+    def _add_equipment_from_option(self, option_data: Dict[str, Any], source: str):
+        """Add equipment items from a starting equipment option."""
+        # Add gold
+        gold = option_data.get('gold', 0)
+        if gold > 0:
+            self.character_data['equipment']['gold'] += gold
+        
+        # Add items with categorization
+        items = option_data.get('items', [])
+        for item in items:
+            item_name_lower = item.lower()
+            
+            # Check if item is a weapon by looking it up in weapon data
+            weapon_props = self._get_weapon_properties(item)
+            if weapon_props:
+                # Item exists in weapons.json, so it's a weapon
+                self.character_data['equipment']['weapons'].append({
+                    'name': item,
+                    'source': source,
+                    'properties': weapon_props
+                })
+            elif any(armor_type in item_name_lower for armor_type in 
+                     ['armor', 'mail', 'leather', 'chain', 'scale', 'plate', 'shield']):
+                self.character_data['equipment']['armor'].append({
+                    'name': item,
+                    'source': source
+                })
+            else:
+                self.character_data['equipment']['items'].append({
+                    'name': item,
+                    'source': source
+                })
+    
+    def _load_weapon_data(self) -> Dict[str, Any]:
+        """Load weapon data from weapons.json."""
+        weapons_file = self.data_dir / "equipment" / "weapons.json"
+        try:
+            with open(weapons_file, 'r') as f:
+                return json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            print(f"Warning: Could not load weapons data from {weapons_file}")
+            return {}
+    
+    def _load_armor_data(self) -> Dict[str, Any]:
+        """Load armor data from armor.json."""
+        armor_file = self.data_dir / "equipment" / "armor.json"
+        try:
+            with open(armor_file, 'r') as f:
+                return json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            print(f"Warning: Could not load armor data from {armor_file}")
+            return {}
+    
+    def _spell_list_contains(self, spell_list: list, spell_name: str) -> bool:
+        """
+        Check if a spell list contains a spell by name.
+        Handles both string and dict spell formats.
+        """
+        for spell in spell_list:
+            if isinstance(spell, dict) and spell.get('name') == spell_name:
+                return True
+            elif isinstance(spell, str) and spell == spell_name:
+                return True
+        return False
+    
+    def _load_spell_definition(self, spell_name: str) -> Dict[str, Any]:
+        """Load spell definition from spell definitions directory."""
+        # Check cache first
+        if spell_name in self._spell_definitions_cache:
+            return self._spell_definitions_cache[spell_name]
+        
+        # Convert spell name to filename format (lowercase with underscores)
+        filename = spell_name.lower().replace(' ', '_').replace("'", "")
+        spell_file = self.data_dir / "spells" / "definitions" / f"{filename}.json"
+        
+        try:
+            with open(spell_file, 'r') as f:
+                spell_data = json.load(f)
+                # Convert components list to string for template display
+                if 'components' in spell_data and isinstance(spell_data['components'], list):
+                    spell_data['components'] = ', '.join(spell_data['components'])
+                # Cache it
+                self._spell_definitions_cache[spell_name] = spell_data
+                return spell_data
+        except (FileNotFoundError, json.JSONDecodeError) as e:
+            # Return minimal spell object if file not found
+            print(f"Warning: Could not load spell definition for '{spell_name}' from {spell_file}: {e}")
+            return {
+                'name': spell_name,
+                'level': 0,
+                'description': 'Spell definition not available.',
+                'source': 'Unknown'
+            }
+    
+    def _get_weapon_properties(self, weapon_name: str) -> Dict[str, Any]:
+        """Get weapon properties from loaded weapon data."""
+        if weapon_name in self._weapon_data:
+            return self._weapon_data[weapon_name].copy()
+        else:
+            print(f"Warning: Weapon '{weapon_name}' not found in weapon data")
+            return {}
+    
+    def calculate_ac_options(self) -> List[Dict[str, Any]]:
+        """
+        Calculate all possible AC combinations based on available equipment.
+        Returns AC options sorted from highest to lowest AC.
+        """
+        ac_options = []
+        
+        # Get character data
+        abilities = self.calculate_processed_ability_scores()
+        dex_mod = abilities.get('dexterity', {}).get('modifier', 0)
+        equipment = self.character_data.get('equipment')
+        proficiencies = self.character_data.get('proficiencies', {}).get('armor', [])
+        
+        # Handle case where equipment is None (like in tests)
+        if equipment is None:
+            # Just return unarmored AC
+            unarmored_ac = 10 + dex_mod
+            return [{
+                'ac': unarmored_ac,
+                'armor': None,
+                'shield': False,
+                'formula': f'10 + Dex modifier ({dex_mod})',
+                'notes': [],
+                'equipped_armor': None
+            }]
+        
+        # Available armor pieces
+        armor_items = equipment.get('armor', [])
+        has_shield = any(item.get('name') == 'Shield' for item in armor_items)
+        
+        # Get all armor (non-shield) pieces
+        armor_pieces = [item for item in armor_items if item.get('name') != 'Shield']
+        
+        # Calculate AC for each armor combination
+        for armor in armor_pieces:
+            armor_name = armor.get('name')
+            if armor_name and armor_name in self._armor_data:
+                armor_data = self._armor_data[armor_name]
+                ac_option = self._calculate_armor_ac(armor_data, dex_mod, has_shield, proficiencies, armor_name)
+                ac_option['equipped_armor'] = armor_name
+                ac_options.append(ac_option)
+        
+        # Add unarmored AC option
+        unarmored_ac = 10 + dex_mod
+        shield_bonus = 2 if has_shield and 'Shields' in proficiencies else 0
+        total_unarmored = unarmored_ac + shield_bonus
+        
+        formula_parts = [f"10 + Dex modifier ({dex_mod})"]
+        if shield_bonus:
+            formula_parts.append(f"Shield ({shield_bonus})")
+        
+        unarmored_option = {
+            'ac': total_unarmored,
+            'armor': None,
+            'shield': has_shield,
+            'formula': ' + '.join(formula_parts),
+            'notes': [],
+            'equipped_armor': None
+        }
+        ac_options.append(unarmored_option)
+        
+        # Add notes for unproficient equipment
+        for option in ac_options:
+            if option['equipped_armor']:
+                armor_data = self._armor_data.get(option['equipped_armor'], {})
+                required_prof = armor_data.get('proficiency_required')
+                if required_prof and required_prof not in proficiencies:
+                    option['notes'].append(f"Not proficient with {required_prof}")
+            
+            if has_shield and 'Shields' not in proficiencies:
+                option['notes'].append("Not proficient with Shields")
+        
+        # Sort by AC (highest first)
+        ac_options.sort(key=lambda x: x['ac'], reverse=True)
+        
+        return ac_options
+    
+    def _calculate_armor_ac(self, armor_data: Dict[str, Any], dex_mod: int, has_shield: bool, proficiencies: List[str], armor_name: str = None) -> Dict[str, Any]:
+        """Calculate AC for a specific armor."""
+        ac_base = armor_data.get('ac_base', 10)
+        category = armor_data.get('category', '')
+        
+        # Calculate DEX modifier contribution based on armor type
+        if 'Light' in category:
+            # Light armor: full DEX modifier
+            dex_bonus = dex_mod
+        elif 'Medium' in category:
+            # Medium armor: DEX modifier max 2
+            dex_bonus = min(dex_mod, 2)
+        else:
+            # Heavy armor: no DEX modifier
+            dex_bonus = 0
+        
+        # Base AC calculation
+        total_ac = ac_base + dex_bonus
+        
+        # Shield bonus
+        shield_bonus = 0
+        if has_shield and 'Shields' in proficiencies:
+            shield_bonus = 2
+            total_ac += shield_bonus
+        
+        # Build formula string
+        formula_parts = []
+        if ac_base != 10:
+            formula_parts.append(f"Armor base ({ac_base})")
+        if dex_bonus > 0:
+            formula_parts.append(f"Dex modifier ({dex_bonus})")
+        if shield_bonus > 0:
+            formula_parts.append(f"Shield ({shield_bonus})")
+        
+        formula = ' + '.join(formula_parts) if formula_parts else str(total_ac)
+        
+        return {
+            'ac': total_ac,
+            'armor': armor_name,
+            'shield': has_shield,
+            'formula': formula,
+            'notes': []
+        }
     
     # ==================== Ability Score Methods ====================
     
@@ -940,14 +1281,28 @@ class CharacterBuilder:
                 for skill in choice_value:
                     if skill not in self.character_data['proficiencies']['skills']:
                         self.character_data['proficiencies']['skills'].append(skill)
+                        # Track that this came from class selection
+                        class_name = self.character_data.get('class', 'Class')
+                        self.character_data['proficiency_sources']['skills'][skill] = class_name
             return True
         
         # Spells
         elif choice_key_lower == 'spellcasting':
             if isinstance(choice_value, list):
+                class_name = self.character_data.get('class', 'Class')
+                # Initialize spell_metadata if needed
+                if 'spell_metadata' not in self.character_data:
+                    self.character_data['spell_metadata'] = {}
+                
                 for spell in choice_value:
                     if spell not in self.character_data['spells']['cantrips']:
                         self.character_data['spells']['cantrips'].append(spell)
+                        # Add metadata for proper source display
+                        self.character_data['spell_metadata'][spell] = {
+                            'source': f'{class_name} Class',
+                            'always_prepared': False,
+                            'once_per_day': False
+                        }
                 
                 # Update Spellcasting feature to include chosen cantrips
                 for feature in self.character_data['features']['class']:
@@ -963,12 +1318,23 @@ class CharacterBuilder:
         elif '_bonus_cantrip' in choice_key_lower:
             # Extract parent feature name (e.g., "Thaumaturge" from "Thaumaturge_bonus_cantrip")
             parent_name = choice_key.replace('_bonus_cantrip', '').replace('_', ' ').title()
+            class_name = self.character_data.get('class', 'Class')
+            
+            # Initialize spell_metadata if needed
+            if 'spell_metadata' not in self.character_data:
+                self.character_data['spell_metadata'] = {}
             
             # Add cantrip(s) to character's spell list
             cantrips_to_add = choice_value if isinstance(choice_value, list) else [choice_value]
             for cantrip in cantrips_to_add:
                 if cantrip not in self.character_data['spells']['cantrips']:
                     self.character_data['spells']['cantrips'].append(cantrip)
+                    # Add metadata for proper source display
+                    self.character_data['spell_metadata'][cantrip] = {
+                        'source': f'{parent_name} ({class_name})',
+                        'always_prepared': False,
+                        'once_per_day': False
+                    }
             
             # Find the parent feature and append the choice
             cantrip_display = ', '.join(cantrips_to_add) if isinstance(choice_value, list) else choice_value
@@ -990,6 +1356,10 @@ class CharacterBuilder:
         elif choice_key_lower == 'alignment':
             self.character_data['alignment'] = choice_value
             return True
+        
+        # Equipment selections
+        elif choice_key_lower == 'equipment_selections':
+            return self._process_equipment_selections(choice_value)
         
         # Generic choice - might be class feature choice
         # Try to find and apply effects from class/subclass data
@@ -1180,61 +1550,491 @@ class CharacterBuilder:
         
         return True
     
+    # ==================== Calculation Methods ====================
+    
+    def calculate_ability_modifier(self, score: int) -> int:
+        """Calculate ability modifier from score."""
+        return math.floor((score - 10) / 2)
+    
+    def calculate_proficiency_bonus(self, level: int) -> int:
+        """Calculate proficiency bonus based on character level."""
+        if level >= 17:
+            return 6
+        elif level >= 13:
+            return 5
+        elif level >= 9:
+            return 4
+        elif level >= 5:
+            return 3
+        else:
+            return 2
+    
+    def calculate_processed_ability_scores(self) -> Dict[str, Dict[str, Any]]:
+        """Calculate ability scores with modifiers and saving throws."""
+        raw_scores = self.ability_scores.final_scores
+        level = self.character_data.get('level', 1)
+        proficiency_bonus = self.calculate_proficiency_bonus(level)
+        
+        # Get saving throw proficiencies
+        class_data = self.character_data.get('class_data')
+        if class_data is None:
+            class_data = {}
+        saving_throw_profs = class_data.get('saving_throw_proficiencies', [])
+        
+        processed_scores = {}
+        for ability_name, score in raw_scores.items():
+            ability_lower = ability_name.lower()
+            modifier = self.calculate_ability_modifier(score)
+            is_proficient = ability_name in saving_throw_profs
+            saving_throw_bonus = modifier + (proficiency_bonus if is_proficient else 0)
+            
+            processed_scores[ability_lower] = {
+                'score': score,
+                'modifier': modifier,
+                'saving_throw': saving_throw_bonus,
+                'saving_throw_proficient': is_proficient
+            }
+        
+        return processed_scores
+    
+    def calculate_skills(self) -> Dict[str, Dict[str, Any]]:
+        """Calculate skill bonuses with proficiency and expertise."""
+        ability_scores = self.calculate_processed_ability_scores()
+        # Get skill proficiencies from the correct location
+        proficiencies = self.character_data.get('proficiencies', {})
+        skill_proficiencies = proficiencies.get('skills', [])
+        skill_expertise = self.character_data.get('skill_expertise', [])
+        proficiency_sources = self.character_data.get('proficiency_sources', {})
+        skill_sources = proficiency_sources.get('skills', {})
+        proficiency_bonus = self.calculate_proficiency_bonus(self.character_data.get('level', 1))
+        
+        skills = {}
+        for skill, ability in self.skill_abilities.items():
+            # Handle different skill name variants
+            skill_name_variants = [
+                skill,
+                skill.replace('_', ' ').title(),
+                skill.title(),
+                skill.replace('_', '')
+            ]
+            
+            # Check proficiency
+            proficient = any(variant in skill_proficiencies for variant in skill_name_variants)
+            expertise = any(variant in skill_expertise for variant in skill_name_variants)
+            
+            # Determine source of proficiency
+            source = 'None'
+            if proficient:
+                for variant in skill_name_variants:
+                    if variant in skill_sources:
+                        source = skill_sources[variant]
+                        break
+                else:
+                    source = 'Class'  # Default assumption
+            
+            # Calculate bonus
+            ability_modifier = ability_scores[ability]['modifier']
+            prof_bonus = 0
+            if expertise:
+                prof_bonus = proficiency_bonus * 2
+            elif proficient:
+                prof_bonus = proficiency_bonus
+            
+            bonus = ability_modifier + prof_bonus
+            
+            skills[skill] = {
+                'proficient': proficient,
+                'expertise': expertise,
+                'bonus': bonus,
+                'modifier': bonus,
+                'ability': ability,
+                'source': source
+            }
+        
+        return skills
+    
+    def calculate_weapon_attacks(self) -> List[Dict[str, Any]]:
+        """Calculate attack stats for all weapons in inventory."""
+        attacks = []
+        equipment = self.character_data.get('equipment') or {'weapons': [], 'armor': [], 'items': [], 'gold': 0}
+        all_weapons = equipment.get('weapons', [])
+        
+        ability_scores = self.calculate_processed_ability_scores()
+        proficiencies = self.character_data.get('proficiencies') or {'weapons': [], 'armor': [], 'skills': []}
+        weapon_profs = proficiencies.get('weapons', [])
+        level = self.character_data.get('level', 1)
+        proficiency_bonus = self.calculate_proficiency_bonus(level)
+        
+        for weapon in all_weapons:
+            weapon_name = weapon.get('name')
+            weapon_props = weapon.get('properties', {})
+            
+            # Determine ability modifier
+            category = weapon_props.get('category', '')
+            properties = weapon_props.get('properties', [])
+            
+            if 'Finesse' in properties:
+                str_mod = ability_scores.get('strength', {}).get('modifier', 0)
+                dex_mod = ability_scores.get('dexterity', {}).get('modifier', 0)
+                ability_mod = max(str_mod, dex_mod)
+                ability_name = f'STR/DEX ({"STR" if str_mod >= dex_mod else "DEX"})'
+            elif 'Ranged' in category:
+                ability_mod = ability_scores.get('dexterity', {}).get('modifier', 0)
+                ability_name = 'DEX'
+            else:
+                ability_mod = ability_scores.get('strength', {}).get('modifier', 0)
+                ability_name = 'STR'
+            
+            # Check proficiency
+            is_proficient = self._has_weapon_proficiency(weapon_props, weapon_profs)
+            prof_bonus = proficiency_bonus if is_proficient else 0
+            
+            # Calculate attack bonus
+            attack_bonus = ability_mod + prof_bonus
+            
+            # Calculate damage
+            damage_dice = weapon_props.get('damage', '1d4')
+            damage_bonus = ability_mod
+            damage_type = weapon_props.get('damage_type', 'Bludgeoning')
+            
+            # Calculate average damage
+            avg_damage = self._calculate_average_damage(damage_dice, damage_bonus)
+            avg_crit = self._calculate_average_damage(damage_dice, damage_bonus, is_crit=True)
+            
+            # Get weapon mastery if available
+            mastery = weapon_props.get('mastery')
+            
+            attacks.append({
+                'name': weapon_name,
+                'attack_bonus': attack_bonus,
+                'attack_bonus_display': f"+{attack_bonus}" if attack_bonus >= 0 else str(attack_bonus),
+                'damage': f"{damage_dice} + {damage_bonus}" if damage_bonus > 0 else damage_dice,
+                'damage_type': damage_type,
+                'avg_damage': avg_damage,
+                'avg_crit': avg_crit,
+                'properties': properties,
+                'ability': ability_name,
+                'proficient': is_proficient,
+                'mastery': mastery,
+                'icon': self._get_weapon_icon(weapon_name)
+            })
+        
+        return attacks
+    
+    def _has_weapon_proficiency(self, weapon_props: Dict[str, Any], weapon_proficiencies: List[str]) -> bool:
+        """Check if character has proficiency for weapon."""
+        prof_required = weapon_props.get('proficiency_required', '')
+        weapon_name = weapon_props.get('name', '')
+        
+        # Check specific weapon proficiency first
+        if weapon_name in weapon_proficiencies:
+            return True
+        
+        # Check category proficiency
+        if prof_required in weapon_proficiencies:
+            return True
+        
+        return False
+    
+    def _calculate_average_damage(self, dice_expr: str, bonus: int, is_crit: bool = False) -> float:
+        """Calculate average damage from a dice expression."""
+        try:
+            if 'd' not in dice_expr:
+                return float(bonus)
+            
+            parts = dice_expr.lower().split('d')
+            num_dice = int(parts[0]) if parts[0] else 1
+            die_size = int(parts[1])
+            
+            # For crits, double the number of dice
+            if is_crit:
+                num_dice *= 2
+            
+            # Average of a die is (1 + die_size) / 2
+            avg_per_die = (1 + die_size) / 2.0
+            total_avg = (num_dice * avg_per_die) + bonus
+            
+            return round(total_avg, 1)
+        except (ValueError, IndexError):
+            return float(bonus)
+    
+    def _get_weapon_icon(self, weapon_name: str) -> str:
+        """Get the appropriate weapon icon path for a weapon name."""
+        if not weapon_name:
+            return '/static/images/weapons/sword.svg'
+            
+        weapon_lower = weapon_name.lower()
+        
+        # Weapon icon mappings
+        icon_mappings = {
+            'club': 'club.svg',
+            'dagger': 'dagger.svg',
+            'dart': 'dart.svg',
+            'greatclub': 'club.svg',
+            'handaxe': 'axe.svg',
+            'javelin': 'spear.svg',
+            'light_hammer': 'hammer.svg',
+            'mace': 'mace.svg',
+            'quarterstaff': 'staff.svg',
+            'sickle': 'sickle.svg',
+            'spear': 'spear.svg',
+            'crossbow_light': 'crossbow.svg',
+            'shortbow': 'bow.svg',
+            'battleaxe': 'axe.svg',
+            'flail': 'flail.svg',
+            'glaive': 'polearm.svg',
+            'greataxe': 'axe.svg',
+            'greatsword': 'greatsword.svg',
+            'halberd': 'polearm.svg',
+            'lance': 'lance.svg',
+            'longsword': 'sword.svg',
+            'maul': 'hammer.svg',
+            'morningstar': 'mace.svg',
+            'pike': 'spear.svg',
+            'rapier': 'rapier.svg',
+            'scimitar': 'scimitar.svg',
+            'shortsword': 'sword.svg',
+            'trident': 'trident.svg',
+            'war_pick': 'pick.svg',
+            'warhammer': 'hammer.svg',
+            'whip': 'whip.svg',
+            'crossbow_hand': 'crossbow.svg',
+            'crossbow_heavy': 'crossbow.svg',
+            'longbow': 'bow.svg'
+        }
+        
+        # Try exact match first
+        normalized_name = weapon_lower.replace(' ', '_').replace('-', '_')
+        if normalized_name in icon_mappings:
+            return f'/static/images/weapons/{icon_mappings[normalized_name]}'
+        
+        # Try partial matches
+        for key, icon in icon_mappings.items():
+            if key in normalized_name or normalized_name in key:
+                return f'/static/images/weapons/{icon}'
+        
+        # Default icon
+        return '/static/images/weapons/sword.svg'
+    
+    def calculate_combat_stats(self) -> Dict[str, Any]:
+        """Calculate combat statistics."""
+        ability_scores = self.calculate_processed_ability_scores()
+        equipment = self.character_data.get('equipment') or {'weapons': [], 'armor': [], 'items': [], 'gold': 0}
+        level = self.character_data.get('level', 1)
+        
+        # Basic combat stats
+        dex_modifier = ability_scores['dexterity']['modifier']
+        wis_modifier = ability_scores['wisdom']['modifier']
+        constitution_score = self.ability_scores.final_scores.get('Constitution', 10)
+        
+        # Calculate HP with bonuses
+        class_name = self.character_data.get('class', '')
+        hp_bonuses = self._extract_hp_bonuses()
+        max_hp = self.hp_calculator.calculate_total_hp(class_name, constitution_score, hp_bonuses, level)
+        
+        # Calculate AC (basic calculation - can be enhanced)
+        base_ac = 10 + dex_modifier
+        
+        # Apply armor if any
+        armor_items = equipment.get('armor', [])
+        armor_ac = base_ac  # Start with unarmored AC
+        
+        # Speed (default 30, can be modified by species/features)
+        speed = self.character_data.get('speed', 30)
+        
+        return {
+            'armor_class': armor_ac,
+            'hit_points': {
+                'current': max_hp,
+                'maximum': max_hp,
+                'temporary': 0
+            },
+            'initiative_bonus': dex_modifier,
+            'speed': speed,
+            'passive_perception': 10 + wis_modifier + (self.calculate_proficiency_bonus(level) 
+                                                      if 'Perception' in self.character_data.get('proficiencies', {}).get('skills', []) 
+                                                      else 0)
+        }
+    
+    def _extract_hp_bonuses(self) -> List[Dict[str, Any]]:
+        """Extract HP bonuses from effects and features."""
+        hp_bonuses = []
+        
+        # Check effects for HP bonuses
+        if hasattr(self, 'applied_effects'):
+            for applied_effect in self.applied_effects:
+                effect = applied_effect['effect']
+                if effect.get('type') == 'bonus_hp':
+                    hp_bonuses.append({
+                        'source': applied_effect.get('source', 'Unknown'),
+                        'amount': effect.get('amount', 0),
+                        'per_level': effect.get('per_level', False)
+                    })
+        
+        return hp_bonuses
+    
     # ==================== Export Methods ====================
     
-    def to_json(self) -> dict:
+    def to_character(self) -> Dict[str, Any]:
         """
-        Export character as JSON dictionary.
+        Export character as complete calculated data dictionary.
+        This is the main method that returns character_data with all calculations.
         
         Returns:
-            Complete character data as dictionary
+            Complete character data with all calculated values
         """
-        data = deepcopy(self.character_data)
-        # Add ability scores from the AbilityScores module
-        data['ability_scores'] = self.ability_scores.final_scores
+        # Start with base character data
+        character_data = deepcopy(self.character_data)
         
-        # Add applied effects to character JSON so web app can use them
+        # Add calculated ability scores
+        character_data['ability_scores'] = self.ability_scores.final_scores
+        character_data['abilities'] = self.calculate_processed_ability_scores()
+        
+        # Add calculated skills
+        character_data['skills'] = self.calculate_skills()
+        
+        # Add calculated combat stats
+        character_data['combat'] = self.calculate_combat_stats()
+        
+        # Add calculated weapon attacks
+        character_data['attacks'] = self.calculate_weapon_attacks()
+        
+        # Add calculated AC options
+        character_data['ac_options'] = self.calculate_ac_options()
+        
+        # Process spell data for template display
+        spells = character_data.get('spells', {})
+        spell_slots = spells.get('slots', {})
+        spell_metadata = character_data.get('spell_metadata', {})
+        
+        # Load full spell definitions for all spells stored as strings
+        if spells.get('cantrips'):
+            loaded_cantrips = []
+            for spell in spells['cantrips']:
+                if isinstance(spell, str):
+                    spell_data = self._load_spell_definition(spell)
+                    # Override with metadata if available (includes proper source)
+                    if spell in spell_metadata:
+                        metadata = spell_metadata[spell]
+                        spell_data['source'] = metadata.get('source', spell_data.get('source', 'Unknown'))
+                        spell_data['always_prepared'] = metadata.get('always_prepared', False)
+                        spell_data['once_per_day'] = metadata.get('once_per_day', False)
+                    loaded_cantrips.append(spell_data)
+                else:
+                    loaded_cantrips.append(spell)
+            spells['cantrips'] = loaded_cantrips
+            
+        if spells.get('prepared'):
+            loaded_prepared = []
+            for spell in spells['prepared']:
+                if isinstance(spell, str):
+                    spell_data = self._load_spell_definition(spell)
+                    # Override with metadata if available (includes proper source)
+                    if spell in spell_metadata:
+                        metadata = spell_metadata[spell]
+                        spell_data['source'] = metadata.get('source', spell_data.get('source', 'Unknown'))
+                        spell_data['always_prepared'] = metadata.get('always_prepared', False)
+                        spell_data['once_per_day'] = metadata.get('once_per_day', False)
+                    loaded_prepared.append(spell_data)
+                else:
+                    loaded_prepared.append(spell)
+            spells['prepared'] = loaded_prepared
+            
+        if spells.get('known'):
+            loaded_known = []
+            for spell in spells['known']:
+                if isinstance(spell, str):
+                    spell_data = self._load_spell_definition(spell)
+                    # Add metadata if available
+                    if spell in spell_metadata:
+                        spell_data.update(spell_metadata[spell])
+                    loaded_known.append(spell_data)
+                else:
+                    loaded_known.append(spell)
+            spells['known'] = loaded_known
+        
+        # Organize spells by level for display
+        spells_by_level = {}
+        for spell in spells.get('cantrips', []):
+            if 0 not in spells_by_level:
+                spells_by_level[0] = []
+            spells_by_level[0].append(spell)
+                    
+        for spell in spells.get('prepared', []):
+            level = spell.get('level', 1)
+            if level not in spells_by_level:
+                spells_by_level[level] = []
+            spells_by_level[level].append(spell)
+        
+        for spell in spells.get('known', []):
+            level = spell.get('level', 1)
+            if level not in spells_by_level:
+                spells_by_level[level] = []
+            spells_by_level[level].append(spell)
+        
+        character_data['spells_by_level'] = spells_by_level
+        character_data['spell_slots'] = spell_slots
+
+        # Add proficiency bonus
+        character_data['proficiency_bonus'] = self.calculate_proficiency_bonus(character_data.get('level', 1))
+        
+        # Add applied effects for export
         if hasattr(self, 'applied_effects') and self.applied_effects:
-            # Include both the effect and source information for web app
             effects_for_export = []
             for applied_effect in self.applied_effects:
                 effect = applied_effect['effect'].copy()
                 effect['source'] = applied_effect.get('source', 'Unknown')
                 effect['source_type'] = applied_effect.get('source_type', 'Unknown')
                 effects_for_export.append(effect)
-            data['effects'] = effects_for_export
+            character_data['effects'] = effects_for_export
         else:
-            data['effects'] = []
+            character_data['effects'] = []
         
         # Flatten proficiencies for easier template access
-        data['languages'] = data['proficiencies']['languages']
-        data['skill_proficiencies'] = data['proficiencies']['skills']
-        data['weapon_proficiencies'] = data['proficiencies']['weapons']
-        data['armor_proficiencies'] = data['proficiencies']['armor']
+        proficiencies = character_data.get('proficiencies', {})
+        character_data['languages'] = proficiencies.get('languages', [])
+        character_data['skill_proficiencies'] = proficiencies.get('skills', [])
+        character_data['weapon_proficiencies'] = proficiencies.get('weapons', [])
+        character_data['armor_proficiencies'] = proficiencies.get('armor', [])
         
         # Include choices_made for web app compatibility
-        data['choices_made'] = self.character_data.get('choices_made', {})
+        character_data['choices_made'] = character_data.get('choices_made', {})
         
-        return data
+        return character_data
     
-    def to_character(self) -> Character:
+    def to_json(self) -> Dict[str, Any]:
         """
-        Convert to Character object.
+        Legacy method - now calls to_character() for consistency.
+        
+        Returns:
+            Complete character data as dictionary
+        """
+        return self.to_character()
+    
+    def to_character_object(self) -> Character:
+        """
+        Convert to Character object (renamed from old to_character method).
         
         Returns:
             Character object with all data populated
         """
         char = Character()
-        char.name = self.character_data.get('name', '')
-        char.species = self.character_data.get('species', '')
-        char.species_variant = self.character_data.get('lineage', '')
-        char.class_name = self.character_data.get('class', '')
-        char.subclass = self.character_data.get('subclass', '')
-        char.background = self.character_data.get('background', '')
-        char.level = self.character_data.get('level', 1)
+        character_data = self.to_character()
         
-        # Ability scores
-        abilities = self.character_data.get('abilities', {})
+        char.name = character_data.get('name', '')
+        char.species = character_data.get('species', '')
+        char.species_variant = character_data.get('lineage', '')
+        char.class_name = character_data.get('class', '')
+        char.subclass = character_data.get('subclass', '')
+        char.background = character_data.get('background', '')
+        char.level = character_data.get('level', 1)
+        
+        # Ability scores from calculated data
+        abilities = character_data.get('abilities', {})
+        for ability_name, ability_data in abilities.items():
+            char.abilities[ability_name.title()] = ability_data.get('score', 10)
+        
+        return char
         if abilities:
             char.ability_scores = self.ability_scores
         
@@ -1267,6 +2067,11 @@ class CharacterBuilder:
         self.character_data = deepcopy(data)
         
         # Reconstruct ability scores
+        # First check for ability_scores (raw scores exported by to_character)
+        if 'ability_scores' in data:
+            self.ability_scores.set_base_scores(data['ability_scores'])
+        
+        # Also check for detailed abilities structure
         abilities = data.get('abilities', {})
         if abilities:
             if 'base' in abilities:
@@ -2010,59 +2815,77 @@ class CharacterBuilder:
         """
         Add nested choices triggered by grant_cantrip_choice effects.
         
-        Scans class_data for options with grant_cantrip_choice effects and adds
-        the corresponding bonus cantrip choices to the choices list.
+        Scans class_data for ALL options with grant_cantrip_choice effects and adds
+        the corresponding bonus cantrip choices to the choices list (hidden by default,
+        shown by JavaScript when parent option is selected).
         """
+        # First, find the parent choice key from existing choices
+        parent_choice_key = None
+        for choice in choices:
+            feature_name = choice.get('feature_name')
+            # Check if any options in class_data match this choice and have grant_cantrip_choice effects
+            for data_key, data_value in class_data.items():
+                if isinstance(data_value, dict):
+                    for option_name, option_data in data_value.items():
+                        if isinstance(option_data, dict) and 'effects' in option_data:
+                            for effect in option_data.get('effects', []):
+                                if effect.get('type') == 'grant_cantrip_choice':
+                                    # Found a parent choice that triggers nested choices
+                                    # Use the choice's feature_name or a normalized key
+                                    if not parent_choice_key:
+                                        # Try to derive the choice key from the feature name or data_key
+                                        parent_choice_key = feature_name.lower().replace(' ', '_') if feature_name else data_key.rstrip('s')
+        
         # Scan all keys in class_data for option lists that might have effects
         for data_key, data_value in class_data.items():
             if isinstance(data_value, dict):
                 # This could be a choice list (e.g., divine_orders, fighting_styles, etc.)
                 for option_name, option_data in data_value.items():
                     if isinstance(option_data, dict) and 'effects' in option_data:
-                        # Check if this option was selected
-                        for choice_key, choice_value in choices_made.items():
-                            if choice_value == option_name:
-                                # This option was selected! Check for grant_cantrip_choice effects
-                                for effect in option_data.get('effects', []):
-                                    if effect.get('type') == 'grant_cantrip_choice':
-                                        cantrip_count = effect.get('count', 1)
-                                        spell_list = effect.get('spell_list', class_name)
-                                        
-                                        # Load cantrip options
-                                        class_lower = spell_list.lower()
-                                        spell_file_path = f"spells/class_lists/{class_lower}.json"
-                                        cantrip_options = resolve_choice_options(
+                        # Check for grant_cantrip_choice effects (add ALL, not just selected ones)
+                        for effect in option_data.get('effects', []):
+                            if effect.get('type') == 'grant_cantrip_choice':
+                                cantrip_count = effect.get('count', 1)
+                                spell_list = effect.get('spell_list', class_name)
+                                
+                                # Load cantrip options
+                                class_lower = spell_list.lower()
+                                spell_file_path = f"spells/class_lists/{class_lower}.json"
+                                cantrip_options = resolve_choice_options(
+                                    {'source': {'type': 'external', 'file': spell_file_path, 'list': 'cantrips'}},
+                                    character,
+                                    class_data,
+                                    None
+                                )
+                                
+                                # Create unique feature name based on the option that grants it
+                                bonus_feature_name = f'{option_name}_bonus_cantrip'
+                                
+                                # Derive parent choice key (e.g., "divine_order" from "Divine Order" or "divine_orders")
+                                choice_key = data_key.rstrip('s')  # Remove trailing 's' (e.g., divine_orders -> divine_order)
+                                
+                                # Only add if not already in choices
+                                if not any(c.get('feature_name') == bonus_feature_name for c in choices):
+                                    choice = {
+                                        'title': f'{option_name} - Bonus Cantrip (Level 1)',
+                                        'type': 'feature',
+                                        'description': f'Choose {cantrip_count} additional cantrip from the {spell_list} spell list.',
+                                        'options': cantrip_options,
+                                        'count': cantrip_count,
+                                        'required': True,
+                                        'level': 1,
+                                        'feature_name': bonus_feature_name,
+                                        'depends_on': choice_key,
+                                        'depends_on_value': option_name,
+                                        'is_nested': True,
+                                        'option_descriptions': get_option_descriptions(
+                                            {'choices': {'source': {'type': 'external', 'file': spell_file_path, 'list': 'cantrips'}}},
                                             {'source': {'type': 'external', 'file': spell_file_path, 'list': 'cantrips'}},
-                                            character,
                                             class_data,
                                             None
                                         )
-                                        
-                                        # Create unique feature name based on the option that grants it
-                                        bonus_feature_name = f'{option_name}_bonus_cantrip'
-                                        
-                                        # Only add if not already in choices
-                                        if not any(c.get('feature_name') == bonus_feature_name for c in choices):
-                                            choice = {
-                                                'title': f'{option_name} - Bonus Cantrip (Level 1)',
-                                                'type': 'feature',
-                                                'description': f'Choose {cantrip_count} additional cantrip from the {spell_list} spell list.',
-                                                'options': cantrip_options,
-                                                'count': cantrip_count,
-                                                'required': True,
-                                                'level': 1,
-                                                'feature_name': bonus_feature_name,
-                                                'depends_on': choice_key,
-                                                'depends_on_value': choice_value,
-                                                'is_nested': True,
-                                                'option_descriptions': get_option_descriptions(
-                                                    {'choices': {'source': {'type': 'external', 'file': spell_file_path, 'list': 'cantrips'}}},
-                                                    {'source': {'type': 'external', 'file': spell_file_path, 'list': 'cantrips'}},
-                                                    class_data,
-                                                    None
-                                                )
-                                            }
-                                            choices.append(choice)
+                                    }
+                                    choices.append(choice)
     
     def validate(self) -> Dict[str, List[str]]:
         """

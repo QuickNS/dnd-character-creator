@@ -1,5 +1,48 @@
 # D&D 2024 Character Creator - TODO List
 
+## 🎯 Current Focus: V2 Schema Migration
+**See:** [V2_SCHEMA_MIGRATION_PHASE1_COMPLETE.md](docs/V2_SCHEMA_MIGRATION_PHASE1_COMPLETE.md)  
+**See:** [V2_SCHEMA_MIGRATION_PHASE2_COMPLETE.md](docs/V2_SCHEMA_MIGRATION_PHASE2_COMPLETE.md)
+
+### Phase 1: Schema Documentation ✅ COMPLETE
+- [x] Document v2 character sheet schema (JSON Schema format)
+- [x] Create example character in v2 format
+- [x] Implement v2 converter alongside old converter
+- [x] Add v2 download routes and UI buttons
+- [x] Test v2 converter with validation script
+
+### Phase 2: Template Migration ✅ COMPLETE
+- [x] Add v2 conversion to character_summary route
+- [x] Migrate character information section (identity)
+- [x] Migrate combat statistics section (combat + hit_points)
+- [x] Migrate weapon attacks section (attacks)
+- [x] Migrate ability scores section (abilities)
+- [x] Migrate saving throws section (abilities + defenses)
+- [x] Migrate skills section (skills)
+- [x] Migrate proficiencies section (proficiencies)
+- [x] Migrate features section (features)
+- [x] Test display with created characters
+
+### Phase 2.5: Polish Remaining Sections 🔲 OPTIONAL
+- [ ] Migrate spellcasting display to use character_v2.spellcasting
+- [ ] Migrate inventory display to use character_v2.equipment
+- [ ] Add HP calculation details display
+- [ ] Add defenses display (resistances, immunities)
+- [ ] Remove debug section or migrate to v2
+
+### Phase 3: PDF Generator Migration
+- [ ] Update pdf_writer.py to consume v2 format
+- [ ] Update field mappings to v2 structure
+- [ ] Test PDF generation with v2 data
+
+### Phase 4: Deprecate Old Format
+- [ ] Switch default download to v2
+- [ ] Remove old converter method
+- [ ] Clean up old structure references
+- [ ] Update all documentation
+
+---
+
 ## 🚀 Missing Core Features
 
 ### Character Sheet Generation
@@ -12,20 +55,20 @@
   - [ ] Feature Cards (class features, traits, abilities)
   - [ ] Equipment Cards (non-combat items and tools)
 
-### Equipment System
-- [ ] **Weapon Database** - Complete D&D 2024 weapon list with properties
-- [ ] **Armor Database** - All armor types with AC calculations
-- [ ] **Equipment Database** - Adventuring gear, tools, and miscellaneous items
-- [ ] **Equipment Selection Interface** - Starting equipment from class/background
+### Equipment System  
+- [x] **Weapon Database** - Complete D&D 2024 weapon list with properties ✅
+- [x] **Armor Database** - All armor types with AC calculations ✅
+- [x] **Equipment Database** - Adventuring gear, tools, and miscellaneous items ✅
+- [x] **Equipment Selection Interface** - Starting equipment from class/background ✅
 - [ ] **Equipment Management** - Add/remove/manage equipment during play
-- [ ] **Encumbrance Calculation** - Weight and carrying capacity tracking
+- [x] **Encumbrance Calculation** - Weight and carrying capacity tracking (basic) ✅
 
 ### Combat Calculations
-- [ ] **Attack Roll Calculations** - Weapon attacks with all bonuses
-- [ ] **Damage Roll Calculations** - Weapon damage with ability modifiers
-- [ ] **Armor Class Calculation** - Base AC + armor + shield + bonuses
-- [ ] **Initiative Calculation** - Dexterity + bonuses
-- [ ] **Combat Actions** - Available actions, bonus actions, reactions
+- [x] **Attack Roll Calculations** - Weapon attacks with all bonuses ✅
+- [x] **Damage Roll Calculations** - Weapon damage with ability modifiers ✅
+- [x] **Armor Class Calculation** - Base AC + armor + shield + bonuses ✅
+- [x] **Initiative Calculation** - Dexterity + bonuses ✅
+- [x] **Combat Actions** - Available actions, bonus actions, reactions (partial) ✅
 
 ### Spell System Enhancement
 - [ ] **Complete Spell Database** - All D&D 2024 spells with full details

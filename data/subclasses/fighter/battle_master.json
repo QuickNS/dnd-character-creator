@@ -1,7 +1,7 @@
 {
   "name": "Battle Master",
   "class": "Fighter",
-  "description": "Students of the art of battle, learning martial techniques passed down through generations. Battle Masters combine carefully honed combat skills with academic study in the fields of history, theory, and the arts.",
+  "description": "Battle Masters are students of the art of battle, learning martial techniques passed down through generations.",
   "source": "Player's Handbook 2024",
   "features_by_level": {
     "3": {

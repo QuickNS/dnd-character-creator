@@ -40,10 +40,8 @@ import sys
 from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent.parent))
 
-import pytest
 from modules.character_builder import CharacterBuilder
 from modules.hp_calculator import HPCalculator
-from modules.character_calculator import CharacterCalculator
 
 
 class TestCharacterRecreation:
@@ -79,7 +77,7 @@ class TestCharacterRecreation:
         
         assert result is True, "Character building should succeed"
         
-        character_json = builder.to_json()
+        character_json = builder.to_character()
         
         # Verify basic character info
         assert character_json['name'] == 'Thorin Lightbringer'
@@ -102,7 +100,7 @@ class TestCharacterRecreation:
         self._verify_ability_modifiers(character_json)
         self._verify_skill_modifiers_and_proficiencies(character_json, 'cleric')
         
-        print(f"✅ Dwarf Cleric Light Domain Level 3 - All effects verified!")
+        print("✅ Dwarf Cleric Light Domain Level 3 - All effects verified!")
 
     def test_wood_elf_fighter_champion_level_3(self):
         """Test Level 3 Wood Elf Fighter with Champion archetype - comprehensive effect verification."""
@@ -135,7 +133,7 @@ class TestCharacterRecreation:
         
         assert result is True, "Character building should succeed"
         
-        character_json = builder.to_json()
+        character_json = builder.to_character()
         
         # Verify basic character info
         assert character_json['name'] == 'Silviana Swiftarrow'
@@ -159,7 +157,7 @@ class TestCharacterRecreation:
         self._verify_ability_modifiers(character_json)
         self._verify_skill_modifiers_and_proficiencies(character_json, 'fighter')
         
-        print(f"✅ Wood Elf Fighter Champion Level 3 - All effects verified!")
+        print("✅ Wood Elf Fighter Champion Level 3 - All effects verified!")
 
     def test_infernal_tiefling_warlock_fiend_level_3(self):
         """Test Level 3 Infernal Tiefling Warlock with Fiend patron - comprehensive effect verification."""
@@ -190,7 +188,7 @@ class TestCharacterRecreation:
         
         assert result is True, "Character building should succeed"
         
-        character_json = builder.to_json()
+        character_json = builder.to_character()
         
         # Verify basic character info
         assert character_json['name'] == 'Zazriel Infernus'
@@ -211,7 +209,7 @@ class TestCharacterRecreation:
         self._verify_ability_modifiers(character_json)
         self._verify_skill_modifiers_and_proficiencies(character_json, 'warlock')
         
-        print(f"✅ Infernal Tiefling Warlock Fiend Level 3 - All effects verified!")
+        print("✅ Infernal Tiefling Warlock Fiend Level 3 - All effects verified!")
     def test_infernal_tiefling_paladin_level_2(self):
         """Test Level 2 Infernal Tiefling Paladin - verifying early level features."""
         
@@ -240,7 +238,7 @@ class TestCharacterRecreation:
         
         assert result is True, "Character building should succeed"
         
-        character_json = builder.to_json()
+        character_json = builder.to_character()
         
         # Verify basic character info
         assert character_json['name'] == 'Valthara Flameborn'
@@ -284,7 +282,7 @@ class TestCharacterRecreation:
         self._verify_ability_modifiers(character_json)
         self._verify_skill_modifiers_and_proficiencies(character_json, 'paladin')
         
-        print(f"✅ Infernal Tiefling Paladin Level 2 - All effects verified!")
+        print("✅ Infernal Tiefling Paladin Level 2 - All effects verified!")
     def _verify_dwarf_effects(self, character_json):
         """Verify all Dwarf species effects are applied."""
         effects = character_json.get('effects', [])
@@ -424,7 +422,7 @@ class TestCharacterRecreation:
         # Note: The exact implementation of Improved Critical might vary
         # This test should be adjusted based on how critical hit improvements are implemented
         
-        print(f"Champion archetype verification complete")
+        print("Champion archetype verification complete")
 
     def _verify_tiefling_effects(self, character_json):
         """Verify all Tiefling species effects are applied."""
@@ -544,80 +542,46 @@ class TestCharacterRecreation:
         print(f"HP calculation verified: {calculated_hp} HP using HPCalculator.calculate_total_hp()")
 
     def _verify_ability_modifiers(self, character_json):
-        """Verify ability score modifiers using CharacterCalculator.calculate_ability_scores()."""
-        ability_scores = character_json.get('ability_scores', {})
-        level = character_json.get('level', 1)
+        """Verify ability score modifiers from CharacterBuilder.to_character() data."""
+        # Get abilities data from the complete character sheet
+        abilities = character_json.get('abilities', {})
         
-        # Get saving throw proficiencies from character data
-        proficiencies = character_json.get('proficiencies', {})
-        saving_throws = proficiencies.get('saving_throws', [])
+        expected_abilities = ['strength', 'dexterity', 'constitution', 'intelligence', 'wisdom', 'charisma']
         
-        expected_abilities = ['Strength', 'Dexterity', 'Constitution', 'Intelligence', 'Wisdom', 'Charisma']
-        
-        # Verify we have all ability scores
+        # Verify we have all ability scores with calculated data
         for ability in expected_abilities:
-            score = ability_scores.get(ability)
-            assert score is not None, f"Should have {ability} score"
-            assert score >= 1 and score <= 30, f"{ability} score should be reasonable (1-30), got {score}"
-        
-        # Use CharacterCalculator to calculate ability score data
-        calculator = CharacterCalculator()
-        calculated_ability_data = calculator.calculate_ability_scores(
-            raw_scores=ability_scores,
-            level=level,
-            saving_throw_proficiencies=[st.lower() for st in saving_throws]
-        )
-        
-        # Verify calculations are correct
-        for ability in expected_abilities:
-            ability_key = ability.lower()
-            score = ability_scores.get(ability)
-            expected_modifier = (score - 10) // 2
-            calculated_modifier = calculated_ability_data[ability_key]['modifier']
+            ability_data = abilities.get(ability)
+            assert ability_data is not None, f"Should have {ability} data"
             
-            assert calculated_modifier == expected_modifier, f"{ability} modifier calculation failed: expected {expected_modifier}, got {calculated_modifier}"
+            score = ability_data.get('score')
+            modifier = ability_data.get('modifier')
+            
+            assert score is not None and score >= 1 and score <= 30, f"{ability} score should be reasonable (1-30), got {score}"
+            assert modifier is not None, f"Should have calculated modifier for {ability}"
+            
+            # Verify modifier calculation is correct
+            expected_modifier = (score - 10) // 2
+            assert modifier == expected_modifier, f"{ability} modifier calculation failed: expected {expected_modifier}, got {modifier}"
         
-        print(f"Ability modifiers verified using CharacterCalculator: {[(k, v['modifier']) for k, v in calculated_ability_data.items()]}")
+        print(f"Ability modifiers verified from CharacterBuilder: {[(k, v['modifier']) for k, v in abilities.items()]}")
 
     def _verify_skill_modifiers_and_proficiencies(self, character_json, character_class):
-        """Verify skill proficiencies using CharacterCalculator.calculate_skills()."""
-        proficiencies = character_json.get('proficiencies', {})
-        skill_proficiencies = proficiencies.get('skills', [])
-        ability_scores = character_json.get('ability_scores', {})
+        """Verify skill proficiencies from CharacterBuilder.to_character() data."""
+        # Get skills data from the complete character sheet
+        skills = character_json.get('skills', {})
+        proficiency_bonus = character_json.get('proficiency_bonus', 2)
         level = character_json.get('level', 1)
         
-        # Get saving throw proficiencies for calculate_ability_scores
-        saving_throws = proficiencies.get('saving_throws', [])
-        
-        # Use CharacterCalculator to get ability score data and calculate skills
-        calculator = CharacterCalculator()
-        proficiency_bonus = calculator.calculate_proficiency_bonus(level)
-        
-        # Calculate ability scores using CharacterCalculator
-        ability_score_data = calculator.calculate_ability_scores(
-            raw_scores=ability_scores,
-            level=level,
-            saving_throw_proficiencies=[st.lower() for st in saving_throws]
-        )
-        
-        # Calculate skills using CharacterCalculator
-        calculated_skills = calculator.calculate_skills(
-            ability_scores=ability_score_data,
-            skill_proficiencies=skill_proficiencies,
-            skill_expertise=[],  # No expertise in these test characters
-            proficiency_bonus=proficiency_bonus
-        )
-        
         # Verify proficiencies are tracked
-        assert len(skill_proficiencies) > 0, "Should have skill proficiencies"
-        
-        # Verify skill calculations for proficient skills
         proficient_skills = {}
-        for skill_key, skill_data in calculated_skills.items():
-            if skill_data['proficient']:
+        skill_proficiencies = []
+        for skill_key, skill_data in skills.items():
+            if skill_data.get('proficient', False):
                 skill_name = skill_key.replace('_', ' ').title()
-                proficient_skills[skill_name] = skill_data['bonus']
+                proficient_skills[skill_name] = skill_data.get('modifier', 0)
+                skill_proficiencies.append(skill_name)
         
+        assert len(skill_proficiencies) > 0, "Should have skill proficiencies"
         assert len(proficient_skills) > 0, f"Should have calculated skill bonuses for proficiencies: {skill_proficiencies}"
         
         # Class-specific proficiency checks
@@ -634,7 +598,7 @@ class TestCharacterRecreation:
             assert has_fighter_skill, f"Fighter should have at least one typical fighter skill from {fighter_skills}, got: {skill_proficiencies}"
         
         print(f"Skill proficiencies verified: {skill_proficiencies}")
-        print(f"Calculated skill bonuses using CharacterCalculator: {proficient_skills}")
+        print(f"Calculated skill bonuses from CharacterBuilder: {proficient_skills}")
         print(f"Proficiency bonus for level {level}: +{proficiency_bonus}")
 
     def test_fighter_with_equipment_option_a(self):
@@ -666,7 +630,7 @@ class TestCharacterRecreation:
         result = builder.apply_choices(choices_made)
         
         assert result is True, "Character building should succeed"
-        character_json = builder.to_json()
+        character_json = builder.to_character()
         
         # Verify equipment selections were stored
         assert 'choices_made' in character_json
@@ -710,7 +674,7 @@ class TestCharacterRecreation:
         result = builder.apply_choices(choices_made)
         
         assert result is True, "Character building should succeed"
-        character_json = builder.to_json()
+        character_json = builder.to_character()
         
         # Verify equipment selections
         equipment_selections = character_json['choices_made']['equipment_selections']
@@ -753,7 +717,7 @@ class TestCharacterRecreation:
         result = builder.apply_choices(choices_made)
         
         assert result is True, "Character building should succeed"
-        character_json = builder.to_json()
+        character_json = builder.to_character()
         
         # Verify equipment selections
         equipment_selections = character_json['choices_made']['equipment_selections']
@@ -792,7 +756,7 @@ class TestCharacterRecreation:
         result = builder.apply_choices(choices_made)
         
         assert result is True, "Character building should succeed"
-        character_json = builder.to_json()
+        character_json = builder.to_character()
         
         # Verify equipment selections stored
         equipment_selections = character_json['choices_made']['equipment_selections']

@@ -1,15 +1,42 @@
 # D&D 2024 Character Creator - Architecture Overview
 
+## Core Architectural Principle
+
+**CharacterBuilder is the single source of truth for ALL character calculations and data.**
+
+### Calculation Flow
+```
+User Input → CharacterBuilder → to_character() → Routes/API → Templates/PDF/JSON Export
+            (ONLY PLACE FOR        (Complete character
+             CALCULATIONS)          with ALL calculations)
+```
+
+**Critical Rules:**
+1. ✅ **DO**: All calculations in CharacterBuilder methods
+2. ✅ **DO**: Routes call `builder.to_character()` and pass result to templates
+3. ✅ **DO**: Templates display pre-calculated values from character dict
+4. ❌ **DON'T**: Calculate anything in routes or templates
+5. ❌ **DON'T**: Duplicate calculation logic anywhere outside CharacterBuilder
+
 ## System Components
 
 ### 1. **CharacterBuilder** - `modules/character_builder.py`
-**Purpose**: The single, authoritative character creation engine.
+**Purpose**: The single, authoritative character creation engine and calculation center.
 
 **Key Methods**:
 - `apply_choice(key, value)` - Apply a single choice with all its effects
 - `apply_choices(choices_dict)` - Apply multiple choices at once
-- `to_json()` - Export complete character as dictionary with flattened proficiencies
+- `to_character()` - Export complete character with ALL calculations (replaces deprecated to_json())
 - `set_species()`, `set_class()`, etc. - Direct property setters
+
+**Calculation Methods** (all called internally by `to_character()`):
+- `calculate_processed_ability_scores()` - Ability scores with modifiers
+- `calculate_skill_modifiers()` - All 18 skill modifiers with proficiency
+- `calculate_saving_throws()` - All 6 saving throws with proficiency
+- `calculate_ac_options()` - All possible AC combinations from equipment
+- `calculate_weapon_attacks()` - Attack stats for all equipped weapons
+- `calculate_hp()` - Hit points with all bonuses
+- `calculate_proficiency_bonus()` - Proficiency bonus by level
 
 **Character Data Structure**:
 - `character_data['spells']['cantrips']` - Known cantrips
@@ -61,14 +88,26 @@ classes = data_loader.classes
 subclasses = data_loader.get_subclasses_for_class("Wizard")
 ```
 
-### 3. **Flask Web Wizard** - `app.py`
-**Purpose**: Web-based character creation wizard.
+### 3. **Flask Web Wizard** - `app.py` and `routes/`
+**Purpose**: Web-based character creation wizard and API endpoints.
 
-**Architecture**:
+**Architecture - Routes as Pure Consumers**:
 - Uses CharacterBuilder for all character operations
 - Session stores CharacterBuilder state (serialized via pickle)
 - Step-by-step guided creation
 - Each form submission calls `builder.apply_choice()`
+- **Routes NEVER calculate** - they call `builder.to_character()` and pass results to templates
+
+**Example Route Pattern**:
+```python
+@app.route('/character-summary')
+def character_summary():
+    builder = get_builder_from_session()
+    # Get complete character with ALL calculations from CharacterBuilder
+    character_data = builder.to_character()
+    # Just pass to template - no calculations here!
+    return render_template('character_summary.html', character=character_data)
+```
 
 **Routes**:
 - `/` - Landing page
@@ -82,6 +121,7 @@ subclasses = data_loader.get_subclasses_for_class("Wizard")
 - `/assign-abilities` - Ability score assignment
 - `/background-bonuses` - Background ability score bonuses
 - `/character-summary` - Final character sheet display
+- `/api/rebuild-character` - JSON character recreation from save file
 
 **Session Helpers**:
 ```python

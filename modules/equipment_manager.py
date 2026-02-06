@@ -5,7 +5,7 @@ Handles equipment inventory management for D&D 2024 characters.
 This module provides inventory management WITHOUT equipped flags - 
 all items in inventory are potential options.
 """
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List
 from pathlib import Path
 import json
 

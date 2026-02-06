@@ -1,6 +1,7 @@
 """Character loading and rebuild API routes."""
-from flask import Blueprint, render_template, request, session, jsonify
+from flask import Blueprint, render_template, request, session, jsonify, send_file
 import json
+import io
 import logging
 from modules.character_builder import CharacterBuilder
 from utils.route_helpers import get_builder_from_session, save_builder_to_session
@@ -82,8 +83,8 @@ def api_rebuild_character():
         save_builder_to_session(builder)
         session.permanent = True
         
-        # Get character JSON for response
-        character = builder.to_json()
+        # Get character data with all calculations for response
+        character = builder.to_character()
         
         return jsonify({
             "success": True,
@@ -98,3 +99,78 @@ def api_rebuild_character():
             "error": str(e),
             "traceback": traceback.format_exc()
         }), 500
+
+
+@load_character_bp.route('/api/choices-to-character', methods=['POST'])
+def api_choices_to_character():
+    """
+    Pure API endpoint to convert choices_made to character_data.
+    Does not affect session - purely for testing and debugging.
+    
+    POST body: {"choices_made": {...}}
+    Returns: {"character_data": {...}}
+    """
+    if not request.is_json:
+        return jsonify({"error": "Content-Type must be application/json"}), 400
+    
+    data = request.get_json()
+    if not data or 'choices_made' not in data:
+        return jsonify({"error": "Missing choices_made in request body"}), 400
+    
+    choices_made = data['choices_made']
+    
+    try:
+        # Create character using CharacterBuilder
+        builder = CharacterBuilder()
+        builder.apply_choices(choices_made)
+        
+        # Get complete character data with calculations
+        character_data = builder.to_character()
+        
+        return jsonify({
+            "success": True,
+            "character_data": character_data
+        }), 200
+    
+    except Exception as e:
+        import traceback
+        return jsonify({
+            "error": str(e),
+            "traceback": traceback.format_exc()
+        }), 500
+
+
+@load_character_bp.route('/api/download-character', methods=['GET'])
+def api_download_character():
+    """
+    Download character data as JSON file.
+    Requires character in session.
+    """
+    builder = get_builder_from_session()
+    if not builder:
+        return jsonify({"error": "No character in session"}), 400
+    
+    try:
+        character_data = builder.to_character()
+        
+        # Create JSON file
+        json_str = json.dumps(character_data, indent=2, ensure_ascii=False)
+        
+        # Create file-like object
+        json_file = io.BytesIO()
+        json_file.write(json_str.encode('utf-8'))
+        json_file.seek(0)
+        
+        # Generate filename
+        char_name = character_data.get('name', 'Character').replace(' ', '_')
+        filename = f"{char_name}_character_data.json"
+        
+        return send_file(
+            json_file,
+            as_attachment=True,
+            download_name=filename,
+            mimetype='application/json'
+        )
+    
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500

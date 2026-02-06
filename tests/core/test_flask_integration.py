@@ -32,7 +32,7 @@ def test_species_selection_integration(client):
             'alignment': 'Neutral Good'
         }, follow_redirects=False)
         assert response.status_code == 200, "Character creation should render class selection"
-        print(f"   ✓ Character created")
+        print("   ✓ Character created")
         
         # Choose class
         print("\n2. Selecting class...")
@@ -40,7 +40,7 @@ def test_species_selection_integration(client):
             'class': 'Ranger'
         }, follow_redirects=False)
         assert response.status_code == 302, "Should redirect after class selection"
-        print(f"   ✓ Class selection successful")
+        print("   ✓ Class selection successful")
         
         # Skip class choices (or submit empty) to get to background
         print("\n3. Submitting class choices...")
@@ -54,7 +54,7 @@ def test_species_selection_integration(client):
             'background': 'Sage'
         }, follow_redirects=False)
         assert response.status_code == 302, "Should redirect after background selection"
-        print(f"   ✓ Background selection successful")
+        print("   ✓ Background selection successful")
         
         # Choose species using CharacterBuilder
         print("\n5. Selecting species (using CharacterBuilder)...")
@@ -62,7 +62,7 @@ def test_species_selection_integration(client):
             'species': 'Elf'
         }, follow_redirects=False)
         assert response.status_code == 302, "Should redirect after species selection"
-        print(f"   ✓ Species selection successful")
+        print("   ✓ Species selection successful")
         
         # Check lineage page loads
         print("\n6. Loading lineage selection page...")
@@ -73,9 +73,9 @@ def test_species_selection_integration(client):
         # Debug: check what's on the page (don't fail test, just report)
         page_content = response.data.decode('utf-8')
         if 'Wood Elf' in page_content or 'High Elf' in page_content or 'Drow' in page_content:
-            print(f"   ✓ Lineage page loaded with Elf variants")
+            print("   ✓ Lineage page loaded with Elf variants")
         else:
-            print(f"   ⚠ Lineage variants not showing (may be redirected or template issue)")
+            print("   ⚠ Lineage variants not showing (may be redirected or template issue)")
         
         # Select lineage using CharacterBuilder
         print("\n7. Selecting lineage (using CharacterBuilder)...")
@@ -84,7 +84,7 @@ def test_species_selection_integration(client):
             'spellcasting_ability': 'Wisdom'
         }, follow_redirects=False)
         assert response.status_code == 302, "Should redirect after lineage selection"
-        print(f"   ✓ Lineage selection successful")
+        print("   ✓ Lineage selection successful")
         
     print("\n" + "="*60)
     print("✅ TEST PASSED: Species Selection Integration")
@@ -139,21 +139,21 @@ def test_character_summary_with_builder():
             # Check for Wood Elf features
             print("\n3. Checking for Wood Elf features...")
             if b'Wood Elf' in response.data:
-                print(f"   ✓ Wood Elf lineage present")
+                print("   ✓ Wood Elf lineage present")
             
             if b'Druidcraft' in response.data:
-                print(f"   ✓ Druidcraft cantrip present")
+                print("   ✓ Druidcraft cantrip present")
             else:
-                print(f"   ⚠ Druidcraft not shown (may require spell display)")
+                print("   ⚠ Druidcraft not shown (may require spell display)")
             
             # Check for level 3 spell (Longstrider)
             print("\n4. Checking for level-based features...")
             if b'Longstrider' in response.data:
-                print(f"   ✓ Longstrider present (level 3+)")
+                print("   ✓ Longstrider present (level 3+)")
             else:
-                print(f"   ⚠ Longstrider not shown")
+                print("   ⚠ Longstrider not shown")
         else:
-            print(f"   ⚠ Summary page not accessible (may need more setup)")
+            print("   ⚠ Summary page not accessible (may need more setup)")
         
     print("\n" + "="*60)
     print("✅ TEST PASSED: Character Summary with CharacterBuilder")
@@ -186,14 +186,14 @@ def test_session_builder_round_trip():
     print(f"   Cantrips: {cantrips}")
     
     if 'Druidcraft' in cantrips:
-        print(f"   ✓ Druidcraft cantrip granted")
+        print("   ✓ Druidcraft cantrip granted")
     
     # Check level 3 spells
     known_spells = builder.character_data['spells'].get('known', [])
     print(f"   Known spells: {known_spells}")
     
     if 'Longstrider' in known_spells:
-        print(f"   ✓ Longstrider granted at level 3")
+        print("   ✓ Longstrider granted at level 3")
     
     # Export to JSON
     print("\n4. Testing JSON export...")
@@ -201,7 +201,7 @@ def test_session_builder_round_trip():
     print(f"   Species: {json_data.get('species')}")
     print(f"   Lineage: {json_data.get('lineage')}")
     print(f"   Class: {json_data.get('class')}")
-    print(f"   ✓ JSON export successful")
+    print("   ✓ JSON export successful")
     
     print("\n" + "="*60)
     print("✅ TEST PASSED: CharacterBuilder Basic Functionality")

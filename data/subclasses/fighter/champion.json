@@ -1,12 +1,12 @@
 {
   "name": "Champion",
   "class": "Fighter",
-  "description": "Fighters who focus on raw physical power and athletic excellence.",
+  "description": "A Champion focuses on the development of martial prowess in a relentless pursuit of victory.",
   "source": "Player's Handbook 2024",
   "features_by_level": {
     "3": {
-      "Improved Critical": "Your weapon attacks score a critical hit on a roll of 19 or 20.",
-      "Remarkable Athlete": "Add half your Proficiency Bonus (rounded up) to Strength, Dexterity, or Constitution checks you make that don't already use your Proficiency Bonus. When you make a running long jump, the distance you can cover increases by a number of feet equal to your Strength modifier."
+      "Improved Critical": "Your weapon attacks and unarmed strikes score a critical hit on a roll of 19 or 20.",
+      "Remarkable Athlete": "Thanks to your athleticism, you have Advantage on Initiative rolls and Strength (Athletics) checks. In addition, immediately after you score a Critical Hit, you can move up to half your Speed without provoking Opportunity Attacks."
     },
     "7": {
       "Additional Fighting Style": "Choose a second Fighting Style from the Fighter class."

@@ -9,12 +9,10 @@ from flask import Flask, session
 from flask_session import Session
 import logging
 from datetime import timedelta
-from pathlib import Path
-from typing import Dict, List, Any, Optional
+from typing import Dict, Any, Optional
 
 from modules.data_loader import DataLoader
 from modules.character_builder import CharacterBuilder
-from modules.character_sheet_converter import CharacterSheetConverter
 
 # ==================== Logging Configuration ====================
 
@@ -45,9 +43,8 @@ app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 # Initialize Flask-Session
 Session(app)
 
-# Initialize data loaders and converters (available to all blueprints)
+# Initialize data loaders (available to all blueprints)
 app.data_loader = DataLoader()
-app.character_sheet_converter = CharacterSheetConverter()
 
 # ==================== Logging Helper Functions ====================
 

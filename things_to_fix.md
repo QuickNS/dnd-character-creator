@@ -64,6 +64,9 @@
 ### High-Elf
 - Prestidigitation can be substituded by any Wizard Cantrip after a Long Rest - need to model this to offer options to choose from in character creator or later
 
+### Champion: Remarkable Athlete
+Needs to choose
+
 ### Character Summary
 - Feat description is just where it comes from. We should list description and benefits.
 - Spellcasting feature should have a better output. It should be caracterized with properties to enable better output than a simple string.

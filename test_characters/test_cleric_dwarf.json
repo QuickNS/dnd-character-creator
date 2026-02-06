@@ -1,0 +1,26 @@
+{
+  "Divine Order": "Protector",
+  "Spellcasting": [
+    "Sacred Flame",
+    "Toll the Dead",
+    "Word of Radiance"
+  ],
+  "ability_scores_method": "recommended",
+  "alignment": "Neutral Good",
+  "background": "Acolyte",
+  "background_bonuses_method": "suggested",
+  "character_name": "Albrek",
+  "class": "Cleric",
+  "equipment_selections": {
+    "background_equipment": "option_a",
+    "class_equipment": "option_a"
+  },
+  "language_choices_needed": 2,
+  "languages": [],
+  "level": 1,
+  "skill_choices": [
+    "Medicine",
+    "Religion"
+  ],
+  "species": "Dwarf"
+}

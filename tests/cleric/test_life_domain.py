@@ -35,7 +35,7 @@ class TestLifeDomain:
         # Check spell metadata (domain spells should be always prepared)
         spell_metadata = char_data.get('spell_metadata', {})
         if 'Bless' in spell_metadata:
-            assert spell_metadata['Bless']['source'] == 'subclass'
+            assert spell_metadata['Bless']['source'] == 'Life Domain'
     
     def test_domain_spell_scaling(self, life_cleric_builder):
         """Test that domain spells are gained at appropriate levels"""

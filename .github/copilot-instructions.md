@@ -172,18 +172,29 @@ When fetching from live wiki (only if not cached):
 
 ### Web Application Architecture & Goals
 
+#### Core Architectural Principle: Single Source of Truth
+**CharacterBuilder is the ONLY place where character calculations happen.**
+
+**CRITICAL RULES:**
+1. **CharacterBuilder calculates EVERYTHING** - All skills, saves, AC options, weapon attacks, HP, proficiency bonuses, ability modifiers
+2. **Routes are pure consumers** - Flask routes and API endpoints call `builder.to_character()` and pass the result to templates
+3. **Templates only display** - No calculations in Jinja2 templates, only data presentation
+4. **No duplication** - If CharacterBuilder calculates it, don't recalculate it anywhere else
+
+**Why This Matters:**
+- JSON export contains complete, calculated character data
+- PDF generation uses the same calculated values
+- API responses are consistent with web display
+- Single point of maintenance for game rules
+- Eliminates calculation drift between different outputs
+
 #### Primary Objective: JSON Character Export
 The web application guides users through creating a D&D 2024 character and produces a **comprehensive JSON model** of the character that includes:
 - All character data (class, species, background, abilities, etc.)
-- **Server-side calculated values** (skill modifiers, saving throws, combat stats)
+- **All calculated values** from CharacterBuilder (skill modifiers, saving throws, combat stats, AC options, weapon attacks)
 - Complete feature descriptions and effects
 - Spell lists and prepared spells
 - Proficiencies and bonuses
-
-**CRITICAL**: All calculations (skills, saves, combat stats, bonuses) MUST be done server-side in `app.py` and passed to templates. This ensures:
-- JSON export contains calculated values
-- Consistent data for all output formats
-- No client-side calculation dependencies
 
 #### Secondary Objective: Printable Character Sheets
 After JSON export is complete and robust, extend to generate **printable character sheets** in multiple formats:
@@ -196,13 +207,13 @@ After JSON export is complete and robust, extend to generate **printable charact
   - Feature Cards
   - Equipment Cards
 
-All print formats should use the same JSON model, ensuring consistency across outputs.
+All print formats should use the same JSON model from `to_character()`, ensuring consistency across outputs.
 
 #### Development Workflow
-1. **Always implement server-side calculations first** - Never rely on template calculations
-2. **Store calculated values in structured objects** - `skill_modifiers`, `saving_throws`, `combat_stats`
-3. **Pass pre-calculated data to templates** - Templates should only display, not calculate
-4. **Design for exportability** - Every feature should work for both web display and JSON/PDF export
+1. **Implement calculations in CharacterBuilder ONLY** - Never calculate in routes or templates
+2. **Call to_character() in routes** - Get complete character data with all calculations
+3. **Pass entire character dict to templates** - Templates access pre-calculated values
+4. **Design for exportability** - Every calculated value works for web display, JSON export, and PDF generation
 
 #### Current Module Structure
 ```
@@ -216,10 +227,34 @@ modules/
 
 ### Extensibility Requirements
 - **JSON-Driven Configuration**: All game data (classes, species, spells, etc.) in JSON files
+- **Data-Driven Logic**: Check against data files, not hardcoded lists (e.g., weapon detection checks weapons.json, not a keyword list)
 - **Plugin Architecture**: New features should be addable without modifying core code
 - **Pattern-Based Parsing**: Use configurable patterns for trait/feature recognition
 - **Version Compatibility**: Support for future D&D content additions
 - **Modular Data Loading**: Each data type in separate, clearly organized directories
+
+#### Data-Driven Design Principles
+**NEVER hardcode lists of game content.** Instead, check against data files.
+
+❌ **WRONG - Hardcoded List**:
+```python
+if any(weapon_type in item_name for weapon_type in 
+       ['sword', 'bow', 'axe', 'hammer', 'spear']):
+    # Categorize as weapon
+```
+
+✅ **CORRECT - Data-Driven Check**:
+```python
+weapon_props = self._get_weapon_properties(item_name)
+if weapon_props:  # Item exists in weapons.json
+    # Categorize as weapon
+```
+
+**Benefits:**
+- Adding new weapons/items/spells only requires updating data files
+- No code changes needed for content additions
+- Impossible to miss items due to incomplete keyword lists
+- Single source of truth for game content
 
 #### Data Organization
 ```

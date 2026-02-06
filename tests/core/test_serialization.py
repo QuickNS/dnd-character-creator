@@ -134,10 +134,11 @@ class TestCantripsPreservation:
         """Test that cantrips exist in both spells.cantrips and effects"""
         json_data = tiefling_paladin.to_json()
         
-        # Check spells.cantrips array
+        # Check spells.cantrips array (to_json returns dicts)
         cantrips = json_data.get('spells', {}).get('cantrips', [])
-        assert 'Thaumaturgy' in cantrips
-        assert 'Chill Touch' in cantrips
+        cantrip_names = [c.get('name') if isinstance(c, dict) else c for c in cantrips]
+        assert 'Thaumaturgy' in cantrip_names
+        assert 'Chill Touch' in cantrip_names
         
         # Check effects array
         cantrip_effects = [e for e in json_data['effects'] if e.get('type') == 'grant_cantrip']
@@ -155,10 +156,11 @@ class TestCantripsPreservation:
         # Re-export
         json_data2 = new_builder.to_json()
         
-        # Cantrips should still be there
+        # Cantrips should still be there (to_json returns dicts)
         cantrips = json_data2.get('spells', {}).get('cantrips', [])
-        assert 'Thaumaturgy' in cantrips
-        assert 'Chill Touch' in cantrips
+        cantrip_names = [c.get('name') if isinstance(c, dict) else c for c in cantrips]
+        assert 'Thaumaturgy' in cantrip_names
+        assert 'Chill Touch' in cantrip_names
         
         # Effects should still be there
         cantrip_effects = [e for e in json_data2['effects'] if e.get('type') == 'grant_cantrip']
@@ -209,10 +211,11 @@ class TestWizardFlowSimulation:
         cantrip_effects = [e for e in final_session['effects'] if e.get('type') == 'grant_cantrip']
         assert len(cantrip_effects) >= 2
         
-        # Verify cantrips are accessible
+        # Verify cantrips are accessible (to_json returns dicts)
         cantrips = final_session.get('spells', {}).get('cantrips', [])
-        assert 'Chill Touch' in cantrips
-        assert 'Thaumaturgy' in cantrips
+        cantrip_names = [c.get('name') if isinstance(c, dict) else c for c in cantrips]
+        assert 'Chill Touch' in cantrip_names
+        assert 'Thaumaturgy' in cantrip_names
     
     def test_effects_not_duplicated_on_restore(self, tiefling_paladin):
         """Test that restoring doesn't duplicate effects"""

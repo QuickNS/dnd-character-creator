@@ -1,0 +1,46 @@
+POST http://localhost:5000/api/rebuild-character HTTP/1.1
+content-type: application/json
+
+{"choices_made":
+{
+  "Elven Lineage": "Wisdom",
+  "Fighting Style": "Archery",
+  "Keen Senses": "Survival",
+  "Weapon Mastery": [
+    "Greatsword",
+    "Longbow",
+    "Shortsword"
+  ],
+  "ability_scores": {
+    "Charisma": 10,
+    "Constitution": 14,
+    "Dexterity": 15,
+    "Intelligence": 8,
+    "Strength": 13,
+    "Wisdom": 12
+  },
+  "ability_scores_method": "manual",
+  "alignment": "Neutral Good",
+  "background": "Soldier",
+  "background_bonuses": {
+    "Dexterity": 2,
+    "Strength": 1
+  },
+  "character_name": "Elenian Silverleaf",
+  "class": "Fighter",
+  "equipment_selections": {
+    "background_equipment": "option_b",
+    "class_equipment": "option_b"
+  },
+  "language_choices_needed": 1,
+  "languages": [],
+  "level": 3,
+  "lineage": "Wood Elf",
+  "skill_choices": [
+    "Acrobatics",
+    "Perception"
+  ],
+  "species": "Elf",
+  "subclass": "Champion"
+}
+}

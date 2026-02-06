@@ -1,7 +1,7 @@
 {
   "name": "Eldritch Knight",
   "class": "Fighter",
-  "description": "Fighters who supplement martial prowess with the ability to cast spells.",
+  "description": "Eldritch Knights combine the martial mastery common to all Fighters with a careful study of magic.",
   "source": "Player's Handbook 2024",
   "features_by_level": {
     "3": {

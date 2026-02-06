@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Test script to verify feature scaling works correctly."""
 
-import pytest
 import json
 from pathlib import Path
 from utils.feature_scaling import resolve_scaling_feature
@@ -19,9 +18,9 @@ def test_cleric_scaling():
     
     print("Testing Channel Divinity Scaling")
     print("=" * 60)
-    print(f"\nOriginal description:")
+    print("\nOriginal description:")
     print(channel_divinity['description'][:200] + "...")
-    print(f"\nScaling metadata:")
+    print("\nScaling metadata:")
     print(json.dumps(channel_divinity.get('scaling', {}), indent=2))
     
     # Test Channel Divinity scaling

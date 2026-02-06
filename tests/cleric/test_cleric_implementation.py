@@ -5,7 +5,6 @@ Tests all features, effects, and mechanics specific to the Cleric class.
 """
 
 import pytest
-import json
 from modules.character_builder import CharacterBuilder
 
 

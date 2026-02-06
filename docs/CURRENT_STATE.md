@@ -1,18 +1,22 @@
 # D&D 2024 Character Creator - Current State
 
-**Last Updated**: 2026-02-04
+**Last Updated**: 2026-02-06
 
 ## 🎯 Project Overview
 
 A web-based D&D 2024 character creator with a data-driven architecture that uses a structured effects system for all mechanical benefits. The system ensures consistency between display and game mechanics through a unified CharacterBuilder engine.
 
+**Key Architectural Principle**: CharacterBuilder is the single source of truth for ALL character calculations. Routes and API endpoints are pure consumers that call `builder.to_character()` and pass the complete calculated character data to templates or export formats.
+
 ## ✅ Completed Features
 
 ### Core Architecture
-- **Single Source of Truth**: CharacterBuilder is the only engine for character creation
+- **Single Source of Truth**: CharacterBuilder is the only engine for character creation AND all calculations
+- **Calculation Centralization**: ALL calculations (skills, saves, AC, attacks, HP) happen in CharacterBuilder methods
+- **Routes as Consumers**: Flask routes/API call `to_character()` and pass results to templates - NO calculations in routes
 - **Effects System**: All mechanical benefits (proficiencies, spells, bonuses, etc.) defined via structured effects in JSON
-- **Data-Driven**: No hardcoded feature logic - everything configured in data files
-- **Unified Approach**: Web wizard and batch creation use the same CharacterBuilder engine
+- **Data-Driven Design**: No hardcoded lists - check against data files (e.g., weapons.json for weapon detection)
+- **Unified Approach**: Web wizard, API, JSON export, and PDF generation all use the same CharacterBuilder engine
 
 ### Web Wizard (Flask)
 - **Complete Character Creation Flow**: Class → Subclass → Background → Species → Lineage → Abilities → Summary
@@ -67,11 +71,18 @@ All effect types working and documented:
 
 ### Character Summary Display
 - **Complete Character Sheet**: All stats, proficiencies, features, spells
-- **Calculated Values**: Skill modifiers, saving throws, combat stats (AC, initiative, etc.)
+- **Pre-Calculated Values**: All values calculated by CharacterBuilder's `to_character()` method
+  - Skill modifiers (all 18 skills)
+  - Saving throws (all 6 abilities)
+  - Combat stats (AC options, initiative, speed, HP)
+  - Weapon attacks (attack bonus, damage, properties, mastery)
+  - Proficiency bonus
+  - Ability modifiers
 - **Organized Sections**: Grouped by category (class, subclass, species, background, feats)
 - **Proficiencies**: Weapons, armor (Shields always last), skills, languages
 - **Ability Bonuses**: Special bonuses displayed with context (e.g., "+3 to Intelligence (Arcana, Religion)")
 - **Feature Filtering**: "Choose..." placeholder features excluded from display
+- **Equipment Categorization**: Data-driven weapon detection (checks weapons.json, not hardcoded keywords)
 
 ### PDF Character Sheet Export
 - **PDF Generation**: Fill PDF character sheet from CharacterBuilder data
