@@ -111,18 +111,18 @@ The route is already implemented at `/download-character-pdf`:
 ```python
 @app.route('/download-character-pdf')
 def download_character_pdf():
+    """Download character as PDF."""
     # Get builder from session
     builder = get_builder_from_session()
-    character = builder.to_json()
+    if not builder:
+        return redirect(url_for('index.index'))
     
-    # Add calculated values
-    character_sheet = character_sheet_converter.convert_to_character_sheet(session['character'])
-    character['combat_stats'] = character_sheet['combat_stats']
-    character['saving_throws'] = character_sheet['saving_throws']
-    character['skill_modifiers'] = character_sheet['skill_modifiers']
+    # Get complete character data with ALL calculations
+    # CharacterBuilder handles all calculations internally
+    character_data = builder.to_character()
     
-    # Generate and return PDF
-    pdf_bytes = generate_character_sheet_pdf(character)
+    # Generate and return PDF using pre-calculated data
+    pdf_bytes = generate_character_sheet_pdf(character_data)
     return send_file(io.BytesIO(pdf_bytes), ...)
 ```
 

@@ -220,17 +220,26 @@ def api_create_character():
     builder.set_background(data['background'])
     builder.set_abilities(data['abilities'])
     
-    return jsonify(builder.to_json())
+    return jsonify(builder.to_character())
 ```
 
-### Convert Session to CharacterBuilder
+### Working with CharacterBuilder in Routes
 
 ```python
-def session_to_builder(session):
-    """Convert session data to CharacterBuilder"""
-    builder = CharacterBuilder()
-    builder.from_json(session['character'])
-    return builder
+from utils.route_helpers import get_builder_from_session, save_builder_to_session
+
+@app.route('/my-route')
+def my_route():
+    """Example route using CharacterBuilder from session"""
+    builder = get_builder_from_session()
+    if not builder:
+        return redirect(url_for('index.index'))
+    
+    # Get complete character data with all calculations
+    character_data = builder.to_character()
+    
+    # Pass to template - no calculations needed
+    return render_template('my_template.html', character=character_data)
 ```
 
 ## Character Data Structure

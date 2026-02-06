@@ -1,45 +1,23 @@
 # D&D 2024 Character Creator - TODO List
 
-## 🎯 Current Focus: V2 Schema Migration
-**See:** [V2_SCHEMA_MIGRATION_PHASE1_COMPLETE.md](docs/V2_SCHEMA_MIGRATION_PHASE1_COMPLETE.md)  
-**See:** [V2_SCHEMA_MIGRATION_PHASE2_COMPLETE.md](docs/V2_SCHEMA_MIGRATION_PHASE2_COMPLETE.md)
+**Last Updated**: 2026-02-06
 
-### Phase 1: Schema Documentation ✅ COMPLETE
-- [x] Document v2 character sheet schema (JSON Schema format)
-- [x] Create example character in v2 format
-- [x] Implement v2 converter alongside old converter
-- [x] Add v2 download routes and UI buttons
-- [x] Test v2 converter with validation script
+## 📋 Recent Completed Work
 
-### Phase 2: Template Migration ✅ COMPLETE
-- [x] Add v2 conversion to character_summary route
-- [x] Migrate character information section (identity)
-- [x] Migrate combat statistics section (combat + hit_points)
-- [x] Migrate weapon attacks section (attacks)
-- [x] Migrate ability scores section (abilities)
-- [x] Migrate saving throws section (abilities + defenses)
-- [x] Migrate skills section (skills)
-- [x] Migrate proficiencies section (proficiencies)
-- [x] Migrate features section (features)
-- [x] Test display with created characters
+### Architectural Refactors (2026-02-06) ✅
+- CharacterBuilder established as single source of truth for ALL calculations
+- Routes refactored as pure consumers of `builder.to_character()`
+- Data-driven design implemented (no hardcoded lists)
+- Equipment categorization uses data files instead of keyword lists
+- Documentation updated to reflect new architecture
+- See: [docs/REFACTOR_2026_02_06.md](docs/REFACTOR_2026_02_06.md)
 
-### Phase 2.5: Polish Remaining Sections 🔲 OPTIONAL
-- [ ] Migrate spellcasting display to use character_v2.spellcasting
-- [ ] Migrate inventory display to use character_v2.equipment
-- [ ] Add HP calculation details display
-- [ ] Add defenses display (resistances, immunities)
-- [ ] Remove debug section or migrate to v2
-
-### Phase 3: PDF Generator Migration
-- [ ] Update pdf_writer.py to consume v2 format
-- [ ] Update field mappings to v2 structure
-- [ ] Test PDF generation with v2 data
-
-### Phase 4: Deprecate Old Format
-- [ ] Switch default download to v2
-- [ ] Remove old converter method
-- [ ] Clean up old structure references
-- [ ] Update all documentation
+### Code Cleanup (2026-02-06) ✅
+- Removed unused `utils/spell_loader.py`
+- Removed duplicate `utils/feature_scaling.py` (functionality in CharacterBuilder)
+- Archived historical PHASE documents to `docs/archive/`
+- Updated documentation examples to use current patterns
+- Verified all 175 tests passing with clean architecture
 
 ---
 
