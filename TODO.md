@@ -249,5 +249,14 @@
 
 ---
 
+## Bugs / Corrections / Enhancements:
+
+- Features and Traits (class and subclass) should display level at which they became available - Nice to have
+- Features like "Subclass Feature: Gain a feature from your Martial Archetype subclass" should be removed from data files, potentially creating a cleanup script for data files
+
+## Fighter
+
+- Fighting Style: Archery needs to add bonus to ranged attacks
+
 *Last Updated: February 5, 2026*
 *Status Legend: ✅ Complete | ⚠️ Partial | ❌ Missing*

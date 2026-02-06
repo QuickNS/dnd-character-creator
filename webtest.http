@@ -34,7 +34,7 @@ content-type: application/json
   },
   "language_choices_needed": 1,
   "languages": [],
-  "level": 3,
+  "level": 7,
   "lineage": "Wood Elf",
   "skill_choices": [
     "Acrobatics",
