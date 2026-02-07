@@ -15,45 +15,48 @@ logger = logging.getLogger(__name__)
 def get_builder_from_session() -> Optional[CharacterBuilder]:
     """
     Get CharacterBuilder from session.
-    
+
     Returns:
         CharacterBuilder if found in session, None otherwise
     """
-    if 'builder_state' not in session:
+    if "builder_state" not in session:
         return None
-    
+
     builder = CharacterBuilder()
-    builder.from_json(session['builder_state'])
+    builder.from_json(session["builder_state"])
     return builder
 
 
 def save_builder_to_session(builder: CharacterBuilder):
     """
     Save CharacterBuilder state to session.
-    
+
     Args:
         builder: The CharacterBuilder instance to save
     """
-    session['builder_state'] = builder.to_json()
+    session["builder_state"] = builder.to_json()
     session.modified = True
 
 
-def log_route_processing(route_name: str, choices_made: Dict[str, Any], 
-                         builder_before: Optional[CharacterBuilder], 
-                         builder_after: Optional[CharacterBuilder]):
+def log_route_processing(
+    route_name: str,
+    choices_made: Dict[str, Any],
+    builder_before: Optional[CharacterBuilder],
+    builder_after: Optional[CharacterBuilder],
+):
     """
     Log route processing with choices made and builder changes.
-    
+
     Args:
         route_name: Name of the route being processed
         choices_made: Dictionary of choices made in this route
         builder_before: Builder state before processing (unused but kept for compatibility)
         builder_after: Builder state after processing (unused but kept for compatibility)
     """
-    logger.info(f"\n{'='*80}")
+    logger.info(f"\n{'=' * 80}")
     logger.info(f"Route: {route_name}")
-    logger.info(f"{'='*80}")
-    
+    logger.info(f"{'=' * 80}")
+
     # Log choices made in this route
     if choices_made:
         logger.info("Choices made:")
@@ -64,5 +67,5 @@ def log_route_processing(route_name: str, choices_made: Dict[str, Any],
                 logger.info(f"  {key}: {value}")
     else:
         logger.info("No choices made in this route")
-    
-    logger.info(f"{'='*80}\n")
+
+    logger.info(f"{'=' * 80}\n")

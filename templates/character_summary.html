@@ -51,9 +51,7 @@
                             <div class="card-body">
                                 <div class="row">
                                     <div class="col-sm-6 col-md-4">
-                                        <p><strong>Hit Points:</strong> {{ character.combat.hit_points.maximum }}
-                                            <small class="text-muted">({{ character.level }}d{{ character.class_data.hit_die }})</small>
-                                        </p>
+                                        <p><strong>Hit Points:</strong> {{ character.combat.hit_points.maximum }}</p>
                                         <p><strong>Initiative:</strong> {% if character.combat.initiative_bonus >= 0 %}+{% endif %}{{ character.combat.initiative_bonus }}</p>
                                     </div>
                                     <div class="col-sm-6 col-md-4">
@@ -151,7 +149,7 @@
                                     <div class="card-body">
                                         <div style="max-height: 500px; overflow-y: auto;">
                                             {% for weapon in character.attacks %}
-                                                <div class="weapon-attack p-3 mb-3 border rounded">
+                                                <div class="weapon-attack p-3 mb-3 border rounded" >
                                                     <h6 class="mb-2">
                                                         <img src="{{ weapon.icon }}" alt="{{ weapon.name }}" style="width: 24px; height: 24px; margin-right: 8px; vertical-align: middle;">
                                                         {{ weapon.name }}
@@ -184,7 +182,7 @@
                                                     {% if weapon.mastery and character.class in ['Fighter', 'Rogue', 'Barbarian', 'Ranger', 'Paladin'] %}
                                                         <p class="mb-1">
                                                             <strong>Mastery:</strong>
-                                                            <span class="badge bg-success">{{ weapon.mastery }}</span>
+                                                            <span class="badge bg-info">{{ weapon.mastery }}</span>
                                                         </p>
                                                     {% endif %}
                                                     {% if weapon.notes %}
@@ -359,11 +357,12 @@
                                     </div>
                                     <div class="card-body">
                                         {% if character.equipment %}
-                                        <div>
+                                        <div class="mb-2">
                                             <!-- Weapons -->
                                             {% if character.equipment['weapons'] %}
                                             <strong>Weapons</strong><br/>
-                                            <ul class="list-unstyled mb-3">
+                                            <hr class="my-1">
+                                            <ul class="list-unstyled mb-1">
                                                 {% for weapon in character.equipment['weapons'] %}
                                                 <li class="d-flex justify-content-between align-items-center mb-1 small">
                                                     <span>
@@ -380,7 +379,8 @@
                                             <!-- Armor -->
                                             {% if character.equipment['armor'] %}
                                             <strong>Armor & Shields</strong><br/>
-                                            <ul class="list-unstyled mb-3">
+                                            <hr class="my-1">
+                                            <ul class="list-unstyled mb-1">
                                                 {% for armor in character.equipment['armor'] %}
                                                 <li class="d-flex justify-content-between align-items-center mb-1 small">
                                                     <span>
@@ -397,7 +397,8 @@
                                             <!-- Items -->
                                             {% if character.equipment['items'] %}
                                             <strong>Equipment & Items</strong><br/>
-                                            <ul class="list-unstyled mb-3">
+                                            <hr class="my-1">
+                                            <ul class="list-unstyled mb-1">
                                                 {% for item in character.equipment['items'] %}
                                                 <li class="d-flex justify-content-between align-items-center mb-1 small">
                                                     <span>
@@ -414,6 +415,7 @@
                                             <!-- Gold -->
                                             {% if character.equipment['gold'] and character.equipment['gold'] > 0 %}
                                             <strong>Wealth</strong><br/>
+                                            <hr class="my-1">
                                             <p class="mb-0 small">
                                                 {{ character.equipment['gold'] }} gp
                                             </p>
@@ -441,7 +443,7 @@
                                     {% for feature in character.features.class %}
                                         {% if feature.name %}
                                         <div class="mb-3">
-                                            <p class="small mb-0">
+                                            <p class="mb-0">
                                             <strong>{{ feature.name }}</strong>
                                                 </br>
                                             {{ feature.description | safe }}</p>
@@ -482,7 +484,7 @@
                                     {% for feature in character.features.species %}
                                         {% if feature.name %}
                                         <div class="mb-3">
-                                            <p class="small mb-0">
+                                            <p class="mb-0">
                                             <strong>{{ feature.name }}</strong>
                                                 </br>
                                             {{ feature.description | safe }}</p>
@@ -494,7 +496,7 @@
                                     {% for feature in character.features.lineage %}
                                         {% if feature.name %}
                                         <div class="mb-3">
-                                            <p class="small mb-0">
+                                            <p class="mb-0">
                                             <strong>{{ feature.name }}</strong>
                                                 {% if feature.source %}
                                                 <span class="badge bg-info ms-1">{{ feature.source }}</span>

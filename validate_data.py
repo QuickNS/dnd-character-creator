@@ -17,7 +17,7 @@ except ImportError:
 
 def load_json(filepath):
     """Load and parse a JSON file."""
-    with open(filepath, 'r', encoding='utf-8') as f:
+    with open(filepath, "r", encoding="utf-8") as f:
         return json.load(f)
 
 
@@ -39,17 +39,17 @@ def validate_classes():
     print("=" * 70)
     print("VALIDATING CLASS FILES")
     print("=" * 70)
-    
+
     schema_file = Path("models/class_schema.json")
     if not schema_file.exists():
         print("❌ Schema file not found:", schema_file)
         return False
-    
+
     classes_dir = Path("data/classes")
     if not classes_dir.exists():
         print("⚠️  No classes directory found")
         return True
-    
+
     all_valid = True
     for class_file in sorted(classes_dir.glob("*.json")):
         valid, error = validate_file(class_file, schema_file)
@@ -59,7 +59,7 @@ def validate_classes():
             print(f"❌ {class_file.name}")
             print(f"   Error: {error}")
             all_valid = False
-    
+
     return all_valid
 
 
@@ -68,22 +68,22 @@ def validate_subclasses():
     print("\n" + "=" * 70)
     print("VALIDATING SUBCLASS FILES")
     print("=" * 70)
-    
+
     schema_file = Path("models/subclass_schema.json")
     if not schema_file.exists():
         print("❌ Schema file not found:", schema_file)
         return False
-    
+
     subclasses_dir = Path("data/subclasses")
     if not subclasses_dir.exists():
         print("⚠️  No subclasses directory found")
         return True
-    
+
     all_valid = True
     for class_dir in sorted(subclasses_dir.iterdir()):
         if not class_dir.is_dir():
             continue
-        
+
         print(f"\n{class_dir.name.upper()}:")
         for subclass_file in sorted(class_dir.glob("*.json")):
             valid, error = validate_file(subclass_file, schema_file)
@@ -93,7 +93,7 @@ def validate_subclasses():
                 print(f"  ❌ {subclass_file.name}")
                 print(f"     Error: {error}")
                 all_valid = False
-    
+
     return all_valid
 
 
@@ -102,14 +102,14 @@ def main():
     print("D&D 2024 Data Validator")
     print("Validating data files against schemas in models/")
     print()
-    
+
     classes_valid = validate_classes()
     subclasses_valid = validate_subclasses()
-    
+
     print("\n" + "=" * 70)
     print("VALIDATION SUMMARY")
     print("=" * 70)
-    
+
     if classes_valid and subclasses_valid:
         print("✅ All data files are valid!")
         return 0

@@ -11,4 +11,11 @@ from .hp_calculator import HPCalculator
 from .variant_manager import VariantManager
 from .level_manager import LevelManager
 
-__all__ = ['Character', 'AbilityScores', 'FeatureManager', 'HPCalculator', 'VariantManager', 'LevelManager']
+__all__ = [
+    "Character",
+    "AbilityScores",
+    "FeatureManager",
+    "HPCalculator",
+    "VariantManager",
+    "LevelManager",
+]

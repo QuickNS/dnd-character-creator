@@ -16,7 +16,7 @@ from routes.character_summary import character_summary_bp
 def register_blueprints(app: Flask):
     """
     Register all blueprint modules with the Flask app.
-    
+
     Args:
         app: The Flask application instance
     """

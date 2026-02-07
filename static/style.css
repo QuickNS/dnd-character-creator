@@ -11,7 +11,7 @@
     --dnd-dark-gray: #495057;
     --dnd-black: #212529;
     --dnd-white: #FFFFFF;
-    --dnd-white-transparent: rgba(255, 255, 255, 0.6);
+    --dnd-white-transparent: rgba(255, 255, 255, 0.3);
     --dnd-accent-gray: #6C757D;
 
     /* Side background art sizing */
@@ -254,6 +254,13 @@ h1, h2, h3, h4, h5, h6 {
         height: auto;
         min-height: 220px;
     }
+}
+
+hr {
+  background-color: var(--dnd-red) !important;  
+  border: none !important;
+  height: 1px !important;
+  opacity: 1 !important;
 }
 
 .class-card:hover, .background-card:hover, .species-card:hover,

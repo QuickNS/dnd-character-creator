@@ -206,46 +206,48 @@
             <input type="text" id="species" class="char-field" value="{{ character.species }}{% if character.lineage %} ({{ character.lineage }}){% endif %}">
             <input type="text" id="subclass" class="char-field" value="{% if character.subclass %}{{ character.subclass }}{% endif %}">
             <input type="text" id="level" class="char-field" value="{{ character.level }}">
-            <input type="text" id="size" class="char-field" value="{{ size }}">
-            <input type="text" id="proficiency-bonus" class="char-field" value="+{{ proficiency_bonus }}">
+            <input type="text" id="size" class="char-field" value="{{ character.size or 'Medium' }}">
+            <input type="text" id="proficiency-bonus" class="char-field" value="+{{ character.proficiency_bonus }}">
             
             <!-- Combat Stats -->
-            <input type="text" id="armor-class" class="char-field" value="{{ combat_stats.armor_class }}">
-            <input type="text" id="initiative" class="char-field" value="{{ '+' if combat_stats.initiative >= 0 else '' }}{{ combat_stats.initiative }}">
-            <input type="text" id="speed" class="char-field" value="{{ combat_stats.speed }}ft">
-            <input type="text" id="hp_max" class="char-field" value="{{ combat_stats.hit_point_maximum }}">
-            <input type="text" id="hit_dice" class="char-field" value="{{ combat_stats.hit_dice.total }}">
-            <input type="text" id="passive-perception" class="char-field" value="{{ passive_perception }}">
+            <input type="text" id="armor-class" class="char-field" value="{{ character.combat.armor_class }}">
+            <input type="text" id="initiative" class="char-field" value="{{ '+' if character.combat.initiative_bonus >= 0 else '' }}{{ character.combat.initiative_bonus }}">
+            <input type="text" id="speed" class="char-field" value="{{ character.combat.speed }}ft">
+            <input type="text" id="hp_max" class="char-field" value="{{ character.combat.hit_points.maximum }}">
+            <input type="text" id="hit_dice" class="char-field" value="{{ character.combat.hit_dice.total }}">
+            <input type="text" id="passive-perception" class="char-field" value="{{ 10 + character.skills.perception.modifier }}">
 
             <!-- Ability Scores Macro -->
-            {% macro ability_block(ability_name, ability_id, skills) %}
+            {% macro ability_block(ability_name, ability_id, skill_keys) %}
+            {% set ability = character.abilities[ability_name.lower()] %}
             <div class="div-ability" id="{{ ability_id }}">
-                <input type="text" style="top: 37px; left: 65px; width: 40px; height: 30px; font-size: 11pt;" class="char-field" value="{{ character.ability_scores[ability_name] }}">
-                <input type="text" style="top: 33px; left: 17px; width: 50px; height: 25px; font-size: 16pt;" class="char-field" value="{{ ability_modifiers[ability_name] }}">
-                <input type="checkbox" style="position:absolute; width: 12px; top: 98px; left: 8px;" {% if ability_name in saving_throws and saving_throws[ability_name]['proficient'] %}checked{% endif %}>
-                <input type="text" style="position:absolute; top: 93px; left: 22px; font-size: 9pt; width:20px" class="char-field" value="{{ '+' if saving_throws[ability_name]['total'] >= 0 else '' }}{{ saving_throws[ability_name]['total'] }}">
+                <input type="text" style="top: 37px; left: 65px; width: 40px; height: 30px; font-size: 11pt;" class="char-field" value="{{ ability.score }}">
+                <input type="text" style="top: 33px; left: 17px; width: 50px; height: 25px; font-size: 16pt;" class="char-field" value="{{ '+' if ability.modifier >= 0 else '' }}{{ ability.modifier }}">
+                <input type="checkbox" style="position:absolute; width: 12px; top: 98px; left: 8px;" {% if ability.saving_throw_proficient %}checked{% endif %}>
+                <input type="text" style="position:absolute; top: 93px; left: 22px; font-size: 9pt; width:20px" class="char-field" value="{{ '+' if ability.saving_throw >= 0 else '' }}{{ ability.saving_throw }}">
                 <div style="position: absolute; top: 118px; left: 0px;">
-                    {% for skill in skills %}
-                    <input type="checkbox" style="position: absolute; width: 12px; top: {{ 7 + loop.index0 * 19 }}px; left: 8px;" {% if skill in skill_modifiers and skill_modifiers[skill]['proficient'] %}checked{% endif %}>
-                    <input type="text" style="position:absolute; top: {{ 2 + loop.index0 * 19 }}px; left: 22px; font-size: 9pt; width:20px" class="char-field" value="{{ '+' if skill_modifiers[skill]['total'] >= 0 else '' }}{{ skill_modifiers[skill]['total'] }}">
+                    {% for skill_key in skill_keys %}
+                    {% set skill = character.skills[skill_key] %}
+                    <input type="checkbox" style="position: absolute; width: 12px; top: {{ 7 + loop.index0 * 19 }}px; left: 8px;" {% if skill.proficient or skill.expertise %}checked{% endif %}>
+                    <input type="text" style="position:absolute; top: {{ 2 + loop.index0 * 19 }}px; left: 22px; font-size: 9pt; width:20px" class="char-field" value="{{ '+' if skill.modifier >= 0 else '' }}{{ skill.modifier }}">
                     {% endfor %}
                 </div>
             </div>
             {% endmacro %}
 
             <!-- Ability Scores -->
-            {{ ability_block('Strength', 'ability-str', ['Athletics']) }}
-            {{ ability_block('Dexterity', 'ability-dex', ['Acrobatics', 'Sleight Of Hand', 'Stealth']) }}
+            {{ ability_block('Strength', 'ability-str', ['athletics']) }}
+            {{ ability_block('Dexterity', 'ability-dex', ['acrobatics', 'sleight_of_hand', 'stealth']) }}
             {{ ability_block('Constitution', 'ability-con', []) }}
-            {{ ability_block('Intelligence', 'ability-int', ['Arcana', 'History', 'Investigation', 'Nature', 'Religion']) }}
-            {{ ability_block('Wisdom', 'ability-wis', ['Animal Handling', 'Insight', 'Medicine', 'Perception', 'Survival']) }}
-            {{ ability_block('Charisma', 'ability-cha', ['Deception', 'Intimidation', 'Performance', 'Persuasion']) }}
+            {{ ability_block('Intelligence', 'ability-int', ['arcana', 'history', 'investigation', 'nature', 'religion']) }}
+            {{ ability_block('Wisdom', 'ability-wis', ['animal_handling', 'insight', 'medicine', 'perception', 'survival']) }}
+            {{ ability_block('Charisma', 'ability-cha', ['deception', 'intimidation', 'performance', 'persuasion']) }}
 
             <!-- Features and Traits -->
             <div id="class-features" style="position: absolute; top: 473px; left: 306px; width: 490px; height: 285px;">
                 <div id="class-features-list" style="margin-bottom: 4px; column-count: 2; column-gap: 10px; column-fill: auto; height: 100%;">
-                    {% if features.class %}
-                    {% for feature in features.class %}
+                    {% if character.features.class %}
+                    {% for feature in character.features.class %}
                     <div class="feature-item" style="margin-bottom: 4px; position: relative; display: inline-block; width: 100%; break-inside: avoid; -webkit-column-break-inside: avoid; page-break-inside: avoid;">
                         <div style="display: block; break-inside: avoid; -webkit-column-break-inside: avoid;">
                             <button class="delete-feature no-print" onclick="this.parentElement.parentElement.remove()" style="position: absolute; right: 0; top: 8px; background: #dc3545; color: white; border: none; border-radius: 3px; width: 12px; height: 12px; font-size: 8px; line-height: 1; cursor: pointer; padding: 0; z-index: 10;" title="Remove feature">×</button>
@@ -261,8 +263,8 @@
 
             <div id="species-features" style="position: absolute; top: 806px; left: 306px; width: 227px;">
                 <div id="species-features-list" style="margin-bottom: 4px;">
-                    {% if features.species %}
-                    {% for feature in features.species %}
+                    {% if character.features.species %}
+                    {% for feature in character.features.species %}
                     <div class="feature-item" style="margin-bottom: 4px; position: relative;">
                         <button class="delete-feature no-print" onclick="this.parentElement.remove()" style="position: absolute; right: 0; top: 8px; background: #dc3545; color: white; border: none; border-radius: 3px; width: 8px; height: 8px; font-size: 10px; line-height: 1; cursor: pointer; padding: 0;" title="Remove feature">×</button>
                         <input type="text" style="width: calc(100% - 20px); margin: 0; font-family: 'Segoe UI'; font-size: 7pt; font-weight: bold; border: none; background: transparent; padding: 0; display: block; line-height: 1;" value="{{ feature.name }}">
@@ -276,8 +278,8 @@
 
             <div id="feats-features" style="position: absolute; top: 806px; left: 558px; width: 238px;">
                 <div id="feats-features-list" style="margin-bottom: 4px;">
-                    {% if features.feats %}
-                    {% for feature in features.feats %}
+                    {% if character.features.feats %}
+                    {% for feature in character.features.feats %}
                     <div class="feature-item" style="margin-bottom: 4px; position: relative;">
                         <button class="delete-feature no-print" onclick="this.parentElement.remove()" style="position: absolute; right: 0; top: 8px; background: #dc3545; color: white; border: none; border-radius: 3px; width: 8px; height: 8px; font-size: 10px; line-height: 1; cursor: pointer; padding: 0;" title="Remove feature">×</button>
                         <input type="text" style="width: calc(100% - 20px); margin: 0; font-family: 'Segoe UI'; font-size: 7pt; font-weight: bold; border: none; background: transparent; padding: 0; display: block; line-height: 1;" value="{{ feature.name }}">
