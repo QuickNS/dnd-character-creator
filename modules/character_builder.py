@@ -1697,6 +1697,14 @@ class CharacterBuilder:
             damage_bonus = ability_mod
             damage_type = weapon_props.get('damage_type', 'Bludgeoning')
             
+            # Format damage string with bonus if non-zero
+            if damage_bonus > 0:
+                damage_str = f"{damage_dice} + {damage_bonus}"
+            elif damage_bonus < 0:
+                damage_str = f"{damage_dice} - {abs(damage_bonus)}"
+            else:
+                damage_str = damage_dice
+            
             # Calculate average damage
             avg_damage = self._calculate_average_damage(damage_dice, damage_bonus)
             avg_crit = self._calculate_average_damage(damage_dice, damage_bonus, is_crit=True)
@@ -1708,7 +1716,7 @@ class CharacterBuilder:
                 'name': weapon_name,
                 'attack_bonus': attack_bonus,
                 'attack_bonus_display': f"+{attack_bonus}" if attack_bonus >= 0 else str(attack_bonus),
-                'damage': f"{damage_dice} + {damage_bonus}" if damage_bonus > 0 else damage_dice,
+                'damage': damage_str,
                 'damage_type': damage_type,
                 'avg_damage': avg_damage,
                 'avg_crit': avg_crit,
