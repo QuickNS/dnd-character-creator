@@ -16,7 +16,7 @@ A web-based D&D 2024 character creator with a data-driven architecture that uses
 - **Routes as Consumers**: Flask routes/API call `to_character()` and pass results to templates - NO calculations in routes
 - **Effects System**: All mechanical benefits (proficiencies, spells, bonuses, etc.) defined via structured effects in JSON
 - **Data-Driven Design**: No hardcoded lists - check against data files (e.g., weapons.json for weapon detection)
-- **Unified Approach**: Web wizard, API, JSON export, and PDF generation all use the same CharacterBuilder engine
+- **Unified Approach**: Web wizard, API, JSON export, and HTML character sheets all use the same CharacterBuilder engine
 
 ### Web Wizard (Flask)
 - **Complete Character Creation Flow**: Class → Subclass → Background → Species → Lineage → Abilities → Summary
@@ -84,14 +84,14 @@ All effect types working and documented:
 - **Feature Filtering**: "Choose..." placeholder features excluded from display
 - **Equipment Categorization**: Data-driven weapon detection (checks weapons.json, not hardcoded keywords)
 
-### PDF Character Sheet Export
-- **PDF Generation**: Fill PDF character sheet from CharacterBuilder data
-- **Field Mapping**: Configuration-driven field mapping (200+ PDF fields)
-- **Custom Formatting**: Override system for special features (checkboxes, usage trackers)
-- **Server-Side Calculations**: All stats calculated server-side before PDF generation
-- **Download Route**: `/download-character-pdf` for downloading filled sheets
-- **PDF Writer Module**: `utils/pdf_writer.py` (300+ lines)
-- **Template System**: Support for {placeholders} in custom formatting
+### HTML Character Sheet Export  
+- **HTML Generation**: Render print-ready HTML character sheet with background images
+- **Browser Print to PDF**: Users export via browser's Print to PDF function
+- **Positioned Fields**: CSS-positioned text fields overlaid on background images
+- **Server-Side Calculations**: All stats calculated server-side before rendering
+- **Character Sheet Route**: `/character-sheet` for viewing/printing sheets
+- **Background Images**: Official D&D 2024 character sheet layout images in `static/pdf_template/`
+- **Template**: `templates/character_sheet_pdf.html` with absolute positioning
 
 **Supported Sections**:
 - Basic Info (name, class, level, background, species)
@@ -127,7 +127,7 @@ dnd-character-creator/
 │   ├── variant_manager.py     # Species variant system
 │   └── data_loader.py         # JSON data loading
 ├── utils/                      # Utilities
-│   ├── pdf_writer.py          # PDF character sheet generation (300+ lines)
+│   ├── choice_resolver.py     # Choice reference system resolution
 │   └── inspect_pdf.py         # PDF field inspection tool
 ├── app.py                      # Flask web application (1,950+ lines)
 ├── data/                       # Structured game data
@@ -143,7 +143,7 @@ dnd-character-creator/
 ├── pdf_template/              # PDF character sheet template
 │   ├── character-sheet.pdf    # Empty PDF form (200+ fields)
 │   ├── field_mapping_config.json # Field mapping configuration
-│   └── README.md              # PDF generation documentation
+│   └── README.md              # HTML to PDF export instructions
 ├── wiki_data/                 # Cached D&D 2024 wiki content
 │   ├── classes/               # Raw wiki pages
 │   └── subclasses/            # Raw wiki pages

@@ -243,76 +243,63 @@ The application uses a **single, canonical character representation** based on C
 - Update JSON data files → Automatically reflected in all interfaces
 - Add new UI flows → Same CharacterBuilder underneath
 
-## PDF Character Sheet Generation
+## HTML Character Sheet Generation
 
-### PDF Writer Module - `utils/pdf_writer.py`
-**Purpose**: Generate filled PDF character sheets from character data.
+### HTML Character Sheet - `templates/character_sheet_pdf.html`
+**Purpose**: Render print-ready HTML character sheets with background images.
 
-**Key Class**: `PDFCharacterSheetWriter`
+**Key Features**:
+- `background-image` CSS for official D&D 2024 sheet layout
+- Absolutely positioned text fields overlaid on background
+- Browser Print to PDF for export (no server-side PDF generation)
+- Responsive design for 8.5" x 11" paper
 
-**Methods**:
-- `create_character_sheet(character)` - Generate filled PDF from character dict
-- `_prepare_character_data(character)` - Transform character data to PDF field values
-- `_format_features(features)` - Apply custom formatting overrides
-- `_calculate_modifier(score)` - Calculate ability modifier
-- `_format_modifier(modifier)` - Format with +/- sign
+**HTML Structure**:
+```html
+<div class="sheet-container">
+    <div class="sheet-background sheet-page1"></div>
+    <div class="field-layer">
+        <input class="char-field" style="top: 0.5in; left: 1in;" 
+               value="{{ character.name }}" readonly>
+    </div>
+</div>
+```
 
-**Configuration Files**:
-- `pdf_template/field_mapping_config.json` - Maps PDF fields to character attributes
-- `pdf_template/character-sheet.pdf` - Empty PDF form template
+**CSS Positioning**:
+```css
+.sheet-background {
+    background-image: url('/static/pdf_template/sheet1.png');
+    background-size: cover;
+}
 
-**Field Mapping Structure**:
-```json
-{
-  "basic_info": {
-    "CharacterName": "name",
-    "ClassLevel": "class_level",
-    "Background": "background"
-  },
-  "ability_scores": {
-    "STR": "abilities.Strength",
-    "DEX": "abilities.Dexterity"
-  },
-  "custom_formatting": {
-    "Second Wind": "Second Wind (uses: ☐ / 1 per short rest)",
-    "Action Surge": "Action Surge (uses: ☐ / 1 per short rest)"
-  }
+.char-field {
+    position: absolute;
+    top: 1.2in;    /* Exact position on sheet */
+    left: 0.5in;
+    font-size: 11pt;
 }
 ```
 
-**Custom Formatting System**:
-- Override default feature text for specific features
-- Support for checkbox trackers `☐` for limited-use abilities
-- Template substitution: `{uses}` → actual uses value
-- Example: "Second Wind" → "Second Wind (uses: ☐ / 1 per short rest)"
-
 **Flask Integration**:
 ```python
-@app.route('/download-character-pdf')
-def download_character_pdf():
+@app.route('/character-sheet')
+def character_sheet():
     builder = get_builder_from_session()
-    character = builder.to_json()
+    character = builder.to_character()
     
-    # Add calculated values
-    character['combat_stats'] = {...}
-    character['saving_throws'] = {...}
-    character['skill_modifiers'] = {...}
-    
-    # Generate PDF
-    pdf_bytes = generate_character_sheet_pdf(character)
-    return send_file(io.BytesIO(pdf_bytes), ...)
+    # Render HTML character sheet with background image and positioned fields
+    return render_template('character_sheet_pdf.html', character=character)
 ```
 
 **Data Flow**:
-1. CharacterBuilder creates character dict
-2. Character sheet converter adds calculated values
-3. PDF writer transforms to field values
-4. Apply custom formatting overrides
-5. Fill PDF form fields
-6. Return PDF bytes for download
+1. CharacterBuilder creates character dict with ALL calculations
+2. Flask route calls `builder.to_character()`
+3. Template renders HTML with positioned fields over background image
+4. User prints to PDF via browser
+5. Browser exports HTML as PDF
 
 **Advantages**:
-- Reuses existing CharacterBuilder data
+- Reuses existing CharacterBuilder data and calculations
 - Custom formatting for special features
 - Consistent with JSON export
 - All calculations server-side
@@ -331,7 +318,7 @@ modules/
 └── ...
 
 utils/
-├── pdf_writer.py           # PDF character sheet generation
+├── choice_resolver.py      # Choice reference system resolution
 ├── inspect_pdf.py          # PDF field inspection tool
 └── ...
 

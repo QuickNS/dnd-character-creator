@@ -183,7 +183,7 @@ When fetching from live wiki (only if not cached):
 
 **Why This Matters:**
 - JSON export contains complete, calculated character data
-- PDF generation uses the same calculated values
+- HTML character sheet rendering uses the same calculated values
 - API responses are consistent with web display
 - Single point of maintenance for game rules
 - Eliminates calculation drift between different outputs
@@ -198,7 +198,7 @@ The web application guides users through creating a D&D 2024 character and produ
 
 #### Secondary Objective: Printable Character Sheets
 After JSON export is complete and robust, extend to generate **printable character sheets** in multiple formats:
-- **PDF Character Sheets**: Official D&D 2024 character sheet layouts
+- **HTML Character Sheets**: Official D&D 2024 character sheet layouts with background images (exported via browser Print to PDF)
 - **Modular Cards**: 
   - Character Info Card
   - Weapon Cards
@@ -213,7 +213,7 @@ All print formats should use the same JSON model from `to_character()`, ensuring
 1. **Implement calculations in CharacterBuilder ONLY** - Never calculate in routes or templates
 2. **Call to_character() in routes** - Get complete character data with all calculations
 3. **Pass entire character dict to templates** - Templates access pre-calculated values
-4. **Design for exportability** - Every calculated value works for web display, JSON export, and PDF generation
+4. **Design for exportability** - Every calculated value works for web display, JSON export, and HTML character sheets
 
 #### Current Module Structure
 ```
@@ -412,10 +412,11 @@ The system must be designed from the ground up to support multiple output format
 - Separate character state from calculated values
 - Include metadata for version tracking and compatibility
 
-#### 2. Character Sheet PDF
-- Professional, print-ready character sheets
-- Support for official D&D 2024 character sheet layouts
-- Automatic field population with character data
+#### 2. Character Sheet HTML (Print to PDF)
+- Professional, print-ready HTML character sheets
+- Background images of official D&D 2024 character sheet layouts  
+- Absolutely positioned text fields overlaid on background
+- Users export via browser's Print to PDF function
 - Equipment, spells, and features properly formatted
 
 #### 3. Modular Cards
@@ -437,8 +438,8 @@ class Character:
 # Separate formatting concerns from data
 class CharacterExporter:
     def export_json(character: Character) -> str
-    def export_pdf(character: Character) -> bytes
-    def export_cards(character: Character) -> dict[str, bytes]
+    def export_html_sheet(character: Character) -> str
+    def export_cards(character: Character) -> dict[str, str]
 ```
 
 ## 🏗️ Implementation Guidelines

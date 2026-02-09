@@ -146,7 +146,7 @@ Organized by source:
 
 ### Step 3: Create Character Sheet Exporters
 - `character_sheet_data.py`: Convert internal format to sheet format
-- `pdf_exporter.py`: Generate fillable PDF character sheets
+- `html_renderer.py`: Generate HTML character sheets with positioned fields over background images
 - `json_exporter.py`: Export complete character sheet JSON
 
 ### Step 4: Update Frontend

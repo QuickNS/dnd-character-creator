@@ -1,16 +1,17 @@
-# PDF Character Sheet Generation - Quick Start Guide
+# HTML Character Sheet Generation - Quick Start Guide
 
 ## For Users
 
-### Download Your Character Sheet
+### Print Your Character Sheet to PDF
 
 1. **Complete character creation** through the wizard (all steps)
 2. **Review your character** on the summary page
-3. **Click "Download PDF"** button (green button with PDF icon)
-4. **Save the PDF** to your computer
-5. **Open with PDF viewer** (Adobe Reader, Preview, Chrome, etc.)
+3. **Click "View Character Sheet"** button 
+4. **Use browser's Print function** (Ctrl+P / Cmd+P or click the Print button on the page)
+5. **Select "Save as PDF"** as the printer destination
+6. **Save the PDF** to your computer
 
-The PDF will be named: `{YourCharacterName}_character_sheet.pdf`
+The character sheet is displayed as an HTML page with background images of the official D&D 2024 character sheet, with your character's information overlaid in the correct positions.
 
 ### What's Included
 
@@ -71,11 +72,13 @@ Some features have **checkbox trackers** for easy tracking:
 
 ## For Developers
 
-### Generate PDF from Python
+### Rendering Character Sheet HTML
+
+The character sheet is rendered as HTML with CSS positioning overlay on background images:
 
 ```python
-from utils.pdf_writer import generate_character_sheet_pdf
 from modules.character_builder import CharacterBuilder
+from flask import render_template
 
 # Create character
 builder = CharacterBuilder()
@@ -87,105 +90,123 @@ builder.apply_choices({
     # ... other choices
 })
 
-# Get character data
-character = builder.to_json()
+# Get complete character data with ALL calculations
+character = builder.to_character()
 
-# Add calculated values (required)
-character['combat_stats'] = {...}
-character['saving_throws'] = {...}
-character['skill_modifiers'] = {...}
-character['spell_slots'] = {...}
-
-# Generate PDF
-pdf_bytes = generate_character_sheet_pdf(character)
-
-# Save to file
-with open('character.pdf', 'wb') as f:
-    f.write(pdf_bytes)
+# Render HTML character sheet (all calculations pre-done by CharacterBuilder)
+return render_template('character_sheet_pdf.html', character=character)
 ```
 
-### Generate PDF from Flask Route
+### Flask Route Implementation
 
-The route is already implemented at `/download-character-pdf`:
+The route is already implemented at `/character-sheet`:
 
 ```python
-@app.route('/download-character-pdf')
-def download_character_pdf():
-    """Download character as PDF."""
-    # Get builder from session
+@character_summary_bp.route("/character-sheet")
+def character_sheet():
+    """Display fillable HTML character sheet."""
     builder = get_builder_from_session()
-    if not builder:
-        return redirect(url_for('index.index'))
-    
-    # Get complete character data with ALL calculations
-    # CharacterBuilder handles all calculations internally
+    if not builder or builder.get_current_step() != "complete":
+        return redirect(url_for("index.index"))
+
+    # Get complete character data with ALL calculations from CharacterBuilder
+    # No transformations needed - template uses data as-is
     character_data = builder.to_character()
-    
-    # Generate and return PDF using pre-calculated data
-    pdf_bytes = generate_character_sheet_pdf(character_data)
-    return send_file(io.BytesIO(pdf_bytes), ...)
+
+    return render_template("character_sheet_pdf.html", character=character_data)
 ```
 
-### Custom Formatting
+### HTML Template Structure
 
-Add custom formatting for specific features in `pdf_template/field_mapping_config.json`:
+The template (`templates/character_sheet_pdf.html`) uses:
+- **Background images**: Official D&D 2024 character sheet layout (`/static/pdf_template/sheet1.png`, `sheet2.png`)
+- **Absolute positioning**: CSS positions text fields exactly where they should appear
+- **Print styles**: `@media print` rules for clean PDF export
+- **No-print controls**: On-screen buttons (Print, Back) that don't appear in PDF output
 
-```json
-{
-  "custom_formatting": {
-    "Second Wind": "Second Wind (uses: ☐ / 1 per short rest)",
-    "Your Feature": "Custom text with {placeholders}"
-  }
+```css
+.sheet-background {
+    background-image: url('/static/pdf_template/sheet1.png');
+    background-size: cover;
+}
+
+.char-field {
+    position: absolute;
+    top: 1.2in;    /* Exact position on sheet */
+    left: 0.5in;
+    /* ... */
 }
 ```
 
-**Template Variables**:
-- `{uses}` - Uses per rest
-- `{dc}` - Save DC
-- `{damage}` - Damage amount
-- `{range}` - Range
+### Customizing Field Positions
 
-### Modify Field Mappings
+Edit `templates/character_sheet_pdf.html` to adjust field positions:
 
-Edit `pdf_template/field_mapping_config.json` to change which character attributes map to which PDF fields:
-
-```json
-{
-  "basic_info": {
-    "CharacterName": "name",
-    "ClassLevel": "class_level"
-  }
-}
+```html
+<input type="text" 
+       class="char-field" 
+       value="{{ character.name }}"
+       style="top: 1.2in; left: 0.5in; width: 3in;"
+       readonly>
 ```
 
-### Inspect PDF Fields
+**Positioning Tips**:
+- Use inches (`in`) for precise print positioning
+- Measure from top-left of the page
+- Use `readonly` attribute so fields can't be edited in browser
+- Test by printing to PDF and checking alignment
 
-Use the inspection tool to discover field names in a PDF:
+### Adding New Fields
 
-```bash
-python utils/inspect_pdf.py
+1. Determine the position on the background image
+2. Add HTML input/textarea with absolute positioning
+3. Use character data from `{{ character.property_name }}`
+4. Style with appropriate font size and alignment
+
+Example:
+```html
+<textarea class="char-field" 
+          style="top: 5in; left: 1in; width: 6in; height: 2in;"
+          readonly>{{ character.features.class['Feature Name'].description }}</textarea>
 ```
 
-This creates `pdf_template/field_mapping.json` with all field information.
+### Modifying Background Images
 
-### Test PDF Generation
+Replace images in `/static/pdf_template/`:
+- `sheet1.png` - Character sheet page 1 (abilities, skills, combat)
+- `sheet2.png` - Character sheet page 2 (features, spells, equipment)
 
-Run the test script:
-
-```bash
-python test_pdf_generation.py
-```
-
-This generates `test_character_sheet.pdf` from the example character.
+**Image Requirements**:
+- Size: 8.5" x 11" at 300 DPI (2550 x 3300 pixels)
+- Format: PNG with transparent or white background
+- Quality: High-resolution scan or vector export
 
 ## Troubleshooting
 
-### PDF has no data
-**Issue**: PDF downloads but is blank
+### Fields not aligning with background
+**Issue**: Text appears in wrong locations
 
 **Solution**: 
-1. Ensure PDF template has fillable form fields
-2. Check field mappings in `field_mapping_config.json`
+1. Check background image dimensions (should be 8.5" x 11")
+2. Adjust CSS positioning in template
+3. Test print preview frequently
+4. Use browser developer tools to inspect positioning
+
+### Print button not visible
+**Issue**: Can't find the print button
+
+**Solution**:
+1. Look in top-right corner of page (floating "no-print" div)
+2. Or use browser's Print function (Ctrl+P / Cmd+P)
+3. Make sure JavaScript is enabled
+
+### PDF exports blank
+**Issue**: Browser prints empty pages
+
+**Solution**:
+1. Check "Print background graphics" is enabled in print dialog
+2. Ensure background images are loading (check browser console)
+3. Verify images exist in `/static/pdf_template/`
 3. Verify character has all required data
 
 ### Download fails with error
@@ -196,86 +217,64 @@ This generates `test_character_sheet.pdf` from the example character.
 2. Session contains valid character data
 3. Check Flask logs for error details
 
-### Fields in wrong places
-**Issue**: Data appears in wrong PDF fields
-
-**Solution**:
-1. Run `utils/inspect_pdf.py` to see actual field names
-2. Update field mappings in config file
-3. Test with simple character first
-
-### Custom formatting not applied
-**Issue**: Features show default text
-
-**Solution**:
-1. Check feature name matches exactly (case-sensitive)
-2. Verify custom_formatting is in correct section
-3. Reload Flask app to pick up config changes
 
 ## Best Practices
 
 ### For Users
-1. **Create character first** - Complete all wizard steps before downloading
-2. **Check summary** - Review character on summary page before PDF
-3. **Save multiple versions** - Download PDF at different levels as character progresses
+1. **Complete character creation** - Finish all wizard steps before viewing sheet
+2. **Check summary** - Review character on summary page 
+3. **Use browser Print to PDF** - Select "Save as PDF" as printer destination
+4. **Enable background graphics** - Ensure this option is checked in print dialog
 
 ### For Developers
-1. **Calculate server-side** - Always compute values before PDF generation
-2. **Test incrementally** - Add fields one section at a time
-3. **Use custom formatting sparingly** - Only for features needing special display
-4. **Document changes** - Update field mapping comments when modifying
+1. **Calculate in CharacterBuilder** - ALL calculations happen in `builder.to_character()`
+2. **Use absolute positioning** - Position fields precisely with CSS top/left in inches
+3. **Test print preview frequently** - Check alignment after each change
+4. **Keep template clean** - Separate CSS styles from positioning logic
+5. **Use readonly inputs** - Prevent browser editing with `readonly` attribute
 
-## Examples
+## Template Structure
 
-### Simple Character PDF
-```python
-character = {
-    'name': 'Bob',
-    'class': 'Fighter',
-    'level': 1,
-    'abilities': {'Strength': 16, 'Dexterity': 14, ...}
-}
-pdf = generate_character_sheet_pdf(character)
+### Page Layout
+```html
+<div class="sheet-container">
+    <!-- Background image layer -->
+    <div class="sheet-background sheet-page1"></div>
+    
+    <!-- Positioned fields layer -->
+    <div class="field-layer">
+        <input type="text" class="char-field" 
+               style="top: 0.5in; left: 1in;" 
+               value="{{ character.name }}" readonly>
+        <!-- More fields... -->
+    </div>
+</div>
 ```
 
-### With Custom Formatting
-```python
-# Add to field_mapping_config.json
-{
-  "custom_formatting": {
-    "Second Wind": "Second Wind (uses: ☐ / 1 per short rest)"
-  }
+### Print Styles
+```css
+@media print {
+    .no-print { display: none; }
+    .sheet-container { margin: 0; box-shadow: none; }
+    body { background: white; }
 }
-
-# Feature will display with checkbox tracker in PDF
-```
-
-### Multiple Characters
-```python
-for name in ['Alice', 'Bob', 'Charlie']:
-    builder.apply_choice('name', name)
-    character = builder.to_json()
-    pdf_bytes = generate_character_sheet_pdf(character)
-    with open(f'{name}_sheet.pdf', 'wb') as f:
-        f.write(pdf_bytes)
 ```
 
 ## Resources
 
-- **Full Documentation**: `pdf_template/README.md`
-- **Architecture**: `docs/ARCHITECTURE.md` (PDF Generation section)
-- **Implementation Details**: `docs/PDF_GENERATION_COMPLETE.md`
-- **Source Code**: `utils/pdf_writer.py`
-- **Field Mappings**: `pdf_template/field_mapping_config.json`
+- **Template**: `templates/character_sheet_pdf.html`
+- **Background Images**: `static/pdf_template/sheet1.png`, `sheet2.png`  
+- **Route**: `routes/character_summary.py` (contains `/character-sheet` route)
+- **Architecture Documentation**: `docs/ARCHITECTURE.md` (HTML Character Sheet section)
+- **Flask App**: `app.py`
 
 ## Support
 
 If you encounter issues:
 
 1. Check the troubleshooting section above
-2. Review Flask logs for error messages
-3. Verify PDF template has form fields
-4. Test with the example character first
-5. Check field mapping configuration
-
-For custom templates or advanced usage, see `pdf_template/README.md`.
+2. Ensure background images are present in `/static/pdf_template/`
+3. Enable "Print background graphics" in browser print dialog
+4. Test with the browser's Print Preview
+5. Check Flask logs for any template rendering errors
+For customization and advanced usage, see `templates/character_sheet_pdf.html`.

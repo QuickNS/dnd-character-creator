@@ -24,7 +24,7 @@
 ## 🚀 Missing Core Features
 
 ### Character Sheet Generation
-- [ ] **PDF Character Sheet Export** - Generate official D&D 2024 character sheets
+- [x] **HTML Character Sheet Export** - Print-ready HTML character sheets with background images ✅
 - [ ] **Modular Card System** - Individual cards for different character aspects
   - [ ] Character Info Card (stats, abilities, proficiencies)
   - [ ] Weapon Cards (individual weapon stats and properties)
@@ -212,7 +212,7 @@
 
 1. **Official D&D 2024 Compliance** - 100% accurate implementation of all rules
 2. **Complete Content Coverage** - All species, classes, subclasses, backgrounds, and feats
-3. **Professional Character Sheets** - High-quality PDF generation
+3. **Professional Character Sheets** - Print-ready HTML with background images
 4. **Campaign Integration** - Multi-character party management
 5. **Digital Integration** - API compatibility with popular D&D tools
 
