@@ -38,10 +38,10 @@ class TestUnarmedFighting:
             },
         }
         builder.apply_choices(choices)
-        
+
         # Remove all weapons to test the "no weapons" case
         builder.character_data["equipment"]["weapons"] = []
-        
+
         return builder
 
     @pytest.fixture
@@ -104,7 +104,7 @@ class TestUnarmedFighting:
         """Test that unarmed strike is always in the attacks list."""
         weapon_data = fighter_without_unarmed_fighting.calculate_weapon_attacks()
         attacks = weapon_data.get("attacks", [])
-        
+
         unarmed = next((a for a in attacks if a["name"] == "Unarmed Strike"), None)
         assert unarmed is not None, "Unarmed Strike should always be present"
 
@@ -112,74 +112,100 @@ class TestUnarmedFighting:
         """Test base unarmed strike damage without Unarmed Fighting."""
         weapon_data = fighter_without_unarmed_fighting.calculate_weapon_attacks()
         attacks = weapon_data.get("attacks", [])
-        
+
         unarmed = next((a for a in attacks if a["name"] == "Unarmed Strike"), None)
         assert unarmed is not None
-        
+
         # Base unarmed: 1 + STR modifier (1 + 3 = 4)
-        assert unarmed["damage"] == "4", f"Base unarmed damage should be 4, got {unarmed['damage']}"
-        assert unarmed["avg_damage"] == 4.0, f"Base unarmed avg should be 4.0, got {unarmed['avg_damage']}"
+        assert unarmed["damage"] == "4", (
+            f"Base unarmed damage should be 4, got {unarmed['damage']}"
+        )
+        assert unarmed["avg_damage"] == 4.0, (
+            f"Base unarmed avg should be 4.0, got {unarmed['avg_damage']}"
+        )
 
     def test_unarmed_fighting_no_weapons_uses_1d8(
         self, fighter_with_unarmed_fighting_no_weapons
     ):
         """Test that Unarmed Fighting uses 1d8 when no weapons equipped."""
-        weapon_data = fighter_with_unarmed_fighting_no_weapons.calculate_weapon_attacks()
+        weapon_data = (
+            fighter_with_unarmed_fighting_no_weapons.calculate_weapon_attacks()
+        )
         attacks = weapon_data.get("attacks", [])
-        
+
         unarmed = next((a for a in attacks if a["name"] == "Unarmed Strike"), None)
         assert unarmed is not None
-        
+
         # Should be 1d8 + STR (1d8 + 3)
-        assert "1d8" in unarmed["damage"], f"Should use 1d8 with no weapons, got {unarmed['damage']}"
+        assert "1d8" in unarmed["damage"], (
+            f"Should use 1d8 with no weapons, got {unarmed['damage']}"
+        )
         assert unarmed["damage"] == "1d8 + 3"
-        
+
         # 1d8 avg = 4.5, + 3 = 7.5
-        assert unarmed["avg_damage"] == 7.5, f"Expected 7.5 avg, got {unarmed['avg_damage']}"
+        assert unarmed["avg_damage"] == 7.5, (
+            f"Expected 7.5 avg, got {unarmed['avg_damage']}"
+        )
 
     def test_unarmed_fighting_with_weapons_uses_1d6(
         self, fighter_with_unarmed_fighting_with_weapons
     ):
         """Test that Unarmed Fighting uses 1d6 when weapons are equipped."""
-        weapon_data = fighter_with_unarmed_fighting_with_weapons.calculate_weapon_attacks()
+        weapon_data = (
+            fighter_with_unarmed_fighting_with_weapons.calculate_weapon_attacks()
+        )
         attacks = weapon_data.get("attacks", [])
-        
+
         unarmed = next((a for a in attacks if a["name"] == "Unarmed Strike"), None)
         assert unarmed is not None
-        
+
         # Should be 1d6 + STR (1d6 + 3)
-        assert "1d6" in unarmed["damage"], f"Should use 1d6 with weapons, got {unarmed['damage']}"
+        assert "1d6" in unarmed["damage"], (
+            f"Should use 1d6 with weapons, got {unarmed['damage']}"
+        )
         assert unarmed["damage"] == "1d6 + 3"
-        
+
         # 1d6 avg = 3.5, + 3 = 6.5
-        assert unarmed["avg_damage"] == 6.5, f"Expected 6.5 avg, got {unarmed['avg_damage']}"
+        assert unarmed["avg_damage"] == 6.5, (
+            f"Expected 6.5 avg, got {unarmed['avg_damage']}"
+        )
 
     def test_unarmed_fighting_has_grapple_note(
         self, fighter_with_unarmed_fighting_no_weapons
     ):
         """Test that Unarmed Fighting adds grapple damage note."""
-        weapon_data = fighter_with_unarmed_fighting_no_weapons.calculate_weapon_attacks()
+        weapon_data = (
+            fighter_with_unarmed_fighting_no_weapons.calculate_weapon_attacks()
+        )
         attacks = weapon_data.get("attacks", [])
-        
-        unarmed = next((a for a in attacks if a["name"] == "Unarmed Strike"), None)
-        assert unarmed is not None
-        
-        damage_notes = unarmed.get("damage_notes", [])
-        assert any("grappled" in note.lower() for note in damage_notes), \
-            f"Should mention grappled damage, got notes: {damage_notes}"
-        assert any("1d4" in note for note in damage_notes), \
-            f"Should mention 1d4 grapple damage, got notes: {damage_notes}"
 
-    def test_unarmed_fighting_attack_bonus(self, fighter_with_unarmed_fighting_no_weapons):
-        """Test that unarmed strike gets proper attack bonus."""
-        weapon_data = fighter_with_unarmed_fighting_no_weapons.calculate_weapon_attacks()
-        attacks = weapon_data.get("attacks", [])
-        
         unarmed = next((a for a in attacks if a["name"] == "Unarmed Strike"), None)
         assert unarmed is not None
-        
+
+        damage_notes = unarmed.get("damage_notes", [])
+        assert any("grappled" in note.lower() for note in damage_notes), (
+            f"Should mention grappled damage, got notes: {damage_notes}"
+        )
+        assert any("1d4" in note for note in damage_notes), (
+            f"Should mention 1d4 grapple damage, got notes: {damage_notes}"
+        )
+
+    def test_unarmed_fighting_attack_bonus(
+        self, fighter_with_unarmed_fighting_no_weapons
+    ):
+        """Test that unarmed strike gets proper attack bonus."""
+        weapon_data = (
+            fighter_with_unarmed_fighting_no_weapons.calculate_weapon_attacks()
+        )
+        attacks = weapon_data.get("attacks", [])
+
+        unarmed = next((a for a in attacks if a["name"] == "Unarmed Strike"), None)
+        assert unarmed is not None
+
         # STR mod (+3) + proficiency bonus (+2 at level 1) = +5
-        assert unarmed["attack_bonus"] == 5, f"Expected attack bonus +5, got {unarmed['attack_bonus']}"
+        assert unarmed["attack_bonus"] == 5, (
+            f"Expected attack bonus +5, got {unarmed['attack_bonus']}"
+        )
         assert unarmed["attack_bonus_display"] == "+5"
 
     def test_unarmed_strike_in_character_export(
@@ -188,10 +214,10 @@ class TestUnarmedFighting:
         """Test that unarmed strike appears in character export."""
         char_data = fighter_with_unarmed_fighting_no_weapons.to_character()
         attacks = char_data.get("attacks", [])
-        
+
         unarmed = next((a for a in attacks if a["name"] == "Unarmed Strike"), None)
         assert unarmed is not None, "Unarmed Strike should be in character export"
-        
+
         # Verify it has all required fields
         assert "damage" in unarmed
         assert "avg_damage" in unarmed
@@ -203,15 +229,24 @@ class TestUnarmedFighting:
     ):
         """Test that Unarmed Fighting is better than base unarmed strike."""
         # With Unarmed Fighting
-        weapon_data_with = fighter_with_unarmed_fighting_no_weapons.calculate_weapon_attacks()
+        weapon_data_with = (
+            fighter_with_unarmed_fighting_no_weapons.calculate_weapon_attacks()
+        )
         attacks_with = weapon_data_with.get("attacks", [])
-        unarmed_with = next((a for a in attacks_with if a["name"] == "Unarmed Strike"), None)
-        
+        unarmed_with = next(
+            (a for a in attacks_with if a["name"] == "Unarmed Strike"), None
+        )
+
         # Without Unarmed Fighting
-        weapon_data_without = fighter_without_unarmed_fighting.calculate_weapon_attacks()
+        weapon_data_without = (
+            fighter_without_unarmed_fighting.calculate_weapon_attacks()
+        )
         attacks_without = weapon_data_without.get("attacks", [])
-        unarmed_without = next((a for a in attacks_without if a["name"] == "Unarmed Strike"), None)
-        
+        unarmed_without = next(
+            (a for a in attacks_without if a["name"] == "Unarmed Strike"), None
+        )
+
         # Unarmed Fighting should deal more damage
-        assert unarmed_with["avg_damage"] > unarmed_without["avg_damage"], \
+        assert unarmed_with["avg_damage"] > unarmed_without["avg_damage"], (
             f"Unarmed Fighting ({unarmed_with['avg_damage']}) should be better than base ({unarmed_without['avg_damage']})"
+        )

@@ -101,9 +101,9 @@ class TestWeaponMasterySystem:
             }
             builder.apply_choices(choices)
             stats = builder.calculate_weapon_mastery_stats()
-            assert (
-                stats["max_masteries"] == expected_count
-            ), f"Level {level} should have {expected_count} masteries"
+            assert stats["max_masteries"] == expected_count, (
+                f"Level {level} should have {expected_count} masteries"
+            )
 
     def test_rogue_mastery_constant(self, rogue_builder):
         """Test Rogue weapon mastery stays at 2."""
@@ -219,7 +219,7 @@ class TestWeaponMasterySystem:
 
     def test_mastery_properties_loaded(self):
         """Test mastery property definitions are loaded."""
-        builder = CharacterBuilder()
+        CharacterBuilder()
         # Check that mastery definitions exist
         mastery_file = Path("data/equipment/weapon_masteries.json")
         assert mastery_file.exists()

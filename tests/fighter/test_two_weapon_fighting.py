@@ -82,7 +82,9 @@ class TestTwoWeaponFighting:
             offhand_dmg = offhand.get("damage", "")
 
             # Should have ability modifier: "1d6 + 3" (DEX is 16, mod +3)
-            assert "+" in offhand_dmg, "Offhand should include positive ability modifier with Two-Weapon Fighting"
+            assert "+" in offhand_dmg, (
+                "Offhand should include positive ability modifier with Two-Weapon Fighting"
+            )
             assert "3" in offhand_dmg, "Offhand should add +3 from DEX modifier"
 
     def test_without_two_weapon_fighting_no_ability_mod_in_offhand(
@@ -99,7 +101,9 @@ class TestTwoWeaponFighting:
             offhand_dmg = offhand.get("damage", "")
 
             # Should be dice only: "1d6"
-            assert "+" not in offhand_dmg, "Offhand shouldn't include positive ability modifier without Two-Weapon Fighting"
+            assert "+" not in offhand_dmg, (
+                "Offhand shouldn't include positive ability modifier without Two-Weapon Fighting"
+            )
 
     def test_two_weapon_fighting_increases_average_damage(
         self, fighter_with_two_weapon_fighting, fighter_without_two_weapon_fighting
@@ -111,13 +115,19 @@ class TestTwoWeaponFighting:
         avg_damage_with = combos_with[0]["offhand"]["avg_damage"]
 
         # Get offhand damage without Two-Weapon Fighting
-        weapon_data_without = fighter_without_two_weapon_fighting.calculate_weapon_attacks()
+        weapon_data_without = (
+            fighter_without_two_weapon_fighting.calculate_weapon_attacks()
+        )
         combos_without = weapon_data_without.get("combinations", [])
         avg_damage_without = combos_without[0]["offhand"]["avg_damage"]
 
         # Two-Weapon Fighting should increase average damage by ability modifier
-        assert avg_damage_with > avg_damage_without, "Two-Weapon Fighting should increase average offhand damage"
-        assert avg_damage_with == avg_damage_without + 3, "Should add DEX modifier (+3) to average damage"
+        assert avg_damage_with > avg_damage_without, (
+            "Two-Weapon Fighting should increase average offhand damage"
+        )
+        assert avg_damage_with == avg_damage_without + 3, (
+            "Should add DEX modifier (+3) to average damage"
+        )
 
     def test_two_weapon_fighting_in_character_export(
         self, fighter_with_two_weapon_fighting
@@ -126,12 +136,18 @@ class TestTwoWeaponFighting:
         char_data = fighter_with_two_weapon_fighting.to_character()
         attack_combinations = char_data.get("attack_combinations", [])
 
-        assert len(attack_combinations) >= 1, "Should have at least one dual-wield combination"
+        assert len(attack_combinations) >= 1, (
+            "Should have at least one dual-wield combination"
+        )
 
         for combo in attack_combinations:
             offhand = combo.get("offhand", {})
             offhand_dmg = offhand.get("damage", "")
 
             # Should have ability modifier: "1d6 + 3"
-            assert "+" in offhand_dmg, "Exported offhand should include ability modifier with Two-Weapon Fighting"
-            assert "3" in offhand_dmg, "Exported offhand should add +3 from DEX modifier"
+            assert "+" in offhand_dmg, (
+                "Exported offhand should include ability modifier with Two-Weapon Fighting"
+            )
+            assert "3" in offhand_dmg, (
+                "Exported offhand should add +3 from DEX modifier"
+            )

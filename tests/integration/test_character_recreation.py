@@ -357,7 +357,9 @@ class TestCharacterRecreation:
         # Verify spell slots and spellcasting progression
         spells_data = character_json.get("spells", {})
         assert "prepared" in spells_data, "Should have prepared spells dict"
-        assert "always_prepared" in spells_data, "Should have always_prepared spells dict"
+        assert "always_prepared" in spells_data, (
+            "Should have always_prepared spells dict"
+        )
 
     def _verify_light_domain_effects_level_3(self, character_json):
         """Verify Light Domain subclass effects for level 3."""
@@ -924,7 +926,12 @@ class TestCharacterRecreation:
             "background": "Soldier",
             "Fighting Style": "Dueling",
             "skill_choices": ["Athletics", "Intimidation"],
-            "weapon_mastery_selections": ["Longsword", "Longbow", "Greatsword", "Battleaxe"],
+            "weapon_mastery_selections": [
+                "Longsword",
+                "Longbow",
+                "Greatsword",
+                "Battleaxe",
+            ],
             "abilities": {
                 "Strength": 16,
                 "Dexterity": 14,
@@ -1000,22 +1007,24 @@ class TestCharacterRecreation:
         # Verify dual-wielding combinations
         attacks = character_json.get("attacks", [])
         attack_combinations = character_json.get("attack_combinations", [])
-        
+
         light_weapons = [a for a in attacks if "Light" in a.get("properties", [])]
         assert len(light_weapons) >= 2, "Should have at least 2 light weapons"
 
         # Check that combinations exist for dual-wielding
-        assert len(attack_combinations) >= 1, "Should have at least one dual-wield combination"
+        assert len(attack_combinations) >= 1, (
+            "Should have at least one dual-wield combination"
+        )
 
         for combo in attack_combinations:
             assert "mainhand" in combo, "Combination should have mainhand"
             assert "offhand" in combo, "Combination should have offhand"
-            
+
             # Check offhand structure
             offhand = combo.get("offhand", {})
             assert "damage" in offhand, "Offhand should have damage"
             assert "avg_damage" in offhand, "Offhand should have average damage"
-            
+
             # Verify offhand damage is calculated correctly
             offhand_dmg = offhand["damage"]
             assert isinstance(offhand_dmg, str)

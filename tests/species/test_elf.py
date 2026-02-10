@@ -448,7 +448,7 @@ class TestElfLineageCantrips:
 
         # Should have the High Elf cantrip
         assert "Prestidigitation" in always_prepared
-        
+
         # Check class cantrips in prepared.cantrips
         prepared_cantrips = char_data["spells"]["prepared"]["cantrips"]
         for cantrip in cantrip_choices:
@@ -699,18 +699,20 @@ class TestElfDataValidation:
         always_prepared = char_data["spells"]["always_prepared"]
 
         # Should have Drow lineage cantrip
-        assert "Dancing Lights" in always_prepared, f"Dancing Lights missing from {always_prepared}"
+        assert "Dancing Lights" in always_prepared, (
+            f"Dancing Lights missing from {always_prepared}"
+        )
 
         # Should have chosen Cleric cantrips in prepared.cantrips
         prepared_cantrips = char_data["spells"]["prepared"]["cantrips"]
         for cantrip in cleric_cantrips:
-            assert cantrip in prepared_cantrips, f"{cantrip} missing from {prepared_cantrips}"
+            assert cantrip in prepared_cantrips, (
+                f"{cantrip} missing from {prepared_cantrips}"
+            )
 
         # Should have total cantrips (1 from Drow in always_prepared + 3 from Cleric in prepared)
         total_cantrips = len(always_prepared) + len(prepared_cantrips)
-        assert total_cantrips == 4, (
-            f"Expected 4 cantrips, got {total_cantrips}"
-        )
+        assert total_cantrips == 4, f"Expected 4 cantrips, got {total_cantrips}"
 
         # Verify effects tracking
         applied_effects = getattr(builder, "applied_effects", [])

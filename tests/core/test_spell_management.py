@@ -180,8 +180,12 @@ class TestSpellManagement:
     def test_spell_selection_storage(self, wizard_builder):
         """Test spell selections are stored correctly."""
         # Add prepared spells
-        wizard_builder.character_data["spells"]["prepared"]["spells"]["Detect Magic"] = {}
-        wizard_builder.character_data["spells"]["prepared"]["spells"]["Magic Missile"] = {}
+        wizard_builder.character_data["spells"]["prepared"]["spells"][
+            "Detect Magic"
+        ] = {}
+        wizard_builder.character_data["spells"]["prepared"]["spells"][
+            "Magic Missile"
+        ] = {}
 
         char_data = wizard_builder.to_character()
         spells_by_level = char_data.get("spells_by_level", {})
@@ -277,9 +281,9 @@ class TestSpellManagement:
             builder.apply_choices(choices)
 
             stats = builder.calculate_spellcasting_stats()
-            assert (
-                stats["max_cantrips"] >= expected_cantrips
-            ), f"Level {level} should have at least {expected_cantrips} cantrips"
+            assert stats["max_cantrips"] >= expected_cantrips, (
+                f"Level {level} should have at least {expected_cantrips} cantrips"
+            )
 
     def test_prepared_spell_limit(self, cleric_builder):
         """Test prepared spell limit calculation."""
@@ -295,7 +299,7 @@ class TestSpellManagement:
         # Check that class data has spell slots defined
         class_data = cleric_builder.character_data.get("class_data", {})
         spell_slots_by_level = class_data.get("spell_slots_by_level", {})
-        
+
         # Level 3 Cleric should have spell slot definition
         level_3_slots = spell_slots_by_level.get("3")
         assert level_3_slots is not None, "Level 3 should have spell slots defined"

@@ -314,12 +314,15 @@ dnd-character-creator/
 - ✅ `FEATURE_EFFECTS.md` - Effects system reference
 - ✅ `FEATURE_SCALING.md` - Scaling system
 - ✅ `.github/copilot-instructions.md` - Development guidelines
-- ✅ `things_to_fix.md` - TODO list
+- ✅ `TODO.md` - TODO list
 - ✅ `CURRENT_STATE.md` - This file
+- ✅ `character_builder_guide.md` - Usage examples
+- ✅ `SESSION_ARCHITECTURE.md` - Session management patterns
 
-### Needs Update
-- 🟨 `character_builder_guide.md` - Usage examples could be expanded
-- 🟨 `character_sheet_model_plan.md` - May be outdated
+### Archived (See docs/archive/)
+- 📦 `character_sheet_model_plan.md` - Original planning (implementation complete)
+- 📦 `dwarf_implementation_summary.md` - Dwarf species implementation complete
+- 📦 `elf_implementation_summary.md` - Elf species implementation complete
 
 ## 🧪 Testing
 

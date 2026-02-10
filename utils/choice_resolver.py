@@ -97,7 +97,7 @@ def get_option_descriptions(
                             return descriptions
             except (json.JSONDecodeError, IOError) as e:
                 print(f"Warning: Could not load descriptions from {file_path}: {e}")
-    
+
     # For internal sources, look for the list in the data
     if source.get("type") == "internal":
         list_name = source.get("list", "")

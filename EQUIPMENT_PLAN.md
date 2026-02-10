@@ -517,10 +517,12 @@ In `app.py`, add AC options to character summary:
 ```python
 @app.route('/character-summary')
 def character_summary():
-    character = session.get('character', {})
+    from utils.route_helpers import get_builder_from_session
+    builder = get_builder_from_session()
+    character = builder.to_character()  # Get complete calculated character
     
-    # Calculate all AC options
-    ac_options = calculator.calculate_all_ac_options(character)
+    # Calculate all AC options (already done in to_character)
+    ac_options = character.get('ac_options', [])
     
     # Get the best AC
     best_ac = ac_options[0]['ac'] if ac_options else 10

@@ -138,22 +138,25 @@ class CharacterBuilder:
             "choices_made": {},
             "spells": {
                 "always_prepared": {},  # Fixed spells (subclass, lineage, features) - dict of spell_name -> metadata
-                "prepared": {"cantrips": {}, "spells": {}},  # User-selected prepared spells (can change on long rest)
+                "prepared": {
+                    "cantrips": {},
+                    "spells": {},
+                },  # User-selected prepared spells (can change on long rest)
                 "known": {},  # Permanently known spells (for known casters)
                 "background_spells": {},  # Special background spells (Magic Initiate, etc.)
-                "slots": {}
+                "slots": {},
             },
             "spell_metadata": {},  # Track spell sources and special properties
             "spell_selections_needed": {  # Track what spells need to be selected
                 "cantrips": 0,
                 "prepared_spells": 0,
                 "background_cantrips": {"count": 0, "spell_list": None},
-                "background_spells": {"count": 0, "spell_list": None, "level": 1}
+                "background_spells": {"count": 0, "spell_list": None, "level": 1},
             },
             "weapon_masteries": {
                 "selected": [],  # User-selected weapon masteries
                 "available": [],  # Weapons available for mastery
-                "max_count": 0   # Maximum masteries allowed
+                "max_count": 0,  # Maximum masteries allowed
             },
             "proficiencies": {
                 "armor": [],
@@ -336,7 +339,9 @@ class CharacterBuilder:
         for trait_name, trait_data in traits.items():
             self._apply_trait_effects(trait_name, trait_data, "lineage")
 
-    def _apply_trait_effects(self, trait_name: str, trait_data: Any, source: str, level: int = None):
+    def _apply_trait_effects(
+        self, trait_name: str, trait_data: Any, source: str, level: int = None
+    ):
         """
         Apply effects from a trait.
 
@@ -430,59 +435,75 @@ class CharacterBuilder:
                     display_name = f"{trait_name}: {', '.join(choice_value)}"
                 else:
                     display_name = f"{trait_name}: {choice_value}"
-                
+
                 # Replace base description with specific choice description
                 choice_source = choice_config.get("source", {})
                 source_type_str = choice_source.get("type", "")
-                
+
                 if source_type_str == "external":
                     # Load description from external file
                     external_file = choice_source.get("file", "")
                     choice_list_name = choice_source.get("list", "")
-                    
+
                     if external_file and choice_list_name:
                         try:
                             external_path = self.data_dir / external_file
                             if external_path.exists():
-                                with open(external_path, 'r') as f:
+                                with open(external_path, "r") as f:
                                     external_data = json.load(f)
-                                    choice_list = external_data.get(choice_list_name, {})
-                                    
+                                    choice_list = external_data.get(
+                                        choice_list_name, {}
+                                    )
+
                                     # Handle both single choice and list of choices
                                     if isinstance(choice_value, list):
                                         # For multiple choices, combine descriptions
                                         descriptions = []
                                         for cv in choice_value:
                                             if isinstance(choice_list.get(cv), dict):
-                                                descriptions.append(choice_list[cv].get("description", ""))
+                                                descriptions.append(
+                                                    choice_list[cv].get(
+                                                        "description", ""
+                                                    )
+                                                )
                                             elif isinstance(choice_list.get(cv), str):
                                                 descriptions.append(choice_list[cv])
                                         if descriptions:
                                             description = "\n\n".join(descriptions)
                                     else:
                                         # Single choice
-                                        if isinstance(choice_list.get(choice_value), dict):
-                                            choice_desc = choice_list[choice_value].get("description", "")
+                                        if isinstance(
+                                            choice_list.get(choice_value), dict
+                                        ):
+                                            choice_desc = choice_list[choice_value].get(
+                                                "description", ""
+                                            )
                                             if choice_desc:
                                                 description = choice_desc
-                                        elif isinstance(choice_list.get(choice_value), str):
+                                        elif isinstance(
+                                            choice_list.get(choice_value), str
+                                        ):
                                             description = choice_list[choice_value]
                         except (json.JSONDecodeError, IOError) as e:
-                            print(f"Warning: Could not load choice description from {external_file}: {e}")
-                
+                            print(
+                                f"Warning: Could not load choice description from {external_file}: {e}"
+                            )
+
                 elif source_type_str == "internal":
                     # Load description from internal list
                     internal_list_name = choice_source.get("list", "")
-                    
+
                     if internal_list_name and isinstance(trait_data, dict):
                         internal_list = trait_data.get(internal_list_name, {})
-                        
+
                         # Handle both single choice and list of choices
                         if isinstance(choice_value, list):
                             descriptions = []
                             for cv in choice_value:
                                 if isinstance(internal_list.get(cv), dict):
-                                    descriptions.append(internal_list[cv].get("description", ""))
+                                    descriptions.append(
+                                        internal_list[cv].get("description", "")
+                                    )
                                 elif isinstance(internal_list.get(cv), str):
                                     descriptions.append(internal_list[cv])
                             if descriptions:
@@ -490,7 +511,9 @@ class CharacterBuilder:
                         else:
                             # Single choice
                             if isinstance(internal_list.get(choice_value), dict):
-                                choice_desc = internal_list[choice_value].get("description", "")
+                                choice_desc = internal_list[choice_value].get(
+                                    "description", ""
+                                )
                                 if choice_desc:
                                     description = choice_desc
                             elif isinstance(internal_list.get(choice_value), str):
@@ -554,7 +577,7 @@ class CharacterBuilder:
             "description": description,
             "source": source_display,
         }
-        
+
         # Add level information if provided (for class/subclass features)
         if level is not None:
             feature_entry["level"] = level
@@ -617,7 +640,7 @@ class CharacterBuilder:
         if effect_type == "grant_cantrip":
             spell_name = effect.get("spell")
             counts_against_limit = effect.get("counts_against_limit", False)
-            
+
             if spell_name:
                 # Map source_type to actual display name
                 if source_type == "species":
@@ -630,21 +653,21 @@ class CharacterBuilder:
                     display_source = self.character_data.get("subclass", source_name)
                 else:
                     display_source = source_name
-                
+
                 # Add to always_prepared dict with metadata
                 self.character_data["spells"]["always_prepared"][spell_name] = {
                     "level": 0,
                     "source": display_source,
                     "always_prepared": True,
-                    "counts_against_limit": counts_against_limit
+                    "counts_against_limit": counts_against_limit,
                 }
-                
+
                 # Also track in spell_metadata for compatibility
                 self.character_data["spell_metadata"][spell_name] = {
                     "source": display_source,
                     "always_prepared": True,
                     "once_per_day": False,
-                    "counts_against_limit": counts_against_limit
+                    "counts_against_limit": counts_against_limit,
                 }
 
         elif effect_type == "grant_cantrip_choice":
@@ -656,12 +679,12 @@ class CharacterBuilder:
             spell_name = effect.get("spell")
             min_level = effect.get("min_level", 1)
             counts_against_limit = effect.get("counts_against_limit", False)
-            
+
             if spell_name and self.character_data["level"] >= min_level:
                 # Load spell definition to get actual spell level
                 spell_def = self._load_spell_definition(spell_name)
                 spell_level = spell_def.get("level", 1)
-                
+
                 # Map source_type to actual name for display
                 if source_type == "species":
                     display_source = self.character_data.get("species", source_name)
@@ -675,26 +698,26 @@ class CharacterBuilder:
                     display_source = self.character_data.get("background", source_name)
                 else:
                     display_source = source_name
-                    
+
                 # Determine if spell is 1/day (for species/lineage spells)
                 once_per_day = source_type in ["species", "lineage"]
-                
+
                 # Add to always_prepared dict with metadata
                 self.character_data["spells"]["always_prepared"][spell_name] = {
                     "level": spell_level,
                     "source": display_source,
                     "always_prepared": True,
                     "once_per_day": once_per_day,
-                    "counts_against_limit": counts_against_limit
+                    "counts_against_limit": counts_against_limit,
                 }
-                
+
                 # Also track in spell_metadata for compatibility
                 self.character_data["spell_metadata"][spell_name] = {
                     "source": display_source,
                     "source_type": source_type,
                     "once_per_day": once_per_day,
                     "always_prepared": True,
-                    "counts_against_limit": counts_against_limit
+                    "counts_against_limit": counts_against_limit,
                 }
 
         elif effect_type == "grant_weapon_proficiency":
@@ -938,42 +961,54 @@ class CharacterBuilder:
 
         # Features by level
         features_by_level = class_data.get("features_by_level", {})
-        
+
         # Ensure features_by_level is a dict
         if not isinstance(features_by_level, dict):
-            print(f"Warning: features_by_level is not a dict for class {class_data.get('name')}: {type(features_by_level)}")
+            print(
+                f"Warning: features_by_level is not a dict for class {class_data.get('name')}: {type(features_by_level)}"
+            )
             return
-        
+
         for feat_level in range(1, level + 1):
             level_features = features_by_level.get(str(feat_level), {})
-            
+
             # Ensure level_features is a dict
             if not isinstance(level_features, dict):
-                print(f"Warning: level_features at level {feat_level} is not a dict: {type(level_features)}")
+                print(
+                    f"Warning: level_features at level {feat_level} is not a dict: {type(level_features)}"
+                )
                 continue
-            
+
             for feature_name, feature_data in level_features.items():
-                self._apply_trait_effects(feature_name, feature_data, "class", feat_level)
+                self._apply_trait_effects(
+                    feature_name, feature_data, "class", feat_level
+                )
 
     def _apply_subclass_features(self, subclass_data: Dict[str, Any], level: int):
         """Apply subclass features up to the specified level."""
         features_by_level = subclass_data.get("features_by_level", {})
-        
+
         # Ensure features_by_level is a dict
         if not isinstance(features_by_level, dict):
-            print(f"Warning: features_by_level is not a dict for subclass {subclass_data.get('name')}: {type(features_by_level)}")
+            print(
+                f"Warning: features_by_level is not a dict for subclass {subclass_data.get('name')}: {type(features_by_level)}"
+            )
             return
-        
+
         for feat_level_str, level_features in features_by_level.items():
             feat_level = int(feat_level_str)
             if feat_level <= level:
                 # Ensure level_features is a dict
                 if not isinstance(level_features, dict):
-                    print(f"Warning: level_features at level {feat_level_str} is not a dict: {type(level_features)}")
+                    print(
+                        f"Warning: level_features at level {feat_level_str} is not a dict: {type(level_features)}"
+                    )
                     continue
-                
+
                 for feature_name, feature_data in level_features.items():
-                    self._apply_trait_effects(feature_name, feature_data, "subclass", feat_level)
+                    self._apply_trait_effects(
+                        feature_name, feature_data, "subclass", feat_level
+                    )
 
     # ==================== Background Methods ====================
 
@@ -1012,7 +1047,9 @@ class CharacterBuilder:
             if skill not in self.character_data["proficiencies"]["skills"]:
                 self.character_data["proficiencies"]["skills"].append(skill)
                 # Track source
-                self.character_data["proficiency_sources"]["skills"][skill] = background_name
+                self.character_data["proficiency_sources"]["skills"][skill] = (
+                    background_name
+                )
 
         # Tool proficiencies
         tool_profs = background_data.get("tool_proficiencies", [])
@@ -1032,12 +1069,14 @@ class CharacterBuilder:
 
         # Background features
         features = background_data.get("features", {})
-        
+
         # Ensure features is a dict
         if not isinstance(features, dict):
-            print(f"Warning: background features is not a dict for {background_name}: {type(features)}")
+            print(
+                f"Warning: background features is not a dict for {background_name}: {type(features)}"
+            )
             features = {}
-        
+
         for feature_name, feature_data in features.items():
             description = (
                 feature_data
@@ -1260,7 +1299,7 @@ class CharacterBuilder:
         dex_mod = abilities.get("dexterity", {}).get("modifier", 0)
         equipment = self.character_data.get("equipment")
         proficiencies = self.character_data.get("proficiencies", {}).get("armor", [])
-        
+
         # Check for bonus_ac effects (e.g., Defense fighting style)
         ac_bonus = 0
         ac_bonus_sources = []
@@ -1268,7 +1307,7 @@ class CharacterBuilder:
             for effect_wrapper in self.applied_effects:
                 if effect_wrapper.get("type") == "bonus_ac":
                     effect = effect_wrapper.get("effect", {})
-                    condition = effect.get("condition", "")
+                    effect.get("condition", "")
                     # Check if condition is met (we'll verify wearing armor per option)
                     # For now, just track the bonus
                     ac_bonus += effect.get("value", 0)
@@ -1306,13 +1345,13 @@ class CharacterBuilder:
                     armor_data, dex_mod, has_shield, proficiencies, armor_name
                 )
                 ac_option["equipped_armor"] = armor_name
-                
+
                 # Apply bonus_ac if wearing armor
                 if ac_bonus > 0:
                     ac_option["ac"] += ac_bonus
                     for source in ac_bonus_sources:
                         ac_option["notes"].append(f"+{ac_bonus} from {source}")
-                
+
                 ac_options.append(ac_option)
 
         # Add unarmored AC option
@@ -1559,7 +1598,7 @@ class CharacterBuilder:
             # This handler is kept for backwards compatibility with old saved characters
             # but does nothing for new characters
             return True
-        
+
         # Spell selections - restore user-selected prepared spells
         elif choice_key_lower == "spell_selections":
             if isinstance(choice_value, dict):
@@ -1567,33 +1606,39 @@ class CharacterBuilder:
                 cantrips = choice_value.get("cantrips", [])
                 if isinstance(cantrips, list):
                     for cantrip in cantrips:
-                        self.character_data["spells"]["prepared"]["cantrips"][cantrip] = {}
-                
+                        self.character_data["spells"]["prepared"]["cantrips"][
+                            cantrip
+                        ] = {}
+
                 # Restore prepared spells
                 spells = choice_value.get("spells", [])
                 if isinstance(spells, list):
                     for spell in spells:
                         self.character_data["spells"]["prepared"]["spells"][spell] = {}
-                
+
                 # Restore background spells if any
                 bg_cantrips = choice_value.get("background_cantrips", [])
                 if isinstance(bg_cantrips, list):
                     for cantrip in bg_cantrips:
-                        self.character_data["spells"]["background_spells"][cantrip] = {"level": 0}
-                
+                        self.character_data["spells"]["background_spells"][cantrip] = {
+                            "level": 0
+                        }
+
                 bg_spells = choice_value.get("background_spells", [])
                 if isinstance(bg_spells, list):
                     for spell in bg_spells:
-                        self.character_data["spells"]["background_spells"][spell] = {"level": 1}
+                        self.character_data["spells"]["background_spells"][spell] = {
+                            "level": 1
+                        }
             return True
-        
+
         # Weapon Mastery - removed from creation wizard, managed post-creation
         elif choice_key_lower == "weapon mastery":
             # Weapon masteries are managed post-creation via "Manage Masteries"
             # This handler is kept for backwards compatibility with old saved characters
             # but does nothing for new characters
             return True
-        
+
         # Weapon mastery selections - restore user-selected masteries
         elif choice_key_lower == "weapon_mastery_selections":
             if isinstance(choice_value, list):
@@ -1618,15 +1663,15 @@ class CharacterBuilder:
                     "level": 0,
                     "source": f"{parent_name} ({class_name})",
                     "always_prepared": True,
-                    "counts_against_limit": False
+                    "counts_against_limit": False,
                 }
-                
+
                 # Also track in spell_metadata for compatibility
                 self.character_data["spell_metadata"][cantrip] = {
                     "source": f"{parent_name} ({class_name})",
                     "always_prepared": True,
                     "once_per_day": False,
-                    "counts_against_limit": False
+                    "counts_against_limit": False,
                 }
 
             # Find the parent feature and append the choice
@@ -1713,7 +1758,7 @@ class CharacterBuilder:
         # Try to find the choice-specific description from class/subclass data
         choice_description = None
         choice_scaling = None
-        
+
         # First check for external sources
         for data_source_key in ["class_data", "subclass_data"]:
             source_data = self.character_data.get(data_source_key, {})
@@ -1723,46 +1768,63 @@ class CharacterBuilder:
                 for level_features in features_by_level.values():
                     if not isinstance(level_features, dict):
                         continue
-                    
+
                     for feature_name, feature_data in level_features.items():
                         # Check if this feature name matches our choice_key
-                        if feature_name in feature_name_variants and isinstance(feature_data, dict):
+                        if feature_name in feature_name_variants and isinstance(
+                            feature_data, dict
+                        ):
                             choices_config = feature_data.get("choices", {})
                             if choices_config:
                                 source_config = choices_config.get("source", {})
-                                
+
                                 # Handle external source
                                 if source_config.get("type") == "external":
                                     external_file = source_config.get("file")
                                     external_list = source_config.get("list")
-                                    
+
                                     if external_file and external_list:
                                         try:
-                                            external_path = self.data_dir / external_file
+                                            external_path = (
+                                                self.data_dir / external_file
+                                            )
                                             if external_path.exists():
                                                 import json
-                                                with open(external_path, 'r') as f:
+
+                                                with open(external_path, "r") as f:
                                                     external_data = json.load(f)
-                                                choice_list = external_data.get(external_list, {})
-                                                
+                                                choice_list = external_data.get(
+                                                    external_list, {}
+                                                )
+
                                                 if choice_value in choice_list:
-                                                    option_data = choice_list[choice_value]
+                                                    option_data = choice_list[
+                                                        choice_value
+                                                    ]
                                                     if isinstance(option_data, dict):
-                                                        choice_description = option_data.get("description", "")
-                                                        choice_scaling = option_data.get("scaling")
+                                                        choice_description = (
+                                                            option_data.get(
+                                                                "description", ""
+                                                            )
+                                                        )
+                                                        choice_scaling = (
+                                                            option_data.get("scaling")
+                                                        )
                                                     elif isinstance(option_data, str):
                                                         choice_description = option_data
                                                     break
                                         except (json.JSONDecodeError, IOError) as e:
-                                            print(f"Warning: Could not load choice description from {external_file}: {e}")
-                        
+                                            print(
+                                                f"Warning: Could not load choice description from {external_file}: {e}"
+                                            )
+
                         if choice_description:
                             break
                     if choice_description:
                         break
                 if choice_description:
                     break
-        
+
         # If not found in external sources, check internal lists
         if not choice_description:
             for data_source_key in ["class_data", "subclass_data"]:
@@ -1831,51 +1893,59 @@ class CharacterBuilder:
             source_data: Class or subclass data to search for effects
         """
         if not isinstance(source_data, dict):
-            print(f"WARNING: _apply_choice_effects received non-dict source_data: {type(source_data)}")
+            print(
+                f"WARNING: _apply_choice_effects received non-dict source_data: {type(source_data)}"
+            )
             return
-        
+
         # Normalize choice key for lookup
-        choice_key_normalized = choice_key.lower().replace(" ", "_")
+        choice_key.lower().replace(" ", "_")
 
         # First, check if there's a feature with choices that references an external file
         features_by_level = source_data.get("features_by_level", {})
         for level_features in features_by_level.values():
             if not isinstance(level_features, dict):
                 continue
-            
+
             for feature_name, feature_data in level_features.items():
                 # Check if this feature matches our choice key
                 if feature_name == choice_key and isinstance(feature_data, dict):
                     choices_config = feature_data.get("choices", {})
                     source_config = choices_config.get("source", {})
-                    
+
                     # Handle external source
                     if source_config.get("type") == "external":
                         external_file = source_config.get("file")
                         external_list = source_config.get("list")
-                        
+
                         if external_file and external_list:
                             # Load external data file
                             import json
-                            from pathlib import Path
-                            
+
                             external_path = self.data_dir / external_file
                             if external_path.exists():
                                 try:
-                                    with open(external_path, 'r') as f:
+                                    with open(external_path, "r") as f:
                                         external_data = json.load(f)
-                                    
+
                                     # Look for the choice value in the external list
                                     options_list = external_data.get(external_list, {})
                                     if choice_value in options_list:
                                         option_data = options_list[choice_value]
-                                        if isinstance(option_data, dict) and "effects" in option_data:
+                                        if (
+                                            isinstance(option_data, dict)
+                                            and "effects" in option_data
+                                        ):
                                             # Apply each effect
                                             for effect in option_data["effects"]:
-                                                self._apply_effect(effect, choice_value, "class_choice")
+                                                self._apply_effect(
+                                                    effect, choice_value, "class_choice"
+                                                )
                                             return
                                 except (json.JSONDecodeError, IOError) as e:
-                                    print(f"WARNING: Failed to load external file {external_file}: {e}")
+                                    print(
+                                        f"WARNING: Failed to load external file {external_file}: {e}"
+                                    )
 
         # Fallback: Search for the choice in class data structures (internal references)
         # Common patterns: 'divine_orders', 'fighting_styles', etc.
@@ -1904,15 +1974,17 @@ class CharacterBuilder:
             source_data: Species or lineage data to search for effects
         """
         if not isinstance(source_data, dict):
-            print(f"WARNING: _apply_species_choice_effects received non-dict source_data: {type(source_data)}")
+            print(
+                f"WARNING: _apply_species_choice_effects received non-dict source_data: {type(source_data)}"
+            )
             return
-        
+
         # Look for traits with choice_effects
         traits = source_data.get("traits", {})
         if not isinstance(traits, dict):
             print(f"WARNING: traits is not a dict: {type(traits)}")
             return
-        
+
         for trait_name, trait_data in traits.items():
             # Check if this trait matches the choice key and has choice_effects
             if (
@@ -1946,7 +2018,7 @@ class CharacterBuilder:
             print(f"Error: apply_choices received non-dict type: {type(choices)}")
             print(f"Choices value: {choices}")
             return False
-        
+
         # Apply choices in a specific order for dependencies
         order = [
             "character_name",
@@ -2019,7 +2091,7 @@ class CharacterBuilder:
     def calculate_spellcasting_stats(self) -> Dict[str, Any]:
         """
         Calculate spellcasting statistics for spellcasting classes.
-        
+
         Returns:
             Dictionary with spellcasting ability, save DC, attack bonus, and spell counts
         """
@@ -2048,54 +2120,59 @@ class CharacterBuilder:
             "background_spell_level": 1,
             # Available spells
             "available_cantrips": [],
-            "available_spells": {}
+            "available_spells": {},
         }
-        
+
         # Get class data from character_data (already loaded)
         class_name = self.character_data.get("class")
         if not class_name:
             return stats
-            
+
         class_data = self.character_data.get("class_data")
         if not class_data:
             # Try to load it if not available
             class_data = self._load_class_data(class_name)
             if not class_data:
                 return stats
-            
+
         # Check if class has spellcasting
         spellcasting_ability = class_data.get("spellcasting_ability")
         if not spellcasting_ability:
             return stats
-            
+
         stats["has_spellcasting"] = True
         stats["spellcasting_ability"] = spellcasting_ability
         stats["spellcasting_type"] = class_data.get("spellcasting_type", "prepared")
         stats["preparation_formula"] = class_data.get("spell_preparation_formula")
         stats["ritual_casting"] = class_data.get("ritual_casting", False)
-        
+
         # Get spellcasting modifier from abilities
         ability_key = spellcasting_ability.lower()
         abilities = self.calculate_processed_ability_scores()
         ability_data = abilities.get(ability_key, {})
         spellcasting_modifier = ability_data.get("modifier", 0)
         stats["spellcasting_modifier"] = spellcasting_modifier
-        
+
         # Calculate spell save DC and attack bonus
         level = self.character_data.get("level", 1)
         proficiency_bonus = self.calculate_proficiency_bonus(level)
         stats["spell_save_dc"] = 8 + proficiency_bonus + spellcasting_modifier
         stats["spell_attack_bonus"] = proficiency_bonus + spellcasting_modifier
-        
+
         # Count always prepared cantrips (from features, lineage, etc)
-        always_prepared = self.character_data.get("spells", {}).get("always_prepared", {})
+        always_prepared = self.character_data.get("spells", {}).get(
+            "always_prepared", {}
+        )
         if isinstance(always_prepared, dict):
-            always_prepared_cantrips = [spell_name for spell_name, spell_data in always_prepared.items()
-                                       if isinstance(spell_data, dict) and spell_data.get("level", 0) == 0]
+            always_prepared_cantrips = [
+                spell_name
+                for spell_name, spell_data in always_prepared.items()
+                if isinstance(spell_data, dict) and spell_data.get("level", 0) == 0
+            ]
         else:
             always_prepared_cantrips = []
         stats["cantrips_always_prepared"] = len(always_prepared_cantrips)
-        
+
         # Get max cantrips from class table
         cantrip_progression = class_data.get("cantrip_progression", {})
         if isinstance(cantrip_progression, dict):
@@ -2105,15 +2182,20 @@ class CharacterBuilder:
             # cantrip_progression is a string like "class_table" - use cantrips_by_level
             cantrips_by_level = class_data.get("cantrips_by_level", {})
             max_cantrips_total = cantrips_by_level.get(str(level), 0)
-        
+
         # Calculate how many cantrips can be prepared (not counting always_prepared that don't count)
-        always_prepared_that_count = sum(1 for spell_data in always_prepared.values() 
-                                        if isinstance(spell_data, dict) and 
-                                        spell_data.get("level", 0) == 0 and 
-                                        spell_data.get("counts_against_limit", True))
-        stats["max_cantrips_to_prepare"] = max(0, max_cantrips_total - always_prepared_that_count)
+        always_prepared_that_count = sum(
+            1
+            for spell_data in always_prepared.values()
+            if isinstance(spell_data, dict)
+            and spell_data.get("level", 0) == 0
+            and spell_data.get("counts_against_limit", True)
+        )
+        stats["max_cantrips_to_prepare"] = max(
+            0, max_cantrips_total - always_prepared_that_count
+        )
         stats["max_cantrips_prepared"] = max_cantrips_total
-        
+
         # Count currently prepared cantrips
         prepared = self.character_data.get("spells", {}).get("prepared", {})
         if isinstance(prepared, dict):
@@ -2121,15 +2203,18 @@ class CharacterBuilder:
         else:
             current_prepared_cantrips = []
         stats["cantrips_to_prepare"] = len(current_prepared_cantrips)
-        
+
         # Count always prepared spells (from subclass, features)
         if isinstance(always_prepared, dict):
-            always_prepared_spells = [spell_name for spell_name, spell_data in always_prepared.items()
-                                     if isinstance(spell_data, dict) and spell_data.get("level", 0) > 0]
+            always_prepared_spells = [
+                spell_name
+                for spell_name, spell_data in always_prepared.items()
+                if isinstance(spell_data, dict) and spell_data.get("level", 0) > 0
+            ]
         else:
             always_prepared_spells = []
         stats["spells_always_prepared"] = len(always_prepared_spells)
-        
+
         # Calculate max prepared spells based on formula
         prepared_by_level = class_data.get("prepared_spells_by_level", {})
         if prepared_by_level:
@@ -2142,42 +2227,54 @@ class CharacterBuilder:
                 max_spells_total = max(1, level + spellcasting_modifier)
         else:
             max_spells_total = 0
-        
+
         # Calculate how many spells can be prepared (not counting always_prepared that don't count)
-        always_prepared_spells_that_count = sum(1 for spell_data in always_prepared.values()
-                                               if isinstance(spell_data, dict) and 
-                                               spell_data.get("level", 0) > 0 and 
-                                               spell_data.get("counts_against_limit", True))
-        stats["max_spells_to_prepare"] = max(0, max_spells_total - always_prepared_spells_that_count)
+        always_prepared_spells_that_count = sum(
+            1
+            for spell_data in always_prepared.values()
+            if isinstance(spell_data, dict)
+            and spell_data.get("level", 0) > 0
+            and spell_data.get("counts_against_limit", True)
+        )
+        stats["max_spells_to_prepare"] = max(
+            0, max_spells_total - always_prepared_spells_that_count
+        )
         stats["max_spells_prepared"] = max_spells_total
-        
+
         # Count currently prepared spells
         if isinstance(prepared, dict):
             current_prepared_spells = list(prepared.get("spells", {}).keys())
         else:
             current_prepared_spells = []
         stats["spells_prepared"] = len(current_prepared_spells)
-        
+
         # Add template-friendly field names for display
         # Total cantrips known = always prepared + user selected
-        stats["cantrips_known"] = stats["cantrips_always_prepared"] + stats["cantrips_to_prepare"]
+        stats["cantrips_known"] = (
+            stats["cantrips_always_prepared"] + stats["cantrips_to_prepare"]
+        )
         # Max cantrips = base slots + bonus cantrips that don't count against limit
         bonus_cantrips = stats["cantrips_always_prepared"] - always_prepared_that_count
         stats["max_cantrips"] = stats["max_cantrips_prepared"] + bonus_cantrips
         # Total spells prepared = always prepared + user selected
-        total_spells_prepared = stats["spells_always_prepared"] + stats["spells_prepared"]
+        total_spells_prepared = (
+            stats["spells_always_prepared"] + stats["spells_prepared"]
+        )
         stats["spells_prepared"] = total_spells_prepared  # Override with total
         # Max spells = base slots + bonus spells that don't count against limit
-        bonus_spells = stats["spells_always_prepared"] - always_prepared_spells_that_count
+        bonus_spells = (
+            stats["spells_always_prepared"] - always_prepared_spells_that_count
+        )
         stats["max_prepared_spells"] = stats["max_spells_prepared"] + bonus_spells
-        
+
         # Check for background spell requirements (e.g., Magic Initiate)
         background_data = self.character_data.get("background_data") or {}
         feat = background_data.get("feat") if background_data else None
         if feat and "Magic Initiate" in feat:
             # Extract spell list from feat name
             import re
-            match = re.search(r'Magic Initiate \((\w+)\)', feat)
+
+            match = re.search(r"Magic Initiate \((\w+)\)", feat)
             if match:
                 spell_list_class = match.group(1)
                 stats["background_cantrips_needed"] = 2
@@ -2185,32 +2282,37 @@ class CharacterBuilder:
                 stats["background_spells_needed"] = 1
                 stats["background_spells_list"] = spell_list_class
                 stats["background_spell_level"] = 1
-        
+
         # Load available spell lists for this class
-        spell_list_path = self.data_dir / "spells" / "class_lists" / f"{class_name.lower()}.json"
+        spell_list_path = (
+            self.data_dir / "spells" / "class_lists" / f"{class_name.lower()}.json"
+        )
         if spell_list_path.exists():
             try:
                 import json
-                with open(spell_list_path, 'r') as f:
+
+                with open(spell_list_path, "r") as f:
                     spell_list_data = json.load(f)
-                    
+
                 # Get available cantrips
                 available_cantrips = spell_list_data.get("cantrips", [])
                 stats["available_cantrips"] = sorted(available_cantrips)
-                
+
                 # Get available spells by level
                 spells_by_level = spell_list_data.get("spells_by_level", {})
-                stats["available_spells"] = {int(k): sorted(v) for k, v in spells_by_level.items()}
-                
+                stats["available_spells"] = {
+                    int(k): sorted(v) for k, v in spells_by_level.items()
+                }
+
             except (json.JSONDecodeError, IOError) as e:
                 print(f"Warning: Could not load spell list for {class_name}: {e}")
-        
+
         return stats
 
     def calculate_weapon_mastery_stats(self) -> Dict[str, Any]:
         """
         Calculate weapon mastery statistics for classes with weapon mastery.
-        
+
         Returns:
             Dictionary with available weapons, max masteries, and current selections
         """
@@ -2218,43 +2320,47 @@ class CharacterBuilder:
             "has_mastery": False,
             "available_weapons": [],
             "max_masteries": 0,
-            "current_masteries": []
+            "current_masteries": [],
         }
-        
+
         # Get class data
         class_name = self.character_data.get("class")
         if not class_name:
             return stats
-            
+
         class_data = self.character_data.get("class_data")
         if not class_data:
             class_data = self._load_class_data(class_name)
             if not class_data:
                 return stats
-        
+
         # Check if class has masterable_weapons
         masterable_weapons = class_data.get("masterable_weapons", [])
         if not masterable_weapons:
             return stats
-        
+
         stats["has_mastery"] = True
         stats["available_weapons"] = sorted(masterable_weapons)
-        
+
         # Get max masteries from masteries_by_level (like cantrips_by_level)
         masteries_by_level = class_data.get("masteries_by_level", {})
         level = self.character_data.get("level", 1)
         max_masteries = masteries_by_level.get(str(level), 0)
-        
+
         stats["max_masteries"] = max_masteries
-        
+
         # Get current selections
-        current_masteries = self.character_data.get("weapon_masteries", {}).get("selected", [])
+        current_masteries = self.character_data.get("weapon_masteries", {}).get(
+            "selected", []
+        )
         stats["current_masteries"] = current_masteries
-        
+
         # Update character data for easy access
-        self.character_data["weapon_masteries"]["available"] = stats["available_weapons"]
+        self.character_data["weapon_masteries"]["available"] = stats[
+            "available_weapons"
+        ]
         self.character_data["weapon_masteries"]["max_count"] = stats["max_masteries"]
-        
+
         return stats
 
     def calculate_processed_ability_scores(self) -> Dict[str, Dict[str, Any]]:
@@ -2401,7 +2507,7 @@ class CharacterBuilder:
                     if effect_wrapper.get("type") == "bonus_attack":
                         # Get the actual effect data (nested inside 'effect' key)
                         effect = effect_wrapper.get("effect", {})
-                        
+
                         # Check if this effect applies to this weapon
                         weapon_property = effect.get("weapon_property")
                         if weapon_property:
@@ -2420,18 +2526,18 @@ class CharacterBuilder:
             damage_dice = weapon_props.get("damage", "1d4")
             damage_bonus = ability_mod
             damage_type = weapon_props.get("damage_type", "Bludgeoning")
-            
+
             # Apply bonus_damage effects from features (e.g., Dueling fighting style)
             # Track which bonuses apply (for excluding from dual-wield offhand)
             damage_notes = []
             dueling_bonus = 0  # Track Dueling separately for dual-wield exclusion
-            
+
             if hasattr(self, "applied_effects"):
                 for effect_wrapper in self.applied_effects:
                     if effect_wrapper.get("type") == "bonus_damage":
                         effect = effect_wrapper.get("effect", {})
                         condition = effect.get("condition", "")
-                        
+
                         # Check if condition is met for this weapon
                         applies = False
                         if condition == "one handed melee weapon":
@@ -2439,7 +2545,7 @@ class CharacterBuilder:
                             # Display as if used alone (dual-wielding shown separately)
                             is_melee = "Ranged" not in category
                             is_one_handed = "Two-Handed" not in properties
-                            
+
                             if is_melee and is_one_handed:
                                 applies = True
                                 # Track Dueling bonus to exclude from dual-wield damage
@@ -2449,13 +2555,13 @@ class CharacterBuilder:
                             # The "Thrown" property means it can be used for ranged attacks
                             # (even if weapon category is "Melee")
                             # Property appears as "Thrown (range X/Y)" in the list
-                            # 
+                            #
                             # IMPORTANT: Only apply to pure thrown weapons OR the separate
                             # throw damage calculation. For melee weapons with Thrown property,
                             # we'll show separate "throw_damage" field with this bonus.
                             is_melee = "Melee" in category
                             has_thrown = any("Thrown" in prop for prop in properties)
-                            
+
                             # Only apply to main damage if it's NOT a melee weapon
                             # (pure thrown weapons without melee option get the bonus on main damage)
                             if has_thrown and not is_melee:
@@ -2463,7 +2569,7 @@ class CharacterBuilder:
                         elif not condition:
                             # No condition, applies to all
                             applies = True
-                        
+
                         if applies:
                             bonus_value = effect.get("value", 0)
                             damage_bonus += bonus_value
@@ -2487,14 +2593,16 @@ class CharacterBuilder:
                         is_melee = "Ranged" not in category
                         is_two_handed = "Two-Handed" in properties
                         is_versatile = any("Versatile" in prop for prop in properties)
-                        
+
                         if is_melee and (is_two_handed or is_versatile):
                             has_gwf = True
                             damage_notes.append("Can reroll 1s and 2s (GWF)")
                             break
-            
+
             # Calculate average damage (adjusted for GWF if applicable)
-            avg_damage = self._calculate_average_damage(damage_dice, damage_bonus, has_gwf=has_gwf)
+            avg_damage = self._calculate_average_damage(
+                damage_dice, damage_bonus, has_gwf=has_gwf
+            )
             avg_crit = self._calculate_average_damage(
                 damage_dice, damage_bonus, is_crit=True, has_gwf=has_gwf
             )
@@ -2505,25 +2613,25 @@ class CharacterBuilder:
             avg_throw_damage = None
             has_thrown = any("Thrown" in prop for prop in properties)
             is_melee = "Melee" in category
-            
+
             if has_thrown and is_melee:
                 # Calculate throw damage (without Dueling, with Thrown Weapon Fighting if active)
                 throw_bonus = ability_mod
                 throw_notes = []
-                
+
                 # Check for Thrown Weapon Fighting bonus
                 if hasattr(self, "applied_effects"):
                     for effect_wrapper in self.applied_effects:
                         if effect_wrapper.get("type") == "bonus_damage":
                             effect = effect_wrapper.get("effect", {})
                             condition = effect.get("condition", "")
-                            
+
                             if condition == "thrown weapon ranged attack":
                                 bonus_value = effect.get("value", 0)
                                 throw_bonus += bonus_value
                                 source_name = effect_wrapper.get("source", "Unknown")
                                 throw_notes.append(f"+{bonus_value} from {source_name}")
-                
+
                 # Format throw damage string
                 if throw_bonus > 0:
                     throw_damage_str = f"{damage_dice} + {throw_bonus}"
@@ -2531,41 +2639,48 @@ class CharacterBuilder:
                     throw_damage_str = f"{damage_dice} - {abs(throw_bonus)}"
                 else:
                     throw_damage_str = damage_dice
-                
-                avg_throw_damage = self._calculate_average_damage(damage_dice, throw_bonus)
-            
+
+                avg_throw_damage = self._calculate_average_damage(
+                    damage_dice, throw_bonus
+                )
+
             # Check for Versatile weapons - show one-handed and two-handed damage
             versatile_die = None
             damage_one_handed_str = None
             damage_two_handed_str = None
             avg_one_handed = None
             avg_two_handed = None
-            
+
             for prop in properties:
                 if "Versatile" in prop:
                     # Parse versatile die (e.g., "Versatile (1d8)")
                     import re
-                    match = re.search(r'\((\d+d\d+)\)', prop)
+
+                    match = re.search(r"\((\d+d\d+)\)", prop)
                     if match:
                         versatile_die = match.group(1)
-                        
+
                         # One-handed damage (use current damage calculation)
                         damage_one_handed_str = damage_str
                         avg_one_handed = avg_damage
-                        
+
                         # Two-handed damage (use versatile die with GWF if active)
                         two_handed_bonus = ability_mod
-                        
+
                         # Dueling doesn't apply when using two hands
                         # But other bonuses might apply
                         # For now, just use ability mod (no Dueling for two-handed)
                         if two_handed_bonus > 0:
-                            damage_two_handed_str = f"{versatile_die} + {two_handed_bonus}"
+                            damage_two_handed_str = (
+                                f"{versatile_die} + {two_handed_bonus}"
+                            )
                         elif two_handed_bonus < 0:
-                            damage_two_handed_str = f"{versatile_die} - {abs(two_handed_bonus)}"
+                            damage_two_handed_str = (
+                                f"{versatile_die} - {abs(two_handed_bonus)}"
+                            )
                         else:
                             damage_two_handed_str = versatile_die
-                        
+
                         # Apply GWF to two-handed versatile use
                         avg_two_handed = self._calculate_average_damage(
                             versatile_die, two_handed_bonus, has_gwf=has_gwf
@@ -2595,12 +2710,12 @@ class CharacterBuilder:
                 "_ability_mod": ability_mod,  # Store for offhand calculation
                 "_dueling_bonus": dueling_bonus,  # Store to exclude from dual-wield
             }
-            
+
             # Add thrown damage if applicable
             if throw_damage_str:
                 attack_info["throw_damage"] = throw_damage_str
                 attack_info["avg_throw_damage"] = avg_throw_damage
-            
+
             # Add versatile damage options if applicable
             if versatile_die:
                 attack_info["damage_one_handed"] = damage_one_handed_str
@@ -2615,27 +2730,27 @@ class CharacterBuilder:
         # With Unarmed Fighting: 1d6 + STR (or 1d8 + STR if no weapons/shield)
         str_mod = ability_scores.get("strength", {}).get("modifier", 0)
         has_unarmed_fighting = False
-        
+
         if hasattr(self, "applied_effects"):
             for effect_wrapper in self.applied_effects:
                 if effect_wrapper.get("type") == "unarmed_fighting":
                     has_unarmed_fighting = True
                     break
-        
+
         if has_unarmed_fighting:
             # Check if character has weapons or shield equipped
             has_weapons_or_shield = len(all_weapons) > 0
-            
+
             # Check for shield in armor
             armor_list = equipment.get("armor", [])
             has_shield = any("Shield" in armor.get("name", "") for armor in armor_list)
-            
+
             # Determine damage die
             if has_weapons_or_shield or has_shield:
                 unarmed_damage_dice = "1d6"
             else:
                 unarmed_damage_dice = "1d8"
-            
+
             # Format damage string
             if str_mod > 0:
                 unarmed_damage_str = f"{unarmed_damage_dice} + {str_mod}"
@@ -2643,9 +2758,11 @@ class CharacterBuilder:
                 unarmed_damage_str = f"{unarmed_damage_dice} - {abs(str_mod)}"
             else:
                 unarmed_damage_str = unarmed_damage_dice
-            
+
             unarmed_avg = self._calculate_average_damage(unarmed_damage_dice, str_mod)
-            unarmed_crit_avg = self._calculate_average_damage(unarmed_damage_dice, str_mod, is_crit=True)
+            unarmed_crit_avg = self._calculate_average_damage(
+                unarmed_damage_dice, str_mod, is_crit=True
+            )
         else:
             # Base unarmed strike: 1 + STR modifier
             unarmed_damage_base = 1 + str_mod
@@ -2653,12 +2770,14 @@ class CharacterBuilder:
                 unarmed_damage_str = str(unarmed_damage_base)
             else:
                 unarmed_damage_str = "1"  # Minimum 1 damage
-            
+
             unarmed_avg = float(max(1, 1 + str_mod))
-            unarmed_crit_avg = float(max(1, 1 + str_mod))  # Unarmed crits don't double the base 1
-        
+            unarmed_crit_avg = float(
+                max(1, 1 + str_mod)
+            )  # Unarmed crits don't double the base 1
+
         unarmed_attack_bonus = str_mod + proficiency_bonus
-        
+
         unarmed_notes = []
         if has_unarmed_fighting:
             if has_weapons_or_shield or has_shield:
@@ -2666,11 +2785,13 @@ class CharacterBuilder:
             else:
                 unarmed_notes.append("1d6 if wielding weapons or shield")
             unarmed_notes.append("1d4 damage to grappled creature (start of turn)")
-        
+
         unarmed_attack = {
             "name": "Unarmed Strike",
             "attack_bonus": unarmed_attack_bonus,
-            "attack_bonus_display": f"+{unarmed_attack_bonus}" if unarmed_attack_bonus >= 0 else str(unarmed_attack_bonus),
+            "attack_bonus_display": f"+{unarmed_attack_bonus}"
+            if unarmed_attack_bonus >= 0
+            else str(unarmed_attack_bonus),
             "damage": unarmed_damage_str,
             "damage_type": "Bludgeoning",
             "avg_damage": unarmed_avg,
@@ -2682,24 +2803,24 @@ class CharacterBuilder:
             "icon": "/static/images/weapons/strike.svg",
             "damage_notes": unarmed_notes,
         }
-        
+
         attacks.append(unarmed_attack)
 
         # Check if character has 2+ light weapons for dual wielding
         # Create combination cards for each pair
-        light_weapons = [
-            atk for atk in attacks if "Light" in atk.get("properties", [])
-        ]
-        
+        light_weapons = [atk for atk in attacks if "Light" in atk.get("properties", [])]
+
         combinations = []
         if len(light_weapons) >= 2:
             # Create all possible combinations of light weapons
             for i, weapon1 in enumerate(light_weapons):
-                for weapon2 in light_weapons[i+1:]:
+                for weapon2 in light_weapons[i + 1 :]:
                     # Create combination card
-                    combo = self._create_dual_wield_combo(weapon1, weapon2, proficiency_bonus)
+                    combo = self._create_dual_wield_combo(
+                        weapon1, weapon2, proficiency_bonus
+                    )
                     combinations.append(combo)
-        
+
         # Clean up temporary fields for all attacks
         for attack in attacks:
             attack.pop("_damage_dice", None)
@@ -2707,7 +2828,7 @@ class CharacterBuilder:
             attack.pop("_dueling_bonus", None)
 
         return {"attacks": attacks, "combinations": combinations}
-    
+
     def _create_dual_wield_combo(
         self, weapon1: Dict[str, Any], weapon2: Dict[str, Any], proficiency_bonus: int
     ) -> Dict[str, Any]:
@@ -2716,7 +2837,7 @@ class CharacterBuilder:
         mh_damage_dice = weapon1.get("_damage_dice", "1d4")
         mh_ability_mod = weapon1.get("_ability_mod", 0)
         mh_attack_bonus = weapon1.get("attack_bonus")
-        
+
         # Mainhand damage: ability mod but NO Dueling
         if mh_ability_mod > 0:
             mh_damage = f"{mh_damage_dice} + {mh_ability_mod}"
@@ -2724,15 +2845,15 @@ class CharacterBuilder:
             mh_damage = f"{mh_damage_dice} - {abs(mh_ability_mod)}"
         else:
             mh_damage = mh_damage_dice
-        
+
         # Mainhand average (no GWF adjustment needed here - applied to individual weapons)
         mh_avg_damage = self._calculate_average_damage(mh_damage_dice, mh_ability_mod)
-        
+
         # Calculate offhand attack (weapon2)
         oh_damage_dice = weapon2.get("_damage_dice", "1d4")
         oh_ability_mod = weapon2.get("_ability_mod", 0)
         oh_attack_bonus = weapon2.get("attack_bonus")
-        
+
         # Check for Two-Weapon Fighting style (adds ability mod to offhand)
         has_two_weapon_fighting = False
         if hasattr(self, "applied_effects"):
@@ -2740,8 +2861,8 @@ class CharacterBuilder:
                 if effect_wrapper.get("type") == "two_weapon_fighting_modifier":
                     has_two_weapon_fighting = True
                     break
-        
-        # Offhand damage: 
+
+        # Offhand damage:
         # - With Two-Weapon Fighting: add full ability mod
         # - Without: dice only (but include negative modifier)
         if has_two_weapon_fighting:
@@ -2761,21 +2882,24 @@ class CharacterBuilder:
             else:
                 oh_damage = oh_damage_dice
                 oh_damage_bonus = 0
-        
+
         # Offhand average (no GWF adjustment needed here - applied to individual weapons)
         oh_avg_damage = self._calculate_average_damage(oh_damage_dice, oh_damage_bonus)
-        
+
         # Check if Dueling was applied to either weapon
-        has_dueling = (weapon1.get("_dueling_bonus", 0) > 0 or 
-                      weapon2.get("_dueling_bonus", 0) > 0)
-        
+        has_dueling = (
+            weapon1.get("_dueling_bonus", 0) > 0 or weapon2.get("_dueling_bonus", 0) > 0
+        )
+
         return {
             "type": "combination",
             "name": f"{weapon1['name']} & {weapon2['name']}",
             "mainhand": {
                 "name": weapon1["name"],
                 "attack_bonus": mh_attack_bonus,
-                "attack_bonus_display": f"+{mh_attack_bonus}" if mh_attack_bonus >= 0 else str(mh_attack_bonus),
+                "attack_bonus_display": f"+{mh_attack_bonus}"
+                if mh_attack_bonus >= 0
+                else str(mh_attack_bonus),
                 "damage": mh_damage,
                 "damage_type": weapon1["damage_type"],
                 "avg_damage": mh_avg_damage,
@@ -2784,15 +2908,19 @@ class CharacterBuilder:
             "offhand": {
                 "name": weapon2["name"],
                 "attack_bonus": oh_attack_bonus,
-                "attack_bonus_display": f"+{oh_attack_bonus}" if oh_attack_bonus >= 0 else str(oh_attack_bonus),
+                "attack_bonus_display": f"+{oh_attack_bonus}"
+                if oh_attack_bonus >= 0
+                else str(oh_attack_bonus),
                 "damage": oh_damage,
                 "damage_type": weapon2["damage_type"],
                 "avg_damage": oh_avg_damage,
                 "icon": weapon2["icon"],
             },
-            "notes": ["Dueling bonus does not apply when dual-wielding"] if has_dueling else [],
+            "notes": ["Dueling bonus does not apply when dual-wielding"]
+            if has_dueling
+            else [],
         }
-        
+
     def _has_weapon_proficiency(
         self, weapon_props: Dict[str, Any], weapon_proficiencies: List[str]
     ) -> bool:
@@ -2814,7 +2942,7 @@ class CharacterBuilder:
         self, dice_expr: str, bonus: int, is_crit: bool = False, has_gwf: bool = False
     ) -> float:
         """Calculate average damage from a dice expression.
-        
+
         Args:
             dice_expr: Dice expression (e.g., "1d6", "2d8")
             bonus: Flat bonus damage
@@ -2843,7 +2971,7 @@ class CharacterBuilder:
                 avg_per_die = (2 * avg_all + sum_3_to_n) / die_size
             else:
                 avg_per_die = (1 + die_size) / 2.0
-            
+
             total_avg = (num_dice * avg_per_die) + bonus
 
             return round(total_avg, 1)
@@ -2981,7 +3109,7 @@ class CharacterBuilder:
                     # Check if it's per-level scaling
                     scaling = effect.get("scaling")
                     value = effect.get("value", 0)
-                    
+
                     hp_bonuses.append(
                         {
                             "source": applied_effect.get("source", "Unknown"),
@@ -3026,26 +3154,28 @@ class CharacterBuilder:
         # Process spell data for template display
         spells = character_data.get("spells", {})
         spell_slots = spells.get("slots", {})
-        spell_metadata = character_data.get("spell_metadata", {})
+        character_data.get("spell_metadata", {})
 
         # Organize spells by level for display
         spells_by_level = {}
-        
+
         # Process always_prepared spells (dict of spell_name -> metadata)
         for spell_name, spell_info in spells.get("always_prepared", {}).items():
             spell_data = self._load_spell_definition(spell_name)
             if spell_data:
                 # Merge with stored metadata
-                spell_data.update({
-                    "source": spell_info.get("source", "Unknown"),
-                    "always_prepared": True,
-                    "once_per_day": spell_info.get("once_per_day", False)
-                })
+                spell_data.update(
+                    {
+                        "source": spell_info.get("source", "Unknown"),
+                        "always_prepared": True,
+                        "once_per_day": spell_info.get("once_per_day", False),
+                    }
+                )
                 level = spell_info.get("level", spell_data.get("level", 0))
                 if level not in spells_by_level:
                     spells_by_level[level] = []
                 spells_by_level[level].append(spell_data)
-        
+
         # Process prepared spells (dict with cantrips and spells subdicts)
         prepared = spells.get("prepared", {})
         if isinstance(prepared, dict):
@@ -3053,27 +3183,31 @@ class CharacterBuilder:
             for spell_name, spell_info in prepared.get("cantrips", {}).items():
                 spell_data = self._load_spell_definition(spell_name)
                 if spell_data:
-                    spell_data.update({
-                        "source": spell_info.get("source", "Selected"),
-                        "always_prepared": False
-                    })
+                    spell_data.update(
+                        {
+                            "source": spell_info.get("source", "Selected"),
+                            "always_prepared": False,
+                        }
+                    )
                     if 0 not in spells_by_level:
                         spells_by_level[0] = []
                     spells_by_level[0].append(spell_data)
-            
+
             # Process prepared spells
             for spell_name, spell_info in prepared.get("spells", {}).items():
                 spell_data = self._load_spell_definition(spell_name)
                 if spell_data:
-                    spell_data.update({
-                        "source": spell_info.get("source", "Selected"),
-                        "always_prepared": False
-                    })
+                    spell_data.update(
+                        {
+                            "source": spell_info.get("source", "Selected"),
+                            "always_prepared": False,
+                        }
+                    )
                     level = spell_data.get("level", 1)
                     if level not in spells_by_level:
                         spells_by_level[level] = []
                     spells_by_level[level].append(spell_data)
-        
+
         # Process known spells (dict of spell_name -> metadata)
         for spell_name, spell_info in spells.get("known", {}).items():
             spell_data = self._load_spell_definition(spell_name)
@@ -3083,15 +3217,17 @@ class CharacterBuilder:
                 if level not in spells_by_level:
                     spells_by_level[level] = []
                 spells_by_level[level].append(spell_data)
-        
+
         # Process background spells (dict of spell_name -> metadata)
         for spell_name, spell_info in spells.get("background_spells", {}).items():
             spell_data = self._load_spell_definition(spell_name)
             if spell_data:
-                spell_data.update({
-                    "source": spell_info.get("source", "Background"),
-                    "once_per_day": True
-                })
+                spell_data.update(
+                    {
+                        "source": spell_info.get("source", "Background"),
+                        "once_per_day": True,
+                    }
+                )
                 level = spell_info.get("level", spell_data.get("level", 0))
                 if level not in spells_by_level:
                     spells_by_level[level] = []
@@ -3107,7 +3243,7 @@ class CharacterBuilder:
 
         # Add spellcasting stats
         character_data["spellcasting_stats"] = self.calculate_spellcasting_stats()
-        
+
         # Add weapon mastery stats
         character_data["weapon_mastery_stats"] = self.calculate_weapon_mastery_stats()
 
@@ -3132,29 +3268,39 @@ class CharacterBuilder:
 
         # Include choices_made for web app compatibility
         character_data["choices_made"] = character_data.get("choices_made", {})
-        
+
         # Include spell selections in choices_made for export/import
         spells = character_data.get("spells", {})
         prepared = spells.get("prepared", {})
         background_spells = spells.get("background_spells", {})
-        
+
         spell_selections = {
             "cantrips": list(prepared.get("cantrips", {}).keys()),
             "spells": list(prepared.get("spells", {}).keys()),
-            "background_cantrips": [name for name, data in background_spells.items() if data.get("level") == 0],
-            "background_spells": [name for name, data in background_spells.items() if data.get("level", 1) > 0]
+            "background_cantrips": [
+                name
+                for name, data in background_spells.items()
+                if data.get("level") == 0
+            ],
+            "background_spells": [
+                name
+                for name, data in background_spells.items()
+                if data.get("level", 1) > 0
+            ],
         }
-        
+
         # Only include if there are any spell selections
         if any(spell_selections.values()):
             character_data["choices_made"]["spell_selections"] = spell_selections
-        
+
         # Include weapon mastery selections in choices_made for export/import
         weapon_masteries = character_data.get("weapon_masteries", {})
         selected_masteries = weapon_masteries.get("selected", [])
-        
+
         if selected_masteries:
-            character_data["choices_made"]["weapon_mastery_selections"] = selected_masteries
+            character_data["choices_made"]["weapon_mastery_selections"] = (
+                selected_masteries
+            )
 
         return character_data
 
@@ -3221,15 +3367,15 @@ class CharacterBuilder:
             data: Character data dictionary
         """
         self.character_data = deepcopy(data)
-        
+
         # Ensure weapon_masteries structure exists (for backwards compatibility)
         if "weapon_masteries" not in self.character_data:
             self.character_data["weapon_masteries"] = {
                 "selected": [],
                 "available": [],
-                "max_count": 0
+                "max_count": 0,
             }
-        
+
         # Ensure choices_made exists (for backwards compatibility)
         if "choices_made" not in self.character_data:
             self.character_data["choices_made"] = {}
