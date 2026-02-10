@@ -2445,8 +2445,20 @@ class CharacterBuilder:
                                 # Track Dueling bonus to exclude from dual-wield damage
                                 dueling_bonus = effect.get("value", 0)
                         elif condition == "thrown weapon ranged attack":
-                            # Check: has Thrown property and is ranged attack
-                            if "Thrown" in properties and "Ranged" in category:
+                            # Thrown Weapon Fighting: Check if weapon has Thrown property
+                            # The "Thrown" property means it can be used for ranged attacks
+                            # (even if weapon category is "Melee")
+                            # Property appears as "Thrown (range X/Y)" in the list
+                            # 
+                            # IMPORTANT: Only apply to pure thrown weapons OR the separate
+                            # throw damage calculation. For melee weapons with Thrown property,
+                            # we'll show separate "throw_damage" field with this bonus.
+                            is_melee = "Melee" in category
+                            has_thrown = any("Thrown" in prop for prop in properties)
+                            
+                            # Only apply to main damage if it's NOT a melee weapon
+                            # (pure thrown weapons without melee option get the bonus on main damage)
+                            if has_thrown and not is_melee:
                                 applies = True
                         elif not condition:
                             # No condition, applies to all
@@ -2466,11 +2478,99 @@ class CharacterBuilder:
             else:
                 damage_str = damage_dice
 
-            # Calculate average damage
-            avg_damage = self._calculate_average_damage(damage_dice, damage_bonus)
+            # Check for Great Weapon Fighting (affects average damage for Two-Handed/Versatile weapons)
+            has_gwf = False
+            if hasattr(self, "applied_effects"):
+                for effect_wrapper in self.applied_effects:
+                    if effect_wrapper.get("type") == "great_weapon_fighting":
+                        # Check if weapon qualifies (melee with Two-Handed or Versatile)
+                        is_melee = "Ranged" not in category
+                        is_two_handed = "Two-Handed" in properties
+                        is_versatile = any("Versatile" in prop for prop in properties)
+                        
+                        if is_melee and (is_two_handed or is_versatile):
+                            has_gwf = True
+                            damage_notes.append("Can reroll 1s and 2s (GWF)")
+                            break
+            
+            # Calculate average damage (adjusted for GWF if applicable)
+            avg_damage = self._calculate_average_damage(damage_dice, damage_bonus, has_gwf=has_gwf)
             avg_crit = self._calculate_average_damage(
-                damage_dice, damage_bonus, is_crit=True
+                damage_dice, damage_bonus, is_crit=True, has_gwf=has_gwf
             )
+
+            # Check for Thrown weapons that can also be used in melee
+            # Show separate "Throw Damage" calculation
+            throw_damage_str = None
+            avg_throw_damage = None
+            has_thrown = any("Thrown" in prop for prop in properties)
+            is_melee = "Melee" in category
+            
+            if has_thrown and is_melee:
+                # Calculate throw damage (without Dueling, with Thrown Weapon Fighting if active)
+                throw_bonus = ability_mod
+                throw_notes = []
+                
+                # Check for Thrown Weapon Fighting bonus
+                if hasattr(self, "applied_effects"):
+                    for effect_wrapper in self.applied_effects:
+                        if effect_wrapper.get("type") == "bonus_damage":
+                            effect = effect_wrapper.get("effect", {})
+                            condition = effect.get("condition", "")
+                            
+                            if condition == "thrown weapon ranged attack":
+                                bonus_value = effect.get("value", 0)
+                                throw_bonus += bonus_value
+                                source_name = effect_wrapper.get("source", "Unknown")
+                                throw_notes.append(f"+{bonus_value} from {source_name}")
+                
+                # Format throw damage string
+                if throw_bonus > 0:
+                    throw_damage_str = f"{damage_dice} + {throw_bonus}"
+                elif throw_bonus < 0:
+                    throw_damage_str = f"{damage_dice} - {abs(throw_bonus)}"
+                else:
+                    throw_damage_str = damage_dice
+                
+                avg_throw_damage = self._calculate_average_damage(damage_dice, throw_bonus)
+            
+            # Check for Versatile weapons - show one-handed and two-handed damage
+            versatile_die = None
+            damage_one_handed_str = None
+            damage_two_handed_str = None
+            avg_one_handed = None
+            avg_two_handed = None
+            
+            for prop in properties:
+                if "Versatile" in prop:
+                    # Parse versatile die (e.g., "Versatile (1d8)")
+                    import re
+                    match = re.search(r'\((\d+d\d+)\)', prop)
+                    if match:
+                        versatile_die = match.group(1)
+                        
+                        # One-handed damage (use current damage calculation)
+                        damage_one_handed_str = damage_str
+                        avg_one_handed = avg_damage
+                        
+                        # Two-handed damage (use versatile die with GWF if active)
+                        two_handed_bonus = ability_mod
+                        
+                        # Dueling doesn't apply when using two hands
+                        # But other bonuses might apply
+                        # For now, just use ability mod (no Dueling for two-handed)
+                        if two_handed_bonus > 0:
+                            damage_two_handed_str = f"{versatile_die} + {two_handed_bonus}"
+                        elif two_handed_bonus < 0:
+                            damage_two_handed_str = f"{versatile_die} - {abs(two_handed_bonus)}"
+                        else:
+                            damage_two_handed_str = versatile_die
+                        
+                        # Apply GWF to two-handed versatile use
+                        avg_two_handed = self._calculate_average_damage(
+                            versatile_die, two_handed_bonus, has_gwf=has_gwf
+                        )
+                    break
 
             # Get weapon mastery if available
             mastery = weapon_props.get("mastery")
@@ -2495,70 +2595,35 @@ class CharacterBuilder:
                 "_ability_mod": ability_mod,  # Store for offhand calculation
                 "_dueling_bonus": dueling_bonus,  # Store to exclude from dual-wield
             }
+            
+            # Add thrown damage if applicable
+            if throw_damage_str:
+                attack_info["throw_damage"] = throw_damage_str
+                attack_info["avg_throw_damage"] = avg_throw_damage
+            
+            # Add versatile damage options if applicable
+            if versatile_die:
+                attack_info["damage_one_handed"] = damage_one_handed_str
+                attack_info["damage_two_handed"] = damage_two_handed_str
+                attack_info["avg_one_handed"] = avg_one_handed
+                attack_info["avg_two_handed"] = avg_two_handed
 
             attacks.append(attack_info)
 
         # Check if character has 2+ light weapons for dual wielding
+        # Create combination cards for each pair
         light_weapons = [
             atk for atk in attacks if "Light" in atk.get("properties", [])
         ]
         
+        combinations = []
         if len(light_weapons) >= 2:
-            # Add dual-wielding damage for light weapons
-            # This shows mainhand/offhand when dual-wielding (Dueling does NOT apply)
-            for attack in attacks:
-                if "Light" in attack.get("properties", []):
-                    damage_dice = attack.get("_damage_dice", "1d4")
-                    ability_mod = attack.get("_ability_mod", 0)
-                    dueling_bonus = attack.get("_dueling_bonus", 0)
-                    
-                    # Mainhand when dual-wielding: ability mod but no Dueling
-                    mainhand_bonus = ability_mod
-                    if mainhand_bonus > 0:
-                        mainhand_damage = f"{damage_dice} + {mainhand_bonus}"
-                    elif mainhand_bonus < 0:
-                        mainhand_damage = f"{damage_dice} - {abs(mainhand_bonus)}"
-                    else:
-                        mainhand_damage = damage_dice
-                    
-                    avg_damage_mainhand = self._calculate_average_damage(
-                        damage_dice, mainhand_bonus
-                    )
-                    avg_crit_mainhand = self._calculate_average_damage(
-                        damage_dice, mainhand_bonus, is_crit=True
-                    )
-                    
-                    # Offhand attack: damage dice only (no ability mod unless negative)
-                    if ability_mod < 0:
-                        offhand_damage = f"{damage_dice} - {abs(ability_mod)}"
-                        offhand_bonus = ability_mod
-                    else:
-                        offhand_damage = damage_dice
-                        offhand_bonus = 0
-                    
-                    # Calculate average offhand damage
-                    avg_damage_offhand = self._calculate_average_damage(
-                        damage_dice, offhand_bonus
-                    )
-                    avg_crit_offhand = self._calculate_average_damage(
-                        damage_dice, offhand_bonus, is_crit=True
-                    )
-                    
-                    # Store dual-wield damage (excludes Dueling bonus)
-                    attack["damage_mainhand"] = mainhand_damage
-                    attack["avg_damage_mainhand"] = avg_damage_mainhand
-                    attack["avg_crit_mainhand"] = avg_crit_mainhand
-                    attack["damage_offhand"] = offhand_damage
-                    attack["avg_damage_offhand"] = avg_damage_offhand
-                    attack["avg_crit_offhand"] = avg_crit_offhand
-                    
-                    # Add note about Dueling not applying when dual-wielding
-                    if dueling_bonus > 0:
-                        if "dual_wield_notes" not in attack:
-                            attack["dual_wield_notes"] = []
-                        attack["dual_wield_notes"].append(
-                            "Dueling bonus does not apply when dual-wielding"
-                        )
+            # Create all possible combinations of light weapons
+            for i, weapon1 in enumerate(light_weapons):
+                for weapon2 in light_weapons[i+1:]:
+                    # Create combination card
+                    combo = self._create_dual_wield_combo(weapon1, weapon2, proficiency_bonus)
+                    combinations.append(combo)
         
         # Clean up temporary fields for all attacks
         for attack in attacks:
@@ -2566,8 +2631,93 @@ class CharacterBuilder:
             attack.pop("_ability_mod", None)
             attack.pop("_dueling_bonus", None)
 
-        return attacks
-
+        return {"attacks": attacks, "combinations": combinations}
+    
+    def _create_dual_wield_combo(
+        self, weapon1: Dict[str, Any], weapon2: Dict[str, Any], proficiency_bonus: int
+    ) -> Dict[str, Any]:
+        """Create a dual-wield combination card for two light weapons."""
+        # Calculate mainhand attack (weapon1)
+        mh_damage_dice = weapon1.get("_damage_dice", "1d4")
+        mh_ability_mod = weapon1.get("_ability_mod", 0)
+        mh_attack_bonus = weapon1.get("attack_bonus")
+        
+        # Mainhand damage: ability mod but NO Dueling
+        if mh_ability_mod > 0:
+            mh_damage = f"{mh_damage_dice} + {mh_ability_mod}"
+        elif mh_ability_mod < 0:
+            mh_damage = f"{mh_damage_dice} - {abs(mh_ability_mod)}"
+        else:
+            mh_damage = mh_damage_dice
+        
+        # Mainhand average (no GWF adjustment needed here - applied to individual weapons)
+        mh_avg_damage = self._calculate_average_damage(mh_damage_dice, mh_ability_mod)
+        
+        # Calculate offhand attack (weapon2)
+        oh_damage_dice = weapon2.get("_damage_dice", "1d4")
+        oh_ability_mod = weapon2.get("_ability_mod", 0)
+        oh_attack_bonus = weapon2.get("attack_bonus")
+        
+        # Check for Two-Weapon Fighting style (adds ability mod to offhand)
+        has_two_weapon_fighting = False
+        if hasattr(self, "applied_effects"):
+            for effect_wrapper in self.applied_effects:
+                if effect_wrapper.get("type") == "two_weapon_fighting_modifier":
+                    has_two_weapon_fighting = True
+                    break
+        
+        # Offhand damage: 
+        # - With Two-Weapon Fighting: add full ability mod
+        # - Without: dice only (but include negative modifier)
+        if has_two_weapon_fighting:
+            # Add full ability modifier
+            if oh_ability_mod > 0:
+                oh_damage = f"{oh_damage_dice} + {oh_ability_mod}"
+            elif oh_ability_mod < 0:
+                oh_damage = f"{oh_damage_dice} - {abs(oh_ability_mod)}"
+            else:
+                oh_damage = oh_damage_dice
+            oh_damage_bonus = oh_ability_mod
+        else:
+            # Dice only (unless negative)
+            if oh_ability_mod < 0:
+                oh_damage = f"{oh_damage_dice} - {abs(oh_ability_mod)}"
+                oh_damage_bonus = oh_ability_mod
+            else:
+                oh_damage = oh_damage_dice
+                oh_damage_bonus = 0
+        
+        # Offhand average (no GWF adjustment needed here - applied to individual weapons)
+        oh_avg_damage = self._calculate_average_damage(oh_damage_dice, oh_damage_bonus)
+        
+        # Check if Dueling was applied to either weapon
+        has_dueling = (weapon1.get("_dueling_bonus", 0) > 0 or 
+                      weapon2.get("_dueling_bonus", 0) > 0)
+        
+        return {
+            "type": "combination",
+            "name": f"{weapon1['name']} & {weapon2['name']}",
+            "mainhand": {
+                "name": weapon1["name"],
+                "attack_bonus": mh_attack_bonus,
+                "attack_bonus_display": f"+{mh_attack_bonus}" if mh_attack_bonus >= 0 else str(mh_attack_bonus),
+                "damage": mh_damage,
+                "damage_type": weapon1["damage_type"],
+                "avg_damage": mh_avg_damage,
+                "icon": weapon1["icon"],
+            },
+            "offhand": {
+                "name": weapon2["name"],
+                "attack_bonus": oh_attack_bonus,
+                "attack_bonus_display": f"+{oh_attack_bonus}" if oh_attack_bonus >= 0 else str(oh_attack_bonus),
+                "damage": oh_damage,
+                "damage_type": weapon2["damage_type"],
+                "avg_damage": oh_avg_damage,
+                "icon": weapon2["icon"],
+            },
+            "notes": ["Dueling bonus does not apply when dual-wielding"] if has_dueling else [],
+        }
+        
     def _has_weapon_proficiency(
         self, weapon_props: Dict[str, Any], weapon_proficiencies: List[str]
     ) -> bool:
@@ -2586,9 +2736,16 @@ class CharacterBuilder:
         return False
 
     def _calculate_average_damage(
-        self, dice_expr: str, bonus: int, is_crit: bool = False
+        self, dice_expr: str, bonus: int, is_crit: bool = False, has_gwf: bool = False
     ) -> float:
-        """Calculate average damage from a dice expression."""
+        """Calculate average damage from a dice expression.
+        
+        Args:
+            dice_expr: Dice expression (e.g., "1d6", "2d8")
+            bonus: Flat bonus damage
+            is_crit: Whether this is a critical hit (doubles dice)
+            has_gwf: Whether Great Weapon Fighting applies (reroll 1s and 2s)
+        """
         try:
             if "d" not in dice_expr:
                 return float(bonus)
@@ -2601,8 +2758,17 @@ class CharacterBuilder:
             if is_crit:
                 num_dice *= 2
 
-            # Average of a die is (1 + die_size) / 2
-            avg_per_die = (1 + die_size) / 2.0
+            # Average of a die
+            if has_gwf:
+                # Great Weapon Fighting: reroll 1s and 2s
+                # Expected value = (2/N)*avg_reroll + sum(3 to N)/N
+                # Where avg_reroll is the normal die average
+                avg_all = (1 + die_size) / 2.0
+                sum_3_to_n = sum(range(3, die_size + 1))
+                avg_per_die = (2 * avg_all + sum_3_to_n) / die_size
+            else:
+                avg_per_die = (1 + die_size) / 2.0
+            
             total_avg = (num_dice * avg_per_die) + bonus
 
             return round(total_avg, 1)
@@ -2635,7 +2801,7 @@ class CharacterBuilder:
             "flail": "flail.svg",
             "glaive": "polearm.svg",
             "greataxe": "axe.svg",
-            "greatsword": "greatsword.svg",
+            "greatsword": "sword.svg",
             "halberd": "polearm.svg",
             "lance": "lance.svg",
             "longsword": "sword.svg",
@@ -2773,8 +2939,10 @@ class CharacterBuilder:
         # Add calculated combat stats
         character_data["combat"] = self.calculate_combat_stats()
 
-        # Add calculated weapon attacks
-        character_data["attacks"] = self.calculate_weapon_attacks()
+        # Add calculated weapon attacks and combinations
+        weapon_data = self.calculate_weapon_attacks()
+        character_data["attacks"] = weapon_data.get("attacks", [])
+        character_data["attack_combinations"] = weapon_data.get("combinations", [])
 
         # Add calculated AC options
         character_data["ac_options"] = self.calculate_ac_options()

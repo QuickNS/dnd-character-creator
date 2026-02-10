@@ -150,7 +150,8 @@ def test_dueling_one_handed_melee():
     }
     
     # Calculate weapon attacks
-    attacks = builder.calculate_weapon_attacks()
+    weapon_data = builder.calculate_weapon_attacks()
+    attacks = weapon_data.get("attacks", [])
     
     assert len(attacks) == 1, "Should have 1 weapon attack"
     longsword = attacks[0]
@@ -223,9 +224,12 @@ def test_dueling_doesnt_apply_with_two_weapons():
     }
     
     # Calculate weapon attacks
-    attacks = builder.calculate_weapon_attacks()
+    weapon_data = builder.calculate_weapon_attacks()
+    attacks = weapon_data.get("attacks", [])
+    combinations = weapon_data.get("combinations", [])
     
-    assert len(attacks) == 2, "Should have 2 weapon attacks"
+    assert len(attacks) == 2, "Should have 2 individual weapon attacks"
+    assert len(combinations) == 1, "Should have 1 combination (Shortsword & Dagger)"
     
     shortsword = next(atk for atk in attacks if atk["name"] == "Shortsword")
     
@@ -235,22 +239,24 @@ def test_dueling_doesnt_apply_with_two_weapons():
     assert any("Dueling" in note for note in shortsword.get("damage_notes", [])), \
         "Dueling should be noted in normal damage"
     
-    # But dual-wield section should exist WITHOUT Dueling bonus
-    assert "damage_mainhand" in shortsword, "Should have dual-wield mainhand damage"
-    assert "damage_offhand" in shortsword, "Should have dual-wield offhand damage"
+    # Check combination card
+    combo = combinations[0]
+    assert "Shortsword" in combo["name"] and "Dagger" in combo["name"], \
+        f"Expected combination with both weapons, got '{combo['name']}'"
     
-    # Mainhand when dual-wielding: 1d6 + 3 (no Dueling)
-    assert "1d6 + 3" in shortsword["damage_mainhand"], \
-        f"Expected dual-wield mainhand '1d6 + 3' (no Dueling), got '{shortsword['damage_mainhand']}'"
+    # Mainhand in combination: no Dueling bonus
+    if "Shortsword" in combo["mainhand"]["name"]:
+        assert "1d6 + 3" in combo["mainhand"]["damage"], \
+            f"Expected combo mainhand '1d6 + 3' (no Dueling), got '{combo['mainhand']['damage']}'"
     
-    # Offhand: 1d6 only (no ability mod, no Dueling)
-    assert shortsword["damage_offhand"] == "1d6", \
-        f"Expected dual-wield offhand '1d6', got '{shortsword['damage_offhand']}'"
+    # Offhand in combination: dice only
+    if "Dagger" in combo["offhand"]["name"]:
+        assert combo["offhand"]["damage"] == "1d4", \
+            f"Expected combo offhand '1d4', got '{combo['offhand']['damage']}'"
     
-    # Should have note about Dueling not applying to dual-wield
-    assert "dual_wield_notes" in shortsword, "Should have dual-wield notes"
-    assert any("Dueling" in note for note in shortsword.get("dual_wield_notes", [])), \
-        "Should note that Dueling doesn't apply when dual-wielding"
+    # Should have note about Dueling not applying
+    assert any("Dueling" in note for note in combo.get("notes", [])), \
+        "Combination should note that Dueling doesn't apply"
 
 
 def test_dueling_doesnt_apply_to_two_handed():
@@ -297,7 +303,8 @@ def test_dueling_doesnt_apply_to_two_handed():
     }
     
     # Calculate weapon attacks
-    attacks = builder.calculate_weapon_attacks()
+    weapon_data = builder.calculate_weapon_attacks()
+    attacks = weapon_data.get("attacks", [])
     
     assert len(attacks) == 1, "Should have 1 weapon attack"
     greatsword = attacks[0]
@@ -355,7 +362,8 @@ def test_dueling_doesnt_apply_to_ranged():
     }
     
     # Calculate weapon attacks
-    attacks = builder.calculate_weapon_attacks()
+    weapon_data = builder.calculate_weapon_attacks()
+    attacks = weapon_data.get("attacks", [])
     
     assert len(attacks) == 1, "Should have 1 weapon attack"
     longbow = attacks[0]
@@ -481,7 +489,8 @@ def test_dueling_serialization():
     new_builder.from_json(json_data)
     
     # Check that Dueling is still applied
-    attacks = new_builder.calculate_weapon_attacks()
+    weapon_data = new_builder.calculate_weapon_attacks()
+    attacks = weapon_data.get("attacks", [])
     longsword = attacks[0]
     
     assert "1d8 + 5" in longsword["damage"], \

@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Switch Hands Function Test</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-light">
+<div class="container mt-5">
+    <h2>Dual-Wielding Test</h2>
+    <p>Click "Switch Hands" to swap mainhand and offhand weapons.</p>
+    
+    <div class="weapon-attack card mb-3" style="background-color: #fef9e7;">
+        <div class="card-body">
+            <h6 class="card-title">
+                <i class="fas fa-hand-fist"></i> Scimitar & Shortsword
+                <button class="btn btn-sm btn-outline-secondary float-end" 
+                        onclick="switchWeaponHands('Scimitar', 'Shortsword')">
+                    <i class="fas fa-exchange-alt"></i> Switch Hands
+                </button>
+            </h6>
+            <div class="row">
+                <div class="col-md-6">
+                    <strong>Mainhand Attack:</strong>
+                    <div><i class="fas fa-sword"></i> <strong>Scimitar:</strong> +5 to hit, 1d6 + 3 Slashing (Avg: 6.5)</div>
+                </div>
+                <div class="col-md-6">
+                    <strong>Offhand (Bonus Action):</strong>
+                    <div><i class="fas fa-dagger"></i> <strong>Shortsword:</strong> +5 to hit, 1d6 Piercing (Avg: 3.5)</div>
+                </div>
+            </div>
+            <div class="alert alert-info mt-2 mb-0">
+                <i class="fas fa-info-circle"></i> Dueling bonus does not apply when dual-wielding
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Dual-Wielding Weapon Switching
+function switchWeaponHands(weapon1Name, weapon2Name) {
+    // Find all combination cards
+    const comboCards = document.querySelectorAll('.weapon-attack');
+    
+    for (const card of comboCards) {
+        const cardTitle = card.querySelector('h6');
+        if (!cardTitle) continue;
+        
+        const titleText = cardTitle.textContent.trim();
+        
+        // Check if this card contains both weapons
+        if (titleText.includes(weapon1Name) && titleText.includes(weapon2Name)) {
+            // Get the two columns (mainhand and offhand)
+            const columns = card.querySelectorAll('.col-md-6');
+            if (columns.length !== 2) continue;
+            
+            const mainhandCol = columns[0];
+            const offhandCol = columns[1];
+            
+            // Store the HTML content
+            const mainhandHTML = mainhandCol.innerHTML;
+            const offhandHTML = offhandCol.innerHTML;
+            
+            // Swap the content but keep the labels
+            mainhandCol.innerHTML = offhandHTML.replace('<strong>Offhand (Bonus Action):</strong>', '<strong>Mainhand Attack:</strong>');
+            offhandCol.innerHTML = mainhandHTML.replace('<strong>Mainhand Attack:</strong>', '<strong>Offhand (Bonus Action):</strong>');
+            
+            // Update the title to reflect the swap  
+            const currentTitle = titleText.replace(/\s+/g, ' ');
+            if (currentTitle.includes(weapon1Name + ' & ' + weapon2Name)) {
+                cardTitle.innerHTML = cardTitle.innerHTML.replace(
+                    weapon1Name + ' & ' + weapon2Name,
+                    weapon2Name + ' & ' + weapon1Name
+                );
+            } else if (currentTitle.includes(weapon2Name + ' & ' + weapon1Name)) {
+                cardTitle.innerHTML = cardTitle.innerHTML.replace(
+                    weapon2Name + ' & ' + weapon1Name,
+                    weapon1Name + ' & ' + weapon2Name
+                );
+            }
+            
+            // Update the button onclick to reflect the new order
+            const switchBtn = card.querySelector('button[onclick*="switchWeaponHands"]');
+            if (switchBtn) {
+                // Swap the weapon names in the onclick attribute
+                const currentOnclick = switchBtn.getAttribute('onclick');
+                if (currentOnclick.includes(`'${weapon1Name}', '${weapon2Name}'`)) {
+                    switchBtn.setAttribute('onclick', currentOnclick.replace(
+                        `'${weapon1Name}', '${weapon2Name}'`,
+                        `'${weapon2Name}', '${weapon1Name}'`
+                    ));
+                } else if (currentOnclick.includes(`'${weapon2Name}', '${weapon1Name}'`)) {
+                    switchBtn.setAttribute('onclick', currentOnclick.replace(
+                        `'${weapon2Name}', '${weapon1Name}'`,
+                        `'${weapon1Name}', '${weapon2Name}'`
+                    ));
+                }
+            }
+            
+            break;
+        }
+    }
+}
+</script>
+</body>
+</html>

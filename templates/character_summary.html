@@ -180,6 +180,22 @@
                                                         <strong>Damage:</strong> {{ weapon.damage }} {{ weapon.damage_type }}
                                                         <small class="text-muted">(Avg: {{ weapon.avg_damage }}, Crit: {{ weapon.avg_crit }})</small>
                                                     </p>
+                                                    {% if weapon.throw_damage %}
+                                                        <p class="mb-1">
+                                                            <strong>Throw Damage:</strong> {{ weapon.throw_damage }} {{ weapon.damage_type }}
+                                                            <small class="text-muted">(Avg: {{ weapon.avg_throw_damage }})</small>
+                                                        </p>
+                                                    {% endif %}
+                                                    {% if weapon.damage_one_handed and weapon.damage_two_handed %}
+                                                        <p class="mb-1">
+                                                            <strong>One-Handed:</strong> {{ weapon.damage_one_handed }} {{ weapon.damage_type }}
+                                                            <small class="text-muted">(Avg: {{ weapon.avg_one_handed }})</small>
+                                                        </p>
+                                                        <p class="mb-1">
+                                                            <strong>Two-Handed:</strong> {{ weapon.damage_two_handed }} {{ weapon.damage_type }}
+                                                            <small class="text-muted">(Avg: {{ weapon.avg_two_handed }})</small>
+                                                        </p>
+                                                    {% endif %}
                                                     {% if weapon.damage_notes %}
                                                         {% for note in weapon.damage_notes %}
                                                             <p class="mb-1">
@@ -191,28 +207,6 @@
                                                         <p class="mb-1">
                                                             <strong>2-handed:</strong> {{ weapon.damage_versatile }} {{ weapon.damage_type }}
                                                         </p>
-                                                    {% endif %}
-                                                    {% if weapon.damage_mainhand %}
-                                                        <div class="mt-2 pt-2 border-top">
-                                                            <p class="mb-1">
-                                                                <strong>Dual-Wielding:</strong>
-                                                            </p>
-                                                            <p class="mb-1 ms-3">
-                                                                <strong>Mainhand:</strong> {{ weapon.damage_mainhand }} {{ weapon.damage_type }}
-                                                                <small class="text-muted">(Avg: {{ weapon.avg_damage_mainhand }})</small>
-                                                            </p>
-                                                            <p class="mb-1 ms-3">
-                                                                <strong>Offhand (Bonus Action):</strong> {{ weapon.damage_offhand }} {{ weapon.damage_type }}
-                                                                <small class="text-muted">(Avg: {{ weapon.avg_damage_offhand }})</small>
-                                                            </p>
-                                                            {% if weapon.dual_wield_notes %}
-                                                                {% for note in weapon.dual_wield_notes %}
-                                                                    <p class="mb-1 ms-3">
-                                                                        <small class="text-info"><i class="fas fa-info-circle"></i> {{ note }}</small>
-                                                                    </p>
-                                                                {% endfor %}
-                                                            {% endif %}
-                                                        </div>
                                                     {% endif %}
                                                     {% if weapon.properties %}
                                                         <p class="mb-1"><strong>Properties:</strong>
@@ -246,7 +240,58 @@
                                                 </div>
                                             {% endfor %}
                                         </div>
+                                        
+                                        <!-- Dual-Wielding Combinations -->
+                                        {% if character.attack_combinations %}
+                                        <hr class="my-3">
+                                        <h6 class="mb-3"><i class="fas fa-hands"></i> Dual-Wielding Combinations</h6>
+                                        {% for combo in character.attack_combinations %}
+                                            <div class="weapon-attack p-3 mb-3 border rounded" style="background-color: #fef9e7;">
+                                                <h6 class="mb-2">
+                                                    <img src="{{ combo.mainhand.icon }}" alt="{{ combo.mainhand.name }}" style="width: 20px; height: 20px; margin-right: 4px; vertical-align: middle;">
+                                                    {{ combo.name }}
+                                                    <img src="{{ combo.offhand.icon }}" alt="{{ combo.offhand.name }}" style="width: 20px; height: 20px; margin-left: 4px; vertical-align: middle;">
+                                                </h6>
+                                                
+                                                <div class="row">
+                                                    <div class="col-md-6">
+                                                        <p class="mb-1"><strong>Mainhand Attack:</strong></p>
+                                                        <p class="mb-1 ms-3">
+                                                            {{ combo.mainhand.name }}: {{ combo.mainhand.attack_bonus_display }} to hit
+                                                        </p>
+                                                        <p class="mb-1 ms-3">
+                                                            {{ combo.mainhand.damage }} {{ combo.mainhand.damage_type }}
+                                                            <small class="text-muted">(Avg: {{ combo.mainhand.avg_damage }})</small>
+                                                        </p>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <p class="mb-1"><strong>Offhand (Bonus Action):</strong></p>
+                                                        <p class="mb-1 ms-3">
+                                                            {{ combo.offhand.name }}: {{ combo.offhand.attack_bonus_display }} to hit
+                                                        </p>
+                                                        <p class="mb-1 ms-3">
+                                                            {{ combo.offhand.damage }} {{ combo.offhand.damage_type }}
+                                                            <small class="text-muted">(Avg: {{ combo.offhand.avg_damage }})</small>
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                
+                                                {% if combo.notes %}
+                                                    {% for note in combo.notes %}
+                                                        <p class="mb-0 mt-2">
+                                                            <small class="text-info"><i class="fas fa-info-circle"></i> {{ note }}</small>
+                                                        </p>
+                                                    {% endfor %}
+                                                {% endif %}
+                                                
+                                                <button type="button" class="btn btn-sm btn-outline-secondary mt-2" onclick="switchWeaponHands('{{ combo.mainhand.name }}', '{{ combo.offhand.name }}')">
+                                                    <i class="fas fa-exchange-alt"></i> Switch Hands
+                                                </button>
+                                            </div>
+                                        {% endfor %}
+                                        {% endif %}
                                     </div>
+                                </div>
                                 </div>
                                 {% endif %}
                             </div>
@@ -1846,6 +1891,71 @@ async function saveMasterySelections() {
         }
     } catch (error) {
         alert('Error saving mastery selections: ' + error);
+    }
+}
+
+// Dual-Wielding Weapon Switching
+function switchWeaponHands(weapon1Name, weapon2Name) {
+    // Find all combination cards
+    const comboCards = document.querySelectorAll('.weapon-attack');
+    
+    for (const card of comboCards) {
+        const cardTitle = card.querySelector('h6');
+        if (!cardTitle) continue;
+        
+        const titleText = cardTitle.textContent.trim();
+        
+        // Check if this card contains both weapons
+        if (titleText.includes(weapon1Name) && titleText.includes(weapon2Name)) {
+            // Get the two columns (mainhand and offhand)
+            const columns = card.querySelectorAll('.col-md-6');
+            if (columns.length !== 2) continue;
+            
+            const mainhandCol = columns[0];
+            const offhandCol = columns[1];
+            
+            // Store the HTML content
+            const mainhandHTML = mainhandCol.innerHTML;
+            const offhandHTML = offhandCol.innerHTML;
+            
+            // Swap the content but keep the labels
+            mainhandCol.innerHTML = offhandHTML.replace('<strong>Offhand (Bonus Action):</strong>', '<strong>Mainhand Attack:</strong>');
+            offhandCol.innerHTML = mainhandHTML.replace('<strong>Mainhand Attack:</strong>', '<strong>Offhand (Bonus Action):</strong>');
+            
+            // Update the title to reflect the swap  
+            const currentTitle = titleText.replace(/\s+/g, ' ');
+            if (currentTitle.includes(weapon1Name + ' & ' + weapon2Name)) {
+                cardTitle.innerHTML = cardTitle.innerHTML.replace(
+                    weapon1Name + ' & ' + weapon2Name,
+                    weapon2Name + ' & ' + weapon1Name
+                );
+            } else if (currentTitle.includes(weapon2Name + ' & ' + weapon1Name)) {
+                cardTitle.innerHTML = cardTitle.innerHTML.replace(
+                    weapon2Name + ' & ' + weapon1Name,
+                    weapon1Name + ' & ' + weapon2Name
+                );
+            }
+            
+            // Update the button onclick to reflect the new order
+            const switchBtn = card.querySelector('button[onclick*="switchWeaponHands"]');
+            if (switchBtn) {
+                // Swap the weapon names in the onclick attribute
+                const currentOnclick = switchBtn.getAttribute('onclick');
+                if (currentOnclick.includes(`'${weapon1Name}', '${weapon2Name}'`)) {
+                    switchBtn.setAttribute('onclick', currentOnclick.replace(
+                        `'${weapon1Name}', '${weapon2Name}'`,
+                        `'${weapon2Name}', '${weapon1Name}'`
+                    ));
+                } else if (currentOnclick.includes(`'${weapon2Name}', '${weapon1Name}'`)) {
+                    switchBtn.setAttribute('onclick', currentOnclick.replace(
+                        `'${weapon2Name}', '${weapon1Name}'`,
+                        `'${weapon1Name}', '${weapon2Name}'`
+                    ));
+                }
+            }
+            
+            break;
+        }
     }
 }
 </script>

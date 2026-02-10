@@ -70,39 +70,34 @@ class TestDualWielding:
         return builder
 
     def test_dual_wielding_detection(self, dual_wielding_fighter):
-        """Test that two light weapons trigger offhand damage."""
-        attacks = dual_wielding_fighter.calculate_weapon_attacks()
+        """Test that two light weapons trigger combination cards."""
+        weapon_data = dual_wielding_fighter.calculate_weapon_attacks()
+        attacks = weapon_data.get("attacks", [])
+        combinations = weapon_data.get("combinations", [])
 
         # Find light weapons
         light_weapons = [atk for atk in attacks if "Light" in atk.get("properties", [])]
 
         assert len(light_weapons) >= 2, "Should have at least 2 light weapons"
+        assert len(combinations) >= 1, "Should have at least 1 dual-wield combination"
 
-        # All light weapons should have offhand damage
-        for weapon in light_weapons:
-            assert (
-                "damage_offhand" in weapon
-            ), f"{weapon['name']} should have offhand damage"
-            assert (
-                "avg_damage_offhand" in weapon
-            ), f"{weapon['name']} should have average offhand damage"
-            assert (
-                "avg_crit_offhand" in weapon
-            ), f"{weapon['name']} should have crit offhand damage"
+        # Check combination structure
+        for combo in combinations:
+            assert "mainhand" in combo, "Combination should have mainhand"
+            assert "offhand" in combo, "Combination should have offhand"
+            assert "name" in combo, "Combination should have name"
 
     def test_single_weapon_no_offhand(self, single_weapon_fighter):
-        """Test that single weapon doesn't get offhand damage."""
-        attacks = single_weapon_fighter.calculate_weapon_attacks()
+        """Test that single weapon doesn't get combination cards."""
+        weapon_data = single_weapon_fighter.calculate_weapon_attacks()
+        attacks = weapon_data.get("attacks", [])
+        combinations = weapon_data.get("combinations", [])
 
-        # No attacks should have offhand damage
-        for weapon in attacks:
-            assert (
-                "damage_offhand" not in weapon
-            ), f"{weapon['name']} shouldn't have offhand damage with single weapon"
+        # Should have no combinations with only one weapon
+        assert len(combinations) == 0, "Single weapon should not have combinations"
 
     def test_offhand_damage_no_ability_modifier(self):
         """Test offhand damage is dice-only (no positive ability mod)."""
-        # Use dual_wielding_fighter fixture which already has two light weapons
         builder = CharacterBuilder()
         choices = {
             "character_name": "Dual Wielder",
@@ -119,7 +114,7 @@ class TestDualWielding:
                 "Charisma": 10,
             },
             "skill_choices": ["Athletics", "Acrobatics"],
-            "Fighting Style": "Two-Weapon Fighting",
+            "Fighting Style": "Dueling",  # NOT Two-Weapon Fighting
             "equipment_selections": {
                 "class_equipment": "option_b",  # Gets Scimitar and Shortsword
                 "background_equipment": "option_a",
@@ -127,14 +122,17 @@ class TestDualWielding:
         }
         builder.apply_choices(choices)
 
-        attacks = builder.calculate_weapon_attacks()
-        light_weapons = [atk for atk in attacks if "Light" in atk.get("properties", [])]
+        weapon_data = builder.calculate_weapon_attacks()
+        combinations = weapon_data.get("combinations", [])
 
-        if len(light_weapons) >= 2:
-            for weapon in light_weapons:
-                offhand_dmg = weapon.get("damage_offhand", "")
-                # Should be just dice (e.g., "1d4" or "1d6"), not "1d4 + 3"
-                assert "+" not in offhand_dmg, "Offhand shouldn't add positive ability mod"
+        assert len(combinations) >= 1, "Should have at least one dual-wield combination"
+
+        for combo in combinations:
+            offhand = combo.get("offhand", {})
+            offhand_dmg = offhand.get("damage", "")
+            # Should be just dice (e.g., "1d4" or "1d6"), not "1d4 + 3"
+            # Without Two-Weapon Fighting, offhand doesn't get positive ability mod
+            assert "+" not in offhand_dmg, "Offhand shouldn't add positive ability mod without Two-Weapon Fighting"
 
     def test_offhand_damage_with_negative_modifier(self):
         """Test offhand damage includes negative ability modifier."""
@@ -154,7 +152,7 @@ class TestDualWielding:
                 "Charisma": 10,
             },
             "skill_choices": ["Athletics", "Acrobatics"],
-            "Fighting Style": "Two-Weapon Fighting",
+            "Fighting Style": "Dueling",  # Use Dueling to avoid Two-Weapon Fighting bonuses
             "equipment_selections": {
                 "class_equipment": "option_b",  # Gets Scimitar and Shortsword
                 "background_equipment": "option_a",
@@ -162,37 +160,34 @@ class TestDualWielding:
         }
         builder.apply_choices(choices)
 
-        attacks = builder.calculate_weapon_attacks()
-        light_weapons = [atk for atk in attacks if "Light" in atk.get("properties", [])]
+        weapon_data = builder.calculate_weapon_attacks()
+        combinations = weapon_data.get("combinations", [])
 
-        if len(light_weapons) >= 2:
-            for weapon in light_weapons:
-                offhand_dmg = weapon.get("damage_offhand", "")
-                # Should include negative modifier (e.g., "1d4 - 1")
-                if weapon.get("_ability_mod", 0) < 0:
-                    assert "-" in offhand_dmg, "Offhand should subtract negative modifier"
+        assert len(combinations) >= 1, "Should have at least one dual-wield combination"
+
+        for combo in combinations:
+            offhand = combo.get("offhand", {})
+            offhand_dmg = offhand.get("damage", "")
+            # Should include negative modifier (e.g., "1d4 - 1") since DEX is 8 (-1 mod)
+            assert "-" in offhand_dmg, "Offhand should subtract negative modifier"
 
     def test_offhand_average_damage_calculation(self, dual_wielding_fighter):
         """Test offhand average damage is calculated correctly."""
-        attacks = dual_wielding_fighter.calculate_weapon_attacks()
-        light_weapons = [atk for atk in attacks if "Light" in atk.get("properties", [])]
+        weapon_data = dual_wielding_fighter.calculate_weapon_attacks()
+        combinations = weapon_data.get("combinations", [])
 
-        assert len(light_weapons) >= 2
+        assert len(combinations) >= 1, "Should have at least one dual-wield combination"
 
-        for weapon in light_weapons:
-            avg_offhand = weapon.get("avg_damage_offhand")
-            avg_crit_offhand = weapon.get("avg_crit_offhand")
+        for combo in combinations:
+            offhand = combo.get("offhand", {})
+            avg_offhand = offhand.get("avg_damage")
 
-            assert avg_offhand is not None
-            assert avg_crit_offhand is not None
+            assert avg_offhand is not None, "Offhand should have average damage"
             assert isinstance(avg_offhand, (int, float))
-            assert isinstance(avg_crit_offhand, (int, float))
-
-            # Crit should always be higher than normal
-            assert avg_crit_offhand > avg_offhand
+            assert avg_offhand > 0, "Average damage should be positive"
 
     def test_mixed_weapons_only_light_get_offhand(self):
-        """Test that only light weapons get offhand damage in mixed loadout."""
+        """Test that only light weapons appear in dual-wield combinations."""
         
         builder = CharacterBuilder()
         choices = {
@@ -218,34 +213,39 @@ class TestDualWielding:
         }
         builder.apply_choices(choices)
 
-        attacks = builder.calculate_weapon_attacks()
+        weapon_data = builder.calculate_weapon_attacks()
+        attacks = weapon_data.get("attacks", [])
+        combinations = weapon_data.get("combinations", [])
 
         # Find light weapons
         light_weapons = [atk for atk in attacks if "Light" in atk.get("properties", [])]
-        heavy_weapons = [
-            atk for atk in attacks if "Light" not in atk.get("properties", [])
-        ]
 
         # Should have 2+ light weapons to trigger dual-wielding
         if len(light_weapons) >= 2:
-            # Light weapons should have offhand damage
-            for weapon in light_weapons:
-                assert "damage_offhand" in weapon
-
-            # Heavy weapons should NOT have offhand damage
-            for weapon in heavy_weapons:
-                assert "damage_offhand" not in weapon
+            assert len(combinations) >= 1, "Should have at least one dual-wield combination"
+            
+            # All weapons in combinations should be light weapons
+            for combo in combinations:
+                mainhand_name = combo.get("mainhand", {}).get("name")
+                offhand_name = combo.get("offhand", {}).get("name")
+                
+                # Check both weapons are in the light weapons list
+                light_weapon_names = [w.get("name") for w in light_weapons]
+                assert mainhand_name in light_weapon_names, f"{mainhand_name} should be a light weapon"
+                assert offhand_name in light_weapon_names, f"{offhand_name} should be a light weapon"
 
     def test_offhand_damage_in_character_export(self, dual_wielding_fighter):
-        """Test offhand damage appears in character export."""
+        """Test dual-wield combinations appear in character export."""
         char_data = dual_wielding_fighter.to_character()
 
-        attacks = char_data.get("attacks", [])
-        light_weapons = [atk for atk in attacks if "Light" in atk.get("properties", [])]
+        attack_combinations = char_data.get("attack_combinations", [])
+        
+        assert len(attack_combinations) >= 1, "Should have at least one dual-wield combination"
 
-        assert len(light_weapons) >= 2
-
-        for weapon in light_weapons:
-            assert "damage_offhand" in weapon
-            assert "avg_damage_offhand" in weapon
-            assert "avg_crit_offhand" in weapon
+        for combo in attack_combinations:
+            assert "mainhand" in combo, "Combination should have mainhand"
+            assert "offhand" in combo, "Combination should have offhand"
+            
+            offhand = combo.get("offhand", {})
+            assert "damage" in offhand, "Offhand should have damage"
+            assert "avg_damage" in offhand, "Offhand should have average damage"

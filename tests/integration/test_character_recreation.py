@@ -997,22 +997,30 @@ class TestCharacterRecreation:
 
         character_json = builder.to_character()
 
-        # Verify dual-wielding attacks
+        # Verify dual-wielding combinations
         attacks = character_json.get("attacks", [])
+        attack_combinations = character_json.get("attack_combinations", [])
+        
         light_weapons = [a for a in attacks if "Light" in a.get("properties", [])]
-
         assert len(light_weapons) >= 2, "Should have at least 2 light weapons"
 
-        # Check offhand damage on light weapons
-        for weapon in light_weapons:
-            assert "damage_offhand" in weapon, f"{weapon['name']} should have offhand damage"
-            assert "avg_damage_offhand" in weapon, f"{weapon['name']} should have avg offhand damage"
-            assert "avg_crit_offhand" in weapon, f"{weapon['name']} should have crit offhand damage"
+        # Check that combinations exist for dual-wielding
+        assert len(attack_combinations) >= 1, "Should have at least one dual-wield combination"
 
-            # Verify offhand damage is calculated correctly (dice only, no positive modifier)
-            offhand_dmg = weapon["damage_offhand"]
+        for combo in attack_combinations:
+            assert "mainhand" in combo, "Combination should have mainhand"
+            assert "offhand" in combo, "Combination should have offhand"
+            
+            # Check offhand structure
+            offhand = combo.get("offhand", {})
+            assert "damage" in offhand, "Offhand should have damage"
+            assert "avg_damage" in offhand, "Offhand should have average damage"
+            
+            # Verify offhand damage is calculated correctly
+            offhand_dmg = offhand["damage"]
             assert isinstance(offhand_dmg, str)
-            # Should be "1d6" format or "1d6 - 1" if negative modifier
+            # With Two-Weapon Fighting, should include ability mod: "1d6 + 3"
+            # Without it, should be dice only: "1d6"
 
         print("✅ Dual-wielding Fighter - Offhand damage calculated correctly!")
 
