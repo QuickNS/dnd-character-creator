@@ -483,13 +483,13 @@
                                     {% for feature in character.features.subclass %}
                                         {% if feature.name %}
                                         <div class="mb-3">
-                                            <p class="small mb-0">
+                                            <p class="mb-0">
                                             <strong>{{ feature.name }}</strong>
                                                 {% if feature.level %}
                                                 <span class="badge bg-secondary ms-1">Level {{ feature.level }}</span>
                                                 {% endif %}
                                                 {% if feature.source %}
-                                                <span class="badge bg-info ms-1">{{ feature.source }}</span>
+                                                <span class="badge bg-primary ms-1">{{ feature.source }}</span>
                                                 {% endif %}
                                                 </br>
                                             {{ feature.description | safe }}</p>
