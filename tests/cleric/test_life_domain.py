@@ -26,11 +26,11 @@ class TestLifeDomain:
         char_data = life_cleric_builder.character_data
 
         # Check domain spells - Life Domain should have Aid, Bless, Cure Wounds, Lesser Restoration at level 3
-        prepared_spells = char_data["spells"]["prepared"]
-        assert "Aid" in prepared_spells
-        assert "Bless" in prepared_spells
-        assert "Cure Wounds" in prepared_spells
-        assert "Lesser Restoration" in prepared_spells
+        always_prepared = char_data["spells"]["always_prepared"]
+        assert "Aid" in always_prepared
+        assert "Bless" in always_prepared
+        assert "Cure Wounds" in always_prepared
+        assert "Lesser Restoration" in always_prepared
 
         # Check spell metadata (domain spells should be always prepared)
         spell_metadata = char_data.get("spell_metadata", {})
@@ -41,26 +41,26 @@ class TestLifeDomain:
         """Test that domain spells are gained at appropriate levels"""
         # At level 3, should have all level 3 domain spells (in D&D 2024, Life Domain gets 4 spells at level 3)
         char_data = life_cleric_builder.character_data
-        prepared_spells = char_data["spells"]["prepared"]
-        assert "Aid" in prepared_spells
-        assert "Bless" in prepared_spells
-        assert "Cure Wounds" in prepared_spells
-        assert "Lesser Restoration" in prepared_spells
+        always_prepared = char_data["spells"]["always_prepared"]
+        assert "Aid" in always_prepared
+        assert "Bless" in always_prepared
+        assert "Cure Wounds" in always_prepared
+        assert "Lesser Restoration" in always_prepared
 
         # Level up to 5, should gain level 5 domain spells
         life_cleric_builder.set_class("Cleric", 5)
         char_data = life_cleric_builder.character_data
-        prepared_spells = char_data["spells"]["prepared"]
+        always_prepared = char_data["spells"]["always_prepared"]
 
         # Should still have level 3 spells (all 4 domain spells are available at level 3)
-        assert "Aid" in prepared_spells
-        assert "Bless" in prepared_spells
-        assert "Cure Wounds" in prepared_spells
-        assert "Lesser Restoration" in prepared_spells
+        assert "Aid" in always_prepared
+        assert "Bless" in always_prepared
+        assert "Cure Wounds" in always_prepared
+        assert "Lesser Restoration" in always_prepared
 
         # Should now have level 5 domain spells
-        assert "Mass Healing Word" in prepared_spells
-        assert "Revivify" in prepared_spells
+        assert "Mass Healing Word" in always_prepared
+        assert "Revivify" in always_prepared
 
     def test_life_domain_features(self, life_cleric_builder):
         """Test Life Domain specific features are present"""

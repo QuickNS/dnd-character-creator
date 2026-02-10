@@ -26,9 +26,9 @@ def test_wood_elf_cantrip(character_builder):
     assert character["species"] == "Elf"
     assert character["lineage"] == "Wood Elf"
 
-    # Check that Druidcraft cantrip was added
-    cantrips = character.get("spells", {}).get("cantrips", [])
-    assert "Druidcraft" in cantrips
+    # Check that Druidcraft cantrip was added (in always_prepared from grant_cantrip effect)
+    always_prepared = character.get("spells", {}).get("always_prepared", {})
+    assert "Druidcraft" in always_prepared
 
 
 def test_basic_character_creation(character_builder):

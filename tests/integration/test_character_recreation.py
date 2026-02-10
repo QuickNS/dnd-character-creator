@@ -356,8 +356,8 @@ class TestCharacterRecreation:
 
         # Verify spell slots and spellcasting progression
         spells_data = character_json.get("spells", {})
-        assert "cantrips" in spells_data, "Should have cantrips array"
-        assert "prepared" in spells_data, "Should have prepared spells array"
+        assert "prepared" in spells_data, "Should have prepared spells dict"
+        assert "always_prepared" in spells_data, "Should have always_prepared spells dict"
 
     def _verify_light_domain_effects_level_3(self, character_json):
         """Verify Light Domain subclass effects for level 3."""
@@ -913,6 +913,196 @@ class TestCharacterRecreation:
 
         print("✅ Cleric with equipment - Equipment selections stored correctly!")
 
+    def test_fighter_with_weapon_masteries(self):
+        """Test Fighter with weapon mastery selections."""
+        choices_made = {
+            "character_name": "Weapon Master",
+            "species": "Human",
+            "class": "Fighter",
+            "level": 5,
+            "subclass": "Champion",
+            "background": "Soldier",
+            "Fighting Style": "Dueling",
+            "skill_choices": ["Athletics", "Intimidation"],
+            "weapon_mastery_selections": ["Longsword", "Longbow", "Greatsword", "Battleaxe"],
+            "abilities": {
+                "Strength": 16,
+                "Dexterity": 14,
+                "Constitution": 15,
+                "Intelligence": 10,
+                "Wisdom": 12,
+                "Charisma": 11,
+            },
+            "equipment_selections": {
+                "class_equipment": "option_a",
+                "background_equipment": "option_a",
+            },
+        }
+
+        builder = CharacterBuilder()
+        result = builder.apply_choices(choices_made)
+        assert result is True, "Character building should succeed"
+
+        character_json = builder.to_character()
+
+        # Verify mastery stats
+        mastery_stats = character_json.get("weapon_mastery_stats", {})
+        assert mastery_stats["has_mastery"] is True
+        assert mastery_stats["max_masteries"] == 4  # Level 5 Fighter
+        assert len(mastery_stats["current_masteries"]) == 4
+        assert "Longsword" in mastery_stats["current_masteries"]
+        assert "Longbow" in mastery_stats["current_masteries"]
+
+        # Verify mastery selections are in choices_made for export
+        assert "weapon_mastery_selections" in character_json["choices_made"]
+        assert len(character_json["choices_made"]["weapon_mastery_selections"]) == 4
+
+        # Verify attacks include mastery property
+        attacks = character_json.get("attacks", [])
+        longsword_attack = next((a for a in attacks if a["name"] == "Longsword"), None)
+        if longsword_attack:
+            assert "mastery" in longsword_attack
+            assert longsword_attack["mastery"] is not None
+
+        print("✅ Fighter with weapon masteries - Mastery system working correctly!")
+
+    def test_dual_wielding_fighter(self):
+        """Test Fighter with two light weapons for dual-wielding."""
+        choices_made = {
+            "character_name": "Dual Wielder",
+            "species": "Human",
+            "class": "Fighter",
+            "level": 3,
+            "subclass": "Champion",
+            "background": "Soldier",
+            "Fighting Style": "Two-Weapon Fighting",
+            "skill_choices": ["Athletics", "Acrobatics"],
+            "abilities": {
+                "Strength": 14,
+                "Dexterity": 16,
+                "Constitution": 14,
+                "Intelligence": 10,
+                "Wisdom": 12,
+                "Charisma": 10,
+            },
+            "equipment_selections": {
+                "class_equipment": "option_b",  # Scimitar and Shortsword
+                "background_equipment": "option_a",
+            },
+        }
+
+        builder = CharacterBuilder()
+        result = builder.apply_choices(choices_made)
+        assert result is True, "Character building should succeed"
+
+        character_json = builder.to_character()
+
+        # Verify dual-wielding attacks
+        attacks = character_json.get("attacks", [])
+        light_weapons = [a for a in attacks if "Light" in a.get("properties", [])]
+
+        assert len(light_weapons) >= 2, "Should have at least 2 light weapons"
+
+        # Check offhand damage on light weapons
+        for weapon in light_weapons:
+            assert "damage_offhand" in weapon, f"{weapon['name']} should have offhand damage"
+            assert "avg_damage_offhand" in weapon, f"{weapon['name']} should have avg offhand damage"
+            assert "avg_crit_offhand" in weapon, f"{weapon['name']} should have crit offhand damage"
+
+            # Verify offhand damage is calculated correctly (dice only, no positive modifier)
+            offhand_dmg = weapon["damage_offhand"]
+            assert isinstance(offhand_dmg, str)
+            # Should be "1d6" format or "1d6 - 1" if negative modifier
+
+        print("✅ Dual-wielding Fighter - Offhand damage calculated correctly!")
+
+    def test_cleric_spell_organization(self):
+        """Test Cleric spells are organized by correct spell level."""
+        choices_made = {
+            "character_name": "High Cleric",
+            "species": "Dwarf",
+            "class": "Cleric",
+            "level": 7,
+            "subclass": "Light Domain",
+            "background": "Acolyte",
+            "Divine Order": "Thaumaturge",
+            "Thaumaturge_bonus_cantrip": "Guidance",
+            "skill_choices": ["Insight", "Religion"],
+            "spell_selections": {
+                "cantrips": [],
+                "spells": ["Detect Magic", "Bless"],
+                "background_cantrips": [],
+                "background_spells": [],
+            },
+            "abilities": {
+                "Strength": 10,
+                "Dexterity": 12,
+                "Constitution": 15,
+                "Intelligence": 10,
+                "Wisdom": 16,
+                "Charisma": 13,
+            },
+        }
+
+        builder = CharacterBuilder()
+        result = builder.apply_choices(choices_made)
+        assert result is True, "Character building should succeed"
+
+        character_json = builder.to_character()
+
+        # Verify spells are organized by level
+        spells_by_level = character_json.get("spells_by_level", {})
+
+        # Check cantrips (level 0)
+        assert 0 in spells_by_level
+        cantrips = spells_by_level[0]
+        assert len(cantrips) > 0
+        for spell in cantrips:
+            assert spell["level"] == 0
+
+        # Check level 1 spells
+        assert 1 in spells_by_level
+        level_1 = spells_by_level[1]
+        level_1_names = [s["name"] for s in level_1]
+        assert "Burning Hands" in level_1_names  # Light Domain
+        assert "Faerie Fire" in level_1_names  # Light Domain
+        for spell in level_1:
+            assert spell["level"] == 1
+
+        # Check level 2 spells (Light Domain at level 3+)
+        assert 2 in spells_by_level
+        level_2 = spells_by_level[2]
+        level_2_names = [s["name"] for s in level_2]
+        assert "Scorching Ray" in level_2_names
+        assert "See Invisibility" in level_2_names
+        for spell in level_2:
+            assert spell["level"] == 2
+
+        # Check level 3 spells (Light Domain at level 5+)
+        assert 3 in spells_by_level
+        level_3 = spells_by_level[3]
+        level_3_names = [s["name"] for s in level_3]
+        assert "Daylight" in level_3_names
+        assert "Fireball" in level_3_names
+        for spell in level_3:
+            assert spell["level"] == 3
+
+        # Check level 4 spells (Light Domain at level 7+)
+        assert 4 in spells_by_level
+        level_4 = spells_by_level[4]
+        level_4_names = [s["name"] for s in level_4]
+        assert "Arcane Eye" in level_4_names
+        assert "Wall of Fire" in level_4_names
+        for spell in level_4:
+            assert spell["level"] == 4
+
+        # Verify spellcasting stats
+        spell_stats = character_json.get("spellcasting_stats", {})
+        assert spell_stats["has_spellcasting"] is True
+        assert spell_stats["spellcasting_ability"] == "Wisdom"
+
+        print("✅ Cleric spell organization - All spells at correct levels!")
+
 
 if __name__ == "__main__":
     # Run tests manually for debugging
@@ -956,5 +1146,24 @@ if __name__ == "__main__":
         print("PASSED: Cleric Equipment")
     except Exception as e:
         print(f"FAILED: Cleric Equipment - {e}")
+
+    print("\n=== Testing New Features ===")
+    try:
+        tester.test_fighter_with_weapon_masteries()
+        print("PASSED: Fighter Weapon Masteries")
+    except Exception as e:
+        print(f"FAILED: Fighter Weapon Masteries - {e}")
+
+    try:
+        tester.test_dual_wielding_fighter()
+        print("PASSED: Dual-Wielding Fighter")
+    except Exception as e:
+        print(f"FAILED: Dual-Wielding Fighter - {e}")
+
+    try:
+        tester.test_cleric_spell_organization()
+        print("PASSED: Cleric Spell Organization")
+    except Exception as e:
+        print(f"FAILED: Cleric Spell Organization - {e}")
 
     print("\n=== All Tests Complete ===")

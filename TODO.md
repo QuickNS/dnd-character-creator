@@ -251,7 +251,6 @@
 
 ## Bugs / Corrections / Enhancements
 
-- Features like "Subclass Feature: Gain a feature from your Martial Archetype subclass" should be removed from data files, potentially creating a cleanup script for data files
 - Subclass spells (like Life Domain) should appear as Always Prepared
 
 ## Fighter

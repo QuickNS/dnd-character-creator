@@ -133,14 +133,13 @@ class TestCantripsPreservation:
     """Test that cantrips specifically are preserved"""
 
     def test_cantrips_in_both_locations(self, tiefling_paladin):
-        """Test that cantrips exist in both spells.cantrips and effects"""
+        """Test that cantrips exist in spells.always_prepared and effects"""
         json_data = tiefling_paladin.to_json()
 
-        # Check spells.cantrips array (to_json returns dicts)
-        cantrips = json_data.get("spells", {}).get("cantrips", [])
-        cantrip_names = [c.get("name") if isinstance(c, dict) else c for c in cantrips]
-        assert "Thaumaturgy" in cantrip_names
-        assert "Chill Touch" in cantrip_names
+        # Check spells.always_prepared dict (cantrips from effects)
+        always_prepared = json_data.get("spells", {}).get("always_prepared", {})
+        assert "Thaumaturgy" in always_prepared
+        assert "Chill Touch" in always_prepared
 
         # Check effects array
         cantrip_effects = [
@@ -160,11 +159,10 @@ class TestCantripsPreservation:
         # Re-export
         json_data2 = new_builder.to_json()
 
-        # Cantrips should still be there (to_json returns dicts)
-        cantrips = json_data2.get("spells", {}).get("cantrips", [])
-        cantrip_names = [c.get("name") if isinstance(c, dict) else c for c in cantrips]
-        assert "Thaumaturgy" in cantrip_names
-        assert "Chill Touch" in cantrip_names
+        # Cantrips should still be in always_prepared
+        always_prepared = json_data2.get("spells", {}).get("always_prepared", {})
+        assert "Thaumaturgy" in always_prepared
+        assert "Chill Touch" in always_prepared
 
         # Effects should still be there
         cantrip_effects = [
@@ -225,11 +223,10 @@ class TestWizardFlowSimulation:
         ]
         assert len(cantrip_effects) >= 2
 
-        # Verify cantrips are accessible (to_json returns dicts)
-        cantrips = final_session.get("spells", {}).get("cantrips", [])
-        cantrip_names = [c.get("name") if isinstance(c, dict) else c for c in cantrips]
-        assert "Chill Touch" in cantrip_names
-        assert "Thaumaturgy" in cantrip_names
+        # Verify cantrips are accessible in always_prepared
+        always_prepared = final_session.get("spells", {}).get("always_prepared", {})
+        assert "Chill Touch" in always_prepared
+        assert "Thaumaturgy" in always_prepared
 
     def test_effects_not_duplicated_on_restore(self, tiefling_paladin):
         """Test that restoring doesn't duplicate effects"""

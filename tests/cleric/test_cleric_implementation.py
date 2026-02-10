@@ -363,7 +363,7 @@ class TestClericFeatureEffects:
         spell_effects = [e for e in applied_effects if e.get("type") == "grant_spell"]
         assert len(spell_effects) > 0
 
-        # Verify spells are in prepared list
-        prepared_spells = char_data["spells"]["prepared"]
-        assert "Bless" in prepared_spells
-        assert "Cure Wounds" in prepared_spells
+        # Verify spells are in always_prepared dict (domain spells)
+        always_prepared = char_data["spells"]["always_prepared"]
+        assert "Bless" in always_prepared
+        assert "Cure Wounds" in always_prepared

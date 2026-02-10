@@ -26,13 +26,14 @@ class TestLightDomain:
         char_data = light_cleric_builder.character_data
 
         # Check bonus cantrip (Light)
-        cantrips = char_data["spells"]["cantrips"]
-        assert "Light" in cantrips
+        always_prepared = char_data["spells"]["always_prepared"]
+        cantrips = [s["name"] for s in char_data.get("spells_by_level", {}).get(0, [])]
+        assert "Light" in cantrips or "Light" in always_prepared
 
         # Check domain spells
-        prepared_spells = char_data["spells"]["prepared"]
-        assert "Burning Hands" in prepared_spells
-        assert "Faerie Fire" in prepared_spells
+        always_prepared = char_data["spells"]["always_prepared"]
+        assert "Burning Hands" in always_prepared
+        assert "Faerie Fire" in always_prepared
 
     def test_light_domain_features(self, light_cleric_builder):
         """Test Light Domain specific features are present"""
@@ -50,8 +51,9 @@ class TestLightDomain:
         char_data = light_cleric_builder.character_data
 
         # Should have Light cantrip from the bonus cantrip feature
-        cantrips = char_data["spells"]["cantrips"]
-        assert "Light" in cantrips
+        always_prepared = char_data["spells"]["always_prepared"]
+        cantrips = [s["name"] for s in char_data.get("spells_by_level", {}).get(0, [])]
+        assert "Light" in cantrips or "Light" in always_prepared
 
         # Check feature is listed
         subclass_features = char_data["features"]["subclass"]
@@ -84,19 +86,19 @@ class TestLightDomain:
         """Test Light Domain spell progression at different levels"""
         # At level 3, should have level 3 domain spells
         char_data = light_cleric_builder.character_data
-        prepared_spells = char_data["spells"]["prepared"]
-        assert "Burning Hands" in prepared_spells
-        assert "Faerie Fire" in prepared_spells
+        always_prepared = char_data["spells"]["always_prepared"]
+        assert "Burning Hands" in always_prepared
+        assert "Faerie Fire" in always_prepared
 
         # Level up to 5, should gain level 5 domain spells
         light_cleric_builder.set_class("Cleric", 5)
         char_data = light_cleric_builder.character_data
-        prepared_spells = char_data["spells"]["prepared"]
+        always_prepared = char_data["spells"]["always_prepared"]
 
         # Should still have level 3 spells
-        assert "Burning Hands" in prepared_spells
-        assert "Faerie Fire" in prepared_spells
+        assert "Burning Hands" in always_prepared
+        assert "Faerie Fire" in always_prepared
 
         # Should now have level 5 domain spells
-        assert "Scorching Ray" in prepared_spells
-        assert "See Invisibility" in prepared_spells
+        assert "Scorching Ray" in always_prepared
+        assert "See Invisibility" in always_prepared

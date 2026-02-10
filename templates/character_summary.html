@@ -682,7 +682,7 @@
                                                 <div class="mb-2">
                                                     <strong><a href="#" onclick="showSpellDetails('{{ spell.name }}'); return false;" style="text-decoration: none; color: inherit;">{{ spell.name }}</a></strong>
                                                     {% if spell.get('always_prepared') and level_num > 0 %}
-                                                        <span class="badge bg-info">Always Prepared</span>
+                                                        <span class="badge bg-success">Always Prepared</span>
                                                     {% endif %}
                                                     {% if spell.get('once_per_day') %}
                                                         <span class="badge bg-info">1/Day (No Slot)</span>

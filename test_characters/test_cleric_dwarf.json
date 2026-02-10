@@ -1,13 +1,17 @@
 {
+  "Blessed Strikes": "Potent Spellcasting",
   "Divine Order": "Thaumaturge",
-  "Spellcasting": [
-    "Light",
-    "Mending",
-    "Resistance"
-  ],
   "Thaumaturge_bonus_cantrip": "Guidance",
-  "ability_scores_method": "recommended",
-  "alignment": "Neutral Good",
+  "ability_scores": {
+    "Charisma": 10,
+    "Constitution": 14,
+    "Dexterity": 13,
+    "Intelligence": 12,
+    "Strength": 8,
+    "Wisdom": 15
+  },
+  "ability_scores_method": "manual",
+  "alignment": "Lawful Good",
   "background": "Sage",
   "background_bonuses": {
     "Constitution": 1,
@@ -21,7 +25,7 @@
   },
   "language_choices_needed": 2,
   "languages": [],
-  "level": 2,
+  "level": 7,
   "skill_choices": [
     "Insight",
     "Persuasion"
@@ -30,13 +34,10 @@
   "spell_selections": {
     "background_cantrips": [],
     "background_spells": [],
-    "cantrips": [
-      "Sacred Flame",
-      "Thaumaturgy",
-      "Toll the Dead"
-    ],
+    "cantrips": [],
     "spells": [
       "Detect Magic"
     ]
-  }
+  },
+  "subclass": "Light Domain"
 }

@@ -590,10 +590,13 @@ class CharacterBuilder:
         elif effect_type == "grant_spell":
             spell_name = effect.get("spell")
             min_level = effect.get("min_level", 1)
-            spell_level = effect.get("level", 1)
             counts_against_limit = effect.get("counts_against_limit", False)
             
             if spell_name and self.character_data["level"] >= min_level:
+                # Load spell definition to get actual spell level
+                spell_def = self._load_spell_definition(spell_name)
+                spell_level = spell_def.get("level", 1)
+                
                 # Map source_type to actual name for display
                 if source_type == "species":
                     display_source = self.character_data.get("species", source_name)

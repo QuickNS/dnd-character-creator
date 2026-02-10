@@ -354,9 +354,8 @@ class TestElfLineageCantrips:
         char_data = builder.character_data
 
         # Check that Prestidigitation is in cantrips
-        cantrips = char_data["spells"]["cantrips"]
-        assert "Prestidigitation" in cantrips
-
+        always_prepared = char_data["spells"]["always_prepared"]
+        assert "Prestidigitation" in always_prepared
         # Verify it came from the correct effect
         applied_effects = getattr(builder, "applied_effects", [])
         cantrip_effects = [
@@ -383,9 +382,8 @@ class TestElfLineageCantrips:
         char_data = builder.character_data
 
         # Check that Druidcraft is in cantrips
-        cantrips = char_data["spells"]["cantrips"]
-        assert "Druidcraft" in cantrips
-
+        always_prepared = char_data["spells"]["always_prepared"]
+        assert "Druidcraft" in always_prepared
         # Verify it came from the correct effect
         applied_effects = getattr(builder, "applied_effects", [])
         cantrip_effects = [
@@ -412,9 +410,8 @@ class TestElfLineageCantrips:
         char_data = builder.character_data
 
         # Check that Dancing Lights is in cantrips
-        cantrips = char_data["spells"]["cantrips"]
-        assert "Dancing Lights" in cantrips
-
+        always_prepared = char_data["spells"]["always_prepared"]
+        assert "Dancing Lights" in always_prepared
         # Verify it came from the correct effect
         applied_effects = getattr(builder, "applied_effects", [])
         cantrip_effects = [
@@ -441,18 +438,21 @@ class TestElfLineageCantrips:
         builder.set_class("Wizard", 1)
 
         # Make cantrip choices for the class (Wizard needs cantrips chosen)
+        # Manually add to prepared.cantrips since we're not using the wizard flow
         cantrip_choices = ["Mage Hand", "Minor Illusion", "Firebolt"]
-        builder.apply_choice("Spellcasting", cantrip_choices)
+        for cantrip in cantrip_choices:
+            builder.character_data["spells"]["prepared"]["cantrips"][cantrip] = {}
 
         char_data = builder.character_data
-        cantrips = char_data["spells"]["cantrips"]
+        always_prepared = char_data["spells"]["always_prepared"]
 
         # Should have the High Elf cantrip
-        assert "Prestidigitation" in cantrips
-
-        # Should have the chosen class cantrips
+        assert "Prestidigitation" in always_prepared
+        
+        # Check class cantrips in prepared.cantrips
+        prepared_cantrips = char_data["spells"]["prepared"]["cantrips"]
         for cantrip in cantrip_choices:
-            assert cantrip in cantrips
+            assert cantrip in prepared_cantrips
 
         # Verify the character has both species and class cantrips
         applied_effects = getattr(builder, "applied_effects", [])
@@ -481,16 +481,16 @@ class TestElfLineageCantrips:
 
         # Check cantrips at level 1
         char_data = builder.character_data
-        cantrips_l1 = char_data["spells"]["cantrips"].copy()
-        assert "Dancing Lights" in cantrips_l1
+        always_prepared_l1 = char_data["spells"]["always_prepared"].copy()
+        assert "Dancing Lights" in always_prepared_l1
 
         # Level up to 2
         builder.set_class("Sorcerer", 2)
         char_data = builder.character_data
-        cantrips_l2 = char_data["spells"]["cantrips"]
+        always_prepared_l2 = char_data["spells"]["always_prepared"]
 
         # Dancing Lights should still be present
-        assert "Dancing Lights" in cantrips_l2
+        assert "Dancing Lights" in always_prepared_l2
 
         # Verify it's still tracked as coming from lineage
         applied_effects = getattr(builder, "applied_effects", [])
@@ -692,21 +692,24 @@ class TestElfDataValidation:
 
         # Make Cleric spellcasting choices
         cleric_cantrips = ["Guidance", "Sacred Flame", "Thaumaturgy"]
-        builder.apply_choice("Spellcasting", cleric_cantrips)
+        for cantrip in cleric_cantrips:
+            builder.character_data["spells"]["prepared"]["cantrips"][cantrip] = {}
 
         char_data = builder.character_data
-        cantrips = char_data["spells"]["cantrips"]
+        always_prepared = char_data["spells"]["always_prepared"]
 
         # Should have Drow lineage cantrip
-        assert "Dancing Lights" in cantrips, f"Dancing Lights missing from {cantrips}"
+        assert "Dancing Lights" in always_prepared, f"Dancing Lights missing from {always_prepared}"
 
-        # Should have chosen Cleric cantrips
+        # Should have chosen Cleric cantrips in prepared.cantrips
+        prepared_cantrips = char_data["spells"]["prepared"]["cantrips"]
         for cantrip in cleric_cantrips:
-            assert cantrip in cantrips, f"{cantrip} missing from {cantrips}"
+            assert cantrip in prepared_cantrips, f"{cantrip} missing from {prepared_cantrips}"
 
-        # Should have exactly 4 cantrips total (1 from Drow + 3 from Cleric)
-        assert len(cantrips) == 4, (
-            f"Expected 4 cantrips, got {len(cantrips)}: {cantrips}"
+        # Should have total cantrips (1 from Drow in always_prepared + 3 from Cleric in prepared)
+        total_cantrips = len(always_prepared) + len(prepared_cantrips)
+        assert total_cantrips == 4, (
+            f"Expected 4 cantrips, got {total_cantrips}"
         )
 
         # Verify effects tracking
