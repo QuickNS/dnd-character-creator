@@ -180,16 +180,39 @@
                                                         <strong>Damage:</strong> {{ weapon.damage }} {{ weapon.damage_type }}
                                                         <small class="text-muted">(Avg: {{ weapon.avg_damage }}, Crit: {{ weapon.avg_crit }})</small>
                                                     </p>
+                                                    {% if weapon.damage_notes %}
+                                                        {% for note in weapon.damage_notes %}
+                                                            <p class="mb-1">
+                                                                <small class="text-success"><i class="fas fa-plus-circle"></i> {{ note }}</small>
+                                                            </p>
+                                                        {% endfor %}
+                                                    {% endif %}
                                                     {% if weapon.damage_versatile %}
                                                         <p class="mb-1">
                                                             <strong>2-handed:</strong> {{ weapon.damage_versatile }} {{ weapon.damage_type }}
                                                         </p>
                                                     {% endif %}
-                                                    {% if weapon.damage_offhand %}
-                                                        <p class="mb-1">
-                                                            <strong>Offhand (Bonus Action):</strong> {{ weapon.damage_offhand }} {{ weapon.damage_type }}
-                                                            <small class="text-muted">(Avg: {{ weapon.avg_damage_offhand }}, Crit: {{ weapon.avg_crit_offhand }})</small>
-                                                        </p>
+                                                    {% if weapon.damage_mainhand %}
+                                                        <div class="mt-2 pt-2 border-top">
+                                                            <p class="mb-1">
+                                                                <strong>Dual-Wielding:</strong>
+                                                            </p>
+                                                            <p class="mb-1 ms-3">
+                                                                <strong>Mainhand:</strong> {{ weapon.damage_mainhand }} {{ weapon.damage_type }}
+                                                                <small class="text-muted">(Avg: {{ weapon.avg_damage_mainhand }})</small>
+                                                            </p>
+                                                            <p class="mb-1 ms-3">
+                                                                <strong>Offhand (Bonus Action):</strong> {{ weapon.damage_offhand }} {{ weapon.damage_type }}
+                                                                <small class="text-muted">(Avg: {{ weapon.avg_damage_offhand }})</small>
+                                                            </p>
+                                                            {% if weapon.dual_wield_notes %}
+                                                                {% for note in weapon.dual_wield_notes %}
+                                                                    <p class="mb-1 ms-3">
+                                                                        <small class="text-info"><i class="fas fa-info-circle"></i> {{ note }}</small>
+                                                                    </p>
+                                                                {% endfor %}
+                                                            {% endif %}
+                                                        </div>
                                                     {% endif %}
                                                     {% if weapon.properties %}
                                                         <p class="mb-1"><strong>Properties:</strong>

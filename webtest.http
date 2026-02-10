@@ -4,7 +4,7 @@ content-type: application/json
 {"choices_made":
 {
   "Elven Lineage": "Wisdom",
-  "Fighting Style": "Archery",
+  "Fighting Style": "Dueling",
   "Keen Senses": "Survival",
   "ability_scores": {
     "Charisma": 10,

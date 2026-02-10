@@ -1260,6 +1260,20 @@ class CharacterBuilder:
         dex_mod = abilities.get("dexterity", {}).get("modifier", 0)
         equipment = self.character_data.get("equipment")
         proficiencies = self.character_data.get("proficiencies", {}).get("armor", [])
+        
+        # Check for bonus_ac effects (e.g., Defense fighting style)
+        ac_bonus = 0
+        ac_bonus_sources = []
+        if hasattr(self, "applied_effects"):
+            for effect_wrapper in self.applied_effects:
+                if effect_wrapper.get("type") == "bonus_ac":
+                    effect = effect_wrapper.get("effect", {})
+                    condition = effect.get("condition", "")
+                    # Check if condition is met (we'll verify wearing armor per option)
+                    # For now, just track the bonus
+                    ac_bonus += effect.get("value", 0)
+                    source_name = effect_wrapper.get("source", "Unknown")
+                    ac_bonus_sources.append(source_name)
 
         # Handle case where equipment is None (like in tests)
         if equipment is None:
@@ -1292,6 +1306,13 @@ class CharacterBuilder:
                     armor_data, dex_mod, has_shield, proficiencies, armor_name
                 )
                 ac_option["equipped_armor"] = armor_name
+                
+                # Apply bonus_ac if wearing armor
+                if ac_bonus > 0:
+                    ac_option["ac"] += ac_bonus
+                    for source in ac_bonus_sources:
+                        ac_option["notes"].append(f"+{ac_bonus} from {source}")
+                
                 ac_options.append(ac_option)
 
         # Add unarmored AC option
@@ -2399,6 +2420,43 @@ class CharacterBuilder:
             damage_dice = weapon_props.get("damage", "1d4")
             damage_bonus = ability_mod
             damage_type = weapon_props.get("damage_type", "Bludgeoning")
+            
+            # Apply bonus_damage effects from features (e.g., Dueling fighting style)
+            # Track which bonuses apply (for excluding from dual-wield offhand)
+            damage_notes = []
+            dueling_bonus = 0  # Track Dueling separately for dual-wield exclusion
+            
+            if hasattr(self, "applied_effects"):
+                for effect_wrapper in self.applied_effects:
+                    if effect_wrapper.get("type") == "bonus_damage":
+                        effect = effect_wrapper.get("effect", {})
+                        condition = effect.get("condition", "")
+                        
+                        # Check if condition is met for this weapon
+                        applies = False
+                        if condition == "one handed melee weapon":
+                            # Dueling: Check weapon qualifies (one-handed melee)
+                            # Display as if used alone (dual-wielding shown separately)
+                            is_melee = "Ranged" not in category
+                            is_one_handed = "Two-Handed" not in properties
+                            
+                            if is_melee and is_one_handed:
+                                applies = True
+                                # Track Dueling bonus to exclude from dual-wield damage
+                                dueling_bonus = effect.get("value", 0)
+                        elif condition == "thrown weapon ranged attack":
+                            # Check: has Thrown property and is ranged attack
+                            if "Thrown" in properties and "Ranged" in category:
+                                applies = True
+                        elif not condition:
+                            # No condition, applies to all
+                            applies = True
+                        
+                        if applies:
+                            bonus_value = effect.get("value", 0)
+                            damage_bonus += bonus_value
+                            source_name = effect_wrapper.get("source", "Unknown")
+                            damage_notes.append(f"+{bonus_value} from {source_name}")
 
             # Format damage string with bonus if non-zero
             if damage_bonus > 0:
@@ -2432,8 +2490,10 @@ class CharacterBuilder:
                 "proficient": is_proficient,
                 "mastery": mastery,
                 "icon": self._get_weapon_icon(weapon_name),
+                "damage_notes": damage_notes,
                 "_damage_dice": damage_dice,  # Store for offhand calculation
                 "_ability_mod": ability_mod,  # Store for offhand calculation
+                "_dueling_bonus": dueling_bonus,  # Store to exclude from dual-wield
             }
 
             attacks.append(attack_info)
@@ -2444,11 +2504,29 @@ class CharacterBuilder:
         ]
         
         if len(light_weapons) >= 2:
-            # Add offhand damage to light weapons
+            # Add dual-wielding damage for light weapons
+            # This shows mainhand/offhand when dual-wielding (Dueling does NOT apply)
             for attack in attacks:
                 if "Light" in attack.get("properties", []):
                     damage_dice = attack.get("_damage_dice", "1d4")
                     ability_mod = attack.get("_ability_mod", 0)
+                    dueling_bonus = attack.get("_dueling_bonus", 0)
+                    
+                    # Mainhand when dual-wielding: ability mod but no Dueling
+                    mainhand_bonus = ability_mod
+                    if mainhand_bonus > 0:
+                        mainhand_damage = f"{damage_dice} + {mainhand_bonus}"
+                    elif mainhand_bonus < 0:
+                        mainhand_damage = f"{damage_dice} - {abs(mainhand_bonus)}"
+                    else:
+                        mainhand_damage = damage_dice
+                    
+                    avg_damage_mainhand = self._calculate_average_damage(
+                        damage_dice, mainhand_bonus
+                    )
+                    avg_crit_mainhand = self._calculate_average_damage(
+                        damage_dice, mainhand_bonus, is_crit=True
+                    )
                     
                     # Offhand attack: damage dice only (no ability mod unless negative)
                     if ability_mod < 0:
@@ -2466,18 +2544,27 @@ class CharacterBuilder:
                         damage_dice, offhand_bonus, is_crit=True
                     )
                     
+                    # Store dual-wield damage (excludes Dueling bonus)
+                    attack["damage_mainhand"] = mainhand_damage
+                    attack["avg_damage_mainhand"] = avg_damage_mainhand
+                    attack["avg_crit_mainhand"] = avg_crit_mainhand
                     attack["damage_offhand"] = offhand_damage
                     attack["avg_damage_offhand"] = avg_damage_offhand
                     attack["avg_crit_offhand"] = avg_crit_offhand
-                
-                # Clean up temporary fields
-                attack.pop("_damage_dice", None)
-                attack.pop("_ability_mod", None)
-        else:
-            # Clean up temporary fields for all attacks
-            for attack in attacks:
-                attack.pop("_damage_dice", None)
-                attack.pop("_ability_mod", None)
+                    
+                    # Add note about Dueling not applying when dual-wielding
+                    if dueling_bonus > 0:
+                        if "dual_wield_notes" not in attack:
+                            attack["dual_wield_notes"] = []
+                        attack["dual_wield_notes"].append(
+                            "Dueling bonus does not apply when dual-wielding"
+                        )
+        
+        # Clean up temporary fields for all attacks
+        for attack in attacks:
+            attack.pop("_damage_dice", None)
+            attack.pop("_ability_mod", None)
+            attack.pop("_dueling_bonus", None)
 
         return attacks
 
@@ -2890,6 +2977,18 @@ class CharacterBuilder:
             data: Character data dictionary
         """
         self.character_data = deepcopy(data)
+        
+        # Ensure weapon_masteries structure exists (for backwards compatibility)
+        if "weapon_masteries" not in self.character_data:
+            self.character_data["weapon_masteries"] = {
+                "selected": [],
+                "available": [],
+                "max_count": 0
+            }
+        
+        # Ensure choices_made exists (for backwards compatibility)
+        if "choices_made" not in self.character_data:
+            self.character_data["choices_made"] = {}
 
         # Reconstruct ability scores
         # First check for ability_scores (raw scores exported by to_character)

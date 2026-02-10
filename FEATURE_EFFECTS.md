@@ -159,34 +159,57 @@ Grants immunity to a condition.
 #### bonus_ac
 Grants a bonus to AC.
 
+**Implementation**: Applied in `calculate_ac_options()`. Only applies to armored AC options (checks if `equipped_armor` is not None).
+
+**Example**: Defense fighting style
 ```json
 {
   "type": "bonus_ac",
   "value": 1,
-  "condition": "while wearing armor"
+  "condition": "wearing armor"
 }
 ```
 
 #### bonus_damage
 Grants a bonus to damage rolls.
 
+**Implementation**: Applied in `calculate_weapon_attacks()`. Checks conditions against weapon properties:
+- `"one handed melee weapon"`: Melee weapon without Two-Handed property, only one weapon equipped (Dueling)
+- `"thrown weapon ranged attack"`: Weapon with Thrown property used for ranged attack (Thrown Weapon Fighting)
+- No condition: Applies to all attacks
+
+**Example**: Dueling fighting style
 ```json
 {
   "type": "bonus_damage",
-  "value": "1d8",
-  "damage_type": "radiant",
-  "condition": "once per turn"
+  "value": 2,
+  "condition": "one handed melee weapon"
+}
+```
+
+**Example**: Thrown Weapon Fighting
+```json
+{
+  "type": "bonus_damage",
+  "value": 2,
+  "condition": "thrown weapon ranged attack"
 }
 ```
 
 #### bonus_attack
 Grants a bonus to attack rolls.
 
+**Implementation**: Applied in `calculate_weapon_attacks()`. Checks conditions against weapon category or properties:
+- `weapon_property: "Ranged"`: Applies if weapon category contains "Ranged" (Archery)
+- `weapon_property: "<property>"`: Applies if weapon has that property in its properties list
+- No condition: Applies to all attacks
+
+**Example**: Archery fighting style
 ```json
 {
   "type": "bonus_attack",
   "value": 2,
-  "condition": "with ranged weapons"
+  "weapon_property": "Ranged"
 }
 ```
 
