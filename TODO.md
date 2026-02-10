@@ -251,7 +251,7 @@
 
 ## Bugs / Corrections / Enhancements
 
-- Subclass spells (like Life Domain) should appear as Always Prepared
+None
 
 ## Fighter
 

@@ -298,6 +298,64 @@ A single feature can grant multiple effects:
 }
 ```
 
+## External Effect References
+
+Features that are shared across multiple classes (like Fighting Styles) should be stored in separate data files and referenced using the choice reference system:
+
+### Example: Fighting Styles
+
+**In class data (e.g., fighter.json):**
+```json
+"Fighting Style": {
+  "description": "You adopt a particular style of fighting as your specialty.",
+  "choices": {
+    "type": "select_single",
+    "count": 1,
+    "name": "fighting_style",
+    "source": {
+      "type": "external",
+      "file": "fighting_styles.json",
+      "list": "fighting_styles"
+    },
+    "optional": false
+  }
+}
+```
+
+**In external data file (data/fighting_styles.json):**
+```json
+{
+  "fighting_styles": {
+    "Archery": {
+      "description": "You gain a +2 bonus to attack rolls you make with ranged weapons.",
+      "effects": [
+        {
+          "type": "bonus_attack",
+          "value": 2,
+          "weapon_property": "Ranged"
+        }
+      ]
+    },
+    "Defense": {
+      "description": "While you are wearing armor, you gain a +1 bonus to AC.",
+      "effects": [
+        {
+          "type": "bonus_ac",
+          "value": 1,
+          "condition": "wearing armor"
+        }
+      ]
+    }
+  }
+}
+```
+
+This approach allows:
+- Reuse across Fighter, Paladin, Ranger, and feats
+- Single source of truth for fighting style mechanics
+- Easy updates to all classes when fighting styles change
+- Consistent behavior across all sources
+
 ## Implementation Notes
 
 1. Effects are optional - features without effects are display-only
@@ -305,10 +363,4 @@ A single feature can grant multiple effects:
 3. Effects should be reversible (for changing choices)
 4. The system should gracefully handle unknown effect types
 5. Complex features may still require custom code, but common patterns should use this system
-
-## Future Extensions
-
-- Condition-based effects (e.g., "when bloodied", "on first hit")
-- Scaling effects (e.g., "bonus increases at level 5")
-- Resource-based effects (e.g., "uses per long rest")
-- Temporary effects (e.g., buffs, reactions)
+6. External references are loaded automatically when applying choices

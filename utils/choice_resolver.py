@@ -70,8 +70,35 @@ def get_option_descriptions(
     if "option_descriptions" in feature_data:
         return feature_data["option_descriptions"]
 
-    # For internal sources, look for the list in the data
+    # For external sources, load the file and extract descriptions
     source = choices_data.get("source", {})
+    if source.get("type") == "external":
+        file_path = source.get("file", "")
+        list_name = source.get("list", "")
+        if file_path and list_name:
+            try:
+                # Get the project root directory (parent of utils/)
+                project_root = Path(__file__).parent.parent
+                full_path = project_root / "data" / file_path
+                if full_path.exists():
+                    with open(full_path, "r") as f:
+                        data = json.load(f)
+                        choice_list = data.get(list_name, {})
+                        if isinstance(choice_list, dict):
+                            # Extract descriptions from structured objects
+                            descriptions = {}
+                            for key, value in choice_list.items():
+                                if isinstance(value, dict) and "description" in value:
+                                    descriptions[key] = value["description"]
+                                elif isinstance(value, str):
+                                    descriptions[key] = value
+                                else:
+                                    descriptions[key] = str(value)
+                            return descriptions
+            except (json.JSONDecodeError, IOError) as e:
+                print(f"Warning: Could not load descriptions from {file_path}: {e}")
+    
+    # For internal sources, look for the list in the data
     if source.get("type") == "internal":
         list_name = source.get("list", "")
         # Try subclass_data first, then class_data

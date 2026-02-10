@@ -430,6 +430,71 @@ class CharacterBuilder:
                     display_name = f"{trait_name}: {', '.join(choice_value)}"
                 else:
                     display_name = f"{trait_name}: {choice_value}"
+                
+                # Replace base description with specific choice description
+                choice_source = choice_config.get("source", {})
+                source_type_str = choice_source.get("type", "")
+                
+                if source_type_str == "external":
+                    # Load description from external file
+                    external_file = choice_source.get("file", "")
+                    choice_list_name = choice_source.get("list", "")
+                    
+                    if external_file and choice_list_name:
+                        try:
+                            external_path = self.data_dir / external_file
+                            if external_path.exists():
+                                with open(external_path, 'r') as f:
+                                    external_data = json.load(f)
+                                    choice_list = external_data.get(choice_list_name, {})
+                                    
+                                    # Handle both single choice and list of choices
+                                    if isinstance(choice_value, list):
+                                        # For multiple choices, combine descriptions
+                                        descriptions = []
+                                        for cv in choice_value:
+                                            if isinstance(choice_list.get(cv), dict):
+                                                descriptions.append(choice_list[cv].get("description", ""))
+                                            elif isinstance(choice_list.get(cv), str):
+                                                descriptions.append(choice_list[cv])
+                                        if descriptions:
+                                            description = "\n\n".join(descriptions)
+                                    else:
+                                        # Single choice
+                                        if isinstance(choice_list.get(choice_value), dict):
+                                            choice_desc = choice_list[choice_value].get("description", "")
+                                            if choice_desc:
+                                                description = choice_desc
+                                        elif isinstance(choice_list.get(choice_value), str):
+                                            description = choice_list[choice_value]
+                        except (json.JSONDecodeError, IOError) as e:
+                            print(f"Warning: Could not load choice description from {external_file}: {e}")
+                
+                elif source_type_str == "internal":
+                    # Load description from internal list
+                    internal_list_name = choice_source.get("list", "")
+                    
+                    if internal_list_name and isinstance(trait_data, dict):
+                        internal_list = trait_data.get(internal_list_name, {})
+                        
+                        # Handle both single choice and list of choices
+                        if isinstance(choice_value, list):
+                            descriptions = []
+                            for cv in choice_value:
+                                if isinstance(internal_list.get(cv), dict):
+                                    descriptions.append(internal_list[cv].get("description", ""))
+                                elif isinstance(internal_list.get(cv), str):
+                                    descriptions.append(internal_list[cv])
+                            if descriptions:
+                                description = "\n\n".join(descriptions)
+                        else:
+                            # Single choice
+                            if isinstance(internal_list.get(choice_value), dict):
+                                choice_desc = internal_list[choice_value].get("description", "")
+                                if choice_desc:
+                                    description = choice_desc
+                            elif isinstance(internal_list.get(choice_value), str):
+                                description = internal_list[choice_value]
 
         # For Spellcasting feature, we'll append cantrips later when choices are made
         # Check if cantrips have already been chosen
@@ -1627,23 +1692,75 @@ class CharacterBuilder:
         # Try to find the choice-specific description from class/subclass data
         choice_description = None
         choice_scaling = None
+        
+        # First check for external sources
         for data_source_key in ["class_data", "subclass_data"]:
             source_data = self.character_data.get(data_source_key, {})
             if source_data and isinstance(source_data, dict):
-                # Look for internal list (e.g., 'divine_orders', 'fighting_styles')
-                for data_key, data_value in source_data.items():
-                    if isinstance(data_value, dict) and choice_value in data_value:
-                        option_data = data_value[choice_value]
-                        if isinstance(option_data, dict):
-                            if "description" in option_data:
-                                choice_description = option_data["description"]
-                                choice_scaling = option_data.get("scaling")
-                                break
-                        elif isinstance(option_data, str):
-                            choice_description = option_data
+                # Check features_by_level for external source references
+                features_by_level = source_data.get("features_by_level", {})
+                for level_features in features_by_level.values():
+                    if not isinstance(level_features, dict):
+                        continue
+                    
+                    for feature_name, feature_data in level_features.items():
+                        # Check if this feature name matches our choice_key
+                        if feature_name in feature_name_variants and isinstance(feature_data, dict):
+                            choices_config = feature_data.get("choices", {})
+                            if choices_config:
+                                source_config = choices_config.get("source", {})
+                                
+                                # Handle external source
+                                if source_config.get("type") == "external":
+                                    external_file = source_config.get("file")
+                                    external_list = source_config.get("list")
+                                    
+                                    if external_file and external_list:
+                                        try:
+                                            external_path = self.data_dir / external_file
+                                            if external_path.exists():
+                                                import json
+                                                with open(external_path, 'r') as f:
+                                                    external_data = json.load(f)
+                                                choice_list = external_data.get(external_list, {})
+                                                
+                                                if choice_value in choice_list:
+                                                    option_data = choice_list[choice_value]
+                                                    if isinstance(option_data, dict):
+                                                        choice_description = option_data.get("description", "")
+                                                        choice_scaling = option_data.get("scaling")
+                                                    elif isinstance(option_data, str):
+                                                        choice_description = option_data
+                                                    break
+                                        except (json.JSONDecodeError, IOError) as e:
+                                            print(f"Warning: Could not load choice description from {external_file}: {e}")
+                        
+                        if choice_description:
                             break
+                    if choice_description:
+                        break
                 if choice_description:
                     break
+        
+        # If not found in external sources, check internal lists
+        if not choice_description:
+            for data_source_key in ["class_data", "subclass_data"]:
+                source_data = self.character_data.get(data_source_key, {})
+                if source_data and isinstance(source_data, dict):
+                    # Look for internal list (e.g., 'divine_orders', 'fighting_styles')
+                    for data_key, data_value in source_data.items():
+                        if isinstance(data_value, dict) and choice_value in data_value:
+                            option_data = data_value[choice_value]
+                            if isinstance(option_data, dict):
+                                if "description" in option_data:
+                                    choice_description = option_data["description"]
+                                    choice_scaling = option_data.get("scaling")
+                                    break
+                            elif isinstance(option_data, str):
+                                choice_description = option_data
+                                break
+                    if choice_description:
+                        break
 
         # Search all feature categories for a matching feature
         for category in [
@@ -1697,9 +1814,49 @@ class CharacterBuilder:
             return
         
         # Normalize choice key for lookup
-        choice_key.lower().replace(" ", "_")
+        choice_key_normalized = choice_key.lower().replace(" ", "_")
 
-        # Search for the choice in class data structures
+        # First, check if there's a feature with choices that references an external file
+        features_by_level = source_data.get("features_by_level", {})
+        for level_features in features_by_level.values():
+            if not isinstance(level_features, dict):
+                continue
+            
+            for feature_name, feature_data in level_features.items():
+                # Check if this feature matches our choice key
+                if feature_name == choice_key and isinstance(feature_data, dict):
+                    choices_config = feature_data.get("choices", {})
+                    source_config = choices_config.get("source", {})
+                    
+                    # Handle external source
+                    if source_config.get("type") == "external":
+                        external_file = source_config.get("file")
+                        external_list = source_config.get("list")
+                        
+                        if external_file and external_list:
+                            # Load external data file
+                            import json
+                            from pathlib import Path
+                            
+                            external_path = self.data_dir / external_file
+                            if external_path.exists():
+                                try:
+                                    with open(external_path, 'r') as f:
+                                        external_data = json.load(f)
+                                    
+                                    # Look for the choice value in the external list
+                                    options_list = external_data.get(external_list, {})
+                                    if choice_value in options_list:
+                                        option_data = options_list[choice_value]
+                                        if isinstance(option_data, dict) and "effects" in option_data:
+                                            # Apply each effect
+                                            for effect in option_data["effects"]:
+                                                self._apply_effect(effect, choice_value, "class_choice")
+                                            return
+                                except (json.JSONDecodeError, IOError) as e:
+                                    print(f"WARNING: Failed to load external file {external_file}: {e}")
+
+        # Fallback: Search for the choice in class data structures (internal references)
         # Common patterns: 'divine_orders', 'fighting_styles', etc.
         for data_key, data_value in source_data.items():
             if not isinstance(data_value, dict):
@@ -2216,6 +2373,27 @@ class CharacterBuilder:
 
             # Calculate attack bonus
             attack_bonus = ability_mod + prof_bonus
+
+            # Apply bonus_attack effects from features (e.g., Archery fighting style)
+            if hasattr(self, "applied_effects"):
+                for effect_wrapper in self.applied_effects:
+                    if effect_wrapper.get("type") == "bonus_attack":
+                        # Get the actual effect data (nested inside 'effect' key)
+                        effect = effect_wrapper.get("effect", {})
+                        
+                        # Check if this effect applies to this weapon
+                        weapon_property = effect.get("weapon_property")
+                        if weapon_property:
+                            # Check if weapon matches the property requirement
+                            if weapon_property == "Ranged" and "Ranged" in category:
+                                bonus = effect.get("value", 0)
+                                attack_bonus += bonus
+                            elif weapon_property in properties:
+                                bonus = effect.get("value", 0)
+                                attack_bonus += bonus
+                        else:
+                            # No condition, applies to all weapons
+                            attack_bonus += effect.get("value", 0)
 
             # Calculate damage
             damage_dice = weapon_props.get("damage", "1d4")
@@ -2738,6 +2916,7 @@ class CharacterBuilder:
                 if isinstance(effect, dict):
                     # Reconstruct the applied_effect structure
                     applied_effect = {
+                        "type": effect.get("type"),  # Preserve top-level type
                         "effect": {
                             k: v
                             for k, v in effect.items()
