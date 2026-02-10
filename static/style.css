@@ -456,6 +456,11 @@ hr {
     border-radius: 8px;
 }
 
+.btn.btn-header {
+    padding: 4px 10px !important;
+    margin: 4px 10px !important;
+}
+
 .btn-sm-active {
     border-radius: 6px;
     font-family: 'Segoe UI', sans-serif;

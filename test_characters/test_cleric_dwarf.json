@@ -1,26 +1,42 @@
 {
-  "Divine Order": "Protector",
+  "Divine Order": "Thaumaturge",
   "Spellcasting": [
-    "Sacred Flame",
-    "Toll the Dead",
-    "Word of Radiance"
+    "Light",
+    "Mending",
+    "Resistance"
   ],
+  "Thaumaturge_bonus_cantrip": "Guidance",
   "ability_scores_method": "recommended",
   "alignment": "Neutral Good",
-  "background": "Acolyte",
-  "background_bonuses_method": "suggested",
+  "background": "Sage",
+  "background_bonuses": {
+    "Constitution": 1,
+    "Wisdom": 2
+  },
   "character_name": "Albrek",
   "class": "Cleric",
   "equipment_selections": {
-    "background_equipment": "option_a",
+    "background_equipment": "option_b",
     "class_equipment": "option_a"
   },
   "language_choices_needed": 2,
   "languages": [],
-  "level": 1,
+  "level": 2,
   "skill_choices": [
-    "Medicine",
-    "Religion"
+    "Insight",
+    "Persuasion"
   ],
-  "species": "Dwarf"
+  "species": "Dwarf",
+  "spell_selections": {
+    "background_cantrips": [],
+    "background_spells": [],
+    "cantrips": [
+      "Sacred Flame",
+      "Thaumaturgy",
+      "Toll the Dead"
+    ],
+    "spells": [
+      "Detect Magic"
+    ]
+  }
 }

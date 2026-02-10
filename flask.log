@@ -1,0 +1,4 @@
+2026-02-10 09:58:52,034 - app - INFO - All blueprints registered successfully
+ * Debug mode: off
+Address already in use
+Port 5000 is in use by another program. Either identify and stop that program, or start the server with a different port.

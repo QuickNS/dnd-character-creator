@@ -72,27 +72,45 @@
                 <div class="card-body">
                     <p class="mb-2">Your JSON should contain an object with character selections:</p>
                     <pre class="bg-white p-3 border rounded"><code>{
-  "character_name": "Thorin Sunforge",
-  "class": "Cleric",
-  "level": 1,
-  "Divine Order": "Protector",
-  "species": "Dwarf",
-  "background": "Soldier",
-  "alignment": "Lawful Good",
+  "Divine Order": "Thaumaturge",
   "Spellcasting": [
-    "Guidance",
-    "Sacred Flame",
-    "Thaumaturgy"
+    "Light",
+    "Mending",
+    "Resistance"
   ],
-  "ability_scores": "standard_array_recommended",
-  "background_ability_score_assignment": {
+  "Thaumaturge_bonus_cantrip": "Guidance",
+  "ability_scores_method": "recommended",
+  "alignment": "Neutral Good",
+  "background": "Sage",
+  "background_bonuses": {
     "Constitution": 1,
-    "Strength": 2
+    "Wisdom": 2
   },
+  "character_name": "Albrek",
+  "class": "Cleric",
+  "equipment_selections": {
+    "background_equipment": "option_b",
+    "class_equipment": "option_a"
+  },
+  "language_choices_needed": 2,
+  "languages": [],
+  "level": 1,
   "skill_choices": [
     "Insight",
     "Persuasion"
-  ]
+  ],
+  "species": "Dwarf",
+  "spell_selections": {
+    "background_cantrips": [],
+    "background_spells": [],
+    "cantrips": [
+      "Sacred Flame",
+      "Thaumaturgy",
+      "Toll the Dead"
+    ],
+    "spells": [
+    ]
+  }
 }</code></pre>
             <p class="mt-3 mb-0 text-muted">This can be obtained by exporting your character from the application.</p>               </div>
             </div>

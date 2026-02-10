@@ -14,38 +14,38 @@
             <div class="card-body">
                 <p class="lead mb-4">Choose one of the following options:</p>
                 
-                <!-- Option A -->
+                {% for option_key, option_data in class_equipment.items() | sort %}
                 <div class="form-check p-3 border rounded mb-3 equipment-option">
-                    <input class="form-check-input" type="radio" name="class_equipment" id="class_option_a" value="option_a" required>
-                    <label class="form-check-label w-100" for="class_option_a">
+                    <input class="form-check-input" type="radio" name="class_equipment" id="class_{{ option_key }}" value="{{ option_key }}" required>
+                    <label class="form-check-label w-100" for="class_{{ option_key }}">
                         <div class="d-flex justify-content-between align-items-start">
                             <div>
-                                <strong class="d-block mb-2">Option A: Standard Equipment</strong>
+                                <strong class="d-block mb-2">Option {{ option_key[-1].upper() }}:
+                                    {% if option_data.get('items') %}
+                                        Equipment Pack
+                                    {% else %}
+                                        Starting Gold
+                                    {% endif %}
+                                </strong>
+                                {% if option_data.get('items') %}
                                 <ul class="mb-0">
-                                    {% for item in class_equipment['option_a']['items'] %}
+                                    {% for item in option_data['items'] %}
                                     <li>{{ item }}</li>
                                     {% endfor %}
                                 </ul>
-                                {% if class_equipment['option_a']['gold'] %}
-                                <p class="mb-0 mt-2"><strong>+ {{ class_equipment['option_a']['gold'] }} GP</strong></p>
+                                {% endif %}
+                                {% if option_data.get('gold') %}
+                                    {% if option_data.get('items') %}
+                                    <p class="mb-0 mt-2"><strong>+ {{ option_data['gold'] }} GP</strong></p>
+                                    {% else %}
+                                    <p class="mb-0"><strong>{{ option_data['gold'] }} GP</strong> to purchase your own equipment</p>
+                                    {% endif %}
                                 {% endif %}
                             </div>
                         </div>
                     </label>
                 </div>
-                
-                <!-- Option B -->
-                <div class="form-check p-3 border rounded equipment-option">
-                    <input class="form-check-input" type="radio" name="class_equipment" id="class_option_b" value="option_b" required>
-                    <label class="form-check-label w-100" for="class_option_b">
-                        <div class="d-flex justify-content-between align-items-start">
-                            <div>
-                                <strong class="d-block mb-2">Option B: Starting Gold</strong>
-                                <p class="mb-0"><strong>{{ class_equipment['option_b']['gold'] }} GP</strong> to purchase your own equipment</p>
-                            </div>
-                        </div>
-                    </label>
-                </div>
+                {% endfor %}
             </div>
         </div>
         {% endif %}
@@ -59,38 +59,38 @@
             <div class="card-body">
                 <p class="lead mb-4">Choose one of the following options:</p>
                 
-                <!-- Option A -->
+                {% for option_key, option_data in background_equipment.items() | sort %}
                 <div class="form-check p-3 border rounded mb-3 equipment-option">
-                    <input class="form-check-input" type="radio" name="background_equipment" id="background_option_a" value="option_a" required>
-                    <label class="form-check-label w-100" for="background_option_a">
+                    <input class="form-check-input" type="radio" name="background_equipment" id="background_{{ option_key }}" value="{{ option_key }}" required>
+                    <label class="form-check-label w-100" for="background_{{ option_key }}">
                         <div class="d-flex justify-content-between align-items-start">
                             <div>
-                                <strong class="d-block mb-2">Option A: Standard Equipment</strong>
+                                <strong class="d-block mb-2">Option {{ option_key[-1].upper() }}:
+                                    {% if option_data.get('items') %}
+                                        Equipment Pack
+                                    {% else %}
+                                        Starting Gold
+                                    {% endif %}
+                                </strong>
+                                {% if option_data.get('items') %}
                                 <ul class="mb-0">
-                                    {% for item in background_equipment['option_a']['items'] %}
+                                    {% for item in option_data['items'] %}
                                     <li>{{ item }}</li>
                                     {% endfor %}
                                 </ul>
-                                {% if background_equipment['option_a']['gold'] %}
-                                <p class="mb-0 mt-2"><strong>+ {{ background_equipment['option_a']['gold'] }} GP</strong></p>
+                                {% endif %}
+                                {% if option_data.get('gold') %}
+                                    {% if option_data.get('items') %}
+                                    <p class="mb-0 mt-2"><strong>+ {{ option_data['gold'] }} GP</strong></p>
+                                    {% else %}
+                                    <p class="mb-0"><strong>{{ option_data['gold'] }} GP</strong> to purchase your own equipment</p>
+                                    {% endif %}
                                 {% endif %}
                             </div>
                         </div>
                     </label>
                 </div>
-                
-                <!-- Option B -->
-                <div class="form-check p-3 border rounded equipment-option">
-                    <input class="form-check-input" type="radio" name="background_equipment" id="background_option_b" value="option_b" required>
-                    <label class="form-check-label w-100" for="background_option_b">
-                        <div class="d-flex justify-content-between align-items-start">
-                            <div>
-                                <strong class="d-block mb-2">Option B: Starting Gold</strong>
-                                <p class="mb-0"><strong>{{ background_equipment['option_b']['gold'] }} GP</strong> to purchase your own equipment</p>
-                            </div>
-                        </div>
-                    </label>
-                </div>
+                {% endfor %}
             </div>
         </div>
         {% endif %}

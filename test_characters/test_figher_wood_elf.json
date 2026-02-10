@@ -2,30 +2,24 @@
   "Elven Lineage": "Wisdom",
   "Fighting Style": "Archery",
   "Keen Senses": "Survival",
-  "Weapon Mastery": [
-    "Greatsword",
-    "Longbow",
-    "Shortsword"
-  ],
   "ability_scores": {
     "Charisma": 10,
-    "Constitution": 14,
+    "Constitution": 13,
     "Dexterity": 15,
     "Intelligence": 8,
-    "Strength": 13,
+    "Strength": 14,
     "Wisdom": 12
   },
-  "ability_scores_method": "manual",
   "alignment": "Neutral Good",
   "background": "Soldier",
   "background_bonuses": {
-    "Dexterity": 2,
-    "Strength": 1
+    "Constitution": 1,
+    "Dexterity": 2
   },
-  "character_name": "Elenian Silverleaf",
+  "character_name": "Elenian",
   "class": "Fighter",
   "equipment_selections": {
-    "background_equipment": "option_b",
+    "background_equipment": "option_a",
     "class_equipment": "option_b"
   },
   "language_choices_needed": 1,
@@ -37,5 +31,10 @@
     "Perception"
   ],
   "species": "Elf",
-  "subclass": "Champion"
+  "subclass": "Champion",
+  "weapon_mastery_selections": [
+    "Longbow",
+    "Greataxe",
+    "Longsword"
+  ]
 }

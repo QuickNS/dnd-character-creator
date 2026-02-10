@@ -251,7 +251,7 @@
 
 ## Bugs / Corrections / Enhancements
 
-- Spellcasting feature should have a more detailed template (spell slots, number of prepared spells, spell save DC, spell attack bonus)
+- Only spells or cantrips coming from lineage, background or directly given by class features should be already added to the spell book
 - Features and Traits (class and subclass) should display level at which they became available - Nice to have
 - Features like "Subclass Feature: Gain a feature from your Martial Archetype subclass" should be removed from data files, potentially creating a cleanup script for data files
 - Subclass spells (like Life Domain) should appear as Always Prepared

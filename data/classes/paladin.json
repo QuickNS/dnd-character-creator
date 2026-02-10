@@ -55,6 +55,39 @@
   "spellcasting_focus": [
     "Holy Symbol"
   ],
+  "masterable_weapons": [
+    "Battleaxe",
+    "Club",
+    "Dagger",
+    "Flail",
+    "Glaive",
+    "Greataxe",
+    "Greatclub",
+    "Greatsword",
+    "Halberd",
+    "Handaxe",
+    "Javelin",
+    "Lance",
+    "Light Crossbow",
+    "Light Hammer",
+    "Longbow",
+    "Longsword",
+    "Mace",
+    "Maul",
+    "Morningstar",
+    "Pike",
+    "Quarterstaff",
+    "Rapier",
+    "Scimitar",
+    "Shortbow",
+    "Shortsword",
+    "Sickle",
+    "Spear",
+    "Trident",
+    "War Pick",
+    "Warhammer",
+    "Whip"
+  ],
   "proficiency_bonus_by_level": {
     "1": 2,
     "2": 2,
@@ -298,6 +331,28 @@
       0,
       0
     ]
+  },
+  "masteries_by_level": {
+    "1": 2,
+    "2": 2,
+    "3": 2,
+    "4": 2,
+    "5": 2,
+    "6": 2,
+    "7": 2,
+    "8": 2,
+    "9": 2,
+    "10": 2,
+    "11": 2,
+    "12": 2,
+    "13": 2,
+    "14": 2,
+    "15": 2,
+    "16": 2,
+    "17": 2,
+    "18": 2,
+    "19": 2,
+    "20": 2
   },
   "features_by_level": {
     "1": {

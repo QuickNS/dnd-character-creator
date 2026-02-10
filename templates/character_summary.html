@@ -141,12 +141,28 @@
                             <div class="col-lg-6">
                                 {% if character.attacks %}
                                 <div class="card mb-4 h-100">
-                                   <div class="sub-card-header bg-secondary">
+                                   <div class="sub-card-header bg-secondary d-flex justify-content-between align-items-center">
                                         <h5 class="mb-0">
                                             Weapon Attacks
                                         </h5>
+                                        {% if character.weapon_mastery_stats and character.weapon_mastery_stats.has_mastery %}
+                                        <button type="button" class="btn btn-header btn-primary btn-sm" onclick="openManageMasteriesModal()">
+                                            Choose Masteries
+                                        </button>
+                                        {% endif %}
                                     </div>
                                     <div class="card-body">
+                                        {% if character.weapon_mastery_stats and character.weapon_mastery_stats.has_mastery %}
+                                        <div class="mb-3">
+                                            <small class="text-muted">
+                                                <strong>Masteries:</strong> 
+                                                {{ character.weapon_mastery_stats.current_masteries | length }} / {{ character.weapon_mastery_stats.max_masteries }}
+                                                {% if character.weapon_mastery_stats.current_masteries %}
+                                                - {{ character.weapon_mastery_stats.current_masteries | join(', ') }}
+                                                {% endif %}
+                                            </small>
+                                        </div>
+                                        {% endif %}
                                         <div style="max-height: 500px; overflow-y: auto;">
                                             {% for weapon in character.attacks %}
                                                 <div class="weapon-attack p-3 mb-3 border rounded" >
@@ -172,6 +188,7 @@
                                                     {% if weapon.damage_offhand %}
                                                         <p class="mb-1">
                                                             <strong>Offhand (Bonus Action):</strong> {{ weapon.damage_offhand }} {{ weapon.damage_type }}
+                                                            <small class="text-muted">(Avg: {{ weapon.avg_damage_offhand }}, Crit: {{ weapon.avg_crit_offhand }})</small>
                                                         </p>
                                                     {% endif %}
                                                     {% if weapon.properties %}
@@ -182,7 +199,15 @@
                                                     {% if weapon.mastery and character.class in ['Fighter', 'Rogue', 'Barbarian', 'Ranger', 'Paladin'] %}
                                                         <p class="mb-1">
                                                             <strong>Mastery:</strong>
-                                                            <span class="badge bg-info">{{ weapon.mastery }}</span>
+                                                            {% if character.weapon_mastery_stats and weapon.name in character.weapon_mastery_stats.current_masteries %}
+                                                            <a href="#" onclick="showMasteryDetailsQuick('{{ weapon.mastery }}'); return false;" style="text-decoration: none;">
+                                                                <span class="badge bg-primary">{{ weapon.mastery }} - Active</span>
+                                                            </a>
+                                                            {% else %}
+                                                            <a href="#" onclick="showMasteryDetailsQuick('{{ weapon.mastery }}'); return false;" style="text-decoration: none;">
+                                                                <span class="badge bg-secondary">{{ weapon.mastery }} - Inactive</span>
+                                                            </a>
+                                                            {% endif %}
                                                         </p>
                                                     {% endif %}
                                                     {% if weapon.notes %}
@@ -445,6 +470,9 @@
                                         <div class="mb-3">
                                             <p class="mb-0">
                                             <strong>{{ feature.name }}</strong>
+                                                {% if feature.level %}
+                                                <span class="badge bg-secondary ms-1">Level {{ feature.level }}</span>
+                                                {% endif %}
                                                 </br>
                                             {{ feature.description | safe }}</p>
                                         </div>
@@ -457,6 +485,9 @@
                                         <div class="mb-3">
                                             <p class="small mb-0">
                                             <strong>{{ feature.name }}</strong>
+                                                {% if feature.level %}
+                                                <span class="badge bg-secondary ms-1">Level {{ feature.level }}</span>
+                                                {% endif %}
                                                 {% if feature.source %}
                                                 <span class="badge bg-info ms-1">{{ feature.source }}</span>
                                                 {% endif %}
@@ -513,10 +544,110 @@
 
 
                         
-                        {% if character.spells_by_level %}
+                        {% if character.spellcasting_stats.has_spellcasting %}
+                        <div class="card mb-4">
+                            <div class="sub-card-header bg-secondary d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">Spellcasting</h5>
+                                <button type="button" class="btn btn-header btn-primary btn-sm" onclick="openManageSpellsModal()">Prepare Spells</button>
+                            </div>
+                            <div class="card-body">
+                                <!-- Spellcasting Statistics -->
+                                <div class="row mb-3">
+                                    <div class="col-md-3">
+                                        <p class="mb-1"><strong>Spellcasting Ability:</strong>
+                                        {{ character.spellcasting_stats.spellcasting_ability }}</p>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <p class="mb-1"><strong>Spell Save DC:</strong>
+                                        {{ character.spellcasting_stats.spell_save_dc }}</p>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <p class="mb-1"><strong>Spell Attack Bonus:</strong>
+                                        {% if character.spellcasting_stats.spell_attack_bonus >= 0 %}+{% endif %}{{ character.spellcasting_stats.spell_attack_bonus }}</p>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <p class="mb-1"><strong>Spellcasting Modifier:</strong>
+                                        {% if character.spellcasting_stats.spellcasting_modifier >= 0 %}+{% endif %}{{ character.spellcasting_stats.spellcasting_modifier }}</p>
+                                    </div>
+                                </div>
+
+                                <!-- Cantrips and Prepared Spells Count -->
+                                <div class="row mb-3">
+                                    <div class="col-md-3">
+                                        <p class="mb-1"><strong>Cantrips Known:</strong>
+                                        {{ character.spellcasting_stats.cantrips_known }} / {{ character.spellcasting_stats.max_cantrips }}</p>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <p class="mb-1"><strong>Prepared Spells:</strong>
+                                        {{ character.spellcasting_stats.spells_prepared }} / {{ character.spellcasting_stats.max_prepared_spells }}</p>
+                                    </div>
+                                </div>
+
+                                {% if character.spell_slots %}
+                                <div class="alert alert-info mb-3">
+                                    <strong>Spell Slots:</strong>
+                                    {% for slot_level, slot_count in character.spell_slots.items() | sort %}
+                                        <span class="badge bg-primary ms-2">Level {{ slot_level }}: {{ slot_count }} slots</span>
+                                    {% endfor %}
+                                    <br>
+                                    <small class="text-muted mt-1 d-block">You regain all expended slots when you finish a Long Rest.</small>
+                                </div>
+                                {% endif %}
+
+                                <!-- Prepared Spells Section -->
+                                {% for level in character.spells_by_level | dictsort %}
+                                    {% set level_num = level[0] %}
+                                    {% set spells = level[1] %}
+                                    {% if spells %}
+                                    <div class="mb-3">
+                                        <h6 class="text-primary">
+                                            {% if level_num == 0 %}
+                                                <strong>Cantrips</strong>
+                                            {% else %}
+                                                <strong>Level {{ level_num }} Spells</strong>
+                                            {% endif %}
+                                        </h6>
+                                        {% for spell in spells %}
+                                            {% if spell.get('is_note') %}
+                                                <div class="alert alert-info py-2 mb-2">
+                                                    <small><strong>{{ spell.name }}:</strong> {{ spell.description }}</small>
+                                                </div>
+                                            {% else %}
+                                                <div class="mb-3">
+                                                    <strong><a href="#" onclick="showSpellDetails('{{ spell.name }}'); return false;" style="text-decoration: none; color: inherit;">{{ spell.name }}</a></strong>
+                                                    {% if spell.get('always_prepared') and level_num > 0 %}
+                                                        <span class="badge bg-success">Always Prepared</span>
+                                                    {% endif %}
+                                                    {% if spell.get('once_per_day') %}
+                                                        <span class="badge bg-info">1/Day (No Slot)</span>
+                                                    {% endif %}
+                                                    <br>
+                                                    <small class="text-muted">
+                                                        {% if spell.school %}<strong>School:</strong> {{ spell.school }} | {% endif %}
+                                                        {% if spell.casting_time %}<strong>Casting Time:</strong> {{ spell.casting_time }} | {% endif %}
+                                                        {% if spell.range %}<strong>Range:</strong> {{ spell.range }} | {% endif %}
+                                                        {% if spell.components %}<strong>Components:</strong> {{ spell.components }} | {% endif %}
+                                                        {% if spell.duration %}<strong>Duration:</strong> {{ spell.duration }}{% endif %}
+                                                    </small>
+                                                    <br>
+                                                    <small>{{ spell.description }}</small>
+                                                    {% if spell.source and spell.source != 'Selected' %}
+                                                    <br>
+                                                    <small class="text-muted"><em>Source: {{ spell.source }}</em></small>
+                                                    {% endif %}
+                                                </div>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% elif character.spells_by_level %}
+                        <!-- Fallback: Show spells without full spellcasting stats (for non-standard casters) -->
                         <div class="card mb-4">
                             <div class="sub-card-header bg-secondary">
-                                <h5 class="mb-0">Spellcasting</h5>
+                                <h5 class="mb-0">Spells</h5>
                             </div>
                             <div class="card-body">
                                 {% if character.spell_slots %}
@@ -549,7 +680,7 @@
                                                 </div>
                                             {% else %}
                                                 <div class="mb-2">
-                                                    <strong>{{ spell.name }}</strong>
+                                                    <strong><a href="#" onclick="showSpellDetails('{{ spell.name }}'); return false;" style="text-decoration: none; color: inherit;">{{ spell.name }}</a></strong>
                                                     {% if spell.get('always_prepared') and level_num > 0 %}
                                                         <span class="badge bg-info">Always Prepared</span>
                                                     {% endif %}
@@ -566,8 +697,10 @@
                                                     </small>
                                                     <br>
                                                     <small>{{ spell.description }}</small>
+                                                    {% if spell.source and spell.source != 'Selected' %}
                                                     <br>
                                                     <small class="text-muted"><em>Source: {{ spell.source }}</em></small>
+                                                    {% endif %}
                                                 </div>
                                             {% endif %}
                                         {% endfor %}
@@ -608,24 +741,49 @@
 
 <!-- Modal for Export Choices -->
 <style>
-#choicesModal {
-    z-index: 1060 !important;
+/* Keep modal content clean and ensure proper background */
+.modal-content {
+    background-color: white;
 }
-#choicesModal .modal-dialog {
-    z-index: 1061 !important;
-    pointer-events: auto !important;
+
+/* Manual backdrop for modals */
+.custom-spell-backdrop,
+.custom-choices-backdrop,
+.custom-masteries-backdrop,
+.custom-mastery-details-backdrop,
+.custom-spell-details-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1040;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.5);
+    pointer-events: none;
+    display: none;
 }
-#choicesModal .modal-content {
-    pointer-events: auto !important;
+
+#manageSpellsModal,
+#choicesModal,
+#manageMasteriesModal,
+#masteryModal,
+#spellModal {
+    pointer-events: none;
 }
-#choicesModal .modal-content * {
-    pointer-events: auto !important;
-}
-.modal-backdrop {
-    z-index: 1059 !important;
-    pointer-events: none !important;
+
+#manageSpellsModal .modal-dialog,
+#choicesModal .modal-dialog,
+#manageMasteriesModal .modal-dialog,
+#masteryModal .modal-dialog,
+#spellModal .modal-dialog {
+    pointer-events: auto;
+    z-index: 1050;
+    position: relative;
 }
 </style>
+
+<!-- Manual backdrop for Export Choices Modal -->
+<div class="custom-choices-backdrop" id="choicesBackdrop"></div>
 
 <div class="modal fade" id="choicesModal" tabindex="-1" aria-labelledby="choicesModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg">
@@ -652,14 +810,256 @@
   </div>
 </div>
 
+<!-- Manual backdrop for Manage Spells Modal -->
+<div class="custom-spell-backdrop" id="spellBackdrop"></div>
+
+<!-- Manage Spells Modal -->
+<div class="modal fade" id="manageSpellsModal" tabindex="-1" aria-labelledby="manageSpellsModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="manageSpellsModalLabel">Manage Spells</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <ul class="nav nav-tabs" id="spellTabs" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="always-tab" data-bs-toggle="tab" data-bs-target="#always-prepared" type="button" role="tab">
+              Always Prepared
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="cantrips-tab" data-bs-toggle="tab" data-bs-target="#prepared-cantrips" type="button" role="tab">
+              Cantrips (<span id="cantrip-count">0</span>/<span id="cantrip-max">3</span>)
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="spells-tab" data-bs-toggle="tab" data-bs-target="#prepared-spells" type="button" role="tab">
+              Prepared Spells (<span id="spell-count">0</span>/<span id="spell-max">5</span>)
+            </button>
+          </li>
+          <li class="nav-item" role="presentation" id="background-tab-item" style="display: none;">
+            <button class="nav-link" id="background-tab" data-bs-toggle="tab" data-bs-target="#background-spells" type="button" role="tab">
+              Background Spells
+            </button>
+          </li>
+        </ul>
+        
+        <div class="tab-content mt-3" id="spellTabContent">
+          <!-- Always Prepared Tab -->
+          <div class="tab-pane fade show active" id="always-prepared" role="tabpanel">
+            <p class="text-muted">These spells are always prepared and don't count against your preparation limit.</p>
+            <div id="always-prepared-list"></div>
+          </div>
+          
+          <!-- Prepared Cantrips Tab -->
+          <div class="tab-pane fade" id="prepared-cantrips" role="tabpanel">
+            <p class="text-muted">Select cantrips to prepare from your class spell list.</p>
+            <div id="cantrips-selection" class="row"></div>
+          </div>
+          
+          <!-- Prepared Spells Tab -->
+          <div class="tab-pane fade" id="prepared-spells" role="tabpanel">
+            <p class="text-muted">Select spells to prepare from your class spell list.</p>
+            <div id="spells-selection"></div>
+          </div>
+          
+          <!-- Background Spells Tab -->
+          <div class="tab-pane fade" id="background-spells" role="tabpanel">
+            <p class="text-muted">Select spells from your background feature.</p>
+            <div id="background-cantrips-section" style="display: none;">
+              <h6>Cantrips (<span id="bg-cantrip-count">0</span>/<span id="bg-cantrip-max">2</span>)</h6>
+              <div id="background-cantrips-selection" class="row mb-3"></div>
+            </div>
+            <div id="background-spells-section" style="display: none;">
+              <h6>Level 1 Spell (<span id="bg-spell-count">0</span>/<span id="bg-spell-max">1</span>)</h6>
+              <div id="background-spells-selection" class="row"></div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Spell Details Display -->
+        <div id="spell-details-section" class="mt-4 p-3 border rounded bg-light" style="display: none;">
+          <h6 class="mb-2" id="spell-details-title">Spell Details</h6>
+          <div id="spell-details-content"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" onclick="saveSpellSelections()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Manual backdrop for Spell Details Modal -->
+<div class="custom-spell-details-backdrop" id="spellDetailsBackdrop"></div>
+
+<!-- Spell Details Modal -->
+<div class="modal fade" id="spellModal" tabindex="-1" aria-labelledby="spellModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="spellModalLabel">Spell Details</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" id="spellModalBody">
+        <div class="text-center">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Manual backdrop for Mastery Details Modal -->
+<div class="custom-mastery-details-backdrop" id="masteryDetailsBackdrop"></div>
+
+<!-- Weapon Mastery Details Modal -->
+<div class="modal fade" id="masteryModal" tabindex="-1" aria-labelledby="masteryModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="masteryModalLabel">Mastery Details</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" id="masteryModalBody">
+        <div class="text-center">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Manual backdrop for Manage Masteries Modal -->
+<div class="custom-masteries-backdrop" id="masteriesBackdrop"></div>
+
+<!-- Manage Weapon Masteries Modal -->
+<div class="modal fade" id="manageMasteriesModal" tabindex="-1" aria-labelledby="manageMasteriesModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="manageMasteriesModalLabel">Manage Weapon Masteries</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p class="text-muted">
+          Select up to <strong><span id="mastery-max">3</span></strong> weapons to master. 
+          <span id="mastery-count-display">Selected: <strong id="mastery-count">0</strong></span>
+        </p>
+        <div id="masteries-selection" class="row"></div>
+        
+        <!-- Mastery Details Display -->
+        <div id="mastery-details-section" class="mt-4 p-3 border rounded bg-light" style="display: none;">
+          <h6 class="mb-2" id="mastery-details-title" style="font-weight: 600;">Mastery Details</h6>
+          <div id="mastery-details-content"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" onclick="saveMasterySelections()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.spell-link {
+    color: #0d6efd;
+    text-decoration: none;
+}
+.spell-link:hover {
+    text-decoration: underline;
+    color: #0a58ca;
+}
+</style>
+
 <script>
+// Spell modal functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const spellLinks = document.querySelectorAll('.spell-link');
+    const spellModal = new bootstrap.Modal(document.getElementById('spellModal'));
+    const spellModalBody = document.getElementById('spellModalBody');
+    const spellModalLabel = document.getElementById('spellModalLabel');
+    
+    spellLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const spellName = this.dataset.spell;
+            const spellLevel = this.dataset.level;
+            
+            // Show loading spinner
+            spellModalLabel.textContent = 'Loading...';
+            spellModalBody.innerHTML = `
+                <div class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            `;
+            
+            // Open modal
+            spellModal.show();
+            
+            // Fetch spell details
+            fetch(`/api/spell-details/${encodeURIComponent(spellName)}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        spellModalLabel.textContent = 'Error';
+                        spellModalBody.innerHTML = `<div class="alert alert-danger">${data.error}</div>`;
+                    } else {
+                        spellModalLabel.textContent = data.name;
+                        spellModalBody.innerHTML = `
+                            <div class="mb-3">
+                                <p><strong>Level:</strong> ${data.level === 0 ? 'Cantrip' : `Level ${data.level}`}</p>
+                                ${data.school ? `<p><strong>School:</strong> ${data.school}</p>` : ''}
+                                ${data.casting_time ? `<p><strong>Casting Time:</strong> ${data.casting_time}</p>` : ''}
+                                ${data.range ? `<p><strong>Range:</strong> ${data.range}</p>` : ''}
+                                ${data.components ? `<p><strong>Components:</strong> ${data.components}</p>` : ''}
+                                ${data.duration ? `<p><strong>Duration:</strong> ${data.duration}</p>` : ''}
+                            </div>
+                            <div>
+                                <p><strong>Description:</strong></p>
+                                <p>${data.description || 'No description available.'}</p>
+                            </div>
+                        `;
+                    }
+                })
+                .catch(error => {
+                    spellModalLabel.textContent = 'Error';
+                    spellModalBody.innerHTML = `<div class="alert alert-danger">Failed to load spell details: ${error.message}</div>`;
+                });
+        });
+    });
+});
+
 function showChoicesMade() {
+    const backdrop = document.getElementById('choicesBackdrop');
+    backdrop.style.display = 'block';
+    
     const modalElement = document.getElementById('choicesModal');
     const modal = new bootstrap.Modal(modalElement, {
         backdrop: false,
         keyboard: true,
         focus: true
     });
+    
+    modalElement.addEventListener('hidden.bs.modal', function () {
+        backdrop.style.display = 'none';
+    }, { once: true });
+    
     modal.show();
 }
 
@@ -714,6 +1114,716 @@ function downloadChoices() {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+}
+
+function showSpellDetails(spellName) {
+    const backdrop = document.getElementById('spellDetailsBackdrop');
+    backdrop.style.display = 'block';
+    
+    const modalEl = document.getElementById('spellModal');
+    const modal = new bootstrap.Modal(modalEl, {
+        backdrop: false,
+        keyboard: true
+    });
+    
+    modalEl.addEventListener('hidden.bs.modal', function () {
+        backdrop.style.display = 'none';
+    }, { once: true });
+    
+    const modalBody = document.getElementById('spellModalBody');
+    
+    // Show loading spinner
+    modalBody.innerHTML = `
+        <div class="text-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    `;
+    
+    // Update modal title
+    document.getElementById('spellModalLabel').textContent = spellName;
+    
+    modal.show();
+    
+    // Fetch spell details
+    fetch(`/api/spell-details/${encodeURIComponent(spellName)}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                modalBody.innerHTML = `<div class="alert alert-danger">${data.error}</div>`;
+                return;
+            }
+            
+            // Build spell details HTML
+            let html = `
+                <dl class="row">
+                    <dt class="col-sm-3">Level:</dt>
+                    <dd class="col-sm-9">${data.level === 0 ? 'Cantrip' : 'Level ' + data.level}</dd>
+                    
+                    <dt class="col-sm-3">School:</dt>
+                    <dd class="col-sm-9">${data.school || 'Unknown'}</dd>
+                    
+                    <dt class="col-sm-3">Casting Time:</dt>
+                    <dd class="col-sm-9">${data.casting_time || 'Unknown'}</dd>
+                    
+                    <dt class="col-sm-3">Range:</dt>
+                    <dd class="col-sm-9">${data.range || 'Unknown'}</dd>
+                    
+                    <dt class="col-sm-3">Components:</dt>
+                    <dd class="col-sm-9">${data.components || 'Unknown'}</dd>
+                    
+                    <dt class="col-sm-3">Duration:</dt>
+                    <dd class="col-sm-9">${data.duration || 'Unknown'}</dd>
+            `;
+            
+            if (data.ritual) {
+                html += `
+                    <dt class="col-sm-3">Ritual:</dt>
+                    <dd class="col-sm-9"><span class="badge bg-info">Yes</span></dd>
+                `;
+            }
+            
+            if (data.concentration) {
+                html += `
+                    <dt class="col-sm-3">Concentration:</dt>
+                    <dd class="col-sm-9"><span class="badge bg-warning">Yes</span></dd>
+                `;
+            }
+            
+            html += `</dl>`;
+            
+            if (data.description) {
+                html += `<h6 class="mt-3">Description:</h6><p>${data.description}</p>`;
+            }
+            
+            modalBody.innerHTML = html;
+        })
+        .catch(error => {
+            modalBody.innerHTML = `<div class="alert alert-danger">Error loading spell details: ${error}</div>`;
+        });
+}
+
+function showSpellDetailsInline(spellName) {
+    const detailsSection = document.getElementById('spell-details-section');
+    const detailsTitle = document.getElementById('spell-details-title');
+    const detailsContent = document.getElementById('spell-details-content');
+    
+    // Show loading state
+    detailsSection.style.display = 'block';
+    detailsTitle.textContent = spellName;
+    detailsContent.innerHTML = `
+        <div class="text-center">
+            <div class="spinner-border spinner-border-sm text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    `;
+    
+    // Fetch spell details
+    fetch(`/api/spell-details/${encodeURIComponent(spellName)}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                detailsContent.innerHTML = `<div class="alert alert-danger mb-0">${data.error}</div>`;
+                return;
+            }
+            
+            // Build spell details HTML
+            let html = `
+                <dl class="row mb-0">
+                    <dt class="col-sm-3">Level:</dt>
+                    <dd class="col-sm-9">${data.level === 0 ? 'Cantrip' : 'Level ' + data.level}</dd>
+                    
+                    <dt class="col-sm-3">School:</dt>
+                    <dd class="col-sm-9">${data.school || 'Unknown'}</dd>
+                    
+                    <dt class="col-sm-3">Casting Time:</dt>
+                    <dd class="col-sm-9">${data.casting_time || 'Unknown'}</dd>
+                    
+                    <dt class="col-sm-3">Range:</dt>
+                    <dd class="col-sm-9">${data.range || 'Unknown'}</dd>
+                    
+                    <dt class="col-sm-3">Components:</dt>
+                    <dd class="col-sm-9">${data.components || 'Unknown'}</dd>
+                    
+                    <dt class="col-sm-3">Duration:</dt>
+                    <dd class="col-sm-9">${data.duration || 'Unknown'}</dd>
+            `;
+            
+            if (data.ritual) {
+                html += `
+                    <dt class="col-sm-3">Ritual:</dt>
+                    <dd class="col-sm-9"><span class="badge bg-info">Yes</span></dd>
+                `;
+            }
+            
+            if (data.concentration) {
+                html += `
+                    <dt class="col-sm-3">Concentration:</dt>
+                    <dd class="col-sm-9"><span class="badge bg-warning">Yes</span></dd>
+                `;
+            }
+            
+            html += `</dl>`;
+            
+            if (data.description) {
+                html += `<p class="mb-0 mt-2">${data.description}</p>`;
+            }
+            
+            detailsContent.innerHTML = html;
+        })
+        .catch(error => {
+            detailsContent.innerHTML = `<div class="alert alert-danger mb-0">Error loading spell details: ${error}</div>`;
+        });
+}
+
+function showMasteryDetailsQuick(masteryName) {
+    const backdrop = document.getElementById('masteryDetailsBackdrop');
+    backdrop.style.display = 'block';
+    
+    const modalEl = document.getElementById('masteryModal');
+    const modal = new bootstrap.Modal(modalEl, {
+        backdrop: false,
+        keyboard: true
+    });
+    
+    modalEl.addEventListener('hidden.bs.modal', function () {
+        backdrop.style.display = 'none';
+    }, { once: true });
+    
+    const modalBody = document.getElementById('masteryModalBody');
+    
+    // Show loading spinner
+    modalBody.innerHTML = `
+        <div class="text-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    `;
+    
+    // Update modal title
+    document.getElementById('masteryModalLabel').textContent = masteryName;
+    
+    modal.show();
+    
+    // Fetch mastery details
+    fetch(`/api/mastery-details/${encodeURIComponent(masteryName)}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                modalBody.innerHTML = `<div class="alert alert-danger">${data.error}</div>`;
+                return;
+            }
+            
+            // Build mastery details HTML
+            let html = `
+                <h6 class="mb-3">${data.name}</h6>
+                <p>${data.description}</p>
+            `;
+            
+            modalBody.innerHTML = html;
+        })
+        .catch(error => {
+            modalBody.innerHTML = `<div class="alert alert-danger">Error loading mastery details: ${error}</div>`;
+        });
+}
+
+function showMasteryDetails(masteryName) {
+    const detailsSection = document.getElementById('mastery-details-section');
+    const detailsTitle = document.getElementById('mastery-details-title');
+    const detailsContent = document.getElementById('mastery-details-content');
+    
+    // Show loading state
+    detailsSection.style.display = 'block';
+    detailsTitle.textContent = masteryName;
+    detailsContent.innerHTML = `
+        <div class="text-center">
+            <div class="spinner-border spinner-border-sm text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    `;
+    
+    // Fetch mastery details
+    fetch(`/api/mastery-details/${encodeURIComponent(masteryName)}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                detailsContent.innerHTML = `<div class="alert alert-danger mb-0">${data.error}</div>`;
+                return;
+            }
+            
+            // Display mastery details
+            detailsContent.innerHTML = `<p class="mb-0">${data.description}</p>`;
+        })
+        .catch(error => {
+            detailsContent.innerHTML = `<div class="alert alert-danger mb-0">Error loading mastery details: ${error}</div>`;
+        });
+}
+
+// Manage Spells Modal Functions
+let spellSelections = {
+    cantrips: [],
+    spells: [],
+    background_cantrips: [],
+    background_spells: []
+};
+let alwaysPreparedSpells = []; // Store always-prepared spells to check against
+
+async function openManageSpellsModal() {
+    const backdrop = document.getElementById('spellBackdrop');
+    backdrop.style.display = 'block';
+    
+    const modalEl = document.getElementById('manageSpellsModal');
+    const modal = new bootstrap.Modal(modalEl, {
+        backdrop: false,
+        keyboard: true
+    });
+    
+    modalEl.addEventListener('hidden.bs.modal', function () {
+        backdrop.style.display = 'none';
+    }, { once: true });
+    
+    // Fetch current spell data and available spells
+    try {
+        const response = await fetch('/api/spell-management-data');
+        const data = await response.json();
+        
+        if (data.error) {
+            alert('Error loading spell data: ' + data.error);
+            return;
+        }
+        
+        // Store always-prepared spells for checking
+        alwaysPreparedSpells = data.always_prepared || [];
+        
+        // Get list of always-prepared spell names
+        const alwaysPreparedNames = alwaysPreparedSpells.map(s => s.name);
+        
+        // Initialize selections with current choices, filtering out always-prepared spells
+        // (so they don't count against the selection limit)
+        spellSelections = {
+            cantrips: (data.current_selections.cantrips || []).filter(name => !alwaysPreparedNames.includes(name)),
+            spells: (data.current_selections.spells || []).filter(name => !alwaysPreparedNames.includes(name)),
+            background_cantrips: data.current_selections.background_cantrips || [],
+            background_spells: data.current_selections.background_spells || []
+        };
+        
+        // Populate modal with data
+        populateAlwaysPrepared(data.always_prepared);
+        populateCantripsSelection(data.available_cantrips, data.limits.cantrips);
+        populateSpellsSelection(data.available_spells, data.limits.spells);
+        
+        // Handle background spells if applicable
+        if (data.background_requirements) {
+            document.getElementById('background-tab-item').style.display = 'block';
+            populateBackgroundSpells(data.background_requirements);
+        } else {
+            document.getElementById('background-tab-item').style.display = 'none';
+        }
+        
+        modal.show();
+    } catch (error) {
+        alert('Error loading spell management: ' + error);
+    }
+}
+
+function populateAlwaysPrepared(alwaysPrepared) {
+    const container = document.getElementById('always-prepared-list');
+    
+    if (!alwaysPrepared || alwaysPrepared.length === 0) {
+        container.innerHTML = '<p class="text-muted">No always-prepared spells yet.</p>';
+        return;
+    }
+    
+    let html = '<div class="list-group">';
+    alwaysPrepared.forEach(spell => {
+        const countsBadge = spell.counts_against_limit ? 
+            '<span class="badge bg-warning">Counts Against Limit</span>' : 
+            '<span class="badge bg-success">Bonus</span>';
+        html += `
+            <div class="list-group-item d-flex justify-content-between align-items-center">
+                <div>
+                    <strong><a href="#" onclick="showSpellDetailsInline('${spell.name}'); return false;">${spell.name}</a></strong>
+                    <small class="text-muted ms-2">(${spell.source})</small>
+                </div>
+                ${countsBadge}
+            </div>
+        `;
+    });
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+function populateCantripsSelection(availableCantrips, maxCantrips) {
+    const container = document.getElementById('cantrips-selection');
+    document.getElementById('cantrip-max').textContent = maxCantrips;
+    updateCantripCount();
+    
+    if (!availableCantrips || availableCantrips.length === 0) {
+        container.innerHTML = '<p class="text-muted">No cantrips available.</p>';
+        return;
+    }
+    
+    // Get list of always-prepared cantrip names
+    const alwaysPreparedNames = alwaysPreparedSpells
+        .filter(s => s.level === 0)
+        .map(s => s.name);
+    
+    let html = '';
+    availableCantrips.forEach(spell => {
+        const isAlreadyKnown = alwaysPreparedNames.includes(spell.name);
+        const isSelected = spellSelections.cantrips.includes(spell.name);
+        
+        html += `
+            <div class="col-md-4 mb-2">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" 
+                           id="cantrip-${spell.name.replace(/\s+/g, '-')}" 
+                           value="${spell.name}"
+                           ${isSelected ? 'checked' : ''}
+                           ${isAlreadyKnown ? 'disabled' : ''}
+                           onchange="toggleCantripSelection('${spell.name}', ${maxCantrips})">
+                    <label class="form-check-label ${isAlreadyKnown ? 'text-muted' : ''}" for="cantrip-${spell.name.replace(/\s+/g, '-')}">
+                        <a href="#" onclick="showSpellDetailsInline('${spell.name}'); return false;">${spell.name}</a>
+                        ${isAlreadyKnown ? '<small class="text-success d-block">(Already Prepared)</small>' : `<small class="text-muted d-block">${spell.school}</small>`}
+                    </label>
+                </div>
+            </div>
+        `;
+    });
+    container.innerHTML = html;
+}
+
+function populateSpellsSelection(availableSpells, maxSpells) {
+    const container = document.getElementById('spells-selection');
+    document.getElementById('spell-max').textContent = maxSpells;
+    updateSpellCount();
+    
+    if (!availableSpells || Object.keys(availableSpells).length === 0) {
+        container.innerHTML = '<p class="text-muted">No spells available.</p>';
+        return;
+    }
+    
+    // Get list of always-prepared spell names (level > 0)
+    const alwaysPreparedNames = alwaysPreparedSpells
+        .filter(s => s.level > 0)
+        .map(s => s.name);
+    
+    let html = '';
+    // Group by spell level
+    Object.keys(availableSpells).sort((a, b) => parseInt(a) - parseInt(b)).forEach(level => {
+        html += `<h6 class="mt-3">Level ${level}</h6><div class="row">`;
+        availableSpells[level].forEach(spell => {
+            const isAlreadyKnown = alwaysPreparedNames.includes(spell.name);
+            const isSelected = spellSelections.spells.includes(spell.name);
+            
+            html += `
+                <div class="col-md-4 mb-2">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" 
+                               id="spell-${spell.name.replace(/\s+/g, '-')}" 
+                               value="${spell.name}"
+                               ${isSelected ? 'checked' : ''}
+                               ${isAlreadyKnown ? 'disabled' : ''}
+                               onchange="toggleSpellSelection('${spell.name}', ${maxSpells})">
+                        <label class="form-check-label ${isAlreadyKnown ? 'text-muted' : ''}" for="spell-${spell.name.replace(/\s+/g, '-')}">
+                            <a href="#" onclick="showSpellDetailsInline('${spell.name}'); return false;">${spell.name}</a>
+                            ${isAlreadyKnown ? '<small class="text-success d-block">(Always Prepared)</small>' : `<small class="text-muted d-block">${spell.school}</small>`}
+                        </label>
+                    </div>
+                </div>
+            `;
+        });
+        html += '</div>';
+    });
+    container.innerHTML = html;
+}
+
+function populateBackgroundSpells(requirements) {
+    // Handle cantrips
+    if (requirements.cantrips && requirements.cantrips.count > 0) {
+        document.getElementById('background-cantrips-section').style.display = 'block';
+        document.getElementById('bg-cantrip-max').textContent = requirements.cantrips.count;
+        updateBackgroundCantripCount();
+        
+        const container = document.getElementById('background-cantrips-selection');
+        let html = '';
+        requirements.cantrips.available.forEach(spell => {
+            const isSelected = spellSelections.background_cantrips.includes(spell.name);
+            html += `
+                <div class="col-md-4 mb-2">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" 
+                               id="bg-cantrip-${spell.name.replace(/\s+/g, '-')}" 
+                               value="${spell.name}"
+                               ${isSelected ? 'checked' : ''}
+                               onchange="toggleBackgroundCantripSelection('${spell.name}', ${requirements.cantrips.count})">
+                        <label class="form-check-label" for="bg-cantrip-${spell.name.replace(/\s+/g, '-')}">
+                            <a href="#" onclick="showSpellDetailsInline('${spell.name}'); return false;">${spell.name}</a>
+                            <small class="text-muted d-block">${requirements.cantrips.class_name}</small>
+                        </label>
+                    </div>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    } else {
+        document.getElementById('background-cantrips-section').style.display = 'none';
+    }
+    
+    // Handle spells
+    if (requirements.spells && requirements.spells.count > 0) {
+        document.getElementById('background-spells-section').style.display = 'block';
+        document.getElementById('bg-spell-max').textContent = requirements.spells.count;
+        updateBackgroundSpellCount();
+        
+        const container = document.getElementById('background-spells-selection');
+        let html = '';
+        requirements.spells.available.forEach(spell => {
+            const isSelected = spellSelections.background_spells.includes(spell.name);
+            html += `
+                <div class="col-md-4 mb-2">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" 
+                               id="bg-spell-${spell.name.replace(/\s+/g, '-')}" 
+                               value="${spell.name}"
+                               ${isSelected ? 'checked' : ''}
+                               onchange="toggleBackgroundSpellSelection('${spell.name}', ${requirements.spells.count})">
+                        <label class="form-check-label" for="bg-spell-${spell.name.replace(/\s+/g, '-')}">
+                            <a href="#" onclick="showSpellDetailsInline('${spell.name}'); return false;">${spell.name}</a>
+                            <small class="text-muted d-block">${requirements.spells.class_name}</small>
+                        </label>
+                    </div>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    } else {
+        document.getElementById('background-spells-section').style.display = 'none';
+    }
+}
+
+function toggleCantripSelection(spellName, maxCantrips) {
+    const index = spellSelections.cantrips.indexOf(spellName);
+    if (index > -1) {
+        spellSelections.cantrips.splice(index, 1);
+    } else {
+        if (spellSelections.cantrips.length >= maxCantrips) {
+            alert(`You can only select up to ${maxCantrips} cantrips.`);
+            document.getElementById(`cantrip-${spellName.replace(/\s+/g, '-')}`).checked = false;
+            return;
+        }
+        spellSelections.cantrips.push(spellName);
+    }
+    updateCantripCount();
+}
+
+function toggleSpellSelection(spellName, maxSpells) {
+    const index = spellSelections.spells.indexOf(spellName);
+    if (index > -1) {
+        spellSelections.spells.splice(index, 1);
+    } else {
+        if (spellSelections.spells.length >= maxSpells) {
+            alert(`You can only select up to ${maxSpells} spells.`);
+            document.getElementById(`spell-${spellName.replace(/\s+/g, '-')}`).checked = false;
+            return;
+        }
+        spellSelections.spells.push(spellName);
+    }
+    updateSpellCount();
+}
+
+function toggleBackgroundCantripSelection(spellName, maxCantrips) {
+    const index = spellSelections.background_cantrips.indexOf(spellName);
+    if (index > -1) {
+        spellSelections.background_cantrips.splice(index, 1);
+    } else {
+        if (spellSelections.background_cantrips.length >= maxCantrips) {
+            alert(`You can only select up to ${maxCantrips} background cantrips.`);
+            document.getElementById(`bg-cantrip-${spellName.replace(/\s+/g, '-')}`).checked = false;
+            return;
+        }
+        spellSelections.background_cantrips.push(spellName);
+    }
+    updateBackgroundCantripCount();
+}
+
+function toggleBackgroundSpellSelection(spellName, maxSpells) {
+    const index = spellSelections.background_spells.indexOf(spellName);
+    if (index > -1) {
+        spellSelections.background_spells.splice(index, 1);
+    } else {
+        if (spellSelections.background_spells.length >= maxSpells) {
+            alert(`You can only select up to ${maxSpells} background spells.`);
+            document.getElementById(`bg-spell-${spellName.replace(/\s+/g, '-')}`).checked = false;
+            return;
+        }
+        spellSelections.background_spells.push(spellName);
+    }
+    updateBackgroundSpellCount();
+}
+
+function updateCantripCount() {
+    document.getElementById('cantrip-count').textContent = spellSelections.cantrips.length;
+}
+
+function updateSpellCount() {
+    document.getElementById('spell-count').textContent = spellSelections.spells.length;
+}
+
+function updateBackgroundCantripCount() {
+    document.getElementById('bg-cantrip-count').textContent = spellSelections.background_cantrips.length;
+}
+
+function updateBackgroundSpellCount() {
+    document.getElementById('bg-spell-count').textContent = spellSelections.background_spells.length;
+}
+
+async function saveSpellSelections() {
+    try {
+        const response = await fetch('/api/save-spell-selections', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(spellSelections)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            // Close modal and reload page to show updated spells
+            bootstrap.Modal.getInstance(document.getElementById('manageSpellsModal')).hide();
+            location.reload();
+        } else {
+            alert('Error saving spell selections: ' + (result.error || 'Unknown error'));
+        }
+    } catch (error) {
+        alert('Error saving spell selections: ' + error);
+    }
+}
+
+// Weapon Mastery Management Functions
+let masterySelections = [];
+
+async function openManageMasteriesModal() {
+    const backdrop = document.getElementById('masteriesBackdrop');
+    backdrop.style.display = 'block';
+    
+    const modalEl = document.getElementById('manageMasteriesModal');
+    const modal = new bootstrap.Modal(modalEl, {
+        backdrop: false,
+        keyboard: true
+    });
+    
+    modalEl.addEventListener('hidden.bs.modal', function () {
+        backdrop.style.display = 'none';
+    }, { once: true });
+    
+    // Fetch current mastery data
+    try {
+        const response = await fetch('/api/mastery-management-data');
+        const data = await response.json();
+        
+        if (data.error) {
+            alert('Error loading mastery data: ' + data.error);
+            return;
+        }
+        
+        // Initialize selections with current choices
+        masterySelections = data.current_masteries || [];
+        
+        // Update UI
+        document.getElementById('mastery-max').textContent = data.max_masteries;
+        updateMasteryCount();
+        
+        // Populate weapon selection
+        populateMasteriesSelection(data.available_weapons, data.max_masteries, data.weapon_masteries);
+        
+        modal.show();
+    } catch (error) {
+        alert('Error loading mastery management: ' + error);
+    }
+}
+
+function populateMasteriesSelection(weapons, maxMasteries, weaponMasteries) {
+    const container = document.getElementById('masteries-selection');
+    container.innerHTML = '';
+    
+    weapons.forEach(weapon => {
+        const col = document.createElement('div');
+        col.className = 'col-md-4 mb-2';
+        
+        const checked = masterySelections.includes(weapon) ? 'checked' : '';
+        const masteryName = weaponMasteries[weapon] || 'Unknown';
+        
+        col.innerHTML = `
+            <div class="form-check">
+                <input class="form-check-input mastery-checkbox" 
+                       type="checkbox" 
+                       value="${weapon}" 
+                       id="mastery_${weapon.replace(/\s+/g, '_')}"
+                       ${checked}
+                       onchange="updateMasterySelection('${weapon}', this.checked)">
+                <label class="form-check-label" for="mastery_${weapon.replace(/\s+/g, '_')}">
+                    ${weapon} <small class="text-muted">(<a href="#" onclick="showMasteryDetails('${masteryName}'); return false;">${masteryName}</a>)</small>
+                </label>
+            </div>
+        `;
+        
+        container.appendChild(col);
+    });
+}
+
+function updateMasterySelection(weapon, isChecked) {
+    const maxMasteries = parseInt(document.getElementById('mastery-max').textContent);
+    
+    if (isChecked) {
+        if (masterySelections.length >= maxMasteries) {
+            alert(`You can only select ${maxMasteries} masteries.`);
+            event.target.checked = false;
+            return;
+        }
+        masterySelections.push(weapon);
+    } else {
+        const index = masterySelections.indexOf(weapon);
+        if (index > -1) {
+            masterySelections.splice(index, 1);
+        }
+    }
+    
+    updateMasteryCount();
+}
+
+function updateMasteryCount() {
+    document.getElementById('mastery-count').textContent = masterySelections.length;
+}
+
+async function saveMasterySelections() {
+    try {
+        const response = await fetch('/api/save-mastery-selections', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ masteries: masterySelections })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            // Close modal and reload page to show updated masteries
+            bootstrap.Modal.getInstance(document.getElementById('manageMasteriesModal')).hide();
+            location.reload();
+        } else {
+            alert('Error saving mastery selections: ' + (result.error || 'Unknown error'));
+        }
+    } catch (error) {
+        alert('Error saving mastery selections: ' + error);
+    }
 }
 </script>
 

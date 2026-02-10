@@ -51,6 +51,11 @@
   "spellcasting_focus": [
     "Holy Symbol"
   ],
+  "spellcasting_type": "prepared",
+  "spell_preparation_formula": "level + wisdom_modifier",
+  "cantrip_progression": "class_table",
+  "spell_list_restrictions": null,
+  "ritual_casting": true,
   "proficiency_bonus_by_level": {
     "1": 2,
     "2": 2,
@@ -355,11 +360,24 @@
     },
     "Thaumaturge": {
       "description": "You know one extra cantrip from the Cleric spell list. In addition, your mystical connection to the divine gives you a bonus to your Intelligence (Arcana or Religion) checks. The bonus equals your Wisdom modifier (minimum of +1).",
+      "choices": {
+        "type": "select_single",
+        "count": 1,
+        "name": "thaumaturge_bonus_cantrip",
+        "source": {
+          "type": "external",
+          "file": "spells/class_lists/cleric.json",
+          "list": "cantrips"
+        },
+        "optional": false
+      },
       "effects": [
         {
           "type": "grant_cantrip_choice",
           "count": 1,
-          "spell_list": "Cleric"
+          "spell_list": "Cleric",
+          "counts_against_limit": false,
+          "category": "always_prepared"
         },
         {
           "type": "ability_bonus",
@@ -394,17 +412,7 @@
   "features_by_level": {
     "1": {
       "Spellcasting": {
-        "description": "You can cast spells using Wisdom as your spellcasting ability. You know 3 cantrips of your choice from the Cleric spell list. You prepare a number of spells equal to your Wisdom modifier + your Cleric level. You can use a Holy Symbol as your Spellcasting Focus.",
-        "choices": {
-          "type": "select_multiple",
-          "count": 3,
-          "name": "cantrips",
-          "source": {
-            "type": "external",
-            "file": "spells/class_lists/cleric.json",
-            "list": "cantrips"
-          }
-        }
+        "description": "You can cast spells using Wisdom as your spellcasting ability. You prepare a number of spells equal to your Wisdom modifier + your Cleric level (minimum of 1). You can change your list of prepared spells whenever you finish a Long Rest. You can use a Holy Symbol as your Spellcasting Focus."
       },
       "Divine Order": {
         "description": "You have dedicated yourself to one of the following sacred roles of your choice.",
