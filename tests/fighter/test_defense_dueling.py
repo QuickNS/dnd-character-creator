@@ -153,8 +153,10 @@ def test_dueling_one_handed_melee():
     weapon_data = builder.calculate_weapon_attacks()
     attacks = weapon_data.get("attacks", [])
     
-    assert len(attacks) == 1, "Should have 1 weapon attack"
-    longsword = attacks[0]
+    # Filter out unarmed strike
+    weapon_attacks = [a for a in attacks if a["name"] != "Unarmed Strike"]
+    assert len(weapon_attacks) == 1, "Should have 1 weapon attack (plus unarmed)"
+    longsword = weapon_attacks[0]
     
     # Check damage: 1d8 + STR (3) + Dueling (2) = 1d8 + 5
     assert "1d8 + 5" in longsword["damage"], \
@@ -228,10 +230,12 @@ def test_dueling_doesnt_apply_with_two_weapons():
     attacks = weapon_data.get("attacks", [])
     combinations = weapon_data.get("combinations", [])
     
-    assert len(attacks) == 2, "Should have 2 individual weapon attacks"
+    # Filter out unarmed strike
+    weapon_attacks = [a for a in attacks if a["name"] != "Unarmed Strike"]
+    assert len(weapon_attacks) == 2, "Should have 2 individual weapon attacks (plus unarmed)"
     assert len(combinations) == 1, "Should have 1 combination (Shortsword & Dagger)"
     
-    shortsword = next(atk for atk in attacks if atk["name"] == "Shortsword")
+    shortsword = next(atk for atk in weapon_attacks if atk["name"] == "Shortsword")
     
     # Normal damage INCLUDES Dueling (assuming used alone)
     assert "1d6 + 5" in shortsword["damage"], \
@@ -306,8 +310,10 @@ def test_dueling_doesnt_apply_to_two_handed():
     weapon_data = builder.calculate_weapon_attacks()
     attacks = weapon_data.get("attacks", [])
     
-    assert len(attacks) == 1, "Should have 1 weapon attack"
-    greatsword = attacks[0]
+    # Filter out unarmed strike
+    weapon_attacks = [a for a in attacks if a["name"] != "Unarmed Strike"]
+    assert len(weapon_attacks) == 1, "Should have 1 weapon attack (plus unarmed)"
+    greatsword = weapon_attacks[0]
     
     # Check damage: 2d6 + STR (3), NO Dueling
     assert "2d6 + 3" in greatsword["damage"], \
@@ -365,8 +371,10 @@ def test_dueling_doesnt_apply_to_ranged():
     weapon_data = builder.calculate_weapon_attacks()
     attacks = weapon_data.get("attacks", [])
     
-    assert len(attacks) == 1, "Should have 1 weapon attack"
-    longbow = attacks[0]
+    # Filter out unarmed strike
+    weapon_attacks = [a for a in attacks if a["name"] != "Unarmed Strike"]
+    assert len(weapon_attacks) == 1, "Should have 1 weapon attack (plus unarmed)"
+    longbow = weapon_attacks[0]
     
     # Check damage: 1d8 + DEX (2), NO Dueling
     assert "1d8 + 2" in longbow["damage"], \

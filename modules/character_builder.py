@@ -2610,6 +2610,81 @@ class CharacterBuilder:
 
             attacks.append(attack_info)
 
+        # Add Unarmed Strike
+        # Base unarmed strike: 1 + STR modifier
+        # With Unarmed Fighting: 1d6 + STR (or 1d8 + STR if no weapons/shield)
+        str_mod = ability_scores.get("strength", {}).get("modifier", 0)
+        has_unarmed_fighting = False
+        
+        if hasattr(self, "applied_effects"):
+            for effect_wrapper in self.applied_effects:
+                if effect_wrapper.get("type") == "unarmed_fighting":
+                    has_unarmed_fighting = True
+                    break
+        
+        if has_unarmed_fighting:
+            # Check if character has weapons or shield equipped
+            has_weapons_or_shield = len(all_weapons) > 0
+            
+            # Check for shield in armor
+            armor_list = equipment.get("armor", [])
+            has_shield = any("Shield" in armor.get("name", "") for armor in armor_list)
+            
+            # Determine damage die
+            if has_weapons_or_shield or has_shield:
+                unarmed_damage_dice = "1d6"
+            else:
+                unarmed_damage_dice = "1d8"
+            
+            # Format damage string
+            if str_mod > 0:
+                unarmed_damage_str = f"{unarmed_damage_dice} + {str_mod}"
+            elif str_mod < 0:
+                unarmed_damage_str = f"{unarmed_damage_dice} - {abs(str_mod)}"
+            else:
+                unarmed_damage_str = unarmed_damage_dice
+            
+            unarmed_avg = self._calculate_average_damage(unarmed_damage_dice, str_mod)
+            unarmed_crit_avg = self._calculate_average_damage(unarmed_damage_dice, str_mod, is_crit=True)
+        else:
+            # Base unarmed strike: 1 + STR modifier
+            unarmed_damage_base = 1 + str_mod
+            if unarmed_damage_base > 0:
+                unarmed_damage_str = str(unarmed_damage_base)
+            else:
+                unarmed_damage_str = "1"  # Minimum 1 damage
+            
+            unarmed_avg = float(max(1, 1 + str_mod))
+            unarmed_crit_avg = float(max(1, 1 + str_mod))  # Unarmed crits don't double the base 1
+        
+        unarmed_attack_bonus = str_mod + proficiency_bonus
+        
+        unarmed_notes = []
+        if has_unarmed_fighting:
+            if has_weapons_or_shield or has_shield:
+                unarmed_notes.append("1d8 if no weapons or shield equipped")
+            else:
+                unarmed_notes.append("1d6 if wielding weapons or shield")
+            unarmed_notes.append("1d4 damage to grappled creature (start of turn)")
+        
+        unarmed_attack = {
+            "name": "Unarmed Strike",
+            "attack_bonus": unarmed_attack_bonus,
+            "attack_bonus_display": f"+{unarmed_attack_bonus}" if unarmed_attack_bonus >= 0 else str(unarmed_attack_bonus),
+            "damage": unarmed_damage_str,
+            "damage_type": "Bludgeoning",
+            "avg_damage": unarmed_avg,
+            "avg_crit": unarmed_crit_avg,
+            "properties": [],
+            "ability": "STR",
+            "proficient": True,  # Everyone is proficient with unarmed strikes
+            "mastery": None,
+            "icon": "/static/images/weapons/strike.svg",
+            "damage_notes": unarmed_notes,
+        }
+        
+        attacks.append(unarmed_attack)
+
         # Check if character has 2+ light weapons for dual wielding
         # Create combination cards for each pair
         light_weapons = [
@@ -2818,6 +2893,7 @@ class CharacterBuilder:
             "crossbow_hand": "crossbow.svg",
             "crossbow_heavy": "crossbow.svg",
             "longbow": "bow.svg",
+            "unarmed_strike": "strike.svg",
         }
 
         # Try exact match first

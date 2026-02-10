@@ -180,7 +180,7 @@
                                                         <strong>Damage:</strong> {{ weapon.damage }} {{ weapon.damage_type }}
                                                         <small class="text-muted">(Avg: {{ weapon.avg_damage }}, Crit: {{ weapon.avg_crit }})</small>
                                                     </p>
-                                                    {% if weapon.throw_damage %}
+                                                    {% if weapon.throw_damage and weapon.throw_damage != weapon.damage %}
                                                         <p class="mb-1">
                                                             <strong>Throw Damage:</strong> {{ weapon.throw_damage }} {{ weapon.damage_type }}
                                                             <small class="text-muted">(Avg: {{ weapon.avg_throw_damage }})</small>
