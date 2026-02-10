@@ -1,8 +1,27 @@
 # D&D 2024 Character Creator - TODO List
 
-**Last Updated**: 2026-02-06
+**Last Updated**: 2026-02-10
 
 ## 📋 Recent Completed Work
+
+### Fighting Styles Implementation (2026-02-10) ✅
+- **All 7 combat fighting styles fully implemented** with effects system
+- **Archery**: +2 to ranged weapon attack rolls
+- **Defense**: +1 AC when wearing armor
+- **Dueling**: +2 damage with one-handed melee weapons
+- **Two-Weapon Fighting**: Add ability modifier to offhand attacks
+- **Thrown Weapon Fighting**: +2 to thrown weapon damage rolls
+- **Great Weapon Fighting**: Reroll 1s and 2s on damage dice (affects average calculations)
+- **Unarmed Fighting**: Enhanced unarmed strikes (1d6/1d8 + STR + grapple damage)
+- **Dual-Wielding System**: Combination cards for light weapon pairs
+  - Mainhand and offhand attack calculations
+  - "Switch Hands" button functionality
+  - Dueling exclusion from dual-wield damage
+- **Thrown Weapons**: Separate throw damage calculations for melee weapons with Thrown property
+- **Versatile Weapons**: Display one-handed and two-handed damage options
+- **Unarmed Strike**: Always present in attacks list for all characters
+- **Test Coverage**: All 240 tests passing (8 new Unarmed Fighting tests, 4 updated dual-wield tests)
+- **Documentation**: FEATURE_EFFECTS.md updated with all fighting style effect types
 
 ### Architectural Refactors (2026-02-06) ✅
 - CharacterBuilder established as single source of truth for ALL calculations
@@ -44,6 +63,11 @@
 ### Combat Calculations
 - [x] **Attack Roll Calculations** - Weapon attacks with all bonuses ✅
 - [x] **Damage Roll Calculations** - Weapon damage with ability modifiers ✅
+- [x] **Fighting Style Bonuses** - All 7 combat fighting styles implemented ✅
+- [x] **Dual-Wielding System** - Combination cards with mainhand/offhand calculations ✅
+- [x] **Thrown Weapons** - Separate throw damage calculations ✅
+- [x] **Versatile Weapons** - One-handed and two-handed damage options ✅
+- [x] **Unarmed Strikes** - Base + Unarmed Fighting style support ✅
 - [x] **Armor Class Calculation** - Base AC + armor + shield + bonuses ✅
 - [x] **Initiative Calculation** - Dexterity + bonuses ✅
 - [x] **Combat Actions** - Available actions, bonus actions, reactions (partial) ✅
@@ -154,7 +178,9 @@
 - ❌ All 44 feats missing: Ability Score Improvement, Actor, Athlete, Charger, Chef, Crossbow Expert, Crusher, Defensive Duelist, Dual Wielder, Durable, Elemental Adept, Fey Touched, Grappler, Great Weapon Master, Harper Teamwork, Heavily Armored, Heavy Armor Master, Inspiring Leader, Keen Mind, Lightly Armored, Mage Slayer, Martial Weapon Training, Medium Armor Master, Moderately Armored, Mounted Combatant, Observant, Piercer, Poisoner, Polearm Master, Resilient, Ritual Caster, Sentinel, Shadow Touched, Sharpshooter, Shield Master, Skill Expert, Skulker, Slasher, Speedy, Spell Sniper, Telekinetic, Telepathic, War Caster, Weapon Master
 
 **Fighting Style Feats (Class Features & Feat Options)**
-- ✅ Archery, ❌ Blind Fighting, ✅ Defense, ✅ Dueling, ❌ Great Weapon Fighting, ❌ Interception, ❌ Protection, ❌ Thrown Weapon Fighting, ❌ Two Weapon Fighting, ❌ Unarmed Fighting
+- ✅ Archery, ✅ Defense, ✅ Dueling, ✅ Great Weapon Fighting, ✅ Thrown Weapon Fighting, ✅ Two-Weapon Fighting, ✅ Unarmed Fighting
+- ✅ Blind Fighting, ✅ Interception, ✅ Protection (display-only features, no calculations needed)
+- **Status**: All 10 fighting styles complete (7 with calculated effects, 3 informational)
 
 **Priority Actions:**
 - [ ] Complete all missing Origin feat data files (Lucky, Tavern Brawler, Tough)

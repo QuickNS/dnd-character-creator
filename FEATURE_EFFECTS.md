@@ -213,6 +213,57 @@ Grants a bonus to attack rolls.
 }
 ```
 
+#### great_weapon_fighting
+Allows rerolling 1s and 2s on damage dice for melee weapons wielded with two hands.
+
+**Implementation**: Applied in `calculate_weapon_attacks()`. Affects average damage calculations for qualifying weapons. Applies to weapons that are:
+- Melee weapons (not Ranged category)
+- Have Two-Handed property OR Versatile property
+
+**Example**: Great Weapon Fighting style
+```json
+{
+  "type": "great_weapon_fighting"
+}
+```
+
+**Calculation**: When calculating average damage, the expected value per die changes from `(1 + die_size) / 2` to account for rerolling 1s and 2s:
+- Expected value = `(2 * avg_all + sum(3 to N)) / N`
+- Where `avg_all` is the normal die average `(1 + die_size) / 2`
+
+#### two_weapon_fighting_modifier
+Adds ability modifier to offhand attack damage when dual-wielding.
+
+**Implementation**: Applied in `_create_dual_wield_combo()`. When creating combination cards for two light weapons:
+- Without this effect: Offhand damage = dice only (e.g., "1d4")
+- With this effect: Offhand damage = dice + ability modifier (e.g., "1d4 + 3")
+
+**Example**: Two-Weapon Fighting style
+```json
+{
+  "type": "two_weapon_fighting_modifier"
+}
+```
+
+#### unarmed_fighting
+Enhances unarmed strikes with improved damage dice and grapple damage.
+
+**Implementation**: Applied in `calculate_weapon_attacks()`. Modifies the Unarmed Strike attack that's always added to all characters:
+- **Base Unarmed Strike** (without style): 1 + STR modifier
+- **With Unarmed Fighting**:
+  - 1d6 + STR modifier (when wielding weapons or shield)
+  - 1d8 + STR modifier (when not wielding any weapons or shield)
+  - Adds note: "1d4 damage to grappled creature (start of turn)"
+
+**Example**: Unarmed Fighting style
+```json
+{
+  "type": "unarmed_fighting"
+}
+```
+
+**Grapple Damage**: At the start of your turn, you can deal 1d4 bludgeoning damage to one creature grappled by you (displayed as a damage note).
+
 ### Ability Score Effects
 
 #### ability_bonus

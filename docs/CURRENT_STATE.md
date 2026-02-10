@@ -1,6 +1,6 @@
 # D&D 2024 Character Creator - Current State
 
-**Last Updated**: 2026-02-06
+**Last Updated**: 2026-02-10
 
 ## 🎯 Project Overview
 
@@ -48,6 +48,14 @@ All effect types working and documented:
 - `grant_save_proficiency` - Saving throw proficiencies
 - `grant_damage_resistance` / `grant_damage_immunity` - Damage resistances/immunities
 
+**Fighting Styles (Implemented 2026-02-10):**
+- `bonus_attack` - Attack roll bonuses (e.g., Archery: +2 to ranged attacks)
+- `bonus_ac` - AC bonuses (e.g., Defense: +1 AC when wearing armor)
+- `bonus_damage` - Conditional damage bonuses (e.g., Dueling: +2 when wielding one-handed melee weapon)
+- `great_weapon_fighting` - Reroll 1s and 2s on damage dice (affects average damage calculations)
+- `two_weapon_fighting_modifier` - Add ability modifier to offhand attacks
+- `unarmed_fighting` - Enhanced unarmed strikes (1d6 or 1d8 + STR, plus grapple damage)
+
 ### Feature Display System
 - **Choice-Specific Descriptions**: Features show actual choice descriptions, not generic prompts
 - **Nested Choice Display**: Bonus choices append to parent features (e.g., "Divine Order: Thaumaturge\n\nBonus Cantrip: Guidance")
@@ -68,6 +76,38 @@ All effect types working and documented:
   - Both badges for species spells
 - **Spell Slots Display**: Shows all available slots with Long Rest recovery note
 - **Spell Details**: School, casting time, range, components, duration, description
+
+### Weapon Attack System (Enhanced 2026-02-10)
+- **Weapon Attacks**: Complete attack calculations with all bonuses
+  - Attack bonus: ability modifier + proficiency + fighting style bonuses
+  - Damage: dice + ability modifier + fighting style bonuses
+  - Average damage calculations (including Great Weapon Fighting adjustments)
+  - Critical hit averages
+- **Thrown Weapons**: Separate calculations for thrown attacks
+  - Melee weapons with Thrown property show both melee and throw damage
+  - Throw damage only displayed if different from regular damage
+  - Thrown Weapon Fighting bonus applies to thrown attacks
+- **Versatile Weapons**: Display both wielding options
+  - One-handed damage (e.g., 1d8 + 3)
+  - Two-handed damage (e.g., 1d10 + 3)
+  - Great Weapon Fighting applies to two-handed use
+- **Dual-Wielding**: Combination cards for light weapon pairs
+  - Mainhand attack (regular damage without Dueling)
+  - Offhand attack (dice only, or dice + modifier with Two-Weapon Fighting)
+  - "Switch Hands" button to swap weapons between hands
+  - Notes about Dueling not applying to dual-wielding
+- **Unarmed Strikes**: Always present in attacks list
+  - Base: 1 + STR modifier
+  - With Unarmed Fighting: 1d6 + STR (weapons/shield) or 1d8 + STR (no weapons/shield)
+  - Grapple damage notes (1d4 at start of turn)
+- **Fighting Style Effects**: All 7 combat styles fully implemented
+  - Archery: +2 to ranged attack rolls
+  - Defense: +1 AC when wearing armor
+  - Dueling: +2 damage with one-handed melee weapons (excluded from dual-wield)
+  - Two-Weapon Fighting: Add ability modifier to offhand attacks
+  - Thrown Weapon Fighting: +2 to thrown weapon damage
+  - Great Weapon Fighting: Reroll 1s and 2s on damage dice
+  - Unarmed Fighting: Enhanced unarmed strikes (1d6/1d8)
 
 ### Character Summary Display
 - **Complete Character Sheet**: All stats, proficiencies, features, spells
