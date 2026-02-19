@@ -236,6 +236,122 @@ class CharacterBuilder:
 
     # ==================== Species/Lineage Methods ====================
 
+    def _clear_species_features(self):
+        """Clear all species-related features and effects before re-applying."""
+        # Clear species and lineage features
+        self.character_data["features"]["species"] = []
+        self.character_data["features"]["lineage"] = []
+
+        # Reset species-specific attributes to defaults
+        self.character_data["speed"] = 30  # Default speed
+        self.character_data["darkvision"] = 0  # No darkvision
+
+        # Clear species and lineage data
+        old_languages = []
+        if self.character_data.get("species_data"):
+            old_languages.extend(self.character_data["species_data"].get("languages", []))
+        if self.character_data.get("lineage_data"):
+            old_languages.extend(self.character_data["lineage_data"].get("languages", []))
+        
+        # Remove old species/lineage languages
+        current_languages = self.character_data["proficiencies"]["languages"]
+        self.character_data["proficiencies"]["languages"] = [
+            lang for lang in current_languages if lang not in old_languages
+        ]
+        
+        # Clear species/lineage from language sources
+        lang_sources = self.character_data["proficiency_sources"]["languages"]
+        self.character_data["proficiency_sources"]["languages"] = {
+            lang: source for lang, source in lang_sources.items() 
+            if source not in ["species", "lineage"]
+        }
+
+        # Clear applied effects from species and lineage source
+        if hasattr(self, "applied_effects"):
+            self.applied_effects = [
+                e
+                for e in self.applied_effects
+                if e.get("source_type") not in ["species", "species_choice", "lineage", "lineage_choice"]
+            ]
+
+        # Clear species/lineage spells from always_prepared
+        always_prepared = self.character_data["spells"]["always_prepared"]
+        spell_metadata = self.character_data.get("spell_metadata", {})
+        
+        spells_to_remove = []
+        for spell_name, spell_info in always_prepared.items():
+            if isinstance(spell_info, dict):
+                source = spell_info.get("source", "")
+                if "species" in source.lower() or "lineage" in source.lower():
+                    spells_to_remove.append(spell_name)
+        
+        for spell_name in spells_to_remove:
+            always_prepared.pop(spell_name, None)
+            spell_metadata.pop(spell_name, None)
+
+        # Clear species and lineage names/data
+        self.character_data["species"] = None
+        self.character_data["species_data"] = None
+        self.character_data["lineage"] = None
+        self.character_data["lineage_data"] = None
+
+    def _clear_lineage_features(self):
+        """Clear all lineage-related features and effects before re-applying."""
+        # Clear lineage features
+        self.character_data["features"]["lineage"] = []
+
+        # Reset lineage-specific attributes (preserve species attributes)
+        species_data = self.character_data.get("species_data")
+        if species_data:
+            # Reset to species defaults
+            if "speed" in species_data:
+                self.character_data["speed"] = species_data["speed"]
+            if "darkvision" in species_data:
+                self.character_data["darkvision"] = species_data.get("darkvision", 0)
+
+        # Clear old lineage languages
+        old_lineage_languages = []
+        if self.character_data.get("lineage_data"):
+            old_lineage_languages.extend(self.character_data["lineage_data"].get("languages", []))
+        
+        # Remove old lineage languages
+        current_languages = self.character_data["proficiencies"]["languages"]
+        self.character_data["proficiencies"]["languages"] = [
+            lang for lang in current_languages if lang not in old_lineage_languages
+        ]
+        
+        # Clear lineage from language sources
+        lang_sources = self.character_data["proficiency_sources"]["languages"]
+        self.character_data["proficiency_sources"]["languages"] = {
+            lang: source for lang, source in lang_sources.items() 
+            if source != "lineage"
+        }
+
+        # Clear applied effects from lineage source
+        if hasattr(self, "applied_effects"):
+            self.applied_effects = [
+                e for e in self.applied_effects if e.get("source_type") not in ["lineage", "lineage_choice"]
+            ]
+
+        # Clear lineage spells from always_prepared
+        always_prepared = self.character_data["spells"]["always_prepared"]
+        spell_metadata = self.character_data.get("spell_metadata", {})
+        
+        spells_to_remove = []
+        for spell_name, spell_info in always_prepared.items():
+            if isinstance(spell_info, dict):
+                source = spell_info.get("source", "")
+                if "lineage" in source.lower():
+                    spells_to_remove.append(spell_name)
+        
+        for spell_name in spells_to_remove:
+            always_prepared.pop(spell_name, None)
+            spell_metadata.pop(spell_name, None)
+
+        # Clear lineage name/data
+        self.character_data["lineage"] = None
+        self.character_data["lineage_data"] = None
+
     def set_species(self, species_name: str) -> bool:
         """
         Set the character's species.
@@ -246,6 +362,9 @@ class CharacterBuilder:
         Returns:
             True if successful, False otherwise
         """
+        # Clear any existing species/lineage data first
+        self._clear_species_features()
+        
         species_data = self._load_species_data(species_name)
         if not species_data:
             return False
@@ -281,6 +400,9 @@ class CharacterBuilder:
         if not self.character_data["species"]:
             return False
 
+        # Clear any existing lineage data first
+        self._clear_lineage_features()
+        
         lineage_data = self._load_lineage_data(
             self.character_data["species"], lineage_name
         )

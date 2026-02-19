@@ -36,6 +36,26 @@
             "Survival"
           ]
         }
+      },
+      "choice_effects": {
+        "Acrobatics": [{"type": "grant_skill_proficiency", "skills": ["Acrobatics"]}],
+        "Animal Handling": [{"type": "grant_skill_proficiency", "skills": ["Animal Handling"]}],
+        "Arcana": [{"type": "grant_skill_proficiency", "skills": ["Arcana"]}],
+        "Athletics": [{"type": "grant_skill_proficiency", "skills": ["Athletics"]}],
+        "Deception": [{"type": "grant_skill_proficiency", "skills": ["Deception"]}],
+        "History": [{"type": "grant_skill_proficiency", "skills": ["History"]}],
+        "Insight": [{"type": "grant_skill_proficiency", "skills": ["Insight"]}],
+        "Intimidation": [{"type": "grant_skill_proficiency", "skills": ["Intimidation"]}],
+        "Investigation": [{"type": "grant_skill_proficiency", "skills": ["Investigation"]}],
+        "Medicine": [{"type": "grant_skill_proficiency", "skills": ["Medicine"]}],
+        "Nature": [{"type": "grant_skill_proficiency", "skills": ["Nature"]}],
+        "Perception": [{"type": "grant_skill_proficiency", "skills": ["Perception"]}],
+        "Performance": [{"type": "grant_skill_proficiency", "skills": ["Performance"]}],
+        "Persuasion": [{"type": "grant_skill_proficiency", "skills": ["Persuasion"]}],
+        "Religion": [{"type": "grant_skill_proficiency", "skills": ["Religion"]}],
+        "Sleight of Hand": [{"type": "grant_skill_proficiency", "skills": ["Sleight of Hand"]}],
+        "Stealth": [{"type": "grant_skill_proficiency", "skills": ["Stealth"]}],
+        "Survival": [{"type": "grant_skill_proficiency", "skills": ["Survival"]}]
       }
     },
     "Versatile": "You gain an Origin feat of your choice. Skilled is recommended."

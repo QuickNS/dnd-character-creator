@@ -2,11 +2,17 @@
   "name": "Forest Gnome",
   "parent_species": "Gnome",
   "traits": {
-    "Natural Illusionist": "You know the Minor Illusion cantrip. Intelligence is your spellcasting ability for it.",
+    "Natural Illusionist": {
+      "description": "You know the Minor Illusion cantrip. Intelligence is your spellcasting ability for it.",
+      "effects": [
+        {
+          "type": "grant_cantrip",
+          "spell": "Minor Illusion",
+          "spell_list": "Gnome"
+        }
+      ]
+    },
     "Speak with Small Beasts": "Through sounds and gestures, you can communicate simple ideas with Small or smaller beasts."
   },
-  "spellcasting_ability": "Intelligence",
-  "spells_by_level": {
-    "cantrip": ["Minor Illusion"]
-  }
+  "spellcasting_ability": "Intelligence"
 }

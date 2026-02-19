@@ -133,8 +133,12 @@ def select_species_traits():
 
     # Check if species has lineages
     if species_data.get("lineages"):
+        builder.set_step("lineage")
+        save_builder_to_session(builder)
         return redirect(url_for("species.choose_lineage"))
     else:
+        builder.set_step("languages")
+        save_builder_to_session(builder)
         return redirect(url_for("languages.choose_languages"))
 
 
