@@ -318,12 +318,6 @@ def class_choices():
             }
         )
 
-    starting_equipment = class_data.get("starting_equipment")
-    if starting_equipment:
-        core_traits.append(
-            {"label": "Starting Equipment", "value": str(starting_equipment)}
-        )
-
     return render_template(
         "class_choices.html",
         character=character,
