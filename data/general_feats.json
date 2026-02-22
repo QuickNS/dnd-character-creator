@@ -1,0 +1,126 @@
+{
+  "general_feats": {
+    "Ability Score Improvement": {
+      "description": "Increase one ability score of your choice by 2, or increase two ability scores of your choice by 1 each. As normal, you can't increase an ability score above 20 using this feat.",
+      "benefits": [],
+      "category": "General",
+      "prerequisite": "4th Level",
+      "source": "Player's Handbook 2024",
+      "choices": [
+        {
+          "type": "select_single",
+          "name": "asi_option",
+          "source": {
+            "type": "fixed_list",
+            "options": [
+              "+2 to one ability",
+              "+1 to two abilities"
+            ]
+          }
+        }
+      ]
+    },
+    "Great Weapon Master": {
+      "description": "You've learned to use the weight and momentum of a weapon to your advantage. You gain the following benefits:",
+      "benefits": [
+        "Heavy Weapon Mastery: When you hit a creature with a weapon that has the Heavy property as part of the Attack action on your turn, you can cause the weapon to deal extra damage to the target. The extra damage equals your Proficiency Bonus.",
+        "Bonus Attack: If you reduce a creature to 0 hit points with an attack using a Heavy weapon, you can make one attack with the same weapon as a Bonus Action."
+      ],
+      "category": "General",
+      "prerequisite": "4th Level, Strength 13+",
+      "source": "Player's Handbook 2024"
+    },
+    "Sharpshooter": {
+      "description": "You've mastered ranged weapons and can make shots that others find impossible. You gain the following benefits:",
+      "benefits": [
+        "Steady Aim: As a Bonus Action, you can take careful aim, giving yourself Advantage on your next attack roll with a ranged weapon. You can't use this feature if you've moved this turn, and using it reduces your Speed to 0 until the end of the current turn.",
+        "Ignore Cover: Your ranged weapon attacks ignore Half Cover and Three-Quarters Cover.",
+        "Long Shots: Attacking at long range doesn't impose Disadvantage on your ranged weapon attack rolls."
+      ],
+      "category": "General",
+      "prerequisite": "4th Level, Dexterity 13+",
+      "source": "Player's Handbook 2024"
+    },
+    "War Caster": {
+      "description": "You've practiced casting spells in the midst of combat, learning techniques that grant you advantages. You gain the following benefits:",
+      "benefits": [
+        "Advantage on Constitution saving throws that you make to maintain Concentration on a spell when you take damage.",
+        "You can perform the somatic components of spells even when you have weapons or a Shield in one or both hands.",
+        "When a creature provokes an Opportunity Attack from you by moving out of your reach, you can use your Reaction to cast a spell at the creature rather than making an Opportunity Attack. The spell must have a casting time of 1 Action and must target only that creature."
+      ],
+      "category": "General",
+      "prerequisite": "4th Level, Spellcasting or Pact Magic feature",
+      "source": "Player's Handbook 2024"
+    },
+    "Dual Wielder": {
+      "description": "You master fighting with two weapons, gaining the following benefits:",
+      "benefits": [
+        "Enhanced Defense: While you are holding a separate weapon in each hand, you gain a +1 bonus to Armor Class.",
+        "Quick Draw: You can draw or stow two weapons that lack the Two-Handed property when you would normally be able to draw or stow only one.",
+        "Two-Weapon Fighting: When you make the extra attack of the Light property, you can make it as part of the Attack action instead of as a Bonus Action. You can make this extra attack only once per turn."
+      ],
+      "category": "General",
+      "prerequisite": "4th Level, Strength or Dexterity 13+",
+      "source": "Player's Handbook 2024"
+    },
+    "Lucky": {
+      "description": "You have inexplicable luck that can kick in at just the right moment. You have a number of Luck Points equal to your Proficiency Bonus. You can spend the points on the following benefits:",
+      "benefits": [
+        "Advantage: Immediately after you roll a d20 for a d20 Test, you can spend 1 Luck Point to give yourself Advantage on the roll.",
+        "Disadvantage on Foe: When a creature you can see makes an attack roll against you, you can spend 1 Luck Point to impose Disadvantage on that roll.",
+        "You regain all expended Luck Points when you finish a Long Rest."
+      ],
+      "category": "General",
+      "prerequisite": "4th Level",
+      "source": "Player's Handbook 2024"
+    },
+    "Polearm Master": {
+      "description": "You've trained extensively with pole weapons. You gain the following benefits:",
+      "benefits": [
+        "Bonus Attack: When you take the Attack action on your turn and attack with a weapon that has the Heavy and Reach properties, you can use a Bonus Action to make a melee attack with the opposite end of the weapon. This attack uses the same ability modifier as the main attack. The weapon's damage die for this attack is a d4, and it deals Bludgeoning damage.",
+        "Reactive Strike: While you are holding a weapon with the Heavy and Reach properties, you can use your Reaction to make one melee attack against a creature that enters the reach you have with that weapon."
+      ],
+      "category": "General",
+      "prerequisite": "4th Level, Strength or Dexterity 13+",
+      "source": "Player's Handbook 2024"
+    },
+    "Resilient": {
+      "description": "Choose one ability score. You gain the following benefits:",
+      "benefits": [
+        "Ability Score Increase: Increase the chosen ability score by 1, to a maximum of 20.",
+        "Saving Throw Proficiency: You gain Proficiency in saving throws using the chosen ability."
+      ],
+      "category": "General",
+      "prerequisite": "4th Level",
+      "source": "Player's Handbook 2024",
+      "choices": [
+        {
+          "type": "select_single",
+          "name": "ability",
+          "source": {
+            "type": "fixed_list",
+            "options": [
+              "Strength",
+              "Dexterity",
+              "Constitution",
+              "Intelligence",
+              "Wisdom",
+              "Charisma"
+            ]
+          }
+        }
+      ]
+    },
+    "Sentinel": {
+      "description": "You've mastered techniques to take advantage of every drop in any enemy's guard. You gain the following benefits:",
+      "benefits": [
+        "Guardian: When you hit a creature with an Opportunity Attack, the creature's Speed becomes 0 for the rest of the turn.",
+        "Halt: Creatures provoke Opportunity Attacks from you even if they take the Disengage action before leaving your reach.",
+        "Reprisal: When a creature within 5 feet of you hits a target other than you with an attack, you can use your Reaction to make a melee weapon attack against the attacking creature."
+      ],
+      "category": "General",
+      "prerequisite": "4th Level, Strength or Dexterity 13+",
+      "source": "Player's Handbook 2024"
+    }
+  }
+}

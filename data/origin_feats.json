@@ -1,0 +1,225 @@
+{
+  "origin_feats": {
+    "Alert": {
+      "description": "Always on the lookout for danger, you gain the following benefits:",
+      "benefits": [
+        "When you roll Initiative, you can add your Proficiency Bonus to the roll.",
+        "Immediately after you roll Initiative, you can swap your Initiative with that of one willing ally in the same encounter. You can't make this swap if you or the ally has the Incapacitated condition."
+      ],
+      "category": "Origin",
+      "prerequisite": "None",
+      "source": "Player's Handbook 2024"
+    },
+    "Crafter": {
+      "description": "You are adept at crafting things and bargaining with merchants, granting you the following benefits:",
+      "benefits": [
+        "You gain Tool Proficiency with three different Artisan's Tools of your choice.",
+        "Whenever you buy a nonmagical item, you receive a 20 percent discount on it.",
+        "When you finish a Long Rest, you can craft one piece of gear from the Adventuring Gear table, provided you have the Artisan's Tools associated with that item and have proficiency with those tools. The item must be worth no more than 20 GP, and you must expend raw materials (leather, metal, wood, or other materials) worth half the item's market price. If the item is a weapon or a suit of armor, it can't have the Heavy property."
+      ],
+      "category": "Origin",
+      "prerequisite": "None",
+      "source": "Player's Handbook 2024"
+    },
+    "Healer": {
+      "description": "You have the training and intuition to administer first aid and other care effectively, granting you the following benefits:",
+      "benefits": [
+        "Battle Medic: If you have a Healer's Kit, you can expend one use of it and tend to a creature within 5 feet of you as an Action. That creature can expend one of its Hit Point Dice, and you then roll that die. The creature regains a number of Hit Points equal to the roll plus your Proficiency Bonus.",
+        "Healing Rerolls: Whenever you roll a die to determine the number of Hit Points you restore with a spell or with this feat's Battle Medic benefit, you can reroll the die if it rolls a 1, and you must use the new roll."
+      ],
+      "category": "Origin",
+      "prerequisite": "None",
+      "source": "Player's Handbook 2024"
+    },
+    "Magic Initiate (Cleric)": {
+      "description": "You've learned the basics of Cleric magic, gaining the following benefits:",
+      "benefits": [
+        "Choose two cantrips from the Cleric spell list.",
+        "Choose one 1st-level spell from the Cleric spell list. You can cast this spell once without expending a spell slot, and you regain the ability to cast it in this way when you finish a Long Rest. You can also cast the spell using any spell slots you have.",
+        "Your spellcasting ability for these spells is Wisdom."
+      ],
+      "category": "Origin",
+      "prerequisite": "None",
+      "source": "Player's Handbook 2024",
+      "choices": [
+        {
+          "type": "select_multiple",
+          "count": 2,
+          "name": "cantrips",
+          "source": {
+            "type": "external",
+            "file": "spells/cleric_cantrips.json",
+            "list": "cantrips"
+          }
+        },
+        {
+          "type": "select_single",
+          "name": "1st_level_spell",
+          "source": {
+            "type": "external",
+            "file": "spells/cleric_spells.json",
+            "list": "1st_level"
+          }
+        }
+      ]
+    },
+    "Magic Initiate (Druid)": {
+      "description": "You've learned the basics of Druid magic, gaining the following benefits:",
+      "benefits": [
+        "Choose two cantrips from the Druid spell list.",
+        "Choose one 1st-level spell from the Druid spell list. You can cast this spell once without expending a spell slot, and you regain the ability to cast it in this way when you finish a Long Rest. You can also cast the spell using any spell slots you have.",
+        "Your spellcasting ability for these spells is Wisdom."
+      ],
+      "category": "Origin",
+      "prerequisite": "None",
+      "source": "Player's Handbook 2024",
+      "choices": [
+        {
+          "type": "select_multiple",
+          "count": 2,
+          "name": "cantrips",
+          "source": {
+            "type": "external",
+            "file": "spells/druid_cantrips.json",
+            "list": "cantrips"
+          }
+        },
+        {
+          "type": "select_single",
+          "name": "1st_level_spell",
+          "source": {
+            "type": "external",
+            "file": "spells/druid_spells.json",
+            "list": "1st_level"
+          }
+        }
+      ]
+    },
+    "Magic Initiate (Wizard)": {
+      "description": "You've learned the basics of Wizard magic, gaining the following benefits:",
+      "benefits": [
+        "Choose two cantrips from the Wizard spell list.",
+        "Choose one 1st-level spell from the Wizard spell list. You can cast this spell once without expending a spell slot, and you regain the ability to cast it in this way when you finish a Long Rest. You can also cast the spell using any spell slots you have.",
+        "Your spellcasting ability for these spells is Intelligence."
+      ],
+      "category": "Origin",
+      "prerequisite": "None",
+      "source": "Player's Handbook 2024",
+      "choices": [
+        {
+          "type": "select_multiple",
+          "count": 2,
+          "name": "cantrips",
+          "source": {
+            "type": "external",
+            "file": "spells/wizard_cantrips.json",
+            "list": "cantrips"
+          }
+        },
+        {
+          "type": "select_single",
+          "name": "1st_level_spell",
+          "source": {
+            "type": "external",
+            "file": "spells/wizard_spells.json",
+            "list": "1st_level"
+          }
+        }
+      ]
+    },
+    "Musician": {
+      "description": "You are a practiced musician, granting you the following benefits:",
+      "benefits": [
+        "Instrument Training: You gain Tool Proficiency with three Musical Instruments of your choice.",
+        "Inspiring Song: As you finish a Short Rest or a Long Rest, you can play a song on a Musical Instrument with which you have Tool Proficiency and give Inspiration to allies who hear the song. The number of allies you can affect in this way equals your Proficiency Bonus."
+      ],
+      "category": "Origin",
+      "prerequisite": "None",
+      "source": "Player's Handbook 2024"
+    },
+    "Savage Attacker": {
+      "description": "You've trained to deal particularly damaging strikes. Once per turn when you hit a target with a weapon, you can roll the weapon's damage dice twice and use either roll against the target.",
+      "benefits": [],
+      "category": "Origin",
+      "prerequisite": "None",
+      "source": "Player's Handbook 2024"
+    },
+    "Skilled": {
+      "description": "You have a knack for learning new things. You gain proficiency in any combination of three skills or tools of your choice.",
+      "benefits": [
+        "Choose any three skills or tools.",
+        "You gain proficiency with your chosen skills or tools.",
+        "This can include any combination of skills and tool proficiencies."
+      ],
+      "category": "Origin",
+      "prerequisite": "None",
+      "source": "Player's Handbook 2024",
+      "choices": [
+        {
+          "type": "select_multiple",
+          "count": 3,
+          "name": "skills_or_tools",
+          "source": {
+            "type": "fixed_list",
+            "options": [
+              "Acrobatics",
+              "Animal Handling",
+              "Arcana",
+              "Athletics",
+              "Deception",
+              "History",
+              "Insight",
+              "Intimidation",
+              "Investigation",
+              "Medicine",
+              "Nature",
+              "Perception",
+              "Performance",
+              "Persuasion",
+              "Religion",
+              "Sleight of Hand",
+              "Stealth",
+              "Survival",
+              "Alchemist's Supplies",
+              "Brewer's Supplies",
+              "Calligrapher's Supplies",
+              "Carpenter's Tools",
+              "Cartographer's Tools",
+              "Cobbler's Tools",
+              "Cook's Utensils",
+              "Glassblower's Tools",
+              "Jeweler's Tools",
+              "Leatherworker's Tools",
+              "Mason's Tools",
+              "Painter's Supplies",
+              "Potter's Tools",
+              "Smith's Tools",
+              "Tinker's Tools",
+              "Weaver's Tools",
+              "Woodcarver's Tools",
+              "Disguise Kit",
+              "Forgery Kit",
+              "Herbalism Kit",
+              "Navigator's Tools",
+              "Poisoner's Kit",
+              "Thieves' Tools"
+            ]
+          }
+        }
+      ]
+    },
+    "Tough": {
+      "description": "Your hit point maximum increases by an amount equal to twice your character level when you gain this feat. Whenever you gain a level thereafter, your hit point maximum increases by an additional 2 hit points.",
+      "benefits": [],
+      "category": "Origin",
+      "prerequisite": "None",
+      "source": "Player's Handbook 2024",
+      "effects": [
+        {
+          "type": "bonus_hp",
+          "formula": "2 * level"
+        }
+      ]
+    }
+  }
+}

@@ -20,7 +20,7 @@ class DataLoader:
         backgrounds: Dictionary of background data keyed by background name
         species: Dictionary of species data keyed by species name
         species_variants: Dictionary of species variant data
-        feats: Dictionary of feat data keyed by feat name
+        feats: Dictionary of feat data keyed by feat name (loaded from origin_feats.json and general_feats.json)
         subclasses: Dictionary of subclass data organized by class name
     """
 
@@ -36,7 +36,7 @@ class DataLoader:
         self.backgrounds = self._load_data("backgrounds")
         self.species = self._load_data("species")
         self.species_variants = self._load_data("species_variants")
-        self.feats = self._load_data("feats")
+        self.feats = self._load_feats()
         self.subclasses = self._load_subclasses()
 
     def _load_data(self, data_type: str) -> Dict[str, Dict[str, Any]]:
@@ -64,6 +64,39 @@ class DataLoader:
                     print(f"Warning: Could not load {json_file}: {e}")
 
         return data
+
+    def _load_feats(self) -> Dict[str, Dict[str, Any]]:
+        """
+        Load feat data from grouped feat files (origin_feats.json, general_feats.json).
+
+        Returns:
+            Dictionary of all feats keyed by feat name
+        """
+        feats = {}
+        
+        # Load origin feats
+        origin_feats_file = self.data_dir / "origin_feats.json"
+        if origin_feats_file.exists():
+            try:
+                with open(origin_feats_file, "r") as f:
+                    origin_data = json.load(f)
+                    if "origin_feats" in origin_data:
+                        feats.update(origin_data["origin_feats"])
+            except (json.JSONDecodeError, IOError) as e:
+                print(f"Warning: Could not load {origin_feats_file}: {e}")
+        
+        # Load general feats
+        general_feats_file = self.data_dir / "general_feats.json"
+        if general_feats_file.exists():
+            try:
+                with open(general_feats_file, "r") as f:
+                    general_data = json.load(f)
+                    if "general_feats" in general_data:
+                        feats.update(general_data["general_feats"])
+            except (json.JSONDecodeError, IOError) as e:
+                print(f"Warning: Could not load {general_feats_file}: {e}")
+        
+        return feats
 
     def _load_subclasses(self) -> Dict[str, Dict[str, Dict[str, Any]]]:
         """
