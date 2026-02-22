@@ -1330,6 +1330,8 @@ class CharacterBuilder:
 
     def _add_equipment_from_option(self, option_data: Dict[str, Any], source: str):
         """Add equipment items from a starting equipment option."""
+        import re
+        
         # Add gold
         gold = option_data.get("gold", 0)
         if gold > 0:
@@ -1343,9 +1345,23 @@ class CharacterBuilder:
             # Check if item is a weapon by looking it up in weapon data
             weapon_props = self._get_weapon_properties(item)
             if weapon_props:
+                # Extract quantity from item name (e.g., "Javelin (5)" -> 5)
+                quantity_match = re.search(r'\((\d+)\)', item)
+                quantity = int(quantity_match.group(1)) if quantity_match else 1
+                
+                # Get clean weapon name for display
+                clean_name = re.sub(r'\s*\([^)]*\)', '', item).strip()
+                clean_name = re.sub(r'^\d+\s+', '', clean_name).strip()
+                
                 # Item exists in weapons.json, so it's a weapon
                 self.character_data["equipment"]["weapons"].append(
-                    {"name": item, "source": source, "properties": weapon_props}
+                    {
+                        "name": clean_name,
+                        "display_name": item,  # Keep original for display
+                        "quantity": quantity,
+                        "source": source,
+                        "properties": weapon_props
+                    }
                 )
             elif any(
                 armor_type in item_name_lower
@@ -1434,10 +1450,24 @@ class CharacterBuilder:
 
     def _get_weapon_properties(self, weapon_name: str) -> Dict[str, Any]:
         """Get weapon properties from loaded weapon data."""
-        if weapon_name in self._weapon_data:
+        # Strip quantity indicators from weapon name
+        # Examples: "Javelin (5)" -> "Javelin", "20 Arrows" -> "Arrows"
+        import re
+        
+        # Remove anything in parentheses (e.g., "Javelin (5)" -> "Javelin")
+        clean_name = re.sub(r'\s*\([^)]*\)', '', weapon_name).strip()
+        
+        # Remove leading numbers (e.g., "20 Arrows" -> "Arrows")
+        clean_name = re.sub(r'^\d+\s+', '', clean_name).strip()
+        
+        # Try the cleaned name first
+        if clean_name in self._weapon_data:
+            return self._weapon_data[clean_name].copy()
+        # Fall back to original name
+        elif weapon_name in self._weapon_data:
             return self._weapon_data[weapon_name].copy()
         else:
-            print(f"Warning: Weapon '{weapon_name}' not found in weapon data")
+            # Return empty dict for non-weapons (will be categorized elsewhere)
             return {}
 
     def calculate_ac_options(self) -> List[Dict[str, Any]]:
