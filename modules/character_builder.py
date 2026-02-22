@@ -2872,6 +2872,9 @@ class CharacterBuilder:
 
             # Get weapon mastery if available
             mastery = weapon_props.get("mastery")
+            
+            # Get quantity from weapon equipment entry
+            weapon_quantity = weapon.get("quantity", 1)
 
             attack_info = {
                 "name": weapon_name,
@@ -2889,6 +2892,7 @@ class CharacterBuilder:
                 "mastery": mastery,
                 "icon": self._get_weapon_icon(weapon_name),
                 "damage_notes": damage_notes,
+                "quantity": weapon_quantity,  # Store quantity for dual wield check
                 "_damage_dice": damage_dice,  # Store for offhand calculation
                 "_ability_mod": ability_mod,  # Store for offhand calculation
                 "_dueling_bonus": dueling_bonus,  # Store to exclude from dual-wield
@@ -2994,6 +2998,17 @@ class CharacterBuilder:
         light_weapons = [atk for atk in attacks if "Light" in atk.get("properties", [])]
 
         combinations = []
+        
+        # Check if any single light weapon has quantity >= 2 (e.g., 2 daggers)
+        for weapon in light_weapons:
+            if weapon.get("quantity", 1) >= 2:
+                # Can dual wield with itself
+                combo = self._create_dual_wield_combo(
+                    weapon, weapon, proficiency_bonus
+                )
+                combinations.append(combo)
+        
+        # Create combinations for different light weapons
         if len(light_weapons) >= 2:
             # Create all possible combinations of light weapons
             for i, weapon1 in enumerate(light_weapons):
@@ -3009,6 +3024,7 @@ class CharacterBuilder:
             attack.pop("_damage_dice", None)
             attack.pop("_ability_mod", None)
             attack.pop("_dueling_bonus", None)
+            attack.pop("quantity", None)  # Remove quantity from final attack data
 
         return {"attacks": attacks, "combinations": combinations}
 
@@ -3073,10 +3089,16 @@ class CharacterBuilder:
         has_dueling = (
             weapon1.get("_dueling_bonus", 0) > 0 or weapon2.get("_dueling_bonus", 0) > 0
         )
+        
+        # Create combination name
+        if weapon1["name"] == weapon2["name"]:
+            combo_name = f"Two {weapon1['name']}s"
+        else:
+            combo_name = f"{weapon1['name']} & {weapon2['name']}"
 
         return {
             "type": "combination",
-            "name": f"{weapon1['name']} & {weapon2['name']}",
+            "name": combo_name,
             "mainhand": {
                 "name": weapon1["name"],
                 "attack_bonus": mh_attack_bonus,
@@ -3110,6 +3132,8 @@ class CharacterBuilder:
         """Check if character has proficiency for weapon."""
         prof_required = weapon_props.get("proficiency_required", "")
         weapon_name = weapon_props.get("name", "")
+        weapon_properties = weapon_props.get("properties", [])
+        weapon_category = weapon_props.get("category", "")
 
         # Check specific weapon proficiency first
         if weapon_name in weapon_proficiencies:
@@ -3118,6 +3142,53 @@ class CharacterBuilder:
         # Check category proficiency
         if prof_required in weapon_proficiencies:
             return True
+
+        # Check conditional proficiencies (e.g., "Martial weapons with Finesse or Light property")
+        for prof in weapon_proficiencies:
+            prof_lower = prof.lower()
+            
+            # Handle "Martial weapons with Finesse or Light property" pattern
+            if "with" in prof_lower:
+                # Extract the weapon type and required properties
+                parts = prof_lower.split(" with ")
+                if len(parts) == 2:
+                    weapon_type = parts[0].strip()  # e.g., "martial weapons"
+                    property_requirement = parts[1].strip()
+                    
+                    # Check if weapon matches the base type (Simple/Martial)
+                    # Extract the key word (Simple or Martial)
+                    weapon_cat_lower = weapon_category.lower()
+                    
+                    # Check for "simple" or "martial" in both the proficiency and category
+                    type_matches = False
+                    if "simple" in weapon_type and "simple" in weapon_cat_lower:
+                        type_matches = True
+                    elif "martial" in weapon_type and "martial" in weapon_cat_lower:
+                        type_matches = True
+                    
+                    if type_matches:
+                        # Check if weapon has any of the required properties
+                        # Handle "or" separated properties
+                        if " or " in property_requirement:
+                            required_props = [p.strip().replace(" property", "") 
+                                            for p in property_requirement.split(" or ")]
+                            # Check if weapon has any of the required properties
+                            for req_prop in required_props:
+                                req_prop_capitalized = req_prop.capitalize()
+                                if req_prop_capitalized in weapon_properties:
+                                    return True
+                                # Also check if the property is part of a longer property string
+                                # (e.g., "Finesse" in "Finesse, Light")
+                                if any(req_prop_capitalized.lower() in prop.lower() 
+                                      for prop in weapon_properties):
+                                    return True
+                        else:
+                            # Single property requirement
+                            req_prop = property_requirement.replace(" property", "").strip().capitalize()
+                            if req_prop in weapon_properties:
+                                return True
+                            if any(req_prop.lower() in prop.lower() for prop in weapon_properties):
+                                return True
 
         return False
 
