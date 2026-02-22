@@ -234,6 +234,24 @@ class CharacterBuilder:
         file_path = self.data_dir / "backgrounds" / f"{filename}.json"
         return self._load_json_file(file_path)
 
+    def _load_feat_data(self, feat_name: str) -> Optional[Dict[str, Any]]:
+        """Load feat data from grouped feat files."""
+        # Load origin feats
+        origin_feats_file = self.data_dir / "origin_feats.json"
+        origin_data = self._load_json_file(origin_feats_file)
+        if origin_data and "origin_feats" in origin_data:
+            if feat_name in origin_data["origin_feats"]:
+                return origin_data["origin_feats"][feat_name]
+        
+        # Load general feats
+        general_feats_file = self.data_dir / "general_feats.json"
+        general_data = self._load_json_file(general_feats_file)
+        if general_data and "general_feats" in general_data:
+            if feat_name in general_data["general_feats"]:
+                return general_data["general_feats"][feat_name]
+        
+        return None
+
     # ==================== Species/Lineage Methods ====================
 
     def _clear_species_features(self):
@@ -1219,9 +1237,22 @@ class CharacterBuilder:
         # Background feat
         feat = background_data.get("feat")
         if feat:
+            # Load the actual feat data to get the description
+            feat_data = self._load_feat_data(feat)
+            if feat_data:
+                # Use the actual feat description
+                description = feat_data.get("description", "")
+                # If there are benefits, append them to the description
+                benefits = feat_data.get("benefits", [])
+                if benefits:
+                    description += "\n" + "\n".join(f"• {benefit}" for benefit in benefits)
+            else:
+                # Fallback if feat data not found
+                description = f"Feat granted by {background_name} background."
+            
             feat_entry = {
                 "name": feat,
-                "description": f"Feat granted by {background_name} background.",
+                "description": description,
                 "source": background_name,
             }
             if not any(
