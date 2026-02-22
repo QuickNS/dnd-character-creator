@@ -284,9 +284,11 @@
                                                     {% endfor %}
                                                 {% endif %}
                                                 
+                                                {% if combo.mainhand.name != combo.offhand.name %}
                                                 <button type="button" class="btn btn-sm btn-outline-secondary mt-2" onclick="switchWeaponHands('{{ combo.mainhand.name }}', '{{ combo.offhand.name }}')">
                                                     <i class="fas fa-exchange-alt"></i> Switch Hands
                                                 </button>
+                                                {% endif %}
                                             </div>
                                         {% endfor %}
                                         {% endif %}
