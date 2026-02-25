@@ -10,8 +10,7 @@
         "effects": [
           {
             "type": "grant_cantrip",
-            "spell": "Light",
-            "spell_list": "Cleric"
+            "spell": "Light"
           }
         ]
       },

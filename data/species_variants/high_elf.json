@@ -8,8 +8,7 @@
       "effects": [
         {
           "type": "grant_cantrip",
-          "spell": "Prestidigitation",
-          "spell_list": "Wizard"
+          "spell": "Prestidigitation"
         },
         {
           "type": "grant_spell",

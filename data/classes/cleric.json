@@ -375,7 +375,6 @@
         {
           "type": "grant_cantrip_choice",
           "count": 1,
-          "spell_list": "Cleric",
           "counts_against_limit": false,
           "category": "always_prepared"
         },

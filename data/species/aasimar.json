@@ -35,8 +35,7 @@
       "effects": [
         {
           "type": "grant_cantrip",
-          "spell": "Light",
-          "spell_list": "Aasimar"
+          "spell": "Light"
         }
       ]
     },

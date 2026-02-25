@@ -10,8 +10,7 @@
       "effects": [
         {
           "type": "grant_cantrip",
-          "spell": "Dancing Lights",
-          "spell_list": "Wizard"
+          "spell": "Dancing Lights"
         },
         {
           "type": "grant_spell",

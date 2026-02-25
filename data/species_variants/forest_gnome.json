@@ -7,8 +7,7 @@
       "effects": [
         {
           "type": "grant_cantrip",
-          "spell": "Minor Illusion",
-          "spell_list": "Gnome"
+          "spell": "Minor Illusion"
         }
       ]
     },
