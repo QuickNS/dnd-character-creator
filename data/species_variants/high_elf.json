@@ -28,6 +28,5 @@
     "3": ["Detect Magic"],
     "5": ["Misty Step"]
   },
-  "spellcasting_ability_choices": ["Intelligence", "Wisdom", "Charisma"],
   "cantrip_replacement": "Wizard"
 }

@@ -313,7 +313,7 @@
 
 ### Grant Cantrip/Spell effects
 
-- ✅~Data files don't need the spell_list property as each spell has its own data file
+- ✅ Data files don't need the spell_list property as each spell has its own data file
 
 ### Aasimar
 
@@ -321,15 +321,15 @@
 
 ### Dragonborn
 
-- Implement better breath weapon and damage resistance descriptions after selecting variant.
+- ✅ Implement better breath weapon and damage resistance descriptions after selecting variant.
 
 ### Gnome
 
-- Gnomish Cunning: advantage on Saving Throws should be reflected on character summary
-- Gnome lineages are incorrect:
-  - Missing Speak with animals as a always prepared spell for Forest Gnomes
-  - Rock Gnomes is missing Mending and Prestidigitation usage
-- Gnomes need to select Intelligence, Wisdom or Charisma for the lineage spells (like Elves)
+- ✅ Gnomish Cunning: advantage on Saving Throws should be reflected on character summary
+- ✅ Gnome lineages are incorrect:
+  - ✅ Missing Speak with animals as a always prepared spell for Forest Gnomes
+  - ✅ Rock Gnomes is missing Mending and Prestidigitation usage
+- ✅ Gnomes need to select Intelligence, Wisdom or Charisma for the lineage spells (like Elves)
 
 ### Hafling
 

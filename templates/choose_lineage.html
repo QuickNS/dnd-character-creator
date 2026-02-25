@@ -61,54 +61,6 @@
                     </div>
                     </div>
                     
-                    <!-- Spellcasting Ability Choice -->
-                    {% set has_spellcasting = False %}
-                    {% for name, lineage in lineages.items() %}
-                        {% if lineage.get('spellcasting_ability_choices') %}
-                            {% set has_spellcasting = True %}
-                        {% endif %}
-                    {% endfor %}
-                    
-                    {% if has_spellcasting %}
-                    <div class="card mb-4" id="spellcasting-choice">
-                        <div class="card-header bg-secondary text-white">
-                            <h5 class="mb-0">Spellcasting Ability</h5>
-                        </div>
-                        <div class="card-body">
-                            <p>Choose your spellcasting ability for lineage spells (as mentioned in the Elven Lineage trait):</p>
-                            <div class="row">
-                                <div class="col-md-4">
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="radio" name="spellcasting_ability" value="Intelligence" id="spell_int" required>
-                                        <label class="form-check-label" for="spell_int">
-                                            <strong>Intelligence</strong><br>
-                                            <small class="text-muted">Logic and reasoning</small>
-                                        </label>
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="radio" name="spellcasting_ability" value="Wisdom" id="spell_wis" required>
-                                        <label class="form-check-label" for="spell_wis">
-                                            <strong>Wisdom</strong><br>
-                                            <small class="text-muted">Insight and perception</small>
-                                        </label>
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="radio" name="spellcasting_ability" value="Charisma" id="spell_cha" required>
-                                        <label class="form-check-label" for="spell_cha">
-                                            <strong>Charisma</strong><br>
-                                            <small class="text-muted">Force of personality</small>
-                                        </label>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    {% endif %}
-                    
                     <div class="text-center d-grid gap-2 mt-4">
                         <button type="submit" class="btn btn-primary btn-lg">
                             <i class="fas fa-arrow-right me-2"></i>Continue to Languages

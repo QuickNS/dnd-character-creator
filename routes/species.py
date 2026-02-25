@@ -187,7 +187,6 @@ def choose_lineage():
 def select_lineage():
     """Handle lineage selection."""
     lineage_name = request.form.get("lineage")
-    spellcasting_ability = request.form.get("spellcasting_ability")
 
     builder_before = get_builder_from_session()
     builder = get_builder_from_session()
@@ -199,11 +198,6 @@ def select_lineage():
     if lineage_name:
         builder.apply_choice("lineage", lineage_name)
         choices["lineage"] = lineage_name
-
-    # Apply spellcasting ability choice if provided
-    if spellcasting_ability:
-        builder.apply_choice("lineage_spellcasting_ability", spellcasting_ability)
-        choices["lineage_spellcasting_ability"] = spellcasting_ability
 
     save_builder_to_session(builder)
 

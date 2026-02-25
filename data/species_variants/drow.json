@@ -29,6 +29,5 @@
     "cantrip": ["Dancing Lights"],
     "3": ["Faerie Fire"],
     "5": ["Darkness"]
-  },
-  "spellcasting_ability_choices": ["Intelligence", "Wisdom", "Charisma"]
+  }
 }

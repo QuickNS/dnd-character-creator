@@ -327,15 +327,26 @@
                                     <div class="card-body">
                                         {% for ability_name in ['strength', 'dexterity', 'constitution', 'intelligence', 'wisdom', 'charisma'] %}
                                         {% set ability = character.abilities[ability_name] %}
+                                        {% set has_advantage = namespace(value=false, label='') %}
+                                        {% for sa in (character.save_advantages or []) %}
+                                            {% if ability_name | capitalize in sa.abilities %}
+                                                {% set has_advantage.value = true %}
+                                                {% set has_advantage.label = sa.display %}
+                                            {% endif %}
+                                        {% endfor %}
                                         <div class="d-flex justify-content-between mb-2 {% if ability.saving_throw_proficient %}fw-bold{% endif %}">
                                             <span>
                                                 {{ ability_name | capitalize }}{% if ability.saving_throw_proficient %} ★{% endif %}
+                                                {% if has_advantage.value %}<span class="badge bg-success ms-1" title="{{ has_advantage.label }}">Adv</span>{% endif %}
                                             </span>
                                             <span>{% if ability.saving_throw >= 0 %}+{% endif %}{{ ability.saving_throw }}</span>
                                         </div>
                                         {% endfor %}
                                         <hr class="my-2">
                                         <small class="text-muted">★ = Proficient</small>
+                                        {% if character.save_advantages %}
+                                        <br><small class="text-muted"><span class="badge bg-success">Adv</span> = Advantage on save</small>
+                                        {% endif %}
                                     </div>
                                 </div>
                             </div>

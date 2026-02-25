@@ -178,6 +178,7 @@ class CharacterBuilder:
             "darkvision": 0,
             "resistances": [],
             "immunities": [],
+            "save_advantages": [],  # [{"abilities": [...], "display": "...", "condition": "..."}]
             "equipment": None,  # Will be initialized when equipment_selections are processed
             "step": "species",  # Track current step
         }
@@ -960,6 +961,21 @@ class CharacterBuilder:
                         source_display
                     )
 
+        elif effect_type == "grant_save_advantage":
+            abilities = effect.get("abilities", [])
+            display = effect.get("display", "")
+            condition = effect.get("condition", "")
+            # Avoid duplicate entries
+            if abilities and not any(
+                e.get("abilities") == abilities and e.get("condition") == condition
+                for e in self.character_data["save_advantages"]
+            ):
+                self.character_data["save_advantages"].append({
+                    "abilities": abilities,
+                    "display": display,
+                    "condition": condition,
+                })
+
         elif effect_type == "grant_damage_resistance":
             damage_type = effect.get("damage_type")
             # Support dynamic damage type resolved from a species/trait choice
@@ -1741,6 +1757,13 @@ class CharacterBuilder:
             return self.set_species(choice_value)
         elif choice_key_lower == "lineage":
             return self.set_lineage(choice_value)
+        elif choice_key_lower == "lineage_spellcasting_ability":
+            self.character_data["spellcasting_ability"] = choice_value
+            return True
+        elif choice_key_lower in ["elven lineage", "gnomish lineage"]:
+            # Species trait choice for spellcasting ability (INT/WIS/CHA)
+            self.character_data["spellcasting_ability"] = choice_value
+            return True
         elif choice_key_lower == "class":
             return self.set_class(choice_value, self.character_data.get("level", 1))
         elif choice_key_lower == "subclass":
@@ -2265,6 +2288,7 @@ class CharacterBuilder:
             "level",
             "species",
             "lineage",
+            "lineage_spellcasting_ability",  # Must come after lineage is applied
             "class",
             "subclass",
             "background",

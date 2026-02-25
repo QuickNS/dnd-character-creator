@@ -29,6 +29,5 @@
     "cantrip": ["Druidcraft"],
     "3": ["Longstrider"],
     "5": ["Pass without Trace"]
-  },
-  "spellcasting_ability_choices": ["Intelligence", "Wisdom", "Charisma"]
+  }
 }

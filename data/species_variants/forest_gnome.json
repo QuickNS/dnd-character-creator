@@ -3,7 +3,7 @@
   "parent_species": "Gnome",
   "traits": {
     "Natural Illusionist": {
-      "description": "You know the Minor Illusion cantrip. Intelligence is your spellcasting ability for it.",
+      "description": "You know the Minor Illusion cantrip.",
       "effects": [
         {
           "type": "grant_cantrip",
@@ -11,7 +11,15 @@
         }
       ]
     },
-    "Speak with Small Beasts": "Through sounds and gestures, you can communicate simple ideas with Small or smaller beasts."
-  },
-  "spellcasting_ability": "Intelligence"
+    "Speak with Animals": {
+      "description": "You always have Speak with Animals prepared. You can cast it without a spell slot a number of times equal to your Proficiency Bonus, and you regain all expended uses when you finish a Long Rest. You can also use any spell slots you have to cast the spell.",
+      "effects": [
+        {
+          "type": "grant_spell",
+          "spell": "Speak with Animals",
+          "min_level": 1
+        }
+      ]
+    }
+  }
 }
