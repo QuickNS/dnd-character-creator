@@ -509,6 +509,14 @@ class CharacterBuilder:
                 description, trait_data["scaling"]
             )
 
+        # Apply choice-based template substitutions (e.g., {damage_type} from Draconic Ancestry)
+        if isinstance(trait_data, dict) and "choice_substitutions" in trait_data:
+            for var_name, choice_name in trait_data["choice_substitutions"].items():
+                choice_value = self._resolve_choice_value(choice_name)
+                if choice_value:
+                    resolved = self._extract_parenthetical(choice_value)
+                    description = description.replace(f"{{{var_name}}}", resolved)
+
         # Skip features that are just choice placeholders
         # 1. Features with choices dict but minimal description
         if isinstance(trait_data, dict) and "choices" in trait_data:
@@ -731,6 +739,11 @@ class CharacterBuilder:
             "source": source_display,
         }
 
+        # Preserve choice_substitutions on the entry so to_character() can resolve
+        # placeholders that weren't available yet when the trait was first applied
+        if isinstance(trait_data, dict) and "choice_substitutions" in trait_data:
+            feature_entry["choice_substitutions"] = trait_data["choice_substitutions"]
+
         # Add level information if provided (for class/subclass features)
         if level is not None:
             feature_entry["level"] = level
@@ -751,6 +764,31 @@ class CharacterBuilder:
             effects = trait_data.get("effects", [])
             for effect in effects:
                 self._apply_effect(effect, trait_name, source)
+
+    def _extract_parenthetical(self, value: str) -> str:
+        """
+        Extract the content inside parentheses from a string.
+        E.g., 'Black (Acid)' -> 'Acid'. Returns the original string if no match.
+        """
+        import re
+        match = re.search(r'\(([^)]+)\)', value)
+        return match.group(1) if match else value
+
+    def _resolve_choice_value(self, choice_name: str) -> Optional[str]:
+        """
+        Look up a choice value from choices_made, trying common key variants
+        (e.g., 'Draconic Ancestry', 'species_trait_Draconic Ancestry').
+        """
+        choices_made = self.character_data.get("choices_made", {})
+        for key in [
+            choice_name,
+            f"species_trait_{choice_name}",
+            choice_name.lower().replace(" ", "_"),
+            f"species_trait_{choice_name.lower().replace(' ', '_')}",
+        ]:
+            if key in choices_made:
+                return choices_made[key]
+        return None
 
     def _apply_feature_scaling(self, description: str, scaling: Dict[str, Any]) -> str:
         """
@@ -924,6 +962,11 @@ class CharacterBuilder:
 
         elif effect_type == "grant_damage_resistance":
             damage_type = effect.get("damage_type")
+            # Support dynamic damage type resolved from a species/trait choice
+            if not damage_type and "damage_type_from_choice" in effect:
+                choice_value = self._resolve_choice_value(effect["damage_type_from_choice"])
+                if choice_value:
+                    damage_type = self._extract_parenthetical(choice_value)
             if damage_type and damage_type not in self.character_data["resistances"]:
                 self.character_data["resistances"].append(damage_type)
 
@@ -2263,7 +2306,27 @@ class CharacterBuilder:
             if key not in order:
                 self.apply_choice(key, value)
 
+        # Resolve any effects that depended on choices made after species was applied
+        self._apply_pending_dynamic_effects()
+
         return True
+
+    def _apply_pending_dynamic_effects(self):
+        """
+        Re-scan species/lineage trait effects that use dynamic choice references
+        (e.g., damage_type_from_choice) and apply them now that choices_made is
+        fully populated. Safe to call multiple times — effects guard against duplicates.
+        """
+        for data_key in ("species_data", "lineage_data"):
+            source_data = self.character_data.get(data_key)
+            if not isinstance(source_data, dict):
+                continue
+            for trait_name, trait_data in source_data.get("traits", {}).items():
+                if not isinstance(trait_data, dict):
+                    continue
+                for effect in trait_data.get("effects", []):
+                    if "damage_type_from_choice" in effect:
+                        self._apply_effect(effect, trait_name, data_key.replace("_data", ""))
 
     # ==================== Calculation Methods ====================
 
@@ -3399,6 +3462,20 @@ class CharacterBuilder:
         """
         # Start with base character data
         character_data = deepcopy(self.character_data)
+
+        # Late-resolve choice_substitutions placeholders in features.
+        # Species traits may have been applied before ancestry choices were stored.
+        for category_features in character_data["features"].values():
+            for feature in category_features:
+                subs = feature.get("choice_substitutions")
+                if subs and "{" in feature.get("description", ""):
+                    for var_name, choice_name in subs.items():
+                        choice_value = self._resolve_choice_value(choice_name)
+                        if choice_value:
+                            resolved = self._extract_parenthetical(choice_value)
+                            feature["description"] = feature["description"].replace(
+                                f"{{{var_name}}}", resolved
+                            )
 
         # Add calculated ability scores
         character_data["ability_scores"] = self.ability_scores.final_scores

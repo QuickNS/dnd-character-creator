@@ -317,7 +317,7 @@
 
 ### Aasimar
 
-- The transformation options should be better displayed (Heavenly Wings, Inner Radiance, Necrotic Shroud)
+- ✅ The transformation options should be better displayed (Heavenly Wings, Inner Radiance, Necrotic Shroud)
 
 ### Dragonborn
 
