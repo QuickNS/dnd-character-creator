@@ -313,7 +313,7 @@
 
 ### Grant Cantrip/Spell effects
 
-- Data files don't need the spell_list property as each spell has its own data file
+- ✅~Data files don't need the spell_list property as each spell has its own data file
 
 ### Aasimar
 

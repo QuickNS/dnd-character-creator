@@ -39,7 +39,14 @@
         }
       ]
     },
-    "Celestial Revelation": "When you reach character level 3, you can transform as a Bonus Action using one of the options (Heavenly Wings, Inner Radiance, or Necrotic Shroud). The transformation lasts for 1 minute or until you end it (no action required). Once you transform, you can't do so again until you finish a Long Rest. Once on each of your turns before the transformation ends, you can deal extra damage to one target when you deal damage to it with an attack or a spell. The extra damage equals your Proficiency Bonus, and the extra damage's type is either Necrotic for Necrotic Shroud or Radiant for Heavenly Wings and Inner Radiance."
+    "Celestial Revelation": {
+      "description": "When you reach character level 3, you can transform as a Bonus Action using one of the options below. The transformation lasts for 1 minute or until you end it (no action required). Once you transform, you can't do so again until you finish a Long Rest. Once on each of your turns before the transformation ends, you can deal extra damage equal to your Proficiency Bonus to one target when you deal damage to it with an attack or a spell.",
+      "options": {
+        "Heavenly Wings": "Spectral wings sprout from your back, granting you a Fly Speed equal to your Speed. Extra damage type: Radiant.",
+        "Inner Radiance": "Searing light radiates from your body, shedding Bright Light in a 10-foot radius and Dim Light for an additional 10 feet. At the end of each of your turns, each creature within 10 feet of you takes Radiant damage equal to your Proficiency Bonus. Extra damage type: Radiant.",
+        "Necrotic Shroud": "Your eyes become pools of darkness and two skeletal, ghostly wings sprout from your back. Creatures other than your allies within 10 feet of you that can see you must succeed on a Charisma saving throw (DC 8 plus your Charisma modifier and Proficiency Bonus) or become Frightened of you until the end of your next turn. Extra damage type: Necrotic."
+      }
+    }
   },
   "languages": [
     "Common",

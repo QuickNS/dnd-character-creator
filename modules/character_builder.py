@@ -711,6 +711,19 @@ class CharacterBuilder:
                         f"\n\nSpells Always Prepared: {', '.join(all_spells)}"
                     )
 
+        # Render structured options (e.g. Celestial Revelation transformations)
+        if isinstance(trait_data, dict) and "options" in trait_data:
+            options = trait_data["options"]
+            if isinstance(options, dict) and options:
+                options_html = '<div class="mt-2">'
+                for opt_name, opt_desc in options.items():
+                    options_html += (
+                        f'<div class="mt-1"><strong class="text-secondary">{opt_name}:</strong> '
+                        f'<span>{opt_desc}</span></div>'
+                    )
+                options_html += "</div>"
+                description += options_html
+
         # Add to features dict
         feature_entry = {
             "name": display_name,
