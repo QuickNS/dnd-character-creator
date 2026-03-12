@@ -532,3 +532,71 @@ def api_mastery_details(mastery_name):
         return jsonify(masteries_data[mastery_name])
     except (json.JSONDecodeError, IOError) as e:
         return jsonify({"error": f"Failed to load mastery data: {str(e)}"}), 500
+
+
+@character_summary_bp.route("/api/invocation-management-data")
+def api_invocation_management_data():
+    """Return Eldritch Invocation management data for the modal."""
+    builder = get_builder_from_session()
+    if not builder:
+        return jsonify({"error": "No character in session"}), 400
+
+    try:
+        stats = builder.calculate_eldritch_invocation_stats()
+
+        if not stats or not stats.get("has_invocations"):
+            return jsonify({"error": "Character does not have Eldritch Invocations"}), 400
+
+        return jsonify(
+            {
+                "available_invocations": stats.get("available_invocations", []),
+                "max_invocations": stats.get("max_invocations", 0),
+                "current_invocations": stats.get("current_invocations", []),
+            }
+        )
+
+    except Exception as e:
+        logger.error(f"Error loading invocation management data: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@character_summary_bp.route("/api/save-invocation-selections", methods=["POST"])
+def api_save_invocation_selections():
+    """Save Eldritch Invocation selections from the modal."""
+    from flask import request
+    from utils.route_helpers import save_builder_to_session
+
+    builder = get_builder_from_session()
+    if not builder:
+        return jsonify({"error": "No character in session"}), 400
+
+    try:
+        data = request.get_json()
+
+        if not data or "invocations" not in data:
+            return jsonify({"error": "No invocations provided"}), 400
+
+        invocations = data["invocations"]
+
+        # Validate invocation count
+        stats = builder.calculate_eldritch_invocation_stats()
+        max_invocations = stats.get("max_invocations", 0)
+
+        if len(invocations) > max_invocations:
+            return jsonify(
+                {"error": f"Too many invocations selected. Maximum is {max_invocations}"}
+            ), 400
+
+        # Save invocations to character data
+        if "eldritch_invocations" not in builder.character_data:
+            builder.character_data["eldritch_invocations"] = {"selected": []}
+
+        builder.character_data["eldritch_invocations"]["selected"] = invocations
+
+        save_builder_to_session(builder)
+
+        return jsonify({"success": True})
+
+    except Exception as e:
+        logger.error(f"Error saving invocation selections: {e}")
+        return jsonify({"error": str(e)}), 500

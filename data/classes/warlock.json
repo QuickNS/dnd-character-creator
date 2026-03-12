@@ -27,20 +27,20 @@
   "starting_equipment": {
     "option_a": {
       "items": [
-        "Light Crossbow",
-        "Bolt (20)",
         "Leather Armor",
+        "Sickle",
         "Dagger (2)",
-        "Arcane Focus",
+        "Arcane Focus (orb)",
+        "Book (occult lore)",
         "Scholar's Pack"
       ],
-      "gold": 10
+      "gold": 15
     },
     "option_b": {
       "gold": 100
     }
   },
-  "subclass_selection_level": 1,
+  "subclass_selection_level": 3,
   "spellcasting_ability": "Charisma",
   "spellcasting_focus": ["Arcane Focus"],
   "proficiency_bonus_by_level": {
@@ -69,69 +69,72 @@
     "19": [4, 5],
     "20": [4, 5]
   },
+  "cantrips_known_by_level": {
+    "1": 2, "2": 2, "3": 2, "4": 3, "5": 3, "6": 3, "7": 3, "8": 3, "9": 3,
+    "10": 4, "11": 4, "12": 4, "13": 4, "14": 4, "15": 4, "16": 4, "17": 4, "18": 4, "19": 4, "20": 4
+  },
+  "prepared_spells_by_level": {
+    "1": 2, "2": 3, "3": 4, "4": 5, "5": 6, "6": 7, "7": 8, "8": 9, "9": 10,
+    "10": 10, "11": 11, "12": 11, "13": 12, "14": 12, "15": 13, "16": 13,
+    "17": 14, "18": 14, "19": 15, "20": 15
+  },
+  "invocations_by_level": {
+    "1": 1, "2": 3, "3": 3, "4": 3, "5": 5, "6": 5, "7": 6, "8": 6, "9": 7,
+    "10": 7, "11": 7, "12": 8, "13": 8, "14": 8, "15": 9, "16": 9, "17": 9,
+    "18": 10, "19": 10, "20": 10
+  },
   "features_by_level": {
     "1": {
-      "Pact Magic": "You have made a pact with an otherworldly being. Your arcane research and the magic bestowed on you by your patron have given you facility with spells. You know two 1st-level spells and two cantrips of your choice from the Warlock spell list.",
-      "Warlock Subclass": "You gain a Warlock Subclass of your choice, which represents the entity with which you've made a pact."
+      "Eldritch Invocations": "You have unearthed Eldritch Invocations, pieces of forbidden knowledge that imbue you with an abiding magical ability or other lessons. You gain one invocation of your choice, such as Pact of the Tome. If an invocation has a prerequisite, you must meet it to learn that invocation. Whenever you gain a Warlock level, you can replace one of your invocations with another one for which you qualify. You can't replace an invocation if it's a prerequisite for another invocation that you have. When you gain certain Warlock levels, you gain more invocations of your choice, as shown in the Invocations column of the Warlock Features table.",
+      "Pact Magic": "Through occult ceremony, you have formed a pact with a mysterious entity to gain magical powers. Charisma is your spellcasting ability, and you can use an Arcane Focus as a spellcasting focus. You know two Warlock cantrips of your choice (Eldritch Blast and Prestidigitation are recommended). You prepare two level 1 Warlock spells (Charm Person and Hex are recommended). The number of spells on your list and their available level increases as you gain Warlock levels, as shown in the Warlock Features table. You regain all expended Pact Magic spell slots when you finish a Short or Long Rest. When you reach Warlock levels 4 and 10, you learn another Warlock cantrip of your choice."
     },
     "2": {
-      "Eldritch Invocations": "In your study of occult lore, you have unearthed Eldritch Invocations, fragments of forbidden knowledge. You gain two Eldritch Invocations of your choice."
+      "Magical Cunning": "You can perform an esoteric rite for 1 minute. At the end of it, you regain expended Pact Magic spell slots but no more than a number equal to half your maximum (round up). Once you use this feature, you can't do so again until you finish a Long Rest."
     },
     "3": {
-      "Pact Boon": "Your otherworldly patron bestows a gift upon you for your loyal service. You gain a Pact Boon of your choice: Pact of the Blade, Pact of the Chain, or Pact of the Tome."
+      "Warlock Subclass": "You gain a Warlock Subclass of your choice, which represents the entity with which you've made a pact. The Archfey Patron, Celestial Patron, Fiend Patron, and Great Old One Patron subclasses are detailed in the Player's Handbook. For the rest of your career, you gain each of your subclass's features that are of your Warlock level or lower."
     },
     "4": {
-      "Ability Score Improvement": "You gain the Ability Score Improvement feat or another feat of your choice for which you qualify."
-    },
-    "5": {
-      "Eldritch Invocations": "You learn an additional Eldritch Invocation."
+      "Ability Score Improvement": "You gain the Ability Score Improvement feat or another feat of your choice for which you qualify. You gain this feature again at Warlock levels 8, 12, and 16."
     },
     "6": {
       "Subclass Feature": "You gain a feature from your Warlock subclass."
-    },
-    "7": {
-      "Eldritch Invocations": "You learn an additional Eldritch Invocation."
     },
     "8": {
       "Ability Score Improvement": "You gain the Ability Score Improvement feat or another feat of your choice for which you qualify."
     },
     "9": {
-      "Eldritch Invocations": "You learn an additional Eldritch Invocation."
+      "Contact Patron": "In the past, you usually contacted your patron through intermediaries. Now you can communicate directly; you always have the Contact Other Plane spell prepared. With this feature, you can cast the spell without expending a spell slot to contact your patron, and you automatically succeed on the spell's saving throw. Once you cast the spell with this feature, you can't do so in this way again until you finish a Long Rest."
     },
     "10": {
       "Subclass Feature": "You gain a feature from your Warlock subclass."
     },
     "11": {
-      "Mystic Arcanum": "Your patron bestows upon you a magical secret called an Arcanum. You can cast your Arcanum spell once without expending a spell slot. You must finish a Long Rest before you can do so again. Choose one 6th-level spell from the Warlock spell list as this Arcanum."
+      "Mystic Arcanum": "Your patron grants you a magical secret called an arcanum. Choose one level 6 Warlock spell as this arcanum. You can cast your arcanum spell once without expending a spell slot, and you must finish a Long Rest before you can cast it in this way again. You gain another Warlock spell of your choice that can be cast in this way when you reach Warlock levels 13 (level 7 spell), 15 (level 8 spell), and 17 (level 9 spell). You regain all uses of your Mystic Arcanum when you finish a Long Rest. Whenever you gain a Warlock level, you can replace one of your arcanum spells with another Warlock spell of the same level."
     },
     "12": {
-      "Ability Score Improvement": "You gain the Ability Score Improvement feat or another feat of your choice for which you qualify.",
-      "Eldritch Invocations": "You learn an additional Eldritch Invocation."
+      "Ability Score Improvement": "You gain the Ability Score Improvement feat or another feat of your choice for which you qualify."
     },
     "13": {
-      "Mystic Arcanum": "You learn a 7th-level spell, which becomes an Arcanum for you."
+      "Mystic Arcanum": "You gain a level 7 Warlock spell as an additional arcanum."
     },
     "14": {
       "Subclass Feature": "You gain a feature from your Warlock subclass."
     },
     "15": {
-      "Mystic Arcanum": "You learn an 8th-level spell, which becomes an Arcanum for you.",
-      "Eldritch Invocations": "You learn an additional Eldritch Invocation."
+      "Mystic Arcanum": "You gain a level 8 Warlock spell as an additional arcanum."
     },
     "16": {
       "Ability Score Improvement": "You gain the Ability Score Improvement feat or another feat of your choice for which you qualify."
     },
     "17": {
-      "Mystic Arcanum": "You learn a 9th-level spell, which becomes an Arcanum for you."
-    },
-    "18": {
-      "Eldritch Invocations": "You learn an additional Eldritch Invocation."
+      "Mystic Arcanum": "You gain a level 9 Warlock spell as an additional arcanum."
     },
     "19": {
-      "Epic Boon": "You gain an Epic Boon feat or another feat of your choice for which you qualify. Boon of the Night Spirit is recommended."
+      "Epic Boon": "You gain an Epic Boon feat or another feat of your choice for which you qualify. Boon of Fate is recommended."
     },
     "20": {
-      "Eldritch Master": "You can draw on your inner reserve of mystical power to entreat your patron to regain expended spell slots. You can spend 1 minute entreating your patron for aid to regain all your expended Pact Magic spell slots. You can't use this feature again until you finish a Long Rest."
+      "Eldritch Master": "When you use your Magical Cunning feature, you regain all your expended Pact Magic spell slots."
     }
   }
 }

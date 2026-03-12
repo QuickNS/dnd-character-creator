@@ -1,0 +1,198 @@
+{
+  "Agonizing Blast": {
+    "description": "Choose one of your known cantrips that deals damage. You can add your Charisma modifier to that spell's damage rolls.",
+    "prerequisite_level": 1,
+    "prerequisite_invocations": [],
+    "prerequisite_cantrip": "Eldritch Blast",
+    "notes": "Requires Eldritch Blast cantrip"
+  },
+  "Armor of Shadows": {
+    "description": "You can cast Mage Armor on yourself without expending a spell slot.",
+    "prerequisite_level": 1,
+    "prerequisite_invocations": [],
+    "notes": ""
+  },
+  "Beast Speech": {
+    "description": "You can cast Speak with Animals without expending a spell slot. You can cast it a number of times equal to your Charisma modifier (minimum once), but you regain all uses when you finish a Long Rest.",
+    "prerequisite_level": 1,
+    "prerequisite_invocations": [],
+    "notes": ""
+  },
+  "Beguiling Influence": {
+    "description": "You gain proficiency in the Deception and Persuasion skills.",
+    "prerequisite_level": 1,
+    "prerequisite_invocations": [],
+    "notes": ""
+  },
+  "Devil's Sight": {
+    "description": "You can see normally in Darkness and Magical Darkness within 120 feet of yourself.",
+    "prerequisite_level": 1,
+    "prerequisite_invocations": [],
+    "notes": ""
+  },
+  "Eldritch Mind": {
+    "description": "You have Advantage on Constitution saving throws that you make to maintain Concentration.",
+    "prerequisite_level": 1,
+    "prerequisite_invocations": [],
+    "notes": ""
+  },
+  "Eldritch Spear": {
+    "description": "When you cast Eldritch Blast, its range is 300 feet.",
+    "prerequisite_level": 1,
+    "prerequisite_invocations": [],
+    "prerequisite_cantrip": "Eldritch Blast",
+    "notes": "Requires Eldritch Blast cantrip"
+  },
+  "Fiendish Vigor": {
+    "description": "You can cast False Life on yourself without expending a spell slot. When you cast it this way, you don't roll the die for temporary Hit Points; you automatically get the highest number on the die.",
+    "prerequisite_level": 1,
+    "prerequisite_invocations": [],
+    "notes": ""
+  },
+  "Gaze of Two Minds": {
+    "description": "You can use a Bonus Action to touch a willing Humanoid and perceive through its senses until the end of your next turn. As long as the creature is on the same plane of existence as you, you can use your action on subsequent turns to maintain this connection, extending the duration until the end of your next turn. While perceiving through the other creature's senses, you benefit from any special senses it has, and you are Blinded and Deafened with regard to your own senses. You can end this effect at any time (no action required).",
+    "prerequisite_level": 1,
+    "prerequisite_invocations": [],
+    "notes": ""
+  },
+  "Lessons of the First Ones": {
+    "description": "You have received knowledge from an elder entity of the multiverse, allowing you to gain one Feat of your choice that has the Origin category. If that feat has a Repeatable note, you can gain this invocation multiple times, each time selecting a different Origin feat.",
+    "prerequisite_level": 1,
+    "prerequisite_invocations": [],
+    "notes": "Grants an Origin feat"
+  },
+  "Mask of Many Faces": {
+    "description": "You can cast Disguise Self without expending a spell slot.",
+    "prerequisite_level": 1,
+    "prerequisite_invocations": [],
+    "notes": ""
+  },
+  "Misty Visions": {
+    "description": "You can cast Silent Image without expending a spell slot.",
+    "prerequisite_level": 1,
+    "prerequisite_invocations": [],
+    "notes": ""
+  },
+  "Pact of the Blade": {
+    "description": "As a Bonus Action, you can conjure a pact weapon in your hand—a Simple or Martial weapon of your choice with which you bond, creating a magical bond between you and the weapon. You can use your Charisma modifier for the attack and damage rolls of the pact weapon instead of Strength or Dexterity. The weapon disappears if it is more than 5 feet away from you for 1 minute or more. It also disappears if you use this feature again, if you dismiss the weapon (no action required), or if you die.\n\nYou can transform one Magic weapon into your pact weapon by performing a special ritual while you hold the weapon. You perform the ritual over the course of 1 hour, which can be done during a Short Rest. You can then dismiss the weapon, shunting it into an extradimensional space, and it appears whenever you create your pact weapon thereafter. The weapon ceases being your pact weapon if you die, if you perform the 1-hour ritual on a different weapon, or if you use a 1-hour ritual to break your bond to it.",
+    "prerequisite_level": 1,
+    "prerequisite_invocations": [],
+    "notes": "Enables Pact of the Blade invocations"
+  },
+  "Pact of the Chain": {
+    "description": "You learn the Find Familiar spell and can cast it as a Ritual. The spell doesn't count against your prepared spells.\n\nWhen you cast the spell, you can choose one of the normal forms for your familiar or one of the following special forms: Imp, Pseudodragon, Quasit, Skeleton, Slaad Tadpole, Sphinx of Wonder, Sprite, or Venomous Snake.\n\nWhen you take the Attack action, you can forgo one of your own attacks to allow your familiar to make one attack of its own with its Reaction.",
+    "prerequisite_level": 1,
+    "prerequisite_invocations": [],
+    "notes": "Enables Pact of the Chain invocations"
+  },
+  "Pact of the Tome": {
+    "description": "Stitching together strands of shadow, you conjure forth a book in your hand called the Book of Shadows. When this tome appears, choose three cantrips, and while the book is on your person, you can cast those cantrips at will. They don't count against the number of cantrips you know. Any cantrip you choose for this feature must be from the Arcane, Divine, or Primal spell list, and the cantrip must be available to a class of your level.\n\nIf your Book of Shadows is destroyed, you can perform a 1-hour ceremony to receive a replacement from your patron.",
+    "prerequisite_level": 1,
+    "prerequisite_invocations": [],
+    "notes": "Grants 3 extra cantrips from any list; enables Pact of the Tome invocations"
+  },
+  "Repelling Blast": {
+    "description": "When you hit a Large or smaller creature with Eldritch Blast, you can push the creature up to 10 feet away from you in a straight line.",
+    "prerequisite_level": 1,
+    "prerequisite_invocations": [],
+    "prerequisite_cantrip": "Eldritch Blast",
+    "notes": "Requires Eldritch Blast cantrip"
+  },
+  "Otherworldly Leap": {
+    "description": "You can cast Jump on yourself without expending a spell slot.",
+    "prerequisite_level": 2,
+    "prerequisite_invocations": [],
+    "notes": "Warlock level 2+ required"
+  },
+  "Gift of the Depths": {
+    "description": "You can breathe underwater, and you gain a Swim Speed equal to your Speed. You can also cast Water Breathing without expending a spell slot. Once you cast it this way, you can't do so again until you finish a Long Rest.",
+    "prerequisite_level": 5,
+    "prerequisite_invocations": [],
+    "notes": "Warlock level 5+ required"
+  },
+  "Maddening Hex": {
+    "description": "As a Bonus Action, you cause a psychic disturbance around the target of your Hex spell or a target affected by your Bestow Curse spell. When you do so, you deal your Charisma modifier in Psychic damage (minimum 1 damage) to the cursed target and each creature of your choice within 5 feet of it.",
+    "prerequisite_level": 5,
+    "prerequisite_invocations": [],
+    "notes": "Warlock level 5+ required; requires Hex or Bestow Curse"
+  },
+  "One with Shadows": {
+    "description": "While you are in an area of Dim Light or Darkness, you can take a Bonus Action to give yourself the Invisible condition until you move, take an action, or take a Bonus Action.",
+    "prerequisite_level": 5,
+    "prerequisite_invocations": [],
+    "notes": "Warlock level 5+ required"
+  },
+  "Sign of Ill Omen": {
+    "description": "You can cast Bestow Curse without expending a spell slot. You can do so a number of times equal to your Charisma modifier (minimum once), and you regain all expended uses when you finish a Long Rest.",
+    "prerequisite_level": 5,
+    "prerequisite_invocations": [],
+    "notes": "Warlock level 5+ required"
+  },
+  "Thirsting Blade": {
+    "description": "When you take the Attack action, you can attack twice with your pact weapon instead of once.",
+    "prerequisite_level": 5,
+    "prerequisite_invocations": ["Pact of the Blade"],
+    "notes": "Warlock level 5+ required; requires Pact of the Blade"
+  },
+  "Sculptor of Flesh": {
+    "description": "You can cast Polymorph without expending a spell slot. You can do so a number of times equal to your Charisma modifier (minimum once), and you regain all expended uses when you finish a Long Rest.",
+    "prerequisite_level": 7,
+    "prerequisite_invocations": [],
+    "notes": "Warlock level 7+ required"
+  },
+  "Whispers of the Grave": {
+    "description": "You can cast Speak with Dead without expending a spell slot. You can do so a number of times equal to your Charisma modifier (minimum once), and you regain all expended uses when you finish a Long Rest.",
+    "prerequisite_level": 7,
+    "prerequisite_invocations": [],
+    "notes": "Warlock level 7+ required"
+  },
+  "Ascendant Step": {
+    "description": "You can cast Levitate on yourself without expending a spell slot.",
+    "prerequisite_level": 9,
+    "prerequisite_invocations": [],
+    "notes": "Warlock level 9+ required"
+  },
+  "Gift of the Protectors": {
+    "description": "A new page appears in your Book of Shadows. With your permission, a creature can use its action to write its name on that page. Whenever any creature whose name is on the page is reduced to 0 Hit Points but not killed outright, the creature magically drops to 1 Hit Point instead. Once this magic is triggered, no creature can benefit from it until you finish a Long Rest. Magic can be written on the page only if it currently has fewer than a number of names on it equal to your Charisma modifier (minimum one name).",
+    "prerequisite_level": 9,
+    "prerequisite_invocations": ["Pact of the Tome"],
+    "notes": "Warlock level 9+ required; requires Pact of the Tome"
+  },
+  "Investment of the Chain Master": {
+    "description": "When you cast Find Familiar, you infuse the summoned familiar with a measure of your eldritch power, granting the creature the following benefits: The familiar's AC equals 13 + your Proficiency Bonus. The familiar and you can communicate telepathically with each other while you are on the same plane of existence. As a Bonus Action, you can command the familiar to take the Attack action. The familiar's weapon attacks are considered magical for the purpose of overcoming immunity and resistance to nonmagical attacks and damage. If the familiar forces a creature to make a saving throw, it uses your spell save DC. When the familiar takes damage, you can use your Reaction to grant it Resistance to that damage.",
+    "prerequisite_level": 9,
+    "prerequisite_invocations": ["Pact of the Chain"],
+    "notes": "Warlock level 9+ required; requires Pact of the Chain"
+  },
+  "Lifedrinker": {
+    "description": "Once per turn when you hit a creature with your pact weapon, you can deal an extra 1d6 Necrotic, Psychic, or Radiant damage (your choice) to the creature.",
+    "prerequisite_level": 9,
+    "prerequisite_invocations": ["Pact of the Blade"],
+    "notes": "Warlock level 9+ required; requires Pact of the Blade"
+  },
+  "Visions of Distant Realms": {
+    "description": "You can cast Arcane Eye without expending a spell slot.",
+    "prerequisite_level": 9,
+    "prerequisite_invocations": [],
+    "prerequisite_cantrip": "Eldritch Blast",
+    "notes": "Warlock level 9+ required; requires Eldritch Blast cantrip"
+  },
+  "Master of Myriad Forms": {
+    "description": "You can cast Alter Self without expending a spell slot.",
+    "prerequisite_level": 15,
+    "prerequisite_invocations": [],
+    "notes": "Warlock level 15+ required"
+  },
+  "Witch Sight": {
+    "description": "You can see the true form of any Shapechanger or creature concealed by illusion or transmutation magic while the creature is within 30 feet of you and within your line of sight.",
+    "prerequisite_level": 15,
+    "prerequisite_invocations": [],
+    "notes": "Warlock level 15+ required"
+  },
+  "Devouring Blade": {
+    "description": "The extra attack of your Thirsting Blade invocation can be made against two targets instead of one, provided each target is within 5 feet of the other.",
+    "prerequisite_level": 17,
+    "prerequisite_invocations": ["Thirsting Blade"],
+    "notes": "Warlock level 17+ required; requires Thirsting Blade"
+  }
+}

@@ -629,7 +629,14 @@
                         <div class="card mb-4">
                             <div class="sub-card-header bg-secondary d-flex justify-content-between align-items-center">
                                 <h5 class="mb-0">Spellcasting</h5>
+                                <div class="d-flex gap-2">
+                                {% if character.eldritch_invocation_stats and character.eldritch_invocation_stats.has_invocations %}
+                                <button type="button" class="btn btn-header btn-primary btn-sm" onclick="openManageInvocationsModal()">
+                                    Choose Invocations
+                                </button>
+                                {% endif %}
                                 <button type="button" class="btn btn-header btn-primary btn-sm" onclick="openManageSpellsModal()">Prepare Spells</button>
+                                </div>
                             </div>
                             <div class="card-body">
                                 <!-- Spellcasting Statistics -->
@@ -662,6 +669,13 @@
                                         <p class="mb-1"><strong>Prepared Spells:</strong>
                                         {{ character.spellcasting_stats.spells_prepared }} / {{ character.spellcasting_stats.max_prepared_spells }}</p>
                                     </div>
+                                    {% if character.eldritch_invocation_stats and character.eldritch_invocation_stats.has_invocations %}
+                                    <div class="col-md-3">
+                                        <p class="mb-1"><strong>Invocations:</strong>
+                                        {{ character.eldritch_invocation_stats.current_invocations | length }} / {{ character.eldritch_invocation_stats.max_invocations }}
+                                        </p>
+                                    </div>
+                                    {% endif %}
                                 </div>
 
                                 {% if character.spell_slots %}
@@ -1018,6 +1032,36 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Manage Eldritch Invocations Modal -->
+<div class="modal fade" id="manageInvocationsModal" tabindex="-1" aria-labelledby="manageInvocationsModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="manageInvocationsModalLabel">Manage Eldritch Invocations</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p class="text-muted">
+          Select up to <strong><span id="invocation-max">0</span></strong> invocations.
+          You can replace one invocation whenever you gain a Warlock level.
+          <span id="invocation-count-display">Selected: <strong id="invocation-count">0</strong></span>
+        </p>
+        <div id="invocations-selection" class="row"></div>
+
+        <!-- Invocation Details Display -->
+        <div id="invocation-details-section" class="mt-4 p-3 border rounded bg-light" style="display: none;">
+          <h6 class="mb-2" id="invocation-details-title" style="font-weight: 600;">Invocation Details</h6>
+          <div id="invocation-details-content"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" onclick="saveInvocationSelections()">Save Changes</button>
       </div>
     </div>
   </div>
@@ -1904,6 +1948,112 @@ async function saveMasterySelections() {
         }
     } catch (error) {
         alert('Error saving mastery selections: ' + error);
+    }
+}
+
+// Eldritch Invocation Management Functions
+let invocationSelections = [];
+
+async function openManageInvocationsModal() {
+    const modalEl = document.getElementById('manageInvocationsModal');
+    const modal = new bootstrap.Modal(modalEl);
+    modal.show();
+
+    try {
+        const response = await fetch('/api/invocation-management-data');
+        const data = await response.json();
+
+        if (!response.ok) {
+            alert('Error loading invocation data: ' + data.error);
+            return;
+        }
+
+        invocationSelections = data.current_invocations || [];
+        document.getElementById('invocation-max').textContent = data.max_invocations;
+        updateInvocationCount();
+        populateInvocationsSelection(data.available_invocations, data.current_invocations, data.max_invocations);
+    } catch (error) {
+        alert('Error loading invocation management: ' + error);
+    }
+}
+
+function populateInvocationsSelection(available, current, max) {
+    const container = document.getElementById('invocations-selection');
+    container.innerHTML = '';
+
+    if (!available || available.length === 0) {
+        container.innerHTML = '<p class="text-muted">No invocations available at your current level.</p>';
+        return;
+    }
+
+    available.forEach(inv => {
+        const col = document.createElement('div');
+        col.className = 'col-md-6 mb-2';
+        const checked = invocationSelections.includes(inv.name) ? 'checked' : '';
+        const notes = inv.notes ? `<br><small class="text-muted fst-italic">${inv.notes}</small>` : '';
+        col.innerHTML = `
+            <div class="form-check">
+                <input class="form-check-input invocation-checkbox"
+                       type="checkbox"
+                       value="${inv.name}"
+                       id="inv_${inv.name.replace(/[^a-zA-Z0-9]/g, '_')}"
+                       ${checked}
+                       onchange="updateInvocationSelection('${inv.name.replace(/'/g, "\\'")}', this.checked)">
+                <label class="form-check-label" for="inv_${inv.name.replace(/[^a-zA-Z0-9]/g, '_')}">
+                    <a href="#" onclick="showInvocationDetails('${inv.name.replace(/'/g, "\\'")}', ${JSON.stringify(inv.description).replace(/</g, '\\u003c')}); return false;">${inv.name}</a>
+                    ${notes}
+                </label>
+            </div>
+        `;
+        container.appendChild(col);
+    });
+}
+
+function showInvocationDetails(name, description) {
+    const section = document.getElementById('invocation-details-section');
+    const title = document.getElementById('invocation-details-title');
+    const content = document.getElementById('invocation-details-content');
+    section.style.display = 'block';
+    title.textContent = name;
+    content.textContent = description;
+}
+
+function updateInvocationSelection(name, isChecked) {
+    const max = parseInt(document.getElementById('invocation-max').textContent);
+    if (isChecked) {
+        if (invocationSelections.length >= max) {
+            alert(`You can only select ${max} invocations.`);
+            event.target.checked = false;
+            return;
+        }
+        invocationSelections.push(name);
+    } else {
+        const idx = invocationSelections.indexOf(name);
+        if (idx > -1) invocationSelections.splice(idx, 1);
+    }
+    updateInvocationCount();
+}
+
+function updateInvocationCount() {
+    document.getElementById('invocation-count').textContent = invocationSelections.length;
+}
+
+async function saveInvocationSelections() {
+    try {
+        const response = await fetch('/api/save-invocation-selections', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ invocations: invocationSelections })
+        });
+        const result = await response.json();
+        if (result.success) {
+            bootstrap.Modal.getInstance(document.getElementById('manageInvocationsModal')).hide();
+            location.reload();
+        } else {
+            alert('Error saving invocations: ' + (result.error || 'Unknown error'));
+        }
+    } catch (error) {
+        alert('Error saving invocations: ' + error);
     }
 }
 

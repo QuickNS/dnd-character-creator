@@ -1907,6 +1907,14 @@ class CharacterBuilder:
                 self.character_data["weapon_masteries"]["selected"] = choice_value
             return True
 
+        # Eldritch Invocation selections - restore user-selected invocations
+        elif choice_key_lower == "eldritch_invocation_selections":
+            if isinstance(choice_value, list):
+                if "eldritch_invocations" not in self.character_data:
+                    self.character_data["eldritch_invocations"] = {"selected": []}
+                self.character_data["eldritch_invocations"]["selected"] = choice_value
+            return True
+
         # Nested bonus choices (e.g., Thaumaturge_bonus_cantrip)
         elif "_bonus_cantrip" in choice_key_lower:
             # Extract parent feature name (e.g., "Thaumaturge" from "Thaumaturge_bonus_cantrip")
@@ -2306,6 +2314,7 @@ class CharacterBuilder:
             "spell_selections",  # Restore spell selections after class/subclass applied
             "weapon mastery",
             "weapon_mastery_selections",  # Restore mastery selections after class applied
+            "eldritch_invocation_selections",  # Restore invocation selections after class applied
             "alignment",
         ]
 
@@ -2637,6 +2646,81 @@ class CharacterBuilder:
             "selected", []
         )
         stats["current_masteries"] = current_masteries
+
+    def calculate_eldritch_invocation_stats(self) -> Dict[str, Any]:
+        """
+        Calculate Eldritch Invocation statistics for Warlock characters.
+
+        Returns:
+            Dictionary with available invocations, max count, and current selections
+        """
+        stats: Dict[str, Any] = {
+            "has_invocations": False,
+            "max_invocations": 0,
+            "current_invocations": [],
+            "available_invocations": [],
+        }
+
+        class_name = self.character_data.get("class")
+        if class_name != "Warlock":
+            return stats
+
+        class_data = self.character_data.get("class_data")
+        if not class_data:
+            class_data = self._load_class_data(class_name)
+            if not class_data:
+                return stats
+
+        invocations_by_level = class_data.get("invocations_by_level", {})
+        level = self.character_data.get("level", 1)
+        max_invocations = invocations_by_level.get(str(level), 0)
+
+        stats["has_invocations"] = True
+        stats["max_invocations"] = max_invocations
+
+        # Load all invocations from data file
+        import json
+        from pathlib import Path
+
+        invocations_file = Path(__file__).parent.parent / "data" / "eldritch_invocations.json"
+        all_invocations: Dict[str, Any] = {}
+        if invocations_file.exists():
+            try:
+                with open(invocations_file, "r") as f:
+                    all_invocations = json.load(f)
+            except (json.JSONDecodeError, IOError):
+                pass
+
+        # Get current invocation selections
+        current_invocations = self.character_data.get("eldritch_invocations", {}).get(
+            "selected", []
+        )
+        stats["current_invocations"] = current_invocations
+
+        # Filter available invocations based on character level and prerequisites
+        available: list[Dict[str, Any]] = []
+        for name, inv_data in all_invocations.items():
+            min_level = inv_data.get("prerequisite_level", 1)
+            if level < min_level:
+                continue
+            required_invocations = inv_data.get("prerequisite_invocations", [])
+            if required_invocations and not all(
+                req in current_invocations for req in required_invocations
+            ):
+                continue
+            available.append(
+                {
+                    "name": name,
+                    "description": inv_data.get("description", ""),
+                    "notes": inv_data.get("notes", ""),
+                    "prerequisite_level": min_level,
+                    "prerequisite_invocations": required_invocations,
+                }
+            )
+
+        stats["available_invocations"] = sorted(available, key=lambda x: (x["prerequisite_level"], x["name"]))
+
+        return stats
 
         # Update character data for easy access
         self.character_data["weapon_masteries"]["available"] = stats[
@@ -3615,6 +3699,9 @@ class CharacterBuilder:
         # Add weapon mastery stats
         character_data["weapon_mastery_stats"] = self.calculate_weapon_mastery_stats()
 
+        # Add Eldritch Invocation stats (Warlock only)
+        character_data["eldritch_invocation_stats"] = self.calculate_eldritch_invocation_stats()
+
         # Add applied effects for export
         if hasattr(self, "applied_effects") and self.applied_effects:
             effects_for_export = []
@@ -3669,6 +3756,12 @@ class CharacterBuilder:
             character_data["choices_made"]["weapon_mastery_selections"] = (
                 selected_masteries
             )
+
+        # Include Eldritch Invocation selections in choices_made for export/import
+        eldritch_invocations = character_data.get("eldritch_invocations", {})
+        selected_invocations = eldritch_invocations.get("selected", [])
+        if selected_invocations:
+            character_data["choices_made"]["eldritch_invocation_selections"] = selected_invocations
 
         return character_data
 
