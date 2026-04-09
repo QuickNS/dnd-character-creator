@@ -240,7 +240,8 @@
       "effects": [
         {
           "type": "bonus_hp",
-          "formula": "2 * level"
+          "value": 2,
+          "scaling": "per_level"
         }
       ]
     }

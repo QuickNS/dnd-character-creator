@@ -272,9 +272,8 @@ class TestToughFeatHP:
         feat_names = [f["name"] for f in char["features"]["feats"]]
         assert "Tough" in feat_names
 
-    @pytest.mark.xfail(reason="Tough feat bonus_hp effect not yet applied by builder")
     def test_tough_feat_hp_bonus_level_1(self):
-        """At level 1, Tough should add 2 HP (2 * 1 = 2)."""
+        """At level 1, Tough should add 2 HP (2 * 1 = 2). Regression test for #10."""
         tough_char = self._build_fighter("Farmer", 1)
         no_tough_char = self._build_fighter("Criminal", 1)
         tough_hp = tough_char["combat"]["hit_points"]["maximum"]
@@ -284,9 +283,8 @@ class TestToughFeatHP:
             f"Tough HP {tough_hp} should be {normal_hp} + 2 = {normal_hp + 2}"
         )
 
-    @pytest.mark.xfail(reason="Tough feat bonus_hp effect not yet applied by builder")
     def test_tough_feat_hp_bonus_level_5(self):
-        """At level 5, Tough should add 10 HP (2 * 5 = 10)."""
+        """At level 5, Tough should add 10 HP (2 * 5 = 10). Regression test for #10."""
         tough_char = self._build_fighter("Farmer", 5)
         no_tough_char = self._build_fighter("Criminal", 5)
         tough_hp = tough_char["combat"]["hit_points"]["maximum"]
@@ -371,11 +369,12 @@ class TestOriginFeatEffects:
     """Origin feats with effects should have correct definitions."""
 
     def test_tough_has_bonus_hp_effect(self, origin_feats):
-        """Tough feat must have a bonus_hp effect with formula '2 * level'."""
+        """Tough feat must have a bonus_hp effect with value 2 and per_level scaling."""
         effects = origin_feats["Tough"].get("effects", [])
         hp_effects = [e for e in effects if e["type"] == "bonus_hp"]
         assert len(hp_effects) == 1
-        assert hp_effects[0]["formula"] == "2 * level"
+        assert hp_effects[0]["value"] == 2
+        assert hp_effects[0]["scaling"] == "per_level"
 
 
 # Feats that have effects (for parametrize)
