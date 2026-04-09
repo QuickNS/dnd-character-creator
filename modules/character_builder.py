@@ -1021,6 +1021,36 @@ class CharacterBuilder:
             # These are processed in calculate_ac_options()
             pass  # Tracked via applied_effects
 
+        elif effect_type == "grant_origin_feat":
+            feat_name = effect.get("feat")
+            if feat_name:
+                feat_data = self._load_feat_data(feat_name)
+                if feat_data:
+                    description = feat_data.get("description", "")
+                    benefits = feat_data.get("benefits", [])
+                    if benefits:
+                        description += "\n" + "\n".join(
+                            f"• {benefit}" for benefit in benefits
+                        )
+                else:
+                    description = f"Origin feat: {feat_name}"
+
+                feat_entry = {
+                    "name": feat_name,
+                    "description": description,
+                    "source": source_name,
+                }
+                if not any(
+                    f["name"] == feat_name
+                    for f in self.character_data["features"]["feats"]
+                ):
+                    self.character_data["features"]["feats"].append(feat_entry)
+
+                # Apply any direct effects from the feat (e.g., Tough's bonus_hp)
+                if feat_data:
+                    for feat_effect in feat_data.get("effects", []):
+                        self._apply_effect(feat_effect, feat_name, "feat")
+
         # Track applied effect
         self.applied_effects.append(
             {
