@@ -48,7 +48,16 @@ mcp_github_issue_read(owner="QuickNS", repo="dnd-character-creator", issueNumber
 
 Parse the issue body to understand: affected levels, current vs expected behavior, and which files to change.
 
-### 3. Verify Against Wiki Source
+### 3. Create a Feature Branch
+
+Create a branch from `main` for this fix. Use the naming convention `fix/issue-N-short-description`:
+
+```bash
+git checkout main && git pull
+git checkout -b fix/issue-N-short-description
+```
+
+### 4. Verify Against Wiki Source
 
 Check wiki data to confirm the correct D&D 2024 rules:
 
@@ -62,7 +71,7 @@ python update_classes.py --class {class_name}
 
 Parse `content.text` to understand the feature's intended mechanics. Never guess — the wiki is the source of truth.
 
-### 4. Fix the Issue
+### 5. Fix the Issue
 
 Depending on issue type:
 
@@ -78,14 +87,14 @@ Depending on issue type:
 
 **`bug`**: Fix the incorrect data or effect in the JSON. May also require fixing effect handlers in `modules/character_builder.py` → `_apply_effect()`.
 
-### 5. Validate
+### 6. Validate
 
 ```bash
 python validate_data.py
 pytest tests/ -x -q --tb=short
 ```
 
-### 6. Write or Update Tests
+### 7. Write or Update Tests
 
 Every fix should have a test proving it works. Follow the patterns in `tests/`:
 
@@ -106,15 +115,65 @@ def test_feature_name_effect():
     assert ...
 ```
 
-### 7. Close the Issue
+### 8. Commit, Push, and Create a Pull Request
 
-After tests pass, close the issue with a comment explaining what was fixed:
+Commit the changes and push the branch:
+
+```bash
+git add -A
+git commit -m "Fix #N: short description"
+git push -u origin fix/issue-N-short-description
+```
+
+Create a pull request linking the issue:
 
 ```
-mcp_github_add_issue_comment(owner="QuickNS", repo="dnd-character-creator", issueNumber=N,
-    body="Fixed: added effects for [feature]. See commit [sha].")
-mcp_github_issue_write(owner="QuickNS", repo="dnd-character-creator", issueNumber=N,
-    method="update", state="CLOSED", stateReason="COMPLETED")
+mcp_github_create_pull_request(
+    owner="QuickNS",
+    repo="dnd-character-creator",
+    head="fix/issue-N-short-description",
+    base="main",
+    title="Fix #N: short description",
+    body="## Summary\n\n{what was changed and why}\n\nCloses #N\n\n## Changes\n- {file}: {what changed}\n\n## Testing\n- All existing tests pass\n- Added: {new test file or function}"
+)
+```
+
+### 9. Present Summary and Ask for Confirmation
+
+Report what was fixed and **ask the user to confirm before merging**:
+
+```
+PR #{pr_number} created for issue #N — {title}
+  - Branch: fix/issue-N-short-description
+  - Changed: data/classes/{class}.json (added effects for {feature})
+  - Added: tests/test_{class}_{feature}.py
+  - Tests: all passing
+
+Please review the PR. Ready to merge and close issue #N?
+```
+
+**Do NOT merge or close until the user explicitly confirms.** Wait for approval.
+
+### 10. Merge and Close
+
+Only after user confirmation:
+
+1. Merge the PR:
+```
+mcp_github_merge_pull_request(owner="QuickNS", repo="dnd-character-creator", pullNumber=PR_NUMBER)
+```
+
+2. Close the issue with a comment:
+```
+mcp_github_add_issue_comment(owner="QuickNS", repo="dnd-character-creator", issue_number=N,
+    body="Fixed in PR #PR_NUMBER.")
+mcp_github_issue_write(owner="QuickNS", repo="dnd-character-creator", issue_number=N,
+    method="update", state="closed", state_reason="completed")
+```
+
+3. Switch back to main locally:
+```bash
+git checkout main && git pull
 ```
 
 If ALL issues for a class are resolved and the class is verified complete, also update boolean flags in `data/completeness/backlog.json`:
@@ -122,16 +181,6 @@ If ALL issues for a class are resolved and the class is verified complete, also 
 "features_validated": true,
 "effects_implemented": true,
 "tests_written": true
-```
-
-### 8. Summary
-
-Report what was fixed:
-```
-Resolved: #N — {title}
-  - Changed: data/classes/{class}.json (added effects for {feature})
-  - Added: tests/test_{class}_{feature}.py
-  - Remaining open issues: M
 ```
 
 ## Tips

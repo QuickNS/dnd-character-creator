@@ -429,7 +429,7 @@
                                                         <span class="badge bg-warning text-dark ms-1">{{ feature.source }}</span>
                                                         {% endif %}
                                                         </br>
-                                                    {{ feature.description | safe }}</p>
+                                                    {{ feature.description | nl2br }}</p>
                                                 </div>
                                                 {% endif %}
                                             {% endfor %}
@@ -446,7 +446,7 @@
                                                         <span class="badge bg-danger ms-1">{{ feature.source }}</span>
                                                         {% endif %}
                                                         </br>
-                                                    {{ feature.description | safe }}</p>
+                                                    {{ feature.description | nl2br }}</p>
                                                 </div>
                                                 {% endif %}
                                             {% endfor %}
@@ -555,7 +555,7 @@
                                                 <span class="badge bg-secondary ms-1">Level {{ feature.level }}</span>
                                                 {% endif %}
                                                 </br>
-                                            {{ feature.description | safe }}</p>
+                                            {{ feature.description | nl2br }}</p>
                                         </div>
                                         {% endif %}
                                     {% endfor %}
@@ -573,7 +573,7 @@
                                                 <span class="badge bg-primary ms-1">{{ feature.source }}</span>
                                                 {% endif %}
                                                 </br>
-                                            {{ feature.description | safe }}</p>
+                                            {{ feature.description | nl2br }}</p>
                                         </div>
                                         {% endif %}
                                     {% endfor %}
@@ -599,7 +599,7 @@
                                             <p class="mb-0">
                                             <strong>{{ feature.name }}</strong>
                                                 </br>
-                                            {{ feature.description | safe }}</p>
+                                            {{ feature.description | nl2br }}</p>
                                         </div>
                                         {% endif %}
                                     {% endfor %}
@@ -614,7 +614,7 @@
                                                 <span class="badge bg-info ms-1">{{ feature.source }}</span>
                                                 {% endif %}
                                                 </br>
-                                            {{ feature.description | safe }}</p>
+                                            {{ feature.description | nl2br }}</p>
                                         </div>
                                         {% endif %}
                                     {% endfor %}

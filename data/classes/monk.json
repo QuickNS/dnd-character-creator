@@ -70,7 +70,9 @@
   },
   "features_by_level": {
     "1": {
-      "Martial Arts": "You gain the following benefits while you are unarmed or wielding Monk weapons (Simple Melee weapons and Martial weapons with the Light property). Bonus Unarmed Strike: You can make one Unarmed Strike as a Bonus Action. Dexterous Attacks: You can use your Dexterity modifier instead of Strength for attack and damage rolls of your Unarmed Strikes and Monk weapons. Martial Arts Die: Your Unarmed Strike uses a d6 for damage. This die changes as you gain Monk levels: d8 at level 5, d10 at level 11, d12 at level 17.",
+      "Martial Arts": {
+        "description": "You gain the following benefits while you are unarmed or wielding Monk weapons (Simple Melee weapons and Martial weapons with the Light property):\n\n**Bonus Unarmed Strike.** You can make one Unarmed Strike as a Bonus Action.\n\n**Dexterous Attacks.** You can use your Dexterity modifier instead of Strength for attack and damage rolls of your Unarmed Strikes and Monk weapons.\n\n**Martial Arts Die.** Your Unarmed Strike uses a d6 for damage. This die changes as you gain Monk levels: d8 at level 5, d10 at level 11, d12 at level 17."
+      },
       "Unarmored Defense": {
         "description": "While you aren't wearing armor or wielding a Shield, your base AC equals 10 plus your Dexterity and Wisdom modifiers.",
         "effects": [
@@ -84,7 +86,9 @@
       }
     },
     "2": {
-      "Monk's Focus": "You gain a number of Focus Points equal to your Monk level, which you can spend on Flurry of Blows (1 Focus Point: make two Unarmed Strikes as a Bonus Action after taking the Attack action), Patient Defense (1 Focus Point: take the Dodge action as a Bonus Action), and Step of the Wind (1 Focus Point: take the Disengage or Dash action as a Bonus Action, and your jump distance is doubled for the turn). You regain all Focus Points when you finish a Short or Long Rest.",
+      "Monk's Focus": {
+        "description": "You gain a number of Focus Points equal to your Monk level. You regain all Focus Points when you finish a Short or Long Rest. You can spend them on the following:\n\n**Flurry of Blows (1 Focus Point).** Make two Unarmed Strikes as a Bonus Action after taking the Attack action.\n\n**Patient Defense (1 Focus Point).** Take the Dodge action as a Bonus Action.\n\n**Step of the Wind (1 Focus Point).** Take the Disengage or Dash action as a Bonus Action, and your jump distance is doubled for the turn."
+      },
       "Unarmored Movement": {
         "description": "Your Speed increases by 10 feet while you aren't wearing armor or wielding a Shield. This bonus increases as you gain Monk levels: 15 ft at level 6, 20 ft at level 10, 25 ft at level 14, 30 ft at level 18.",
         "effects": [
@@ -97,7 +101,9 @@
       "Uncanny Metabolism": "When you roll Initiative, you can regain all expended Focus Points. When you do so, you also regain a number of Hit Points equal to your Martial Arts die plus your Monk level. You can use this feature only once per Long Rest."
     },
     "3": {
-      "Deflect Attacks": "When an attack roll hits you and its damage includes Bludgeoning, Piercing, or Slashing damage, you can take a Reaction to reduce the total damage by 1d10 plus your Dexterity modifier plus your Monk level. If the damage is reduced to 0, you can spend 1 Focus Point to redirect the attack back. Make a ranged attack (range 20/60) against a target within range using the same attack roll modifier. On hit, the target takes damage equal to two rolls of your Martial Arts die plus your Dexterity modifier. The damage type matches the original attack.",
+      "Deflect Attacks": {
+        "description": "When an attack roll hits you and its damage includes Bludgeoning, Piercing, or Slashing damage, you can take a Reaction to reduce the total damage by 1d10 plus your Dexterity modifier plus your Monk level.\n\n**Deflect and Redirect.** If the damage is reduced to 0, you can spend 1 Focus Point to redirect the attack back. Make a ranged attack (range 20/60) against a target within range using the same attack roll modifier. On hit, the target takes damage equal to two rolls of your Martial Arts die plus your Dexterity modifier. The damage type matches the original attack."
+      },
       "Monk Subclass": "Choose a Monk subclass: Warrior of Mercy, Warrior of Shadow, Warrior of the Elements, or Warrior of the Open Hand."
     },
     "4": {
@@ -130,7 +136,9 @@
       "Acrobatic Movement": "While you aren't wearing armor or wielding a Shield, you gain the ability to move along vertical surfaces and across liquids on your turn without falling during the move."
     },
     "10": {
-      "Heightened Focus": "Your Flurry of Blows, Patient Defense, and Step of the Wind gain the following improvements. Flurry of Blows: You can make three Unarmed Strikes instead of two when you spend a Focus Point. Patient Defense: When you spend a Focus Point, you also gain a number of Temporary Hit Points equal to two rolls of your Martial Arts die. Step of the Wind: When you spend a Focus Point, you can choose a willing creature within 5 feet of you that is your size or smaller. You move the creature with you until the end of your turn, and the creature's movement doesn't provoke Opportunity Attacks.",
+      "Heightened Focus": {
+        "description": "Your Flurry of Blows, Patient Defense, and Step of the Wind gain the following improvements.\n\n**Flurry of Blows.** You can make three Unarmed Strikes instead of two when you spend a Focus Point.\n\n**Patient Defense.** When you spend a Focus Point, you also gain a number of Temporary Hit Points equal to two rolls of your Martial Arts die.\n\n**Step of the Wind.** When you spend a Focus Point, you can choose a willing creature within 5 feet of you that is your size or smaller. You move the creature with you until the end of your turn, and the creature's movement doesn't provoke Opportunity Attacks."
+      },
       "Self-Restoration": "You can spend 1 Focus Point to end one of the following conditions on yourself: Charmed, Frightened, or Poisoned.",
       "Unarmored Movement": {
         "description": "Unarmored Movement speed bonus increases to 20 feet.",

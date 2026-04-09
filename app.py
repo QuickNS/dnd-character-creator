@@ -239,6 +239,23 @@ def _extract_hp_bonuses_from_character(character):
 # Make helper functions available to blueprints
 app._extract_hp_bonuses_from_character = _extract_hp_bonuses_from_character
 
+# ==================== Jinja2 Filters ====================
+
+import re
+import markupsafe
+
+
+@app.template_filter("nl2br")
+def nl2br_filter(value):
+    """Convert newlines to <br> and **bold** to <strong> for HTML rendering."""
+    if not value:
+        return value
+    escaped = str(markupsafe.escape(value))
+    escaped = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", escaped)
+    escaped = escaped.replace("\n", "<br>")
+    return markupsafe.Markup(escaped)
+
+
 # ==================== Blueprint Registration ====================
 
 try:
