@@ -4,6 +4,9 @@ import pytest
 from modules.character_builder import CharacterBuilder
 
 
+# ==================== Helpers & Fixtures ====================
+
+
 @pytest.fixture
 def monk_builder():
     """Fresh CharacterBuilder for Monk tests."""
@@ -18,6 +21,33 @@ def _build_monk(level=1, subclass=None):
     if subclass and level >= 3:
         builder.set_subclass(subclass)
     return builder
+
+
+def _build_full_monk(level=6, subclass=None, ability_scores=None,
+                     background_bonuses=None):
+    """Helper to build a full Monk character via apply_choices + to_character."""
+    builder = CharacterBuilder()
+    choices = {
+        "character_name": "Test Monk",
+        "level": level,
+        "species": "Human",
+        "class": "Monk",
+        "background": "Acolyte",
+        "ability_scores": ability_scores or {
+            "Strength": 10, "Dexterity": 16, "Constitution": 14,
+            "Intelligence": 8, "Wisdom": 15, "Charisma": 10
+        },
+        "background_bonuses": background_bonuses or {
+            "Dexterity": 2, "Wisdom": 1
+        },
+    }
+    if subclass and level >= 3:
+        choices["subclass"] = subclass
+    builder.apply_choices(choices)
+    return builder
+
+
+# ==================== Base Class Tests ====================
 
 
 class TestMonkBasicSetup:
@@ -67,37 +97,25 @@ class TestMonkBasicSetup:
 class TestUnarmoredDefense:
 
     def test_unarmored_defense_ac_option(self):
-        builder = _build_monk(level=1)
-        builder.apply_choices({
-            "character_name": "Monk Test",
-            "level": 1,
-            "species": "Human",
-            "class": "Monk",
-            "background": "Acolyte",
-            "ability_scores": {
-                "Strength": 10, "Dexterity": 16, "Constitution": 12,
-                "Intelligence": 8, "Wisdom": 16, "Charisma": 10
-            },
-            "background_bonuses": {"Dexterity": 2, "Wisdom": 1},
-        })
+        """Unarmored Defense: AC = 10 + DEX + WIS.
+
+        DEX 16 + 2 background = 18 → +4, WIS 15 + 1 background = 16 → +3.
+        Expected: 10 + 4 + 3 = 17.
+        """
+        builder = _build_full_monk(level=1)
         character = builder.to_character()
         ac_options = character.get("ac_options", [])
 
-        # Should have an Unarmored Defense option with 10 + DEX(+3) + WIS(+3) = 16
-        # (With +2 DEX from background: DEX=18 → +4, WIS=17 → +3, so 10+4+3=17)
         unarmored_defense = [
             opt for opt in ac_options
-            if "Unarmored Defense" in (opt.get("notes", []) or [" "])[0]
-            if opt.get("notes")
+            if any("Unarmored Defense" in note for note in opt.get("notes", []))
         ]
-        assert len(unarmored_defense) >= 1
-        # The alternative AC should be higher than standard unarmored (10 + DEX)
-        standard_unarmored = [
-            opt for opt in ac_options
-            if opt.get("equipped_armor") is None and not opt.get("notes")
-        ]
-        if standard_unarmored and unarmored_defense:
-            assert unarmored_defense[0]["ac"] >= standard_unarmored[0]["ac"]
+        assert len(unarmored_defense) >= 1, (
+            f"Expected Unarmored Defense AC option, got: {ac_options}"
+        )
+        assert unarmored_defense[0]["ac"] == 17, (
+            f"Expected AC 17, got {unarmored_defense[0]['ac']}"
+        )
 
     def test_alternative_ac_effect_applied(self):
         builder = _build_monk(level=1)
@@ -154,18 +172,23 @@ class TestDisciplinedSurvivor:
 
 class TestSuperiorDefense:
 
-    def test_damage_resistances_at_level_18(self):
+    def test_superior_defense_feature_exists_at_level_18(self):
+        """Superior Defense should exist as a class feature at level 18."""
+        builder = _build_monk(level=18)
+        features = builder.character_data["features"]["class"]
+        names = [f["name"] for f in features]
+        assert "Superior Defense" in names
+
+    def test_no_passive_resistances_at_level_18(self):
+        """Superior Defense is an activated ability (3 FP, 1 minute), NOT passive.
+
+        It should NOT grant permanent resistances.
+        """
         builder = _build_monk(level=18)
         resistances = builder.character_data["resistances"]
-        expected = [
-            "Bludgeoning", "Piercing", "Slashing",
-            "Acid", "Cold", "Fire", "Lightning",
-            "Necrotic", "Poison", "Psychic", "Radiant", "Thunder"
-        ]
-        for dmg_type in expected:
-            assert dmg_type in resistances, f"Missing resistance: {dmg_type}"
-        # Force should NOT be resisted
-        assert "Force" not in resistances
+        assert len(resistances) == 0, (
+            f"Human Monk should have no passive resistances, got: {resistances}"
+        )
 
     def test_no_resistances_before_level_18(self):
         builder = _build_monk(level=17)
@@ -185,6 +208,9 @@ class TestBodyAndMind:
         assert dex_bonus[0]["value"] == 4
         assert len(wis_bonus) >= 1
         assert wis_bonus[0]["value"] == 4
+
+
+# ==================== Subclass Tests ====================
 
 
 class TestWarriorOfMercy:
@@ -252,6 +278,9 @@ class TestWarriorOfTheOpenHand:
         assert "Wholeness of Body" in names
 
 
+# ==================== Full Character Build Tests ====================
+
+
 class TestMonkFullBuild:
 
     def test_full_character_build(self):
@@ -282,3 +311,202 @@ class TestMonkFullBuild:
         # Should have Minor Illusion
         spells = character.get("spells", {}).get("always_prepared", {})
         assert "Minor Illusion" in spells
+
+
+class TestWarriorOfMercyFullBuild:
+    """Full character build tests for Warrior of Mercy at level 6."""
+
+    @pytest.fixture
+    def mercy_character(self):
+        builder = _build_full_monk(level=6, subclass="Warrior of Mercy")
+        return builder.to_character()
+
+    def test_class_and_level(self, mercy_character):
+        assert mercy_character["class"] == "Monk"
+        assert mercy_character["level"] == 6
+        assert mercy_character["subclass"] == "Warrior of Mercy"
+
+    def test_skill_proficiencies(self, mercy_character):
+        skills = mercy_character["proficiencies"]["skills"]
+        assert "Insight" in skills, "Implements of Mercy should grant Insight"
+        assert "Medicine" in skills, "Implements of Mercy should grant Medicine"
+
+    def test_all_features_present(self, mercy_character):
+        class_features = [f["name"] for f in mercy_character["features"]["class"]]
+        subclass_features = [f["name"] for f in mercy_character["features"]["subclass"]]
+
+        # Core class features through level 6
+        assert "Martial Arts" in class_features
+        assert "Unarmored Defense" in class_features
+        assert "Extra Attack" in class_features
+
+        # Subclass features
+        assert "Hand of Healing" in subclass_features
+        assert "Hand of Harm" in subclass_features
+        assert "Physician's Touch" in subclass_features
+
+    def test_hp_calculation(self, mercy_character):
+        """L6 Monk, CON 14 → +2 modifier.
+
+        HP = 8 (L1 max d8) + 5*5 (avg d8=5, levels 2-6) + 6*2 (CON) = 45.
+        """
+        hp = mercy_character["combat"]["hit_points"]["maximum"]
+        assert hp == 45, f"Expected 45 HP at L6, got {hp}"
+
+    def test_speed(self, mercy_character):
+        """L6 Monk: 30 base + 10 (L2) + 5 (L6) = 45."""
+        assert mercy_character["speed"] == 45
+
+    def test_ac_includes_unarmored_defense(self, mercy_character):
+        """Unarmored Defense: 10 + DEX(18→+4) + WIS(16→+3) = 17."""
+        ac_options = mercy_character.get("ac_options", [])
+        unarmored_defense = [
+            opt for opt in ac_options
+            if any("Unarmored Defense" in note for note in opt.get("notes", []))
+        ]
+        assert len(unarmored_defense) >= 1
+        assert unarmored_defense[0]["ac"] == 17
+
+
+class TestWarriorOfShadowFullBuild:
+    """Full character build tests for Warrior of Shadow at level 6."""
+
+    @pytest.fixture
+    def shadow_character(self):
+        builder = _build_full_monk(level=6, subclass="Warrior of Shadow")
+        return builder.to_character()
+
+    def test_class_and_level(self, shadow_character):
+        assert shadow_character["class"] == "Monk"
+        assert shadow_character["level"] == 6
+        assert shadow_character["subclass"] == "Warrior of Shadow"
+
+    def test_darkvision(self, shadow_character):
+        assert shadow_character.get("darkvision", 0) >= 60
+
+    def test_minor_illusion_cantrip(self, shadow_character):
+        spells = shadow_character.get("spells", {}).get("always_prepared", {})
+        assert "Minor Illusion" in spells
+
+    def test_shadow_step_feature(self, shadow_character):
+        subclass_features = [
+            f["name"] for f in shadow_character["features"]["subclass"]
+        ]
+        assert "Shadow Step" in subclass_features
+
+    def test_all_features_present(self, shadow_character):
+        class_features = [f["name"] for f in shadow_character["features"]["class"]]
+        subclass_features = [
+            f["name"] for f in shadow_character["features"]["subclass"]
+        ]
+
+        assert "Martial Arts" in class_features
+        assert "Unarmored Defense" in class_features
+        assert "Extra Attack" in class_features
+        assert "Shadow Arts" in subclass_features
+        assert "Shadow Step" in subclass_features
+
+    def test_hp_calculation(self, shadow_character):
+        """L6, CON 14 → +2. HP = 8 + 5*5 + 6*2 = 45."""
+        hp = shadow_character["combat"]["hit_points"]["maximum"]
+        assert hp == 45, f"Expected 45 HP at L6, got {hp}"
+
+    def test_speed(self, shadow_character):
+        assert shadow_character["speed"] == 45
+
+    def test_ac_includes_unarmored_defense(self, shadow_character):
+        ac_options = shadow_character.get("ac_options", [])
+        unarmored_defense = [
+            opt for opt in ac_options
+            if any("Unarmored Defense" in note for note in opt.get("notes", []))
+        ]
+        assert len(unarmored_defense) >= 1
+        assert unarmored_defense[0]["ac"] == 17
+
+
+class TestWarriorOfTheElementsFullBuild:
+    """Full character build tests for Warrior of the Elements at level 6."""
+
+    @pytest.fixture
+    def elements_character(self):
+        builder = _build_full_monk(level=6, subclass="Warrior of the Elements")
+        return builder.to_character()
+
+    def test_class_and_level(self, elements_character):
+        assert elements_character["class"] == "Monk"
+        assert elements_character["level"] == 6
+        assert elements_character["subclass"] == "Warrior of the Elements"
+
+    def test_elementalism_cantrip(self, elements_character):
+        spells = elements_character.get("spells", {}).get("always_prepared", {})
+        assert "Elementalism" in spells
+
+    def test_all_features_present(self, elements_character):
+        class_features = [f["name"] for f in elements_character["features"]["class"]]
+        subclass_features = [
+            f["name"] for f in elements_character["features"]["subclass"]
+        ]
+
+        assert "Martial Arts" in class_features
+        assert "Unarmored Defense" in class_features
+        assert "Extra Attack" in class_features
+        assert "Elemental Attunement" in subclass_features
+        assert "Elemental Burst" in subclass_features
+
+    def test_hp_calculation(self, elements_character):
+        hp = elements_character["combat"]["hit_points"]["maximum"]
+        assert hp == 45, f"Expected 45 HP at L6, got {hp}"
+
+    def test_speed(self, elements_character):
+        assert elements_character["speed"] == 45
+
+    def test_ac_includes_unarmored_defense(self, elements_character):
+        ac_options = elements_character.get("ac_options", [])
+        unarmored_defense = [
+            opt for opt in ac_options
+            if any("Unarmored Defense" in note for note in opt.get("notes", []))
+        ]
+        assert len(unarmored_defense) >= 1
+        assert unarmored_defense[0]["ac"] == 17
+
+
+class TestWarriorOfTheOpenHandFullBuild:
+    """Full character build tests for Warrior of the Open Hand at level 6."""
+
+    @pytest.fixture
+    def open_hand_character(self):
+        builder = _build_full_monk(level=6, subclass="Warrior of the Open Hand")
+        return builder.to_character()
+
+    def test_class_and_level(self, open_hand_character):
+        assert open_hand_character["class"] == "Monk"
+        assert open_hand_character["level"] == 6
+        assert open_hand_character["subclass"] == "Warrior of the Open Hand"
+
+    def test_all_features_present(self, open_hand_character):
+        class_features = [f["name"] for f in open_hand_character["features"]["class"]]
+        subclass_features = [
+            f["name"] for f in open_hand_character["features"]["subclass"]
+        ]
+
+        assert "Martial Arts" in class_features
+        assert "Unarmored Defense" in class_features
+        assert "Extra Attack" in class_features
+        assert "Open Hand Technique" in subclass_features
+        assert "Wholeness of Body" in subclass_features
+
+    def test_hp_calculation(self, open_hand_character):
+        hp = open_hand_character["combat"]["hit_points"]["maximum"]
+        assert hp == 45, f"Expected 45 HP at L6, got {hp}"
+
+    def test_speed(self, open_hand_character):
+        assert open_hand_character["speed"] == 45
+
+    def test_ac_includes_unarmored_defense(self, open_hand_character):
+        ac_options = open_hand_character.get("ac_options", [])
+        unarmored_defense = [
+            opt for opt in ac_options
+            if any("Unarmored Defense" in note for note in opt.get("notes", []))
+        ]
+        assert len(unarmored_defense) >= 1
+        assert unarmored_defense[0]["ac"] == 17
