@@ -73,14 +73,14 @@
     },
     "Monk": {
       "data_file": true,
-      "features_validated": false,
-      "effects_implemented": false,
+      "features_validated": true,
+      "effects_implemented": true,
       "tests_written": true,
       "subclasses": {
-        "Warrior of Mercy": { "data_file": true, "features_validated": false, "effects_implemented": false, "tests_written": true },
-        "Warrior of Shadow": { "data_file": true, "features_validated": false, "effects_implemented": false, "tests_written": true },
-        "Warrior of the Elements": { "data_file": true, "features_validated": false, "effects_implemented": false, "tests_written": true },
-        "Warrior of the Open Hand": { "data_file": true, "features_validated": false, "effects_implemented": false, "tests_written": true }
+        "Warrior of Mercy": { "data_file": true, "features_validated": true, "effects_implemented": true, "tests_written": true },
+        "Warrior of Shadow": { "data_file": true, "features_validated": true, "effects_implemented": true, "tests_written": true },
+        "Warrior of the Elements": { "data_file": true, "features_validated": true, "effects_implemented": true, "tests_written": true },
+        "Warrior of the Open Hand": { "data_file": true, "features_validated": true, "effects_implemented": true, "tests_written": true }
       }
     },
     "Paladin": {
