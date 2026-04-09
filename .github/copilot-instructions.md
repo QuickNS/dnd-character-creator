@@ -77,7 +77,7 @@ When implementing any feature:
 ## Issue Tracking
 
 Known bugs and missing features are tracked as GitHub Issues on `QuickNS/dnd-character-creator`.
-Issue titles follow the format `[ClassName] Short description` with `bug` or `enhancement` labels.
+Issue titles follow the format `[Category] Short description` (e.g., `[Monk]`, `[Elf]`, `[Monk/Warrior of Shadow]`) with `bug` or `enhancement` labels.
 Use GitHub MCP tools (`mcp_github_list_issues`, `mcp_github_search_issues`) to find open issues.
 When the user reports a bug or missing feature conversationally, use the `file-issue` skill to create a structured GitHub Issue.
-When fixing issues, use the `fix-class-issues` skill for the full workflow.
+When fixing issues, use the `fix-issue` skill for the full workflow (covers classes, species, feats, backgrounds, spells, and application issues).
