@@ -13,14 +13,14 @@
   "classes": {
     "Barbarian": {
       "data_file": true,
-      "features_validated": false,
-      "effects_implemented": false,
-      "tests_written": false,
+      "features_validated": true,
+      "effects_implemented": true,
+      "tests_written": true,
       "subclasses": {
-        "Path of the Berserker": { "data_file": true, "features_validated": false, "effects_implemented": false, "tests_written": false },
-        "Path of the Wild Heart": { "data_file": true, "features_validated": false, "effects_implemented": false, "tests_written": false },
-        "Path of the World Tree": { "data_file": true, "features_validated": false, "effects_implemented": false, "tests_written": false },
-        "Path of the Zealot": { "data_file": true, "features_validated": false, "effects_implemented": false, "tests_written": false }
+        "Path of the Berserker": { "data_file": true, "features_validated": true, "effects_implemented": true, "tests_written": true },
+        "Path of the Wild Heart": { "data_file": true, "features_validated": true, "effects_implemented": true, "tests_written": true },
+        "Path of the World Tree": { "data_file": true, "features_validated": true, "effects_implemented": true, "tests_written": true },
+        "Path of the Zealot": { "data_file": true, "features_validated": true, "effects_implemented": true, "tests_written": true }
       }
     },
     "Bard": {
