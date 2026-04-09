@@ -3,7 +3,8 @@
   "spells_by_level": {
     "1": [
       "Detect Magic",
-      "Longstrider"
+      "Longstrider",
+      "Speak with Animals"
     ],
     "2": [
       "Pass without Trace"

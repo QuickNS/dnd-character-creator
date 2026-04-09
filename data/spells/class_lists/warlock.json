@@ -1,10 +1,14 @@
 {
   "class": "Warlock",
   "cantrips": [
+    "Minor Illusion",
     "Prestidigitation",
     "Toll the Dead"
   ],
   "spells_by_level": {
+    "1": [
+      "Speak with Animals"
+    ],
     "2": [
       "Darkness",
       "Misty Step"
