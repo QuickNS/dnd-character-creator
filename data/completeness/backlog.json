@@ -121,14 +121,14 @@
     },
     "Sorcerer": {
       "data_file": true,
-      "features_validated": false,
-      "effects_implemented": false,
-      "tests_written": false,
+      "features_validated": true,
+      "effects_implemented": true,
+      "tests_written": true,
       "subclasses": {
-        "Aberrant Mind": { "data_file": false, "features_validated": false, "effects_implemented": false, "tests_written": false },
-        "Clockwork Soul": { "data_file": false, "features_validated": false, "effects_implemented": false, "tests_written": false },
-        "Draconic Bloodline": { "data_file": true, "features_validated": false, "effects_implemented": false, "tests_written": false },
-        "Wild Magic": { "data_file": true, "features_validated": false, "effects_implemented": false, "tests_written": false }
+        "Aberrant Sorcery": { "data_file": true, "features_validated": true, "effects_implemented": true, "tests_written": true },
+        "Clockwork Sorcery": { "data_file": true, "features_validated": true, "effects_implemented": true, "tests_written": true },
+        "Draconic Sorcery": { "data_file": true, "features_validated": true, "effects_implemented": true, "tests_written": true },
+        "Wild Magic Sorcery": { "data_file": true, "features_validated": true, "effects_implemented": true, "tests_written": true }
       }
     },
     "Warlock": {
