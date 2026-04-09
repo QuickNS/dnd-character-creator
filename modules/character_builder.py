@@ -1374,6 +1374,11 @@ class CharacterBuilder:
             ):
                 self.character_data["features"]["feats"].append(feat_entry)
 
+            # Apply any direct effects from the feat (e.g., Tough's bonus_hp)
+            if feat_data:
+                for feat_effect in feat_data.get("effects", []):
+                    self._apply_effect(feat_effect, feat, "feat")
+
     def _process_equipment_selections(
         self, equipment_selections: Dict[str, str]
     ) -> bool:
@@ -2758,6 +2763,8 @@ class CharacterBuilder:
             "selected", []
         )
         stats["current_masteries"] = current_masteries
+
+        return stats
 
     def calculate_eldritch_invocation_stats(self) -> Dict[str, Any]:
         """
