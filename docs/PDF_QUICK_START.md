@@ -265,7 +265,6 @@ Replace images in `/static/pdf_template/`:
 - **Template**: `templates/character_sheet_pdf.html`
 - **Background Images**: `static/pdf_template/sheet1.png`, `sheet2.png`  
 - **Route**: `routes/character_summary.py` (contains `/character-sheet` route)
-- **Architecture Documentation**: `docs/ARCHITECTURE.md` (HTML Character Sheet section)
 - **Flask App**: `app.py`
 
 ## Support

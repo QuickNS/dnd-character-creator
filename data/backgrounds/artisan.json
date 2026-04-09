@@ -1,0 +1,26 @@
+{
+  "name": "Artisan",
+  "description": "You began mopping floors and scrubbing counters in an artisan's workshop for a few coppers per day as soon as you were strong enough to carry a bucket. When you were old enough to apprentice, you learned to create basic crafts of your own, as well as how to sweet-talk the occasional demanding customer. Your trade has also given you a keen eye for detail.",
+  "ability_score_increase": {
+    "total": 3,
+    "options": ["Strength", "Dexterity", "Intelligence"],
+    "suggested": {"Strength": 1, "Intelligence": 2}
+  },
+  "feat": "Crafter",
+  "skill_proficiencies": ["Investigation", "Persuasion"],
+  "tool_proficiencies": ["Artisan's Tools"],
+  "languages": 2,
+  "starting_equipment": {
+    "option_a": {
+      "items": [
+        "Artisan's Tools",
+        "2 Pouches",
+        "Traveler's Clothes"
+      ],
+      "gold": 32
+    },
+    "option_b": {
+      "gold": 50
+    }
+  }
+}

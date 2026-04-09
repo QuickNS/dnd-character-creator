@@ -208,6 +208,29 @@
         }
       ]
     },
+    "Lucky": {
+      "description": "You have inexplicable luck that seems to kick in at just the right moment.",
+      "benefits": [
+        "Luck Points: You have a number of Luck Points equal to your Proficiency Bonus and can spend the points on the benefits below. You regain your expended Luck Points when you finish a Long Rest.",
+        "Advantage: When you roll a d20 for a D20 Test, you can spend 1 Luck Point to give yourself Advantage on the roll.",
+        "Disadvantage: When a creature rolls a d20 for an attack roll against you, you can spend 1 Luck Point to impose Disadvantage on that roll."
+      ],
+      "category": "Origin",
+      "prerequisite": "None",
+      "source": "Player's Handbook 2024"
+    },
+    "Tavern Brawler": {
+      "description": "Accustomed to brawling, you gain the following benefits:",
+      "benefits": [
+        "Enhanced Unarmed Strike: When you hit with your Unarmed Strike and deal damage, you can deal Bludgeoning damage equal to 1d4 plus your Strength modifier instead of the normal damage of an Unarmed Strike.",
+        "Damage Rerolls: Whenever you roll a damage die for your Unarmed Strike, you can reroll the die if it rolls a 1, and you must use the new roll.",
+        "Improvised Weaponry: You have proficiency with improvised weapons.",
+        "Push: When you hit a creature with an Unarmed Strike as part of the Attack action on your turn, you can deal damage to the target and also push it 5 feet away from you. You can use this benefit only once per turn."
+      ],
+      "category": "Origin",
+      "prerequisite": "None",
+      "source": "Player's Handbook 2024"
+    },
     "Tough": {
       "description": "Your hit point maximum increases by an amount equal to twice your character level when you gain this feat. Whenever you gain a level thereafter, your hit point maximum increases by an additional 2 hit points.",
       "benefits": [],

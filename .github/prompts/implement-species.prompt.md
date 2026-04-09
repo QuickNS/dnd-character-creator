@@ -1,27 +1,43 @@
 ---
-agent: 'agent'
-description: 'Implements species features'
+description: 'Implements species features end-to-end using the agent chain: wiki-fetcher → data-author → data-validator → feature-implementer → test-writer'
 ---
 
-This details the execution plan for implementing the species features for species {{ species_name }} in accordance with:
+Implement the species features for **{{ species_name }}** using the following agent chain:
 
-- The data models defined in the models/ folder
-- The data files under the data/ folder
-- The effects system detailed in FEATURE_EFFECTS.md
-- All relevant instructions in copilot-instructions.md
+## Step 1 — Fetch Wiki Data (@wiki-fetcher)
 
-## Sequence Plan:
+Ensure `wiki_data/species/{{ species_name }}.json` exists.
+Run `python update_species.py --species {{ species_name }}` if missing.
 
-1. Check the data files located at data/species/{{ species_name }}.yaml for any inconsistencies or missing information related to the wiki page for {{ species_name }}.
-  - The wiki information is stored in wiki_data/species/{{ species_name }}.json. If needed, update the data files to ensure they accurately reflect the wiki content.
-  - We are only focusing on features from basic rules and/or official Player's Handbook 2024.
-2. Take special note of any features that have complex effects or interactions as detailed in FEATURE_EFFECTS.md.
-3. Make sure all species features are accurately represented according in the data files, including the level where they become available.
-4. Review the species data file located at data/species/{{ species_name }}.yaml to understand the core features and attributes of the species.
-5. Implement the species features in the codebase, ensuring that:
-   - Each feature is implemented according to its description in the data files.
-   - Any special effects or interactions are handled as per FEATURE_EFFECTS.md.
-   - The implementation adheres to coding standards and best practices.
-6. Write unit tests for each species feature to ensure they function as intended.
-7. Conduct integration testing to verify that the species features work correctly within the overall system.
-8. Document the implementation details and any important notes regarding the species features.
+## Step 2 — Author Data Files (@data-author)
+
+Update `data/species/{{ species_name }}.json` and any variant files under `data/species_variants/`:
+- Parse wiki content from `wiki_data/`
+- Ensure all traits use structured `effects` arrays (see `FEATURE_EFFECTS.md`)
+- Species do NOT have ability score increases (D&D 2024)
+- Validate against schemas
+
+## Step 3 — Validate Data (@data-validator)
+
+Run `python validate_data.py` and verify:
+- Schema compliance for species file
+- All mechanical traits have `effects` arrays
+- No ability score increases in species data
+- D&D 2024 accuracy
+
+## Step 4 — Implement Handlers (@feature-implementer)
+
+If any traits require new effect types:
+- Add the handler in `CharacterBuilder._apply_effect()`
+- Update `FEATURE_EFFECTS.md`
+
+## Step 5 — Write Tests (@test-writer)
+
+Create `tests/species/test_{{ species_name }}_traits.py`:
+- Test species traits for effect application
+- Verify with at least 2 different class combinations
+- Run `pytest tests/ -x -q --tb=short`
+
+## Step 6 — Update Backlog
+
+Update `data/completeness/backlog.json` to mark {{ species_name }} as validated.

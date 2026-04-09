@@ -1,6 +1,6 @@
 {
   "name": "Monk",
-  "description": "Monks are masters of martial arts, harnessing the energy that flows through their bodies. They focus their ki to perform superhuman feats and deliver devastating unarmed strikes.",
+  "description": "Monks are masters of martial arts, harnessing the power of body, mind, and spirit. Through discipline and training, they channel their Focus to perform extraordinary feats of combat and athleticism.",
   "hit_die": 8,
   "primary_ability": "Dexterity and Wisdom",
   "saving_throw_proficiencies": [
@@ -18,7 +18,7 @@
   "armor_proficiencies": [],
   "weapon_proficiencies": [
     "Simple weapons",
-    "Shortswords"
+    "Martial weapons that have the Light property"
   ],
   "tool_proficiencies": [
     "Choose one type of artisan's tools or one musical instrument"
@@ -35,9 +35,9 @@
   "starting_equipment": {
     "option_a": {
       "items": [
-        "Quarterstaff",
-        "Dart (10)",
-        "Explorer's Pack"
+        "Spear",
+        "Explorer's Pack",
+        "Dart (10)"
       ],
       "gold": 5
     },
@@ -70,72 +70,149 @@
   },
   "features_by_level": {
     "1": {
-      "Unarmored Defense": "While not wearing armor or wielding a shield, your AC equals 10 + Dexterity modifier + Wisdom modifier.",
-      "Martial Arts": "Your unarmed strikes and monk weapons deal 1d6 damage (increases at higher levels). You can use Dexterity instead of Strength for attack and damage rolls with unarmed strikes and monk weapons. When you use Attack action with unarmed strike or monk weapon, you can make one unarmed strike as a Bonus Action."
+      "Martial Arts": "You gain the following benefits while you are unarmed or wielding Monk weapons (Simple Melee weapons and Martial weapons with the Light property). Bonus Unarmed Strike: You can make one Unarmed Strike as a Bonus Action. Dexterous Attacks: You can use your Dexterity modifier instead of Strength for attack and damage rolls of your Unarmed Strikes and Monk weapons. Martial Arts Die: Your Unarmed Strike uses a d6 for damage. This die changes as you gain Monk levels: d8 at level 5, d10 at level 11, d12 at level 17.",
+      "Unarmored Defense": {
+        "description": "While you aren't wearing armor or wielding a Shield, your base AC equals 10 plus your Dexterity and Wisdom modifiers.",
+        "effects": [
+          {
+            "type": "alternative_ac",
+            "base": 10,
+            "modifiers": ["dexterity", "wisdom"],
+            "condition": "no_armor_no_shield"
+          }
+        ]
+      }
     },
     "2": {
-      "Ki": "Gain Ki points equal to your Monk level. Spend Ki to fuel special abilities: Flurry of Blows (1 Ki, make 2 unarmed strikes as Bonus Action), Patient Defense (1 Ki, Dodge as Bonus Action), Step of the Wind (1 Ki, Disengage or Dash as Bonus Action, jump distance doubled). Regain all Ki on Short or Long Rest.",
-      "Unarmored Movement": "Your Speed increases by 10 feet while not wearing armor or wielding a shield. Bonus increases at higher levels."
+      "Monk's Focus": "You gain a number of Focus Points equal to your Monk level, which you can spend on Flurry of Blows (1 Focus Point: make two Unarmed Strikes as a Bonus Action after taking the Attack action), Patient Defense (1 Focus Point: take the Dodge action as a Bonus Action), and Step of the Wind (1 Focus Point: take the Disengage or Dash action as a Bonus Action, and your jump distance is doubled for the turn). You regain all Focus Points when you finish a Short or Long Rest.",
+      "Unarmored Movement": {
+        "description": "Your Speed increases by 10 feet while you aren't wearing armor or wielding a Shield. This bonus increases as you gain Monk levels: 15 ft at level 6, 20 ft at level 10, 25 ft at level 14, 30 ft at level 18.",
+        "effects": [
+          {
+            "type": "increase_speed",
+            "value": 10
+          }
+        ]
+      },
+      "Uncanny Metabolism": "When you roll Initiative, you can regain all expended Focus Points. When you do so, you also regain a number of Hit Points equal to your Martial Arts die plus your Monk level. You can use this feature only once per Long Rest."
     },
     "3": {
-      "Deflect Missiles": "When hit by ranged weapon attack, use Reaction to reduce damage by 1d10 + Dexterity modifier + Monk level. If damage reduced to 0, you can catch the missile and spend 1 Ki to throw it back (range 20/60, attack with proficiency).",
-      "Monk Subclass": "Choose your Monastic Tradition subclass."
+      "Deflect Attacks": "When an attack roll hits you and its damage includes Bludgeoning, Piercing, or Slashing damage, you can take a Reaction to reduce the total damage by 1d10 plus your Dexterity modifier plus your Monk level. If the damage is reduced to 0, you can spend 1 Focus Point to redirect the attack back. Make a ranged attack (range 20/60) against a target within range using the same attack roll modifier. On hit, the target takes damage equal to two rolls of your Martial Arts die plus your Dexterity modifier. The damage type matches the original attack.",
+      "Monk Subclass": "Choose a Monk subclass: Warrior of Mercy, Warrior of Shadow, Warrior of the Elements, or Warrior of the Open Hand."
     },
     "4": {
-      "Ability Score Improvement": "Increase one ability score by 2, or increase two ability scores by 1.",
-      "Slow Fall": "Reduce falling damage by an amount equal to 5 times your Monk level."
+      "Ability Score Improvement": "Increase one ability score by 2, or increase two ability scores by 1, to a maximum of 20. Alternatively, choose a feat.",
+      "Slow Fall": "You can take a Reaction when you fall to reduce any falling damage you take by an amount equal to five times your Monk level."
     },
     "5": {
-      "Extra Attack": "Attack twice, instead of once, when you take the Attack action on your turn.",
-      "Stunning Strike": "When you hit with melee weapon attack, spend 1 Ki to attempt stunning strike. Target makes Constitution save (DC 8 + Proficiency Bonus + Wisdom modifier) or be Stunned until end of your next turn."
+      "Extra Attack": "You can attack twice, instead of once, whenever you take the Attack action on your turn.",
+      "Stunning Strike": "Once per turn when you hit a creature with a Monk weapon or an Unarmed Strike, you can spend 1 Focus Point to attempt a stunning strike. The target must succeed on a Constitution saving throw (DC = 8 + your Proficiency Bonus + your Wisdom modifier) or have the Stunned condition until the start of your next turn."
     },
     "6": {
-      "Empowered Strikes": "Your unarmed strikes count as magical for overcoming resistance and immunity to nonmagical attacks and damage.",
-      "Subclass Feature": "Gain a feature from your Monastic Tradition subclass."
+      "Empowered Strikes": "Whenever you deal damage with your Unarmed Strike, it can deal your choice of Force damage or its normal damage type.",
+      "Unarmored Movement": {
+        "description": "Unarmored Movement speed bonus increases to 15 feet.",
+        "effects": [
+          {
+            "type": "increase_speed",
+            "value": 5
+          }
+        ]
+      }
     },
     "7": {
-      "Evasion": "When you are subjected to an effect that allows a Dexterity saving throw to take only half damage, you instead take no damage if you succeed on the save, and only half damage if you fail.",
-      "Stillness of Mind": "Use your action to end one effect on yourself causing you to be Charmed or Frightened."
+      "Evasion": "When you are subjected to an effect that allows you to make a Dexterity saving throw to take only half damage, you instead take no damage if you succeed on the saving throw, and only half damage if you fail."
     },
     "8": {
-      "Ability Score Improvement": "Increase one ability score by 2, or increase two ability scores by 1."
+      "Ability Score Improvement": "Increase one ability score by 2, or increase two ability scores by 1, to a maximum of 20. Alternatively, choose a feat."
     },
     "9": {
-      "Unarmored Movement Improvement": "You can move along vertical surfaces and across liquids on your turn without falling during the move."
+      "Acrobatic Movement": "While you aren't wearing armor or wielding a Shield, you gain the ability to move along vertical surfaces and across liquids on your turn without falling during the move."
     },
     "10": {
-      "Purity of Body": "Immune to disease and poison.",
-      "Subclass Feature": "Gain a feature from your Monastic Tradition subclass."
-    },
-    "11": {
-      "Subclass Feature": "Gain a feature from your Monastic Tradition subclass."
+      "Heightened Focus": "Your Flurry of Blows, Patient Defense, and Step of the Wind gain the following improvements. Flurry of Blows: You can make three Unarmed Strikes instead of two when you spend a Focus Point. Patient Defense: When you spend a Focus Point, you also gain a number of Temporary Hit Points equal to two rolls of your Martial Arts die. Step of the Wind: When you spend a Focus Point, you can choose a willing creature within 5 feet of you that is your size or smaller. You move the creature with you until the end of your turn, and the creature's movement doesn't provoke Opportunity Attacks.",
+      "Self-Restoration": "You can spend 1 Focus Point to end one of the following conditions on yourself: Charmed, Frightened, or Poisoned.",
+      "Unarmored Movement": {
+        "description": "Unarmored Movement speed bonus increases to 20 feet.",
+        "effects": [
+          {
+            "type": "increase_speed",
+            "value": 5
+          }
+        ]
+      }
     },
     "12": {
-      "Ability Score Improvement": "Increase one ability score by 2, or increase two ability scores by 1."
+      "Ability Score Improvement": "Increase one ability score by 2, or increase two ability scores by 1, to a maximum of 20. Alternatively, choose a feat."
     },
     "13": {
-      "Tongue of the Sun and Moon": "You understand all spoken languages. Creatures that understand a language can understand what you say."
+      "Deflect Energy": "You can now use Deflect Attacks when the damage includes any damage type, not just Bludgeoning, Piercing, or Slashing."
     },
     "14": {
-      "Diamond Soul": "Proficiency in all saving throws. When you fail a saving throw, you can spend 1 Ki to reroll it and take the second result."
+      "Disciplined Survivor": {
+        "description": "Your physical and mental discipline grant you proficiency in all saving throws. Additionally, when you fail a saving throw, you can spend 1 Focus Point to reroll it, and you must use the new result.",
+        "effects": [
+          {
+            "type": "grant_save_proficiency",
+            "abilities": ["Strength", "Dexterity", "Constitution", "Intelligence", "Wisdom", "Charisma"]
+          }
+        ]
+      },
+      "Unarmored Movement": {
+        "description": "Unarmored Movement speed bonus increases to 25 feet.",
+        "effects": [
+          {
+            "type": "increase_speed",
+            "value": 5
+          }
+        ]
+      }
     },
     "15": {
-      "Timeless Body": "You suffer none of the frailty of old age, and you can't be aged magically. You can still die of old age. You no longer need food or water."
+      "Perfect Focus": "When you have 0 Focus Points after rolling Initiative, you regain 4 Focus Points. Also, your Heightened Focus improvements increase: Flurry of Blows makes three Unarmed Strikes without expending a Focus Point."
     },
     "16": {
-      "Ability Score Improvement": "Increase one ability score by 2, or increase two ability scores by 1."
-    },
-    "17": {
-      "Subclass Feature": "Gain a feature from your Monastic Tradition subclass."
+      "Ability Score Improvement": "Increase one ability score by 2, or increase two ability scores by 1, to a maximum of 20. Alternatively, choose a feat."
     },
     "18": {
-      "Empty Body": "Spend 4 Ki as an action to become Invisible for 1 minute. During that time, you have resistance to all damage except Force damage. Alternatively, spend 8 Ki to cast Astral Projection without material components."
+      "Superior Defense": {
+        "description": "Your mastery of Focus allows you to bolster your body. You have Resistance to all damage types except Force.",
+        "effects": [
+          {"type": "grant_damage_resistance", "damage_type": "Bludgeoning"},
+          {"type": "grant_damage_resistance", "damage_type": "Piercing"},
+          {"type": "grant_damage_resistance", "damage_type": "Slashing"},
+          {"type": "grant_damage_resistance", "damage_type": "Acid"},
+          {"type": "grant_damage_resistance", "damage_type": "Cold"},
+          {"type": "grant_damage_resistance", "damage_type": "Fire"},
+          {"type": "grant_damage_resistance", "damage_type": "Lightning"},
+          {"type": "grant_damage_resistance", "damage_type": "Necrotic"},
+          {"type": "grant_damage_resistance", "damage_type": "Poison"},
+          {"type": "grant_damage_resistance", "damage_type": "Psychic"},
+          {"type": "grant_damage_resistance", "damage_type": "Radiant"},
+          {"type": "grant_damage_resistance", "damage_type": "Thunder"}
+        ]
+      },
+      "Unarmored Movement": {
+        "description": "Unarmored Movement speed bonus increases to 30 feet.",
+        "effects": [
+          {
+            "type": "increase_speed",
+            "value": 5
+          }
+        ]
+      }
     },
     "19": {
-      "Epic Boon": "Gain an Epic Boon feat or another feat of your choice."
+      "Epic Boon": "You gain an Epic Boon feat or another feat of your choice for which you qualify."
     },
     "20": {
-      "Perfect Self": "When you roll Initiative and have no Ki points remaining, you regain 4 Ki points."
+      "Body and Mind": {
+        "description": "You have honed your body and mind to new heights. Your Dexterity and Wisdom scores increase by 4, to a maximum of 25.",
+        "effects": [
+          {"type": "ability_bonus", "ability": "Dexterity", "value": 4},
+          {"type": "ability_bonus", "ability": "Wisdom", "value": 4}
+        ]
+      }
     }
   }
 }

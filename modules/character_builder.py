@@ -1009,6 +1009,18 @@ class CharacterBuilder:
             }
             self.character_data["ability_bonuses"].append(bonus_info)
 
+        elif effect_type == "grant_save_proficiency":
+            abilities = effect.get("abilities", [])
+            for ability in abilities:
+                if ability not in self.character_data["proficiencies"]["saving_throws"]:
+                    self.character_data["proficiencies"]["saving_throws"].append(ability)
+                    self.character_data["proficiency_sources"]["saving_throws"][ability] = source_name
+
+        elif effect_type == "alternative_ac":
+            # Store alternative AC formulas (e.g., Monk/Barbarian Unarmored Defense)
+            # These are processed in calculate_ac_options()
+            pass  # Tracked via applied_effects
+
         # Track applied effect
         self.applied_effects.append(
             {
@@ -1573,7 +1585,7 @@ class CharacterBuilder:
         if equipment is None:
             # Just return unarmored AC
             unarmored_ac = 10 + dex_mod
-            return [
+            ac_options = [
                 {
                     "ac": unarmored_ac,
                     "armor": None,
@@ -1583,6 +1595,36 @@ class CharacterBuilder:
                     "equipped_armor": None,
                 }
             ]
+
+            # Check for alternative AC formulas (e.g., Monk/Barbarian Unarmored Defense)
+            if hasattr(self, "applied_effects"):
+                for effect_wrapper in self.applied_effects:
+                    if effect_wrapper.get("type") == "alternative_ac":
+                        effect = effect_wrapper.get("effect", {})
+                        base = effect.get("base", 10)
+                        modifiers = effect.get("modifiers", [])
+
+                        alt_ac = base
+                        formula_desc = [str(base)]
+                        for mod_ability in modifiers:
+                            mod_val = abilities.get(mod_ability.lower(), {}).get("modifier", 0)
+                            alt_ac += mod_val
+                            ability_short = mod_ability[:3].capitalize()
+                            formula_desc.append(f"{ability_short} modifier ({mod_val})")
+
+                        source_name = effect_wrapper.get("source", "Unarmored Defense")
+                        alt_option = {
+                            "ac": alt_ac,
+                            "armor": None,
+                            "shield": False,
+                            "formula": " + ".join(formula_desc),
+                            "notes": [source_name],
+                            "equipped_armor": None,
+                        }
+                        ac_options.append(alt_option)
+
+            ac_options.sort(key=lambda x: x["ac"], reverse=True)
+            return ac_options
 
         # Available armor pieces
         armor_items = equipment.get("armor", [])
@@ -1627,6 +1669,46 @@ class CharacterBuilder:
             "equipped_armor": None,
         }
         ac_options.append(unarmored_option)
+
+        # Check for alternative AC formulas (e.g., Monk/Barbarian Unarmored Defense)
+        if hasattr(self, "applied_effects"):
+            for effect_wrapper in self.applied_effects:
+                if effect_wrapper.get("type") == "alternative_ac":
+                    effect = effect_wrapper.get("effect", {})
+                    base = effect.get("base", 10)
+                    modifiers = effect.get("modifiers", [])
+                    condition = effect.get("condition", "")
+
+                    # Calculate AC from modifiers
+                    alt_ac = base
+                    formula_desc = [str(base)]
+                    for mod_ability in modifiers:
+                        mod_val = abilities.get(mod_ability.lower(), {}).get("modifier", 0)
+                        alt_ac += mod_val
+                        ability_short = mod_ability[:3].capitalize()
+                        formula_desc.append(f"{ability_short} modifier ({mod_val})")
+
+                    # Determine if shield is allowed
+                    allow_shield = "no_shield" not in condition
+                    alt_shield_bonus = 2 if has_shield and allow_shield and "Shields" in proficiencies else 0
+                    alt_total = alt_ac + alt_shield_bonus
+
+                    alt_formula_parts = [" + ".join(formula_desc)]
+                    if alt_shield_bonus:
+                        alt_formula_parts.append(f"Shield ({alt_shield_bonus})")
+
+                    source_name = effect_wrapper.get("source", "Unarmored Defense")
+                    alt_option = {
+                        "ac": alt_total,
+                        "armor": None,
+                        "shield": has_shield and allow_shield,
+                        "formula": " + ".join(alt_formula_parts),
+                        "notes": [source_name],
+                        "equipped_armor": None,
+                    }
+
+                    # Replace default unarmored if this is better
+                    ac_options.append(alt_option)
 
         # Add notes for unproficient equipment
         for option in ac_options:

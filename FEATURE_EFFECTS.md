@@ -156,6 +156,34 @@ Grants immunity to a condition.
 
 ### Combat Effects
 
+#### alternative_ac
+Provides an alternative AC calculation formula (e.g., Monk or Barbarian Unarmored Defense). Added as an additional AC option in `calculate_ac_options()`.
+
+**Properties:**
+- `base`: Base AC value (typically 10)
+- `modifiers`: Array of ability score names to add as modifiers (e.g., `["dexterity", "wisdom"]`)
+- `condition`: (Optional) Condition string. `"no_armor_no_shield"` means no armor and no shield allowed.
+
+**Example**: Monk Unarmored Defense
+```json
+{
+  "type": "alternative_ac",
+  "base": 10,
+  "modifiers": ["dexterity", "wisdom"],
+  "condition": "no_armor_no_shield"
+}
+```
+
+**Example**: Barbarian Unarmored Defense
+```json
+{
+  "type": "alternative_ac",
+  "base": 10,
+  "modifiers": ["dexterity", "constitution"],
+  "condition": "no_armor"
+}
+```
+
 #### bonus_ac
 Grants a bonus to AC.
 

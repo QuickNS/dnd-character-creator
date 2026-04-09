@@ -31,3 +31,7 @@ def register_blueprints(app: Flask):
     app.register_blueprint(ability_scores_bp)
     app.register_blueprint(equipment_bp)
     app.register_blueprint(character_summary_bp)
+
+    # Register test API endpoints (dev/testing helpers — always available)
+    from routes.test_api import test_api_bp
+    app.register_blueprint(test_api_bp)
