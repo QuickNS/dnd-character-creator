@@ -5,20 +5,29 @@
   "source": "Player's Handbook 2024",
   "features_by_level": {
     "3": {
-      "Psionic Power": "You harbor a wellspring of psionic energy. You have Psionic Energy dice equal to twice your Proficiency Bonus (d6 each). Regain all on Long Rest. Use them for: Protective Field (when you or creature within 30 feet takes damage, use Reaction to reduce damage by d6 + Intelligence modifier), Psionic Strike (once per turn when you hit, deal extra Force damage equal to one Psionic Energy die), Telekinetic Movement (move one object or willing creature up to 30 feet as an action).",
-      "Telekinetic Adept": "When you use Psionic Strike, you can also move the target 5 feet in any direction if it is Large or smaller."
+      "Psionic Power": "You harbor a wellspring of psionic energy within yourself. It is represented by your Psionic Energy Dice, which fuel powers you have from this subclass. Psionic Energy Dice scale with level: 4d6 at level 3, 6d8 at level 5, 8d8 at level 9, 8d10 at level 11, 10d10 at level 13, 12d12 at level 17. You regain all expended Psionic Energy Dice when you finish a Long Rest. Psionic Power grants the following abilities:\n\nProtective Field. When you or another creature you can see within 30 feet of you takes damage, you can take a Reaction to expend one Psionic Energy Die, roll the die, and reduce the damage taken by the number rolled plus your Intelligence modifier (minimum reduction of 1).\n\nPsionic Strike. Once on each of your turns, immediately after you hit a target within 30 feet of yourself with an attack and deal damage to it with a weapon, you can expend one Psionic Energy Die, rolling it and dealing Force damage to the target equal to the number rolled plus your Intelligence modifier.\n\nTelekinetic Movement. As a Magic action, choose one target you can see within 30 feet of yourself; the target must be a loose object that is Large or smaller or one willing creature other than you. You transport the target up to 30 feet to an unoccupied space you can see. Alternatively, if the target is a Tiny object, you can transport it to or from your hand. Once you take this action, you can't do so again until you finish a Short or Long Rest unless you expend a Psionic Energy Die."
     },
     "7": {
-      "Psi-Powered Leap": "As a Bonus Action, gain a flying speed equal to twice your Walking Speed until the end of the current turn. Can use once without expending a Psionic Energy die, then must expend a die for subsequent uses until you finish a Short or Long Rest."
+      "Telekinetic Adept": "You have honed your telekinetic abilities, gaining the following abilities:\n\nPsi-Powered Leap. As a Bonus Action, you gain a Fly Speed equal to twice your Speed until the end of the current turn. Once you take this Bonus Action, you can't do so again until you finish a Short or Long Rest unless you expend a Psionic Energy Die.\n\nTelekinetic Thrust. When you deal damage to a target with your Psionic Strike, you can force the target to make a Strength saving throw (DC 8 plus your Intelligence modifier and Proficiency Bonus). On a failed save, you can give the target the Prone condition or transport it up to 10 feet horizontally."
     },
     "10": {
-      "Guarded Mind": "You have Resistance to Psychic damage. If you start your turn Charmed or Frightened, you can expend a Psionic Energy die and end every effect on yourself causing those conditions."
+      "Guarded Mind": {
+        "description": "You have Resistance to Psychic damage. Moreover, if you start your turn with the Charmed or Frightened condition, you can expend a Psionic Energy Die (no action required) and end every effect on yourself giving you those conditions.",
+        "effects": [
+          {"type": "grant_damage_resistance", "damage_type": "Psychic"}
+        ]
+      }
     },
     "15": {
-      "Bulwark of Force": "When you or a creature you can see within 30 feet takes damage, you can use Reaction to grant Resistance to that damage. When you do so, expend one Psionic Energy die, and the target gains Temporary HP equal to the number rolled plus your Intelligence modifier."
+      "Bulwark of Force": "You can shield yourself and others with telekinetic force. As a Bonus Action, you can choose creatures, including yourself, within 30 feet of yourself, up to a number of creatures equal to your Intelligence modifier (minimum of one creature). Each of the chosen creatures has Half Cover for 1 minute or until you have the Incapacitated condition. Once you use this feature, you can't do so again until you finish a Long Rest unless you expend a Psionic Energy Die."
     },
     "18": {
-      "Telekinetic Master": "Your Psionic Energy dice become d8s. As an action, you can cast Telekinesis without components or a spell slot. When you do so, the spell's save DC equals 8 + Proficiency Bonus + Intelligence modifier. You can use this action a number of times equal to your Intelligence modifier (minimum 1), regaining uses on Long Rest."
+      "Telekinetic Master": {
+        "description": "You always have the Telekinesis spell prepared. With this feature, you can cast it without a spell slot or components, and your spellcasting ability for it is Intelligence. On each of your turns while you maintain Concentration on it, including the turn when you cast it, you can make one attack with a weapon as a Bonus Action. Once you cast the spell with this feature, you can't do so in this way again until you finish a Long Rest unless you expend a Psionic Energy Die.",
+        "effects": [
+          {"type": "grant_spell", "spell": "Telekinesis"}
+        ]
+      }
     }
   }
 }

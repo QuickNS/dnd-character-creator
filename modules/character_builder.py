@@ -2546,14 +2546,23 @@ class CharacterBuilder:
 
         # Check if class has spellcasting
         spellcasting_ability = class_data.get("spellcasting_ability")
+        subclass_data = None
+        spellcasting_source = class_data  # Track which data source provides spellcasting
         if not spellcasting_ability:
-            return stats
+            # Check if subclass grants spellcasting (e.g., Eldritch Knight, Arcane Trickster)
+            subclass_data = self.character_data.get("subclass_data")
+            if subclass_data:
+                spellcasting_ability = subclass_data.get("spellcasting_ability")
+                if spellcasting_ability:
+                    spellcasting_source = subclass_data
+            if not spellcasting_ability:
+                return stats
 
         stats["has_spellcasting"] = True
         stats["spellcasting_ability"] = spellcasting_ability
-        stats["spellcasting_type"] = class_data.get("spellcasting_type", "prepared")
-        stats["preparation_formula"] = class_data.get("spell_preparation_formula")
-        stats["ritual_casting"] = class_data.get("ritual_casting", False)
+        stats["spellcasting_type"] = spellcasting_source.get("spellcasting_type", "prepared")
+        stats["preparation_formula"] = spellcasting_source.get("spell_preparation_formula")
+        stats["ritual_casting"] = spellcasting_source.get("ritual_casting", False)
 
         # Get spellcasting modifier from abilities
         ability_key = spellcasting_ability.lower()
@@ -2582,14 +2591,18 @@ class CharacterBuilder:
             always_prepared_cantrips = []
         stats["cantrips_always_prepared"] = len(always_prepared_cantrips)
 
-        # Get max cantrips from class table
+        # Get max cantrips from class table (fall back to subclass for EK/AT)
         cantrip_progression = class_data.get("cantrip_progression", {})
+        if not cantrip_progression and spellcasting_source is not class_data:
+            cantrip_progression = spellcasting_source.get("cantrips_by_level", {})
         if isinstance(cantrip_progression, dict):
             # Direct lookup in cantrip_progression dict
             max_cantrips_total = cantrip_progression.get(str(level), 0)
         else:
             # cantrip_progression is a string like "class_table" - use cantrips_by_level
             cantrips_by_level = class_data.get("cantrips_by_level", {})
+            if not cantrips_by_level and spellcasting_source is not class_data:
+                cantrips_by_level = spellcasting_source.get("cantrips_by_level", {})
             max_cantrips_total = cantrips_by_level.get(str(level), 0)
 
         # Calculate how many cantrips can be prepared (not counting always_prepared that don't count)
@@ -2624,8 +2637,10 @@ class CharacterBuilder:
             always_prepared_spells = []
         stats["spells_always_prepared"] = len(always_prepared_spells)
 
-        # Calculate max prepared spells based on formula
+        # Calculate max prepared spells based on formula (fall back to subclass for EK/AT)
         prepared_by_level = class_data.get("prepared_spells_by_level", {})
+        if not prepared_by_level and spellcasting_source is not class_data:
+            prepared_by_level = spellcasting_source.get("prepared_spells_by_level", {})
         if prepared_by_level:
             # Use class table
             max_spells_total = prepared_by_level.get(str(level), 0)
@@ -2692,9 +2707,14 @@ class CharacterBuilder:
                 stats["background_spells_list"] = spell_list_class
                 stats["background_spell_level"] = 1
 
-        # Load available spell lists for this class
+        # Load available spell lists for this class (or subclass spell_list for EK/AT)
+        spell_list_name = class_name.lower()
+        if spellcasting_source is not class_data:
+            spell_list_override = spellcasting_source.get("spell_list")
+            if spell_list_override:
+                spell_list_name = spell_list_override.lower()
         spell_list_path = (
-            self.data_dir / "spells" / "class_lists" / f"{class_name.lower()}.json"
+            self.data_dir / "spells" / "class_lists" / f"{spell_list_name}.json"
         )
         if spell_list_path.exists():
             try:
@@ -3805,6 +3825,26 @@ class CharacterBuilder:
                 spells_by_level[level].append(spell_data)
 
         character_data["spells_by_level"] = spells_by_level
+
+        # If spell_slots not in session data, compute from class or subclass data
+        if not spell_slots:
+            class_data = character_data.get("class_data") or {}
+            subclass_data = character_data.get("subclass_data")
+            level = character_data.get("level", 1)
+            slots_source = class_data.get("spell_slots_by_level", {})
+            if not slots_source and subclass_data:
+                slots_source = subclass_data.get("spell_slots_by_level", {})
+            level_slots = slots_source.get(str(level), [])
+            if isinstance(level_slots, list):
+                spell_level_names = ["1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "9th"]
+                spell_slots = {
+                    spell_level_names[i]: count
+                    for i, count in enumerate(level_slots)
+                    if i < len(spell_level_names) and count > 0
+                }
+            elif isinstance(level_slots, dict):
+                spell_slots = level_slots
+
         character_data["spell_slots"] = spell_slots
 
         # Add proficiency bonus

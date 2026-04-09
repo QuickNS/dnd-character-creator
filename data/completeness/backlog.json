@@ -61,14 +61,14 @@
     },
     "Fighter": {
       "data_file": true,
-      "features_validated": false,
-      "effects_implemented": false,
+      "features_validated": true,
+      "effects_implemented": true,
       "tests_written": true,
       "subclasses": {
-        "Battle Master": { "data_file": true, "features_validated": false, "effects_implemented": false, "tests_written": false },
-        "Champion": { "data_file": true, "features_validated": false, "effects_implemented": false, "tests_written": true },
-        "Eldritch Knight": { "data_file": true, "features_validated": false, "effects_implemented": false, "tests_written": false },
-        "Psi Warrior": { "data_file": true, "features_validated": false, "effects_implemented": false, "tests_written": false }
+        "Battle Master": { "data_file": true, "features_validated": true, "effects_implemented": true, "tests_written": true },
+        "Champion": { "data_file": true, "features_validated": true, "effects_implemented": true, "tests_written": true },
+        "Eldritch Knight": { "data_file": true, "features_validated": true, "effects_implemented": true, "tests_written": true },
+        "Psi Warrior": { "data_file": true, "features_validated": true, "effects_implemented": true, "tests_written": true }
       }
     },
     "Monk": {
