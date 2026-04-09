@@ -122,6 +122,20 @@ Grants proficiency in saving throws.
 }
 ```
 
+#### grant_origin_feat
+Grants an Origin Feat by name. Loads the feat data, adds it to the character's feats list, and applies any direct effects the feat has (e.g., Tough's `bonus_hp`). Used by the Human Versatile trait.
+
+**Properties:**
+- `feat`: Name of the origin feat (must exist in `data/origin_feats.json`)
+
+**Example**: Human Versatile trait choice
+```json
+{
+  "type": "grant_origin_feat",
+  "feat": "Tough"
+}
+```
+
 ### Resistance and Immunity Effects
 
 #### grant_damage_resistance

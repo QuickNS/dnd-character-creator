@@ -58,7 +58,45 @@
         "Survival": [{"type": "grant_skill_proficiency", "skills": ["Survival"]}]
       }
     },
-    "Versatile": "You gain an Origin feat of your choice. Skilled is recommended."
+    "Versatile": {
+      "description": "You gain an Origin feat of your choice. Skilled is recommended.",
+      "type": "choice",
+      "choices": {
+        "type": "select_single",
+        "count": 1,
+        "source": {
+          "type": "fixed_list",
+          "options": [
+            "Alert",
+            "Crafter",
+            "Healer",
+            "Lucky",
+            "Magic Initiate (Cleric)",
+            "Magic Initiate (Druid)",
+            "Magic Initiate (Wizard)",
+            "Musician",
+            "Savage Attacker",
+            "Skilled",
+            "Tavern Brawler",
+            "Tough"
+          ]
+        }
+      },
+      "choice_effects": {
+        "Alert": [{"type": "grant_origin_feat", "feat": "Alert"}],
+        "Crafter": [{"type": "grant_origin_feat", "feat": "Crafter"}],
+        "Healer": [{"type": "grant_origin_feat", "feat": "Healer"}],
+        "Lucky": [{"type": "grant_origin_feat", "feat": "Lucky"}],
+        "Magic Initiate (Cleric)": [{"type": "grant_origin_feat", "feat": "Magic Initiate (Cleric)"}],
+        "Magic Initiate (Druid)": [{"type": "grant_origin_feat", "feat": "Magic Initiate (Druid)"}],
+        "Magic Initiate (Wizard)": [{"type": "grant_origin_feat", "feat": "Magic Initiate (Wizard)"}],
+        "Musician": [{"type": "grant_origin_feat", "feat": "Musician"}],
+        "Savage Attacker": [{"type": "grant_origin_feat", "feat": "Savage Attacker"}],
+        "Skilled": [{"type": "grant_origin_feat", "feat": "Skilled"}],
+        "Tavern Brawler": [{"type": "grant_origin_feat", "feat": "Tavern Brawler"}],
+        "Tough": [{"type": "grant_origin_feat", "feat": "Tough"}]
+      }
+    }
   },
   "languages": [
     "Common"
