@@ -25,14 +25,14 @@
     },
     "Bard": {
       "data_file": true,
-      "features_validated": false,
-      "effects_implemented": false,
-      "tests_written": false,
+      "features_validated": true,
+      "effects_implemented": true,
+      "tests_written": true,
       "subclasses": {
-        "College of Dance": { "data_file": true, "features_validated": false, "effects_implemented": false, "tests_written": false },
-        "College of Glamour": { "data_file": true, "features_validated": false, "effects_implemented": false, "tests_written": false },
-        "College of Lore": { "data_file": true, "features_validated": false, "effects_implemented": false, "tests_written": false },
-        "College of Valor": { "data_file": true, "features_validated": false, "effects_implemented": false, "tests_written": false }
+        "College of Dance": { "data_file": true, "features_validated": true, "effects_implemented": true, "tests_written": true },
+        "College of Glamour": { "data_file": true, "features_validated": true, "effects_implemented": true, "tests_written": true },
+        "College of Lore": { "data_file": true, "features_validated": true, "effects_implemented": true, "tests_written": true },
+        "College of Valor": { "data_file": true, "features_validated": true, "effects_implemented": true, "tests_written": true }
       }
     },
     "Cleric": {

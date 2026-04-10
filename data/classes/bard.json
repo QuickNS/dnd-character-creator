@@ -31,16 +31,16 @@
   "starting_equipment": {
     "option_a": {
       "items": [
-        "Rapier",
         "Leather Armor",
+        "Dagger",
         "Dagger",
         "Musical Instrument",
         "Entertainer's Pack"
       ],
-      "gold": 10
+      "gold": 19
     },
     "option_b": {
-      "gold": 100
+      "gold": 90
     }
   },
   "subclass_selection_level": 3,
@@ -343,7 +343,7 @@
     },
     "2": {
       "Expertise": "Gain Expertise in two skill proficiencies of your choice.",
-      "Jack of All Trades": "Add half your Proficiency Bonus (round down) to any ability check that doesn't already use your Proficiency Bonus."
+      "Jack of all Trades": "You can add half your Proficiency Bonus (round down) to any ability check you make that uses a skill proficiency you lack and that doesn't otherwise use your Proficiency Bonus."
     },
     "3": {
       "Bard Subclass": "Choose your Bard College subclass."
@@ -389,7 +389,13 @@
       "Epic Boon": "Gain an Epic Boon feat or another feat of your choice."
     },
     "20": {
-      "Words of Creation": "Always have Power Word: Heal and Power Word: Kill prepared. Can target a second creature within 10 feet when casting either."
+      "Words of Creation": {
+        "description": "You have mastered two of the Words of Creation: the words of life and death. You always have the Power Word Heal and Power Word Kill spells prepared. When you cast either spell, you can target a second creature with it if that creature is within 10 feet of the first target.",
+        "effects": [
+          {"type": "grant_spell", "spell": "Power Word: Heal", "min_level": 20, "counts_against_limit": false},
+          {"type": "grant_spell", "spell": "Power Word: Kill", "min_level": 20, "counts_against_limit": false}
+        ]
+      }
     }
   }
 }
