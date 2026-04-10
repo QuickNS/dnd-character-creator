@@ -1359,6 +1359,7 @@ class CharacterBuilder:
 
             # Clear spells granted by the feat (e.g. Magic Initiate cantrips/spells)
             spell_metadata = self.character_data.get("spell_metadata", {})
+            spells_to_remove = set()
             for collection in (
                 self.character_data["spells"]["prepared"]["cantrips"],
                 self.character_data["spells"]["prepared"]["spells"],
@@ -1366,10 +1367,11 @@ class CharacterBuilder:
                 self.character_data["spells"]["background_spells"],
             ):
                 for spell_name in list(collection):
-                    meta = spell_metadata.get(spell_name, {})
-                    if meta.get("source") == prev_feat_name:
+                    if spell_metadata.get(spell_name, {}).get("source") == prev_feat_name:
                         del collection[spell_name]
-                        spell_metadata.pop(spell_name, None)
+                        spells_to_remove.add(spell_name)
+            for spell_name in spells_to_remove:
+                spell_metadata.pop(spell_name, None)
 
             # Remove feat-related choices from choices_made
             feat_choice_prefix = f"feat_{prev_feat_name}_"
