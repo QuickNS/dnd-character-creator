@@ -4,8 +4,56 @@ Ability Scores Module
 Handles ability score calculations, bonuses, and final score computation for D&D characters.
 """
 
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Tuple
 from dataclasses import dataclass
+
+# D&D 2024 Point Buy cost table: score → points spent
+POINT_BUY_COSTS: Dict[int, int] = {
+    8: 0,
+    9: 1,
+    10: 2,
+    11: 3,
+    12: 4,
+    13: 5,
+    14: 7,
+    15: 9,
+}
+
+POINT_BUY_TOTAL = 27
+POINT_BUY_MIN = 8
+POINT_BUY_MAX = 15
+
+ABILITIES = [
+    "Strength",
+    "Dexterity",
+    "Constitution",
+    "Intelligence",
+    "Wisdom",
+    "Charisma",
+]
+
+
+def validate_point_buy(scores: Dict[str, int]) -> Tuple[bool, str]:
+    """Validate that a set of ability scores is legal under the Point Buy system.
+
+    Returns (is_valid, error_message).  error_message is empty when valid.
+    """
+    for ability in ABILITIES:
+        if ability not in scores:
+            return False, f"Missing score for {ability}"
+        score = scores[ability]
+        if score not in POINT_BUY_COSTS:
+            return (
+                False,
+                f"{ability} score {score} is outside the allowed range "
+                f"({POINT_BUY_MIN}–{POINT_BUY_MAX})",
+            )
+
+    total_spent = sum(POINT_BUY_COSTS[scores[a]] for a in ABILITIES)
+    if total_spent > POINT_BUY_TOTAL:
+        return False, f"Point buy total {total_spent} exceeds the limit of {POINT_BUY_TOTAL}"
+
+    return True, ""
 
 
 @dataclass
