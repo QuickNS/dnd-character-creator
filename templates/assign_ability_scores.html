@@ -37,20 +37,28 @@
                                     </div>
                                 </label>
                             </div>
-                            <div class="form-check">
+                            <div class="form-check mb-3">
                                 <input class="form-check-input" type="radio" name="assignment_method" 
                                        id="manual" value="manual">
                                 <label class="form-check-label" for="manual">
-                                    <strong>Manual Assignment</strong><br>
-                                    <small class="text-muted">Choose where to assign each value yourself</small>
+                                    <strong>Standard Array</strong><br>
+                                    <small class="text-muted">Manually assign each standard array value to an ability yourself</small>
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="assignment_method"
+                                       id="point_buy" value="point_buy">
+                                <label class="form-check-label" for="point_buy">
+                                    <strong>Point Buy</strong><br>
+                                    <small class="text-muted">Spend {{ point_buy_total }} points to customise scores ({{ point_buy_min }}–{{ point_buy_max }} per ability)</small>
                                 </label>
                             </div>
                         </div>
                     </div>
                     
-                    <div id="manual-assignment" class="card" style="display: none;">
+                    <div id="manual-assignment" class="card mb-4" style="display: none;">
                         <div class="card-header">
-                            <h5 class="mb-0">Manual Assignment</h5>
+                            <h5 class="mb-0">Standard Array</h5>
                         </div>
                         <div class="card-body">
                             <p>Assign each standard array value to an ability score:</p>
@@ -69,6 +77,51 @@
                             </div>
                             <div id="assignment-validation" class="text-danger small" style="display: none;">
                                 Please assign all values exactly once.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Point Buy section -->
+                    <div id="point-buy-assignment" class="card mb-4" style="display: none;">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">Point Buy</h5>
+                            <span class="badge bg-primary fs-6">
+                                Points remaining: <span id="pb-remaining">{{ point_buy_total }}</span> / {{ point_buy_total }}
+                            </span>
+                        </div>
+                        <div class="card-body">
+                            {% if point_buy_error %}
+                            <div class="alert alert-danger">{{ point_buy_error }}</div>
+                            {% endif %}
+                            <p class="text-muted small mb-3">
+                                All abilities start at {{ point_buy_min }}. Spend up to {{ point_buy_total }} points to raise them (max {{ point_buy_max }}).
+                                Cost per score:
+                                {% for score, cost in point_buy_costs.items() %}
+                                    <span class="badge bg-secondary me-1">{{ score }}: {{ cost }}pts</span>
+                                {% endfor %}
+                            </p>
+                            <div class="row">
+                                {% for ability in ['Strength', 'Dexterity', 'Constitution', 'Intelligence', 'Wisdom', 'Charisma'] %}
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-semibold">{{ ability }}</label>
+                                    <input type="hidden" name="pb_ability_{{ ability }}" id="pb_val_{{ ability }}" value="{{ point_buy_min }}">
+                                    <div class="input-group">
+                                        <button type="button" class="btn btn-outline-secondary pb-dec" data-ability="{{ ability }}"
+                                                aria-label="Decrease {{ ability }}">−</button>
+                                        <span class="form-control text-center fw-bold pb-score" id="pb_display_{{ ability }}">{{ point_buy_min }}</span>
+                                        <button type="button" class="btn btn-outline-secondary pb-inc" data-ability="{{ ability }}"
+                                                aria-label="Increase {{ ability }}">+</button>
+                                    </div>
+                                    <div class="text-muted small mt-1">
+                                        Cost: <span class="pb-cost" id="pb_cost_{{ ability }}">0</span> pts
+                                        &nbsp;|&nbsp; Modifier:
+                                        <span class="pb-mod" id="pb_mod_{{ ability }}">{{ '-1' }}</span>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <div id="pb-validation" class="text-danger small mt-2" style="display: none;">
+                                You have exceeded the point buy limit. Please lower one or more scores.
                             </div>
                         </div>
                     </div>
@@ -92,36 +145,98 @@
 <script>
 const recommendedRadio = document.getElementById('recommended');
 const manualRadio = document.getElementById('manual');
+const pointBuyRadio = document.getElementById('point_buy');
 const manualAssignment = document.getElementById('manual-assignment');
+const pointBuyAssignment = document.getElementById('point-buy-assignment');
 const abilitySelects = document.querySelectorAll('.ability-select');
 const submitBtn = document.getElementById('submit-btn');
 const validationMsg = document.getElementById('assignment-validation');
+const pbValidationMsg = document.getElementById('pb-validation');
 
-// Toggle manual assignment visibility
-function toggleManualAssignment() {
-    if (manualRadio.checked) {
-        manualAssignment.style.display = 'block';
-        validateManualAssignment();
-    } else {
-        manualAssignment.style.display = 'none';
-        submitBtn.disabled = false;
+// ── Point Buy data from server ──────────────────────────────────────────────
+const POINT_BUY_COSTS = {{ point_buy_costs|tojson }};
+const POINT_BUY_TOTAL = {{ point_buy_total }};
+const POINT_BUY_MIN   = {{ point_buy_min }};
+const POINT_BUY_MAX   = {{ point_buy_max }};
+
+const ABILITIES = ['Strength', 'Dexterity', 'Constitution', 'Intelligence', 'Wisdom', 'Charisma'];
+
+// Current point-buy scores (keyed by ability name)
+const pbScores = {};
+ABILITIES.forEach(a => pbScores[a] = POINT_BUY_MIN);
+
+function modifierStr(score) {
+    const mod = Math.floor((score - 10) / 2);
+    return mod >= 0 ? '+' + mod : String(mod);
+}
+
+function totalPointsSpent() {
+    return ABILITIES.reduce((sum, a) => sum + (POINT_BUY_COSTS[pbScores[a]] || 0), 0);
+}
+
+function updatePointBuyUI() {
+    const spent = totalPointsSpent();
+    const remaining = POINT_BUY_TOTAL - spent;
+    document.getElementById('pb-remaining').textContent = remaining;
+
+    ABILITIES.forEach(a => {
+        const score = pbScores[a];
+        document.getElementById('pb_val_' + a).value = score;
+        document.getElementById('pb_display_' + a).textContent = score;
+        document.getElementById('pb_cost_' + a).textContent = POINT_BUY_COSTS[score] || 0;
+        document.getElementById('pb_mod_' + a).textContent = modifierStr(score);
+
+        // Enable/disable buttons
+        const decBtn = document.querySelector('.pb-dec[data-ability="' + a + '"]');
+        const incBtn = document.querySelector('.pb-inc[data-ability="' + a + '"]');
+        decBtn.disabled = score <= POINT_BUY_MIN;
+        // Can increase if score < max AND spending one more point won't exceed budget
+        const currentCost = POINT_BUY_COSTS[score] || 0;
+        const nextCost = POINT_BUY_COSTS[score + 1];
+        incBtn.disabled = score >= POINT_BUY_MAX || nextCost === undefined ||
+                          (spent - currentCost + nextCost) > POINT_BUY_TOTAL;
+    });
+
+    const overBudget = spent > POINT_BUY_TOTAL;
+    pbValidationMsg.style.display = overBudget ? 'block' : 'none';
+    if (pointBuyRadio.checked) {
+        submitBtn.disabled = overBudget;
+    }
+}
+
+// Toggle section visibility
+function updateVisibility() {
+    manualAssignment.style.display   = manualRadio.checked    ? 'block' : 'none';
+    pointBuyAssignment.style.display = pointBuyRadio.checked  ? 'block' : 'none';
+
+    if (!manualRadio.checked) {
         validationMsg.style.display = 'none';
-        
-        // Reset all selections when switching to recommended
+    }
+    if (!pointBuyRadio.checked) {
+        pbValidationMsg.style.display = 'none';
+    }
+
+    if (manualRadio.checked) {
+        validateManualAssignment();
+    } else if (pointBuyRadio.checked) {
+        updatePointBuyUI();
+    } else {
+        // recommended
+        submitBtn.disabled = false;
+        // Reset manual selections
         abilitySelects.forEach(select => {
             select.value = '';
-            const options = select.querySelectorAll('option');
-            options.forEach(option => option.disabled = false);
+            select.querySelectorAll('option').forEach(o => o.disabled = false);
         });
     }
 }
 
 // Validate manual assignment
+const sortedStandardArray = {{ standard_array|tojson }}.slice().sort((a, b) => a - b);
 function validateManualAssignment() {
     if (!manualRadio.checked) return;
     
     const selectedValues = [];
-    const standardArray = {{ standard_array|tojson }};
     let allSelected = true;
     
     abilitySelects.forEach(select => {
@@ -134,8 +249,8 @@ function validateManualAssignment() {
     
     // Check if all values are selected and no duplicates
     const isValid = allSelected && 
-                   selectedValues.length === standardArray.length &&
-                   selectedValues.sort().join(',') === standardArray.sort().join(',');
+                   selectedValues.length === sortedStandardArray.length &&
+                   selectedValues.slice().sort((a, b) => a - b).join(',') === sortedStandardArray.join(',');
     
     submitBtn.disabled = !isValid;
     validationMsg.style.display = isValid ? 'none' : 'block';
@@ -143,9 +258,7 @@ function validateManualAssignment() {
     // Update select options to prevent duplicates
     abilitySelects.forEach(select => {
         const currentValue = select.value;
-        const options = select.querySelectorAll('option');
-        
-        options.forEach(option => {
+        select.querySelectorAll('option').forEach(option => {
             if (option.value && option.value !== currentValue) {
                 option.disabled = selectedValues.includes(parseInt(option.value)) && option.value !== currentValue;
             }
@@ -153,14 +266,36 @@ function validateManualAssignment() {
     });
 }
 
-// Event listeners
-recommendedRadio.addEventListener('change', toggleManualAssignment);
-manualRadio.addEventListener('change', toggleManualAssignment);
+// Point buy increment / decrement
+document.querySelectorAll('.pb-inc').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const ability = btn.dataset.ability;
+        if (pbScores[ability] < POINT_BUY_MAX) {
+            pbScores[ability]++;
+            updatePointBuyUI();
+        }
+    });
+});
+document.querySelectorAll('.pb-dec').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const ability = btn.dataset.ability;
+        if (pbScores[ability] > POINT_BUY_MIN) {
+            pbScores[ability]--;
+            updatePointBuyUI();
+        }
+    });
+});
+
+// Radio event listeners
+recommendedRadio.addEventListener('change', updateVisibility);
+manualRadio.addEventListener('change', updateVisibility);
+pointBuyRadio.addEventListener('change', updateVisibility);
+
 abilitySelects.forEach(select => {
     select.addEventListener('change', validateManualAssignment);
 });
 
 // Initialize
-toggleManualAssignment();
+updateVisibility();
 </script>
 {% endblock %}

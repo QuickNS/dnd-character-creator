@@ -2066,7 +2066,7 @@ class CharacterBuilder:
                     return self.set_abilities(standard_array)
             return True
         elif choice_key_lower == "ability_scores_method":
-            # Handle "recommended" or "manual" ability score method
+            # Handle "recommended", "manual", or "point_buy" ability score method
             if choice_value == "recommended":
                 # Use the predefined standard_array_assignment from class data
                 class_data = self.character_data.get("class_data", {})
@@ -2078,6 +2078,8 @@ class CharacterBuilder:
                         f"Warning: Class {class_data.get('name', 'Unknown')} missing standard_array_assignment"
                     )
                     return False
+            # "manual" and "point_buy" both store scores via the "ability_scores" key;
+            # nothing extra needed here beyond recording the method choice.
             return True
         elif choice_key_lower == "background_ability_score_assignment":
             # Apply background ability bonuses
