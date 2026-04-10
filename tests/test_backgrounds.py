@@ -302,3 +302,165 @@ class TestBackgroundReselection:
         assert "Alert" not in feat_names
         assert "Savage Attacker" not in feat_names
         assert feat_names.count("Tough") == 1
+
+
+class TestBackgroundSkillReplacement:
+    """Regression tests for GitHub Issue: overlapping class/background skill proficiencies
+    should offer a replacement choice instead of silently dropping the duplicate."""
+
+    def _monk_choices(self, background: str):
+        """Monk choosing Acrobatics as their class skill, then a given background."""
+        return {
+            "character_name": "Test Monk",
+            "level": 1,
+            "species": "Human",
+            "class": "Monk",
+            "background": background,
+            "skill_choices": ["Acrobatics", "History"],
+            "ability_scores": {
+                "Strength": 12, "Dexterity": 16, "Constitution": 13,
+                "Intelligence": 10, "Wisdom": 14, "Charisma": 8,
+            },
+            "background_bonuses": {"Dexterity": 2, "Wisdom": 1},
+        }
+
+    # ---- overlap detection --------------------------------------------------
+
+    def test_overlap_detection_sets_replacements_needed(self):
+        """When background skill overlaps with class skill, replacements_needed is stored."""
+        builder = CharacterBuilder()
+        # Monk picks Acrobatics; Sailor also grants Acrobatics
+        builder.apply_choices(self._monk_choices("Sailor"))
+        needed = builder.character_data["choices_made"].get(
+            "background_skill_replacements_needed", 0
+        )
+        assert needed == 1, (
+            f"Expected 1 replacement needed, got {needed}"
+        )
+
+    def test_no_overlap_no_replacements_needed(self):
+        """When there is no overlap, replacements_needed is not set."""
+        builder = CharacterBuilder()
+        # Monk picks History and Insight; Sailor grants Acrobatics + Perception — no overlap
+        builder.apply_choices({
+            **self._monk_choices("Sailor"),
+            "skill_choices": ["History", "Insight"],
+        })
+        needed = builder.character_data["choices_made"].get(
+            "background_skill_replacements_needed", 0
+        )
+        assert needed == 0, (
+            f"Expected 0 replacements needed, got {needed}"
+        )
+
+    # ---- replacement info ---------------------------------------------------
+
+    def test_get_replacement_info_returns_options(self):
+        """get_background_skill_replacement_info() lists valid replacement options."""
+        builder = CharacterBuilder()
+        builder.apply_choices(self._monk_choices("Sailor"))
+
+        info = builder.get_background_skill_replacement_info()
+        assert info["needed"] == 1
+        assert len(info["options"]) > 0
+        # Options should not include already-proficient skills
+        current_profs = set(builder.character_data["proficiencies"]["skills"])
+        for skill in info["options"]:
+            assert skill not in current_profs, (
+                f"Option '{skill}' is already proficient — should be excluded"
+            )
+
+    def test_get_replacement_info_returns_zero_when_no_overlap(self):
+        """get_background_skill_replacement_info() returns needed=0 when no overlap."""
+        builder = CharacterBuilder()
+        builder.apply_choices({
+            **self._monk_choices("Sailor"),
+            "skill_choices": ["History", "Insight"],
+        })
+        info = builder.get_background_skill_replacement_info()
+        assert info["needed"] == 0
+
+    # ---- applying replacements ----------------------------------------------
+
+    def test_apply_replacement_adds_skill(self):
+        """apply_background_skill_replacement() grants the chosen skill proficiency."""
+        builder = CharacterBuilder()
+        builder.apply_choices(self._monk_choices("Sailor"))
+
+        info = builder.get_background_skill_replacement_info()
+        replacement_skill = info["options"][0]
+
+        builder.apply_background_skill_replacement([replacement_skill])
+
+        skills = builder.character_data["proficiencies"]["skills"]
+        assert replacement_skill in skills, (
+            f"Replacement skill '{replacement_skill}' should now be proficient"
+        )
+
+    def test_apply_replacement_correct_total_proficiencies(self):
+        """After replacement, character should have the expected total skill count."""
+        builder = CharacterBuilder()
+        # Monk picks 2 class skills; Sailor grants 2 background skills with 1 overlap
+        # → should end up with 2 + 2 = 4 distinct skill proficiencies (1 bg replaced)
+        builder.apply_choices(self._monk_choices("Sailor"))
+
+        info = builder.get_background_skill_replacement_info()
+        builder.apply_background_skill_replacement([info["options"][0]])
+
+        skills = builder.character_data["proficiencies"]["skills"]
+        assert len(skills) == 4, (
+            f"Expected 4 distinct skill proficiencies, got {len(skills)}: {skills}"
+        )
+
+    def test_apply_replacement_idempotent(self):
+        """Calling apply_background_skill_replacement twice replaces the first choice."""
+        builder = CharacterBuilder()
+        builder.apply_choices(self._monk_choices("Sailor"))
+
+        info = builder.get_background_skill_replacement_info()
+        skill_a = info["options"][0]
+        skill_b = info["options"][1] if len(info["options"]) > 1 else info["options"][0]
+
+        builder.apply_background_skill_replacement([skill_a])
+        builder.apply_background_skill_replacement([skill_b])
+
+        skills = builder.character_data["proficiencies"]["skills"]
+        # Only one replacement should survive
+        assert skills.count(skill_a) <= 1
+        assert skills.count(skill_b) == 1
+
+    # ---- clearing on background change --------------------------------------
+
+    def test_changing_background_clears_replacement_data(self):
+        """Switching background removes replacement tracking and replacement skills."""
+        builder = CharacterBuilder()
+        builder.apply_choices(self._monk_choices("Sailor"))
+
+        info = builder.get_background_skill_replacement_info()
+        replacement_skill = info["options"][0]
+        builder.apply_background_skill_replacement([replacement_skill])
+
+        # Switch to a background that does NOT overlap with remaining class skills
+        builder.set_background("Hermit")  # Grants Medicine + Religion
+
+        choices_made = builder.character_data["choices_made"]
+        assert "background_skill_replacements_needed" not in choices_made
+        assert "background_skill_replacements" not in choices_made
+        # Replacement skill from old background should be removed
+        assert replacement_skill not in builder.character_data["proficiencies"]["skills"]
+
+    # ---- restore from choices_made ------------------------------------------
+
+    def test_apply_choices_restores_replacement_skills(self):
+        """apply_choices() with background_skill_replacements restores proficiencies."""
+        builder = CharacterBuilder()
+        builder.apply_choices({
+            **self._monk_choices("Sailor"),
+            "background_skill_replacements": ["Athletics"],
+        })
+        skills = builder.character_data["proficiencies"]["skills"]
+        assert "Athletics" in skills, (
+            "Replacement skill should be restored from choices_made"
+        )
+        assert len(set(skills)) == len(skills), "No duplicate proficiencies"
+
