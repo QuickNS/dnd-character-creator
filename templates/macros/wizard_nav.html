@@ -1,0 +1,34 @@
+{#
+  Shared wizard navigation buttons.
+
+  Usage:
+    {% from "macros/wizard_nav.html" import wizard_nav %}
+    {{ wizard_nav(back_url=back_url, back_label=back_label, next_label=next_label) }}
+
+  Parameters:
+    back_url    – url_for() result for the "Back" link (omit to hide back button)
+    back_label  – text for the back button (default: "Back")
+    next_label  – text for the submit/next button (default: "Continue")
+    submit_id   – HTML id for the submit button (default: "submit-btn")
+    is_final    – if True, renders a green "Complete" button instead
+    disabled    – if True, the submit button starts disabled
+    extra_class – additional CSS class(es) on the submit button
+#}
+{% macro wizard_nav(back_url=None, back_label="Back", next_label="Continue", submit_id="submit-btn", is_final=False, disabled=False, extra_class="") %}
+<div class="d-grid gap-2 mt-4">
+    {% if is_final %}
+    <button type="submit" class="btn btn-success btn-lg {{ extra_class }}" id="{{ submit_id }}"{% if disabled %} disabled{% endif %}>
+        <i class="fas fa-check"></i> {{ next_label }}
+    </button>
+    {% else %}
+    <button type="submit" class="btn btn-primary btn-lg {{ extra_class }}" id="{{ submit_id }}"{% if disabled %} disabled{% endif %}>
+        <i class="fas fa-arrow-right"></i> {{ next_label }}
+    </button>
+    {% endif %}
+    {% if back_url %}
+    <a href="{{ back_url }}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left"></i> {{ back_label }}
+    </a>
+    {% endif %}
+</div>
+{% endmacro %}

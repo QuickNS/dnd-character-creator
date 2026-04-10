@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "macros/wizard_nav.html" import wizard_nav %}
 
 {% block content %}
 <style>
@@ -47,6 +48,42 @@
                     </div>
                 </div>
                 
+                <!-- Subclass Selection (embedded) -->
+                {% if needs_subclass and subclasses %}
+                <div class="card mb-4 border-warning">
+                    <div class="card-header bg-warning text-dark">
+                        <h5 class="mb-0"><i class="fas fa-code-branch"></i> Choose Your {{ character.class }} Subclass</h5>
+                    </div>
+                    <div class="card-body">
+                        <p>At level {{ character_level }}, you choose a subclass that further defines your abilities.</p>
+                        <div class="row">
+                            {% for subclass_name, subclass_data in subclasses.items() %}
+                            <div class="col-lg-6 mb-3">
+                                <div class="card h-100 selection-card{% if current_subclass == subclass_name %} border-primary{% endif %}" data-subclass-option="{{ subclass_name }}">
+                                    <div class="card-body">
+                                        <div class="form-check">
+                                            <input class="form-check-input subclass-radio" type="radio" name="subclass_preview"
+                                                   id="subclass_{{ loop.index }}" value="{{ subclass_name }}"
+                                                   {% if current_subclass == subclass_name %}checked{% endif %}>
+                                            <label class="form-check-label w-100" for="subclass_{{ loop.index }}">
+                                                <h6 class="card-title">{{ subclass_name }}</h6>
+                                                <p class="card-text small text-muted">{{ subclass_data.get('description', '') | truncate(200) }}</p>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% if not current_subclass %}
+                        <div class="alert alert-info mt-2 mb-0">
+                            <i class="fas fa-info-circle"></i> Select a subclass to see its features below.
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+
                 <!-- Features Overview by Level -->
                 <div class="row">
                     <!-- Features Display Column -->
@@ -231,13 +268,12 @@
                             </div>
                             {% endfor %}
                             
-                            <div class="text-center d-grid gap-2 mt-4">
-                                 <button type="submit" class="btn btn-primary btn-lg" id="submit-btn">
-                                    <i class="fas fa-arrow-right"></i> Continue
-                                </button>
-                                <a href="{{ url_for('character_creation.choose_subclass') }}" class="btn btn-secondary">
-                                    <i class="fas fa-arrow-left"></i> Back
-                                </a>
+                            {% if needs_subclass and subclasses %}
+                            <input type="hidden" name="subclass" id="subclass-hidden" value="{{ current_subclass }}">
+                            {% endif %}
+                            
+                            <div class="text-center">
+                                {{ wizard_nav(back_url=back_url, back_label=back_label, next_label=next_label) }}
                             </div>
                         </form>
                         {% else %}
@@ -245,14 +281,12 @@
                         <div class="alert alert-info">
                             <i class="fas fa-info-circle"></i> No choices required for your current level and class combination.
                         </div>
-                        <div class="text-center d-grid gap-2 mt-4">
-                            <a href="{{ url_for('background.choose_background') }}" class="btn btn-primary btn-lg">
-                                <i class="fas fa-arrow-right"></i> Continue
-                            </a>
-                            <a href="{{ url_for('character_creation.choose_subclass') }}" class="btn btn-secondary">
-                                <i class="fas fa-arrow-left"></i> Back
-                            </a>
-                        </div>
+                        <form method="POST" action="{{ url_for('character_creation.submit_class_choices') }}">
+                            {% if needs_subclass and subclasses %}
+                            <input type="hidden" name="subclass" id="subclass-hidden-noform" value="{{ current_subclass }}">
+                            {% endif %}
+                            {{ wizard_nav(back_url=back_url, back_label=back_label, next_label=next_label) }}
+                        </form>
                         {% endif %}
                     </div>
                 </div>
@@ -263,6 +297,43 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Subclass selection: clicking a card selects the radio and reloads
+    document.querySelectorAll('[data-subclass-option]').forEach(card => {
+        card.addEventListener('click', function() {
+            const radio = this.querySelector('.subclass-radio');
+            radio.checked = true;
+            document.querySelectorAll('[data-subclass-option]').forEach(c => c.classList.remove('border-primary'));
+            this.classList.add('border-primary');
+        });
+    });
+
+    // When subclass radio changes, apply the subclass server-side and reload
+    document.querySelectorAll('.subclass-radio').forEach(radio => {
+        radio.addEventListener('change', function() {
+            if (this.checked) {
+                // POST to select-subclass to apply, then redirect back here
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '{{ url_for("character_creation.select_subclass") }}';
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'subclass';
+                input.value = this.value;
+                form.appendChild(input);
+                document.body.appendChild(form);
+                form.submit();
+            }
+        });
+    });
+
+    // Sync subclass hidden field with selected subclass radio
+    function syncSubclassHidden() {
+        const selected = document.querySelector('.subclass-radio:checked');
+        const hiddenFields = document.querySelectorAll('#subclass-hidden, #subclass-hidden-noform');
+        hiddenFields.forEach(h => { if (h) h.value = selected ? selected.value : ''; });
+    }
+    syncSubclassHidden();
+
     // Initialize counters
     updateAllCounters();
     

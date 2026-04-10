@@ -52,14 +52,20 @@ class CharacterBuilder:
 
     # Character creation steps in order
     CREATION_STEPS = [
-        "species",
-        "lineage",  # Optional - only for species with variants
-        "class",
-        "subclass",  # Only at appropriate level
-        "background",
-        "abilities",
-        "features",  # Any additional choices (feats, skills, etc.)
-        "complete",
+        "create",           # Name + alignment
+        "class",            # Class + level selection
+        "class_choices",    # Subclass (if applicable) + class feature choices
+        "background",       # Background selection
+        "background_skill_replacement",  # Optional - overlap resolution
+        "feat_choices",     # Optional - origin feat choices
+        "species",          # Species selection
+        "species_traits",   # Optional - species trait choices
+        "species_feat_choices",  # Optional - species feat choices
+        "lineage",          # Optional - subspecies/lineage
+        "languages",        # Language selection
+        "ability_scores",   # Ability scores + background bonuses
+        "equipment",        # Equipment selection
+        "complete",         # Character summary
     ]
 
     def __init__(self, data_dir: str = None):

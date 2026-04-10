@@ -9,6 +9,7 @@ from utils.route_helpers import (
     get_builder_from_session,
     save_builder_to_session,
     log_route_processing,
+    get_nav_context,
 )
 
 species_bp = Blueprint("species", __name__)
@@ -31,7 +32,8 @@ def choose_species():
     save_builder_to_session(builder)
 
     species = dict(sorted(data_loader.species.items()))
-    return render_template("choose_species.html", species=species, character=character)
+    nav = get_nav_context(builder, "species")
+    return render_template("choose_species.html", species=species, character=character, **nav)
 
 
 @species_bp.route("/select-species", methods=["POST"])
@@ -93,8 +95,9 @@ def choose_species_traits():
     # Get species trait choices from builder (business logic moved to CharacterBuilder)
     trait_choices = builder.get_species_trait_choices()
 
+    nav = get_nav_context(builder, "species_traits")
     return render_template(
-        "choose_species_traits.html", character=character, trait_choices=trait_choices
+        "choose_species_traits.html", character=character, trait_choices=trait_choices, **nav
     )
 
 
@@ -174,6 +177,7 @@ def species_feat_choices():
     character = builder.to_json()
     choices_made = character.get("choices_made", {})
 
+    nav = get_nav_context(builder, "species_feat_choices")
     return render_template(
         "feat_choices.html",
         character=character,
@@ -183,8 +187,8 @@ def species_feat_choices():
         choices=feat_choice_data["choices"],
         choices_made=choices_made,
         action_url=url_for("species.submit_species_feat_choices"),
-        back_url=url_for("species.choose_species_traits"),
         source_label="Your species grants you",
+        **nav,
     )
 
 
@@ -262,8 +266,9 @@ def choose_lineage():
         except (json.JSONDecodeError, IOError) as e:
             logger.error(f"Error loading lineage {lineage_name}: {e}")
 
+    nav = get_nav_context(builder, "lineage")
     return render_template(
-        "choose_lineage.html", character=character, lineages=lineages
+        "choose_lineage.html", character=character, lineages=lineages, **nav
     )
 
 

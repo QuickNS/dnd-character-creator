@@ -7,6 +7,7 @@ from utils.route_helpers import (
     get_builder_from_session,
     save_builder_to_session,
     log_route_processing,
+    get_nav_context,
 )
 
 equipment_bp = Blueprint("equipment", __name__)
@@ -38,11 +39,13 @@ def choose_equipment():
     background_data = data_loader.backgrounds.get(background_name, {})
     background_equipment = background_data.get("starting_equipment", {})
 
+    nav = get_nav_context(builder, "equipment")
     return render_template(
         "choose_equipment.html",
         character=character,
         class_equipment=class_equipment,
         background_equipment=background_equipment,
+        **nav,
     )
 
 

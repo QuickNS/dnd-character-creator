@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "macros/wizard_nav.html" import wizard_nav %}
 
 {% block content %}
 <div class="row justify-content-center">
@@ -126,14 +127,56 @@
                         </div>
                     </div>
                     
-                    <div class="d-grid gap-2 mt-4">
-                        <button type="submit" class="btn btn-danger btn-lg" id="submit-btn">
-                            <i class="fas fa-arrow-right"></i> Continue to Background Bonuses
-                        </button>
-                        <a href="{{ url_for('species.choose_species') if not character.get('lineage') else url_for('species.choose_lineage') }}" class="btn btn-outline-secondary">
-                            <i class="fas fa-arrow-left"></i> Back
-                        </a>
+                    <!-- Background Ability Score Bonuses -->
+                    <div class="card mb-4" id="background-bonuses-section">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-plus"></i> Background Ability Score Bonuses</h5>
+                        </div>
+                        <div class="card-body">
+                            <p>Your <strong>{{ character.background }}</strong> background grants +{{ asi_total_points }} ability score points.</p>
+                            
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="radio" name="bonus_method" 
+                                       id="bonus_suggested" value="suggested" checked>
+                                <label class="form-check-label" for="bonus_suggested">
+                                    <strong>Suggested Bonuses</strong><br>
+                                    <div class="mt-1">
+                                        {% for ability, bonus in asi_suggested.items() %}
+                                            <span class="badge bg-success me-1">{{ ability }} +{{ bonus }}</span>
+                                        {% endfor %}
+                                    </div>
+                                </label>
+                            </div>
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="radio" name="bonus_method" 
+                                       id="bonus_manual" value="manual">
+                                <label class="form-check-label" for="bonus_manual">
+                                    <strong>Choose Manually</strong><br>
+                                    <small class="text-muted">Distribute {{ asi_total_points }} points as +2/+1 or +1/+1/+1</small>
+                                </label>
+                            </div>
+                            
+                            <div id="manual-bonuses" style="display: none;">
+                                <div class="row">
+                                    {% for ability in ['Strength', 'Dexterity', 'Constitution', 'Intelligence', 'Wisdom', 'Charisma'] %}
+                                    <div class="col-md-4 mb-2">
+                                        <label class="form-label small">{{ ability }}</label>
+                                        <select class="form-select form-select-sm bonus-select" name="bonus_{{ ability }}">
+                                            <option value="0">+0</option>
+                                            <option value="1">+1</option>
+                                            <option value="2">+2</option>
+                                        </select>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                <div id="bonus-validation" class="small mt-2" style="display: none;">
+                                    Points used: <span id="bonus-points-used">0</span> / {{ asi_total_points }}
+                                </div>
+                            </div>
+                        </div>
                     </div>
+                    
+                    {{ wizard_nav(back_url=back_url, back_label=back_label, next_label=next_label) }}
                 </form>
             </div>
         </div>
@@ -297,5 +340,41 @@ abilitySelects.forEach(select => {
 
 // Initialize
 updateVisibility();
+
+// ── Background Bonus section toggle ─────────────────────────────────────────
+const bonusSuggestedRadio = document.getElementById('bonus_suggested');
+const bonusManualRadio = document.getElementById('bonus_manual');
+const manualBonuses = document.getElementById('manual-bonuses');
+const bonusValidation = document.getElementById('bonus-validation');
+const bonusPointsUsed = document.getElementById('bonus-points-used');
+const bonusSelects = document.querySelectorAll('.bonus-select');
+const ASI_TOTAL = {{ asi_total_points }};
+
+function updateBonusVisibility() {
+    manualBonuses.style.display = bonusManualRadio.checked ? 'block' : 'none';
+    if (bonusManualRadio.checked) {
+        validateBonuses();
+    }
+}
+
+function validateBonuses() {
+    let total = 0;
+    bonusSelects.forEach(sel => { total += parseInt(sel.value || 0); });
+    bonusPointsUsed.textContent = total;
+    bonusValidation.style.display = 'block';
+    
+    if (total === ASI_TOTAL) {
+        bonusValidation.className = 'small mt-2 text-success';
+    } else if (total > ASI_TOTAL) {
+        bonusValidation.className = 'small mt-2 text-danger';
+    } else {
+        bonusValidation.className = 'small mt-2 text-warning';
+    }
+}
+
+bonusSuggestedRadio?.addEventListener('change', updateBonusVisibility);
+bonusManualRadio?.addEventListener('change', updateBonusVisibility);
+bonusSelects.forEach(sel => sel.addEventListener('change', validateBonuses));
+updateBonusVisibility();
 </script>
 {% endblock %}

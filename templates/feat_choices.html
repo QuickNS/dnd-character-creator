@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "macros/wizard_nav.html" import wizard_nav %}
 
 {% block content %}
 <div class="row justify-content-center">
@@ -89,13 +90,8 @@
                     </div>
                     {% endfor %}
 
-                    <div class="text-center d-grid gap-2 mt-4">
-                        <button type="submit" class="btn btn-primary btn-lg" id="submit-btn">
-                            <i class="fas fa-arrow-right"></i> Continue
-                        </button>
-                        <a href="{{ back_url | default(url_for('background.choose_background')) }}" class="btn btn-secondary">
-                            <i class="fas fa-arrow-left"></i> Back
-                        </a>
+                    <div class="text-center">
+                        {{ wizard_nav(back_url=back_url|default(url_for('background.choose_background')), back_label=back_label|default('Back'), next_label=next_label|default('Continue')) }}
                     </div>
                 </form>
             </div>

@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "macros/wizard_nav.html" import wizard_nav %}
 
 {% block content %}
 <div class="row">
@@ -61,14 +62,7 @@
                     </div>
                     </div>
                     
-                    <div class="text-center d-grid gap-2 mt-4">
-                        <button type="submit" class="btn btn-primary btn-lg">
-                            <i class="fas fa-arrow-right me-2"></i>Continue to Languages
-                        </button>
-                        <a href="{{ url_for('species.choose_species') }}" class="btn btn-outline-secondary">
-                            <i class="fas fa-arrow-left me-2"></i>Back to Species
-                        </a>
-                    </div>
+                    {{ wizard_nav(back_url=back_url, back_label=back_label, next_label=next_label) }}
                 </form>
             </div>
         </div>

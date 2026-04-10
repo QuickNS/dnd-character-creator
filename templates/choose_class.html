@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "macros/wizard_nav.html" import wizard_nav %}
 
 {% block content %}
 <div class="row justify-content-center">
@@ -60,20 +61,7 @@
                         {% endfor %}
                     </div>
                     
-                    <div class="d-grid gap-2 mt-4">
-                        <button type="submit" class="btn btn-primary btn-lg">
-                            <i class="fas fa-arrow-right"></i> Continue to Class Features
-                        </button>
-                        {% if character_created %}
-                        <a href="{{ url_for('index.index') }}" class="btn btn-outline-secondary">
-                            <i class="fas fa-arrow-left"></i> Back to Home
-                        </a>
-                        {% else %}
-                        <a href="{{ url_for('character_creation.create_character') }}" class="btn btn-outline-secondary">
-                            <i class="fas fa-arrow-left"></i> Back to Character Details
-                        </a>
-                        {% endif %}
-                    </div>
+                    {{ wizard_nav(back_url=back_url, back_label=back_label, next_label=next_label) }}
                 </form>
             </div>
         </div>

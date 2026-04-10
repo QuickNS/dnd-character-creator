@@ -7,6 +7,7 @@ from utils.route_helpers import (
     get_builder_from_session,
     save_builder_to_session,
     log_route_processing,
+    get_nav_context,
 )
 
 
@@ -32,8 +33,9 @@ def choose_background():
     save_builder_to_session(builder)
 
     backgrounds = dict(sorted(data_loader.backgrounds.items()))
+    nav = get_nav_context(builder, "background")
     return render_template(
-        "choose_background.html", backgrounds=backgrounds, character=character
+        "choose_background.html", backgrounds=backgrounds, character=character, **nav
     )
 
 
@@ -82,11 +84,13 @@ def choose_replacement_skills():
     background_data = character.get("background_data") or {}
     background_skills = background_data.get("skill_proficiencies", [])
 
+    nav = get_nav_context(builder, "background_skill_replacement")
     return render_template(
         "choose_replacement_skills.html",
         character=character,
         replacement_info=replacement_info,
         background_skills=background_skills,
+        **nav,
     )
 
 
@@ -139,6 +143,7 @@ def feat_choices():
     character = builder.to_json()
     choices_made = character.get("choices_made", {})
 
+    nav = get_nav_context(builder, "feat_choices")
     return render_template(
         "feat_choices.html",
         character=character,
@@ -147,6 +152,7 @@ def feat_choices():
         feat_benefits=feat_choice_data["feat_benefits"],
         choices=feat_choice_data["choices"],
         choices_made=choices_made,
+        **nav,
     )
 
 

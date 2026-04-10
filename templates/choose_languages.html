@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "macros/wizard_nav.html" import wizard_nav %}
 
 {% block content %}
 <div class="row justify-content-center">
@@ -62,14 +63,7 @@
                         These selections are for any extra languages your character might know from their personal history.
                     </div>
                     
-                    <div class="d-grid gap-2 mt-4">
-                        <button type="submit" class="btn btn-primary btn-lg">
-                            <i class="fas fa-arrow-right"></i> Continue to Ability Scores
-                        </button>
-                        <a href="{{ url_for('species.choose_species') }}" class="btn btn-outline-secondary">
-                            <i class="fas fa-arrow-left"></i> Back to Species
-                        </a>
-                    </div>
+                    {{ wizard_nav(back_url=back_url, back_label=back_label, next_label=next_label) }}
                 </form>
             </div>
         </div>
@@ -82,13 +76,14 @@
 // Update continue button text based on selected languages
 function updateButtonText() {
     const selectedLanguages = document.querySelectorAll('input[name="languages"]:checked');
-    const button = document.querySelector('button[type="submit"]');
+    const button = document.querySelector('#submit-btn');
+    if (!button) return;
     
     if (selectedLanguages.length > 0) {
         const count = selectedLanguages.length;
         button.innerHTML = `<i class="fas fa-arrow-right"></i> Continue with ${count} additional language${count > 1 ? 's' : ''}`;
     } else {
-        button.innerHTML = '<i class="fas fa-arrow-right"></i> Continue to Ability Scores';
+        button.innerHTML = '<i class="fas fa-arrow-right"></i> {{ next_label }}';
     }
 }
 

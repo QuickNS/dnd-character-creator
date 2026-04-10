@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "macros/wizard_nav.html" import wizard_nav %}
 
 {% block content %}
 <div class="row justify-content-center">
@@ -78,11 +79,7 @@
                         </div>
                     </div>
 
-                    <div class="d-grid gap-2">
-                        <button type="submit" class="btn btn-primary btn-lg" id="submit-btn">
-                            Confirm Replacement{% if replacement_info.needed > 1 %}s{% endif %} &amp; Continue
-                        </button>
-                    </div>
+                    {{ wizard_nav(next_label="Confirm Replacement" ~ ('s' if replacement_info.needed > 1 else '') ~ " & Continue") }}
                 </form>
             </div>
         </div>

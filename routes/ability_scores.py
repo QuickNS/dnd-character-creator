@@ -8,6 +8,7 @@ from utils.route_helpers import (
     get_builder_from_session,
     save_builder_to_session,
     log_route_processing,
+    get_nav_context,
 )
 
 ability_scores_bp = Blueprint("ability_scores", __name__)
@@ -44,7 +45,7 @@ def _ability_score_template_context(character):
 
 @ability_scores_bp.route("/assign-ability-scores")
 def assign_ability_scores():
-    """Ability score assignment step."""
+    """Ability score assignment step (merged with background bonuses)."""
     builder = get_builder_from_session()
     if not builder:
         return redirect(url_for("index.index"))
@@ -54,15 +55,23 @@ def assign_ability_scores():
     # Allow access if we're at ability_scores step or later
     if character.get("step") not in [
         "ability_scores",
-        "background_bonuses",
+        "equipment",
         "complete",
     ]:
         return redirect(url_for("index.index"))
 
+    # Background ASI options (merged from old background_bonuses page)
+    asi_options = builder.get_background_asi_options()
+
+    nav = get_nav_context(builder, "ability_scores")
     return render_template(
         "assign_ability_scores.html",
         character=character,
         **_ability_score_template_context(character),
+        asi_total_points=asi_options["total_points"],
+        asi_suggested=asi_options["suggested"],
+        asi_ability_options=asi_options["ability_options"],
+        **nav,
     )
 
 
@@ -130,61 +139,12 @@ def submit_ability_scores():
         # IMPORTANT: Mark that manual method was used to override any previous "recommended" choice
         builder.apply_choice("ability_scores_method", "manual")
 
-    save_builder_to_session(builder)
-
-    # Update step to background_bonuses
-    builder.set_step("background_bonuses")
-    save_builder_to_session(builder)
-
-    # Log route processing
-    log_route_processing("submit_ability_scores", choices, builder_before, builder)
-
-    return redirect(url_for("ability_scores.background_bonuses"))
-
-
-@ability_scores_bp.route("/background-bonuses")
-def background_bonuses():
-    """Background ability score bonuses step."""
-    builder = get_builder_from_session()
-    if not builder:
-        return redirect(url_for("index.index"))
-
-    character = builder.to_json()
-
-    # Allow access if we're at background_bonuses step or later
-    if character.get("step") not in ["background_bonuses", "complete"]:
-        return redirect(url_for("index.index"))
-
-    # Get background ASI options from builder (business logic moved to CharacterBuilder)
-    asi_options = builder.get_background_asi_options()
-    total_points = asi_options["total_points"]
-    suggested = asi_options["suggested"]
-    ability_options = asi_options["ability_options"]
-
-    return render_template(
-        "background_bonuses.html",
-        character=character,
-        total_points=total_points,
-        suggested=suggested,
-        ability_options=ability_options,
-    )
-
-
-@ability_scores_bp.route("/submit-background-bonuses", methods=["POST"])
-def submit_background_bonuses():
-    """Process background ability score bonuses."""
-    assignment_method = request.form.get("assignment_method")
-
-    builder_before = get_builder_from_session()
-    builder = get_builder_from_session()
-
-    choices = {"assignment_method": assignment_method}
-
-    if assignment_method == "suggested":
-        # Use suggested background bonuses
+    # --- Background bonuses (merged from old background_bonuses page) ---
+    bonus_method = request.form.get("bonus_method", "suggested")
+    if bonus_method == "suggested":
         builder.apply_choice("background_bonuses_method", "suggested")
-    else:  # manual
-        # Get manual background bonus assignments from form
+        choices["bonus_method"] = "suggested"
+    else:
         manual_bonuses = {}
         for ability in [
             "Strength",
@@ -197,17 +157,28 @@ def submit_background_bonuses():
             bonus = request.form.get(f"bonus_{ability}")
             if bonus and int(bonus) > 0:
                 manual_bonuses[ability] = int(bonus)
-
         builder.apply_choice("background_bonuses", manual_bonuses)
         choices["background_bonuses"] = manual_bonuses
 
     save_builder_to_session(builder)
 
-    # Next step: equipment selection
+    # Next step: equipment selection (skip old background_bonuses step)
     builder.set_step("equipment")
     save_builder_to_session(builder)
 
     # Log route processing
-    log_route_processing("submit_background_bonuses", choices, builder_before, builder)
+    log_route_processing("submit_ability_scores", choices, builder_before, builder)
 
     return redirect(url_for("equipment.choose_equipment"))
+
+
+@ability_scores_bp.route("/background-bonuses")
+def background_bonuses():
+    """Redirect to ability scores (bonuses are now merged there)."""
+    return redirect(url_for("ability_scores.assign_ability_scores"))
+
+
+@ability_scores_bp.route("/submit-background-bonuses", methods=["POST"])
+def submit_background_bonuses():
+    """Redirect to ability scores (bonuses are now merged there)."""
+    return redirect(url_for("ability_scores.assign_ability_scores"))
