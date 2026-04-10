@@ -212,7 +212,7 @@ class TestMartialArtsDie:
             f"Level {level} Monk should use {expected_die}, got {unarmed['damage']}"
         )
 
-
+    def test_unarmed_strike_uses_dex_modifier(self):
         """Monk Dexterous Attacks: unarmed strike should use DEX if higher than STR."""
         # DEX 18 (+4) > STR 10 (+0)
         builder = _build_full_monk(level=1, ability_scores={

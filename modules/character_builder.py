@@ -3261,8 +3261,6 @@ class CharacterBuilder:
         dex_mod = ability_scores.get("dexterity", {}).get("modifier", 0)
         has_unarmed_fighting = False
         martial_arts_die = self.character_data.get("martial_arts_die")
-        has_weapons_or_shield = False
-        has_shield = False
 
         if hasattr(self, "applied_effects"):
             for effect_wrapper in self.applied_effects:
@@ -3332,7 +3330,7 @@ class CharacterBuilder:
             "avg_damage": unarmed_avg,
             "avg_crit": unarmed_crit_avg,
             "properties": [],
-            "ability": "DEX" if martial_arts_die and dex_mod >= str_mod else "STR",
+            "ability": "DEX" if martial_arts_die and dex_mod > str_mod else "STR",
             "proficient": True,  # Everyone is proficient with unarmed strikes
             "mastery": None,
             "icon": "/static/images/weapons/strike.svg",
