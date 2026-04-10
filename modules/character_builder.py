@@ -178,6 +178,7 @@ class CharacterBuilder:
             "darkvision": 0,
             "resistances": [],
             "immunities": [],
+            "condition_immunities": [],
             "save_advantages": [],  # [{"abilities": [...], "display": "...", "condition": "..."}]
             "equipment": None,  # Will be initialized when equipment_selections are processed
             "step": "species",  # Track current step
@@ -985,6 +986,11 @@ class CharacterBuilder:
                     damage_type = self._extract_parenthetical(choice_value)
             if damage_type and damage_type not in self.character_data["resistances"]:
                 self.character_data["resistances"].append(damage_type)
+
+        elif effect_type == "grant_condition_immunity":
+            condition = effect.get("condition")
+            if condition and condition not in self.character_data["condition_immunities"]:
+                self.character_data["condition_immunities"].append(condition)
 
         elif effect_type == "grant_darkvision":
             darkvision_range = effect.get("range", 60)

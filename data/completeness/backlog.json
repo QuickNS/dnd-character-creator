@@ -49,14 +49,14 @@
     },
     "Druid": {
       "data_file": true,
-      "features_validated": false,
-      "effects_implemented": false,
-      "tests_written": false,
+      "features_validated": true,
+      "effects_implemented": true,
+      "tests_written": true,
       "subclasses": {
-        "Circle of the Land": { "data_file": true, "features_validated": false, "effects_implemented": false, "tests_written": false },
-        "Circle of the Moon": { "data_file": true, "features_validated": false, "effects_implemented": false, "tests_written": false },
-        "Circle of the Sea": { "data_file": true, "features_validated": false, "effects_implemented": false, "tests_written": false },
-        "Circle of the Stars": { "data_file": true, "features_validated": false, "effects_implemented": false, "tests_written": false }
+        "Circle of the Land": { "data_file": true, "features_validated": true, "effects_implemented": true, "tests_written": true },
+        "Circle of the Moon": { "data_file": true, "features_validated": true, "effects_implemented": true, "tests_written": true },
+        "Circle of the Sea": { "data_file": true, "features_validated": true, "effects_implemented": true, "tests_written": true },
+        "Circle of the Stars": { "data_file": true, "features_validated": true, "effects_implemented": true, "tests_written": true }
       }
     },
     "Fighter": {
