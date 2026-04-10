@@ -2601,11 +2601,11 @@ class CharacterBuilder:
         cantrip_progression = class_data.get("cantrip_progression", {})
         if not cantrip_progression and spellcasting_source is not class_data:
             cantrip_progression = spellcasting_source.get("cantrips_by_level", {})
-        if isinstance(cantrip_progression, dict):
+        if isinstance(cantrip_progression, dict) and cantrip_progression:
             # Direct lookup in cantrip_progression dict
             max_cantrips_total = cantrip_progression.get(str(level), 0)
         else:
-            # cantrip_progression is a string like "class_table" - use cantrips_by_level
+            # cantrip_progression is a string like "class_table", or empty/missing — use cantrips_by_level
             cantrips_by_level = class_data.get("cantrips_by_level", {})
             if not cantrips_by_level and spellcasting_source is not class_data:
                 cantrips_by_level = spellcasting_source.get("cantrips_by_level", {})

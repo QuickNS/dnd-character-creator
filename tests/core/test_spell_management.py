@@ -285,6 +285,40 @@ class TestSpellManagement:
                 f"Level {level} should have at least {expected_cantrips} cantrips"
             )
 
+    def test_bard_cantrip_count_progression(self):
+        """Test Bard cantrip count reads cantrips_by_level (not cantrip_progression)."""
+        test_levels = [
+            (1, 2),   # Level 1 Bard: 2 cantrips
+            (4, 3),   # Level 4 Bard: 3 cantrips
+            (10, 4),  # Level 10 Bard: 4 cantrips
+        ]
+
+        for level, expected_cantrips in test_levels:
+            builder = CharacterBuilder()
+            choices = {
+                "character_name": "Test Bard",
+                "species": "Human",
+                "class": "Bard",
+                "level": level,
+                "background": "Entertainer",
+                "ability_scores": {
+                    "Strength": 8,
+                    "Dexterity": 14,
+                    "Constitution": 12,
+                    "Intelligence": 10,
+                    "Wisdom": 10,
+                    "Charisma": 16,
+                },
+                "skill_choices": ["Perception", "Persuasion", "Performance"],
+            }
+            builder.apply_choices(choices)
+
+            stats = builder.calculate_spellcasting_stats()
+            assert stats["max_cantrips_prepared"] == expected_cantrips, (
+                f"Level {level} Bard should have {expected_cantrips} cantrips, "
+                f"got {stats['max_cantrips_prepared']}"
+            )
+
     def test_prepared_spell_limit(self, cleric_builder):
         """Test prepared spell limit calculation."""
         stats = cleric_builder.calculate_spellcasting_stats()
