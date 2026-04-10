@@ -64,6 +64,7 @@ If a matching issue exists, tell the user and optionally add a comment to the ex
 
 - `bug` — Something that exists but is wrong (incorrect values, broken logic)
 - `enhancement` — Something missing that should be added (missing effects, missing features)
+- `copilot` — **Always added** so the Copilot coding agent picks up the issue automatically
 
 ### 5. Create the Issue
 
@@ -78,8 +79,18 @@ mcp_github_issue_write(
   repo="dnd-character-creator",
   method="create",
   title="[Monk] Martial Arts die not scaling at level 5",
-  labels=["bug"],
+  labels=["bug", "copilot"],
   body=<structured body>
+)
+```
+
+Then assign Copilot to the issue so the coding agent starts working on it:
+
+```
+mcp_github_assign_copilot_to_issue(
+  owner="QuickNS",
+  repo="dnd-character-creator",
+  issueNumber=<created issue number>
 )
 ```
 
@@ -127,6 +138,7 @@ After creating, report back:
 ```
 Filed #{number}: [ClassName] Title
 https://github.com/QuickNS/dnd-character-creator/issues/{number}
+Copilot has been assigned and will start working on it.
 ```
 
 ## Examples
