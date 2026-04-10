@@ -253,6 +253,158 @@ class TestMartialArtsDie:
         )
 
 
+class TestDexterousAttacksMonkWeapons:
+    """Tests for Monk Dexterous Attacks on monk weapons (GitHub Issue:
+    [Monk] Monk weapons don't use DEX for attack/damage rolls)."""
+
+    def _build_monk_with_weapon(self, weapon_entry, str_score=8, dex_score=17, level=1):
+        """Helper: build a Monk with a given weapon in inventory."""
+        builder = _build_full_monk(
+            level=level,
+            ability_scores={
+                "Strength": str_score, "Dexterity": dex_score,
+                "Constitution": 14, "Intelligence": 8,
+                "Wisdom": 14, "Charisma": 10,
+            },
+            background_bonuses={"Dexterity": 2, "Wisdom": 1},
+        )
+        if builder.character_data.get("equipment") is None:
+            builder.character_data["equipment"] = {"weapons": [], "armor": [], "items": [], "gold": 0}
+        builder.character_data["equipment"].setdefault("weapons", []).append(weapon_entry)
+        return builder
+
+    def test_monk_dexterous_attacks_effect_is_set(self):
+        """Martial Arts feature should set monk_dexterous_attacks on character data."""
+        builder = _build_full_monk(level=1)
+        assert builder.character_data.get("monk_dexterous_attacks") is True
+
+    def test_simple_melee_uses_dex_when_higher(self):
+        """A Monk wielding a Simple Melee weapon (Spear) should use DEX when DEX > STR."""
+        # STR 8 (-1), DEX 19 (+4 after background bonus)
+        spear = {
+            "name": "Spear",
+            "quantity": 1,
+            "properties": {
+                "category": "Simple Melee",
+                "damage": "1d6",
+                "damage_type": "Piercing",
+                "properties": ["Thrown", "Versatile (1d8)"],
+            },
+        }
+        builder = self._build_monk_with_weapon(spear)
+        weapon_data = builder.calculate_weapon_attacks()
+        spear_attack = next(
+            (a for a in weapon_data["attacks"] if a["name"] == "Spear"), None
+        )
+        assert spear_attack is not None, "Spear attack not found"
+        # STR 8 → mod -1; DEX 17+2=19 → mod +4; expect DEX
+        assert "DEX" in spear_attack["ability"], (
+            f"Monk Spear should use DEX, got ability '{spear_attack['ability']}'"
+        )
+        # With DEX +4 the attack bonus must be higher than with STR (-1)
+        assert spear_attack["attack_bonus"] > 0, (
+            f"Expected positive attack bonus with DEX, got {spear_attack['attack_bonus']}"
+        )
+
+    def test_martial_melee_light_uses_dex_when_higher(self):
+        """A Monk with a Martial Melee + Light weapon (shortsword) uses DEX when higher."""
+        shortsword = {
+            "name": "Shortsword",
+            "quantity": 1,
+            "properties": {
+                "category": "Martial Melee",
+                "damage": "1d6",
+                "damage_type": "Piercing",
+                "properties": ["Finesse", "Light"],
+            },
+        }
+        builder = self._build_monk_with_weapon(shortsword)
+        weapon_data = builder.calculate_weapon_attacks()
+        sw_attack = next(
+            (a for a in weapon_data["attacks"] if a["name"] == "Shortsword"), None
+        )
+        assert sw_attack is not None, "Shortsword attack not found"
+        assert "DEX" in sw_attack["ability"], (
+            f"Monk Shortsword should use DEX, got ability '{sw_attack['ability']}'"
+        )
+
+    def test_martial_melee_no_light_uses_str(self):
+        """A Monk with a Martial Melee weapon WITHOUT Light (e.g., Longsword) uses STR."""
+        longsword = {
+            "name": "Longsword",
+            "quantity": 1,
+            "properties": {
+                "category": "Martial Melee",
+                "damage": "1d8",
+                "damage_type": "Slashing",
+                "properties": ["Versatile (1d10)"],
+            },
+        }
+        builder = self._build_monk_with_weapon(longsword)
+        weapon_data = builder.calculate_weapon_attacks()
+        ls_attack = next(
+            (a for a in weapon_data["attacks"] if a["name"] == "Longsword"), None
+        )
+        assert ls_attack is not None, "Longsword attack not found"
+        assert ls_attack["ability"] == "STR", (
+            f"Non-Light Martial weapon should use STR, got '{ls_attack['ability']}'"
+        )
+
+    def test_monk_weapon_uses_str_when_str_higher(self):
+        """Monk with STR > DEX: monk weapon should use STR (max still picks STR)."""
+        spear = {
+            "name": "Spear",
+            "quantity": 1,
+            "properties": {
+                "category": "Simple Melee",
+                "damage": "1d6",
+                "damage_type": "Piercing",
+                "properties": ["Thrown", "Versatile (1d8)"],
+            },
+        }
+        # STR 18 (+4), DEX 10 (+0)
+        builder = self._build_monk_with_weapon(spear, str_score=16, dex_score=10)
+        # Override background bonuses by rebuilding with str-focused bonuses
+        builder2 = _build_full_monk(
+            level=1,
+            ability_scores={
+                "Strength": 16, "Dexterity": 10, "Constitution": 14,
+                "Intelligence": 8, "Wisdom": 14, "Charisma": 10,
+            },
+            background_bonuses={"Strength": 2, "Wisdom": 1},
+        )
+        if builder2.character_data.get("equipment") is None:
+            builder2.character_data["equipment"] = {"weapons": [], "armor": [], "items": [], "gold": 0}
+        builder2.character_data["equipment"].setdefault("weapons", []).append(spear)
+        weapon_data = builder2.calculate_weapon_attacks()
+        spear_attack = next(
+            (a for a in weapon_data["attacks"] if a["name"] == "Spear"), None
+        )
+        assert spear_attack is not None, "Spear attack not found"
+        assert "STR" in spear_attack["ability"], (
+            f"Monk Spear with higher STR should use STR, got '{spear_attack['ability']}'"
+        )
+
+    def test_non_monk_does_not_get_dexterous_attacks(self):
+        """A non-Monk character should NOT have monk_dexterous_attacks set."""
+        builder = CharacterBuilder()
+        builder.apply_choices({
+            "character_name": "Test Fighter",
+            "level": 1,
+            "species": "Human",
+            "class": "Fighter",
+            "background": "Acolyte",
+            "ability_scores": {
+                "Strength": 8, "Dexterity": 17, "Constitution": 14,
+                "Intelligence": 8, "Wisdom": 10, "Charisma": 10,
+            },
+            "background_bonuses": {"Dexterity": 2, "Strength": 1},
+        })
+        assert not builder.character_data.get("monk_dexterous_attacks"), (
+            "Non-Monk should not have monk_dexterous_attacks"
+        )
+
+
 class TestSuperiorDefense:
 
     def test_superior_defense_feature_exists_at_level_18(self):
