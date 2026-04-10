@@ -177,55 +177,19 @@ def api_spell_management_data():
                     }
                 )
 
-        # Get available cantrips from class spell list
-        available_cantrips = []
-        class_name = builder.character_data.get("class")
-        if class_name:
-            spell_list_file = (
-                Path(__file__).parent.parent
-                / "data"
-                / "spells"
-                / "class_lists"
-                / f"{class_name.lower()}.json"
-            )
-            if spell_list_file.exists():
-                with open(spell_list_file, "r") as f:
-                    spell_list_data = json.load(f)
-                    cantrip_names = spell_list_data.get("cantrips", [])
-                    for spell_name in cantrip_names:
-                        available_cantrips.append(
-                            {
-                                "name": spell_name,
-                                "school": "Unknown",  # Will be filled by spell details modal
-                            }
-                        )
+        # Get available cantrips and spells from spellcasting stats
+        # (stats already resolves the correct spell list, e.g. Wizard for Eldritch Knight)
+        available_cantrips = [
+            {"name": name, "school": "Unknown"}
+            for name in stats.get("available_cantrips", [])
+        ]
 
-        # Get available spells from class spell list (organized by level)
         available_spells = {}
-        if class_name:
-            spell_list_file = (
-                Path(__file__).parent.parent
-                / "data"
-                / "spells"
-                / "class_lists"
-                / f"{class_name.lower()}.json"
-            )
-            if spell_list_file.exists():
-                with open(spell_list_file, "r") as f:
-                    spell_list_data = json.load(f)
-                    for level_str, spell_names in spell_list_data.get(
-                        "spells_by_level", {}
-                    ).items():
-                        int(level_str)
-                        # Show all spell levels (user can prepare only what they can cast)
-                        available_spells[level_str] = []
-                        for spell_name in spell_names:
-                            available_spells[level_str].append(
-                                {
-                                    "name": spell_name,
-                                    "school": "Unknown",  # Will be filled by spell details modal
-                                }
-                            )
+        for level, spell_names in stats.get("available_spells", {}).items():
+            available_spells[str(level)] = [
+                {"name": name, "school": "Unknown"}
+                for name in spell_names
+            ]
 
         # Get current selections from character
         # Handle both old (list) and new (dict) spell storage formats
