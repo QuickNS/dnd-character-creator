@@ -4,14 +4,21 @@
     "Druidcraft",
     "Guidance",
     "Mending",
-    "Resistance"
+    "Poison Spray",
+    "Resistance",
+    "Starry Wisp"
   ],
   "spells_by_level": {
     "1": [
+      "Animal Friendship",
+      "Charm Person",
+      "Cure Wounds",
       "Detect Magic",
       "Faerie Fire",
+      "Healing Word",
       "Longstrider",
-      "Speak with Animals"
+      "Speak with Animals",
+      "Thunderwave"
     ],
     "2": [
       "Pass without Trace"

@@ -529,6 +529,50 @@ class TestMagicInitiateChoices:
         assert cantrip_choice["source"]["type"] == "external"
         assert cantrip_choice["source"]["file"] == expected_file
 
+    @pytest.mark.parametrize("variant,expected_file", [
+        ("Magic Initiate (Cleric)", "spells/cleric_spells.json"),
+        ("Magic Initiate (Druid)", "spells/druid_spells.json"),
+        ("Magic Initiate (Wizard)", "spells/wizard_spells.json"),
+    ])
+    def test_spell_source_file(self, origin_feats, variant, expected_file):
+        """1st-level spell choices should reference the correct external spell file."""
+        choices = origin_feats[variant]["choices"]
+        spell_choice = next(c for c in choices if c["name"] == "1st_level_spell")
+        assert spell_choice["source"]["type"] == "external"
+        assert spell_choice["source"]["file"] == expected_file
+
+    @pytest.mark.parametrize("variant,expected_cantrips", [
+        ("Magic Initiate (Cleric)", ["Guidance", "Sacred Flame", "Thaumaturgy"]),
+        ("Magic Initiate (Druid)", ["Druidcraft", "Guidance", "Resistance"]),
+        ("Magic Initiate (Wizard)", ["Fire Bolt", "Mage Hand", "Minor Illusion"]),
+    ])
+    def test_cantrip_options_non_empty(self, origin_feats, variant, expected_cantrips):
+        """Cantrip options must resolve to a non-empty list containing expected spells."""
+        from utils.choice_resolver import load_external_choice_list
+        choices = origin_feats[variant]["choices"]
+        cantrip_choice = next(c for c in choices if c["name"] == "cantrips")
+        file_path = cantrip_choice["source"]["file"]
+        options = load_external_choice_list(file_path, "cantrips")
+        assert len(options) > 0, f"{variant} cantrip options should not be empty"
+        for spell in expected_cantrips:
+            assert spell in options, f"{spell} should be in {variant} cantrip options"
+
+    @pytest.mark.parametrize("variant,expected_spells", [
+        ("Magic Initiate (Cleric)", ["Bane", "Command", "Cure Wounds", "Detect Magic", "Healing Word"]),
+        ("Magic Initiate (Druid)", ["Faerie Fire", "Detect Magic", "Speak with Animals"]),
+        ("Magic Initiate (Wizard)", ["Magic Missile", "Detect Magic", "Sleep"]),
+    ])
+    def test_spell_options_non_empty(self, origin_feats, variant, expected_spells):
+        """1st-level spell options must resolve to a non-empty list containing expected spells."""
+        from utils.choice_resolver import load_external_choice_list
+        choices = origin_feats[variant]["choices"]
+        spell_choice = next(c for c in choices if c["name"] == "1st_level_spell")
+        file_path = spell_choice["source"]["file"]
+        options = load_external_choice_list(file_path, "1st_level")
+        assert len(options) > 0, f"{variant} 1st-level spell options should not be empty"
+        for spell in expected_spells:
+            assert spell in options, f"{spell} should be in {variant} 1st-level spell options"
+
 
 class TestSkilledChoices:
     """Skilled feat should allow choosing 3 skills or tools."""
