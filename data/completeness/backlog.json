@@ -97,14 +97,14 @@
     },
     "Ranger": {
       "data_file": true,
-      "features_validated": false,
-      "effects_implemented": false,
-      "tests_written": false,
+      "features_validated": true,
+      "effects_implemented": true,
+      "tests_written": true,
       "subclasses": {
-        "Beast Master": { "data_file": true, "features_validated": false, "effects_implemented": false, "tests_written": false },
-        "Fey Wanderer": { "data_file": false, "features_validated": false, "effects_implemented": false, "tests_written": false },
-        "Gloom Stalker": { "data_file": true, "features_validated": false, "effects_implemented": false, "tests_written": false },
-        "Hunter": { "data_file": true, "features_validated": false, "effects_implemented": false, "tests_written": false }
+        "Beast Master": { "data_file": true, "features_validated": true, "effects_implemented": true, "tests_written": true },
+        "Fey Wanderer": { "data_file": true, "features_validated": true, "effects_implemented": true, "tests_written": true },
+        "Gloom Stalker": { "data_file": true, "features_validated": true, "effects_implemented": true, "tests_written": true },
+        "Hunter": { "data_file": true, "features_validated": true, "effects_implemented": true, "tests_written": true }
       }
     },
     "Rogue": {

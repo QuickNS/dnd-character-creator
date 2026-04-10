@@ -237,6 +237,25 @@ class CharacterBuilder:
         file_path = self.data_dir / "backgrounds" / f"{filename}.json"
         return self._load_json_file(file_path)
 
+    @staticmethod
+    def _format_benefits(benefits: list) -> str:
+        """Format a list of benefits as markdown paragraphs with bold titles.
+
+        Each benefit string is expected to be in the form "Title: Description".
+        Returns formatted text compatible with the nl2br template filter so that
+        sub-feature titles render in bold (matching class feature formatting).
+        """
+        parts = []
+        for benefit in benefits:
+            colon_idx = benefit.find(": ")
+            if colon_idx > 0:
+                title = benefit[:colon_idx]
+                rest = benefit[colon_idx + 2:]
+                parts.append(f"**{title}.** {rest}")
+            else:
+                parts.append(benefit)
+        return "\n\n" + "\n\n".join(parts)
+
     def _load_feat_data(self, feat_name: str) -> Optional[Dict[str, Any]]:
         """Load feat data from grouped feat files."""
         # Load origin feats
@@ -980,6 +999,17 @@ class CharacterBuilder:
                         source_display
                     )
 
+        elif effect_type == "grant_skill_expertise":
+            skills = effect.get("skills", [])
+            if "skill_expertise" not in self.character_data:
+                self.character_data["skill_expertise"] = []
+            for skill in skills:
+                # Skip choice placeholders like "__expertise_skills__"
+                if skill.startswith("__"):
+                    continue
+                if skill not in self.character_data["skill_expertise"]:
+                    self.character_data["skill_expertise"].append(skill)
+
         elif effect_type == "grant_save_advantage":
             abilities = effect.get("abilities", [])
             display = effect.get("display", "")
@@ -1071,9 +1101,7 @@ class CharacterBuilder:
                     description = feat_data.get("description", "")
                     benefits = feat_data.get("benefits", [])
                     if benefits:
-                        description += "\n" + "\n".join(
-                            f"• {benefit}" for benefit in benefits
-                        )
+                        description += self._format_benefits(benefits)
                 else:
                     description = f"Origin feat: {feat_name}"
 
@@ -1401,7 +1429,7 @@ class CharacterBuilder:
                 # If there are benefits, append them to the description
                 benefits = feat_data.get("benefits", [])
                 if benefits:
-                    description += "\n" + "\n".join(f"• {benefit}" for benefit in benefits)
+                    description += self._format_benefits(benefits)
             else:
                 # Fallback if feat data not found
                 description = f"Feat granted by {background_name} background."
