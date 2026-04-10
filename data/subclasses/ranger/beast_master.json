@@ -1,122 +1,20 @@
 {
   "name": "Beast Master",
-  "description": "The Beast Master archetype embodies a friendship between the civilized races and the beasts of the world. United in focus, beast and ranger work as one to fight the monstrous foes that threaten civilization and the wilderness alike.",
+  "class": "Ranger",
+  "description": "A Beast Master forms a mystical bond with a special animal, drawing on primal magic and a deep connection to the natural world.",
+  "source": "Player's Handbook 2024",
   "features_by_level": {
     "3": {
-      "Ranger's Companion": "You gain a beast companion that accompanies you on your adventures and is trained to fight alongside you. Choose a beast that is no larger than Medium and that has a challenge rating of 1/4 or lower. Your beast companion gains a variety of benefits while linked to you.",
-      "Primal Companion": "You magically summon a primal beast, which draws on the power of your bond with nature. The beast is friendly to you and your companions and obeys your commands. Choose its stat block: Beast of the Land, Beast of the Sea, or Beast of the Sky. You also determine the kind of animal the beast is, choosing a kind appropriate for the stat block. Whatever kind you choose, the beast bears primal markings, indicating its mystical origin."
+      "Primal Companion": "You magically summon a primal beast, which draws strength from your bond with nature. Choose its stat block: Beast of the Land, Beast of the Sea, or Beast of the Sky. You also determine the kind of animal it is, choosing a kind appropriate for the stat block. Whatever beast you choose, it bears primal markings indicating its supernatural origin. The Beast in Combat: In Combat, the beast acts during your turn. It can move and use its Reaction on its own, but the only action it takes is the Dodge action unless you take a Bonus Action to command it to take an action in its stat block or some other action. You can also sacrifice one of your attacks when you take the Attack action to command the beast to take the Beast's Strike action. If you have the Incapacitated condition, the beast acts on its own and isn't limited to the Dodge action. Restoring or Replacing the Beast: If the beast has died within the last hour, you can take a Magic action to touch it and expend a spell slot. The beast returns to life after 1 minute with all its Hit Points restored. Whenever you finish a Long Rest, you can summon a different primal beast, which appears in an unoccupied space within 5 feet of you."
     },
     "7": {
-      "Exceptional Training": "On any of your turns when your beast companion doesn't attack, you can use a bonus action to command the beast to take the Dash, Disengage, Dodge, or Help action on its turn."
+      "Exceptional Training": "When you take a Bonus Action to command your Primal Companion beast to take an action, you can also command it to take the Dash, Disengage, Dodge, or Help action using its Bonus Action. In addition, whenever it hits with an attack roll and deals damage, it can deal your choice of Force damage or its normal damage type."
     },
     "11": {
-      "Bestial Fury": "Your beast companion can make two attacks when you command it to use the Attack action."
+      "Bestial Fury": "When you command your Primal Companion beast to take the Beast's Strike action, the beast can use it twice. In addition, the first time each turn it hits a creature under the effect of your Hunter's Mark spell, the beast deals extra Force damage equal to the bonus damage of that spell."
     },
     "15": {
-      "Share Spells": "When you cast a spell targeting yourself, you can also affect your beast companion with the spell if the beast is within 30 feet of you."
+      "Share Spells": "When you cast a spell targeting yourself, you can also affect your Primal Companion beast with the spell if the beast is within 30 feet of you."
     }
-  },
-  "spellcasting_ability": "Wisdom",
-  "spell_slots_by_level": {
-    "1": {},
-    "2": {
-      "1": 2
-    },
-    "3": {
-      "1": 3
-    },
-    "4": {
-      "1": 3
-    },
-    "5": {
-      "1": 4,
-      "2": 2
-    },
-    "6": {
-      "1": 4,
-      "2": 2
-    },
-    "7": {
-      "1": 4,
-      "2": 3
-    },
-    "8": {
-      "1": 4,
-      "2": 3
-    },
-    "9": {
-      "1": 4,
-      "2": 3,
-      "3": 2
-    },
-    "10": {
-      "1": 4,
-      "2": 3,
-      "3": 2
-    },
-    "11": {
-      "1": 4,
-      "2": 3,
-      "3": 3
-    },
-    "12": {
-      "1": 4,
-      "2": 3,
-      "3": 3
-    },
-    "13": {
-      "1": 4,
-      "2": 3,
-      "3": 3,
-      "4": 1
-    },
-    "14": {
-      "1": 4,
-      "2": 3,
-      "3": 3,
-      "4": 1
-    },
-    "15": {
-      "1": 4,
-      "2": 3,
-      "3": 3,
-      "4": 2
-    },
-    "16": {
-      "1": 4,
-      "2": 3,
-      "3": 3,
-      "4": 2
-    },
-    "17": {
-      "1": 4,
-      "2": 3,
-      "3": 3,
-      "4": 3,
-      "5": 1
-    },
-    "18": {
-      "1": 4,
-      "2": 3,
-      "3": 3,
-      "4": 3,
-      "5": 1
-    },
-    "19": {
-      "1": 4,
-      "2": 3,
-      "3": 3,
-      "4": 3,
-      "5": 2
-    },
-    "20": {
-      "1": 4,
-      "2": 3,
-      "3": 3,
-      "4": 3,
-      "5": 2
-    }
-  },
-  "class": "Ranger",
-  "source": "Player's Handbook 2024"
+  }
 }
