@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "macros/wizard_nav.html" import wizard_nav %}
 
 {% block content %}
 <div class="row justify-content-center">
@@ -38,14 +39,7 @@
                         <div class="form-text">Optional; you can leave this blank.</div>
                     </div>
                     
-                    <div class="d-grid gap-2">
-                        <button type="submit" class="btn btn-primary btn-lg">
-                            <i class="fas fa-arrow-right"></i> Continue to Class Selection
-                        </button>
-                        <a href="{{ url_for('index.index') }}" class="btn btn-outline-secondary">
-                            <i class="fas fa-arrow-left"></i> Back to Home
-                        </a>
-                    </div>
+                    {{ wizard_nav(back_url=url_for('index.index'), back_label="Back to Home", next_label="Continue to Class Selection") }}
                 </form>
             </div>
         </div>

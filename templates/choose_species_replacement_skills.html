@@ -13,21 +13,18 @@
             <div class="card-body">
                 <div class="alert alert-info">
                     <p class="mb-1">
-                        <strong>{{ character.background }}</strong> grants
-                        <strong>{{ background_skills | join(' and ') }}</strong>,
-                        but you already have
-                        {% if replacement_info.needed == 1 %}one of those skills{% else %}{{ replacement_info.needed }} of those skills{% endif %}
-                        from your class.
+                        Your <strong>{{ character.species }}</strong>{% if character.lineage %} ({{ character.lineage }}){% endif %}
+                        grants a skill proficiency you already have from your class or background.
                     </p>
                     <p class="mb-0">
                         Per D&amp;D 2024 rules, choose
                         {{ replacement_info.needed }}
                         replacement skill{% if replacement_info.needed > 1 %}s{% endif %}
-                        from your class's available options.
+                        from any skill you're not already proficient in.
                     </p>
                 </div>
 
-                <form method="POST" action="{{ url_for('background.submit_replacement_skills') }}">
+                <form method="POST" action="{{ url_for('species.submit_species_replacement_skills') }}">
                     <div class="card mb-4">
                         <div class="card-header">
                             <h6 class="card-title mb-0">
@@ -107,7 +104,6 @@
             feedback.className = 'mt-2 text-muted small';
             submitBtn.disabled = true;
         }
-        // Disable unchecked boxes once the limit is reached
         container.querySelectorAll('.replacement-skill-cb').forEach(function (cb) {
             cb.disabled = !cb.checked && checked >= needed;
         });

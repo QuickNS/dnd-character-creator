@@ -9,11 +9,29 @@ from utils.route_helpers import (
     get_builder_from_session,
     save_builder_to_session,
     log_route_processing,
+    get_nav_context,
 )
 
 species_bp = Blueprint("species", __name__)
 data_loader = DataLoader()
 logger = logging.getLogger(__name__)
+
+
+def _redirect_to_languages_or_replacement(builder):
+    """Check for species skill overlaps before moving to languages.
+
+    If the species/lineage tried to grant a skill the character already has,
+    redirect to the replacement-skills page.  Otherwise go straight to
+    language selection.
+    """
+    info = builder.get_species_skill_replacement_info()
+    if info["needed"] and not info["already_chosen"]:
+        builder.set_step("species_skill_replacement")
+        save_builder_to_session(builder)
+        return redirect(url_for("species.choose_species_replacement_skills"))
+    builder.set_step("languages")
+    save_builder_to_session(builder)
+    return redirect(url_for("languages.choose_languages"))
 
 
 @species_bp.route("/choose-species")
@@ -31,7 +49,8 @@ def choose_species():
     save_builder_to_session(builder)
 
     species = dict(sorted(data_loader.species.items()))
-    return render_template("choose_species.html", species=species, character=character)
+    nav = get_nav_context(builder, "species")
+    return render_template("choose_species.html", species=species, character=character, **nav)
 
 
 @species_bp.route("/select-species", methods=["POST"])
@@ -72,13 +91,10 @@ def select_species():
         log_route_processing("select_species", choices, builder_before, builder)
         return redirect(url_for("species.choose_lineage"))
     else:
-        builder.set_step("languages")
-        save_builder_to_session(builder)
-
         # Log route processing
         log_route_processing("select_species", choices, builder_before, builder)
 
-        return redirect(url_for("languages.choose_languages"))
+        return _redirect_to_languages_or_replacement(builder)
 
 
 @species_bp.route("/choose-species-traits")
@@ -93,8 +109,9 @@ def choose_species_traits():
     # Get species trait choices from builder (business logic moved to CharacterBuilder)
     trait_choices = builder.get_species_trait_choices()
 
+    nav = get_nav_context(builder, "species_traits")
     return render_template(
-        "choose_species_traits.html", character=character, trait_choices=trait_choices
+        "choose_species_traits.html", character=character, trait_choices=trait_choices, **nav
     )
 
 
@@ -145,9 +162,7 @@ def select_species_traits():
         save_builder_to_session(builder)
         return redirect(url_for("species.choose_lineage"))
     else:
-        builder.set_step("languages")
-        save_builder_to_session(builder)
-        return redirect(url_for("languages.choose_languages"))
+        return _redirect_to_languages_or_replacement(builder)
 
 
 @species_bp.route("/species-feat-choices")
@@ -167,13 +182,12 @@ def species_feat_choices():
             builder.set_step("lineage")
             save_builder_to_session(builder)
             return redirect(url_for("species.choose_lineage"))
-        builder.set_step("languages")
-        save_builder_to_session(builder)
-        return redirect(url_for("languages.choose_languages"))
+        return _redirect_to_languages_or_replacement(builder)
 
     character = builder.to_json()
     choices_made = character.get("choices_made", {})
 
+    nav = get_nav_context(builder, "species_feat_choices")
     return render_template(
         "feat_choices.html",
         character=character,
@@ -183,8 +197,8 @@ def species_feat_choices():
         choices=feat_choice_data["choices"],
         choices_made=choices_made,
         action_url=url_for("species.submit_species_feat_choices"),
-        back_url=url_for("species.choose_species_traits"),
         source_label="Your species grants you",
+        **nav,
     )
 
 
@@ -221,9 +235,7 @@ def submit_species_feat_choices():
         save_builder_to_session(builder)
         return redirect(url_for("species.choose_lineage"))
 
-    builder.set_step("languages")
-    save_builder_to_session(builder)
-    return redirect(url_for("languages.choose_languages"))
+    return _redirect_to_languages_or_replacement(builder)
 
 
 @species_bp.route("/choose-lineage")
@@ -262,8 +274,9 @@ def choose_lineage():
         except (json.JSONDecodeError, IOError) as e:
             logger.error(f"Error loading lineage {lineage_name}: {e}")
 
+    nav = get_nav_context(builder, "lineage")
     return render_template(
-        "choose_lineage.html", character=character, lineages=lineages
+        "choose_lineage.html", character=character, lineages=lineages, **nav
     )
 
 
@@ -285,11 +298,60 @@ def select_lineage():
 
     save_builder_to_session(builder)
 
-    # Update session step
-    builder.set_step("languages")
-    save_builder_to_session(builder)
-
     # Log route processing
     log_route_processing("select_lineage", choices, builder_before, builder)
 
+    return _redirect_to_languages_or_replacement(builder)
+
+
+@species_bp.route("/choose-species-replacement-skills")
+def choose_species_replacement_skills():
+    """Choose replacement skill profs when species/lineage overlaps with existing skills."""
+    builder = get_builder_from_session()
+    if not builder:
+        return redirect(url_for("index.index"))
+
+    replacement_info = builder.get_species_skill_replacement_info()
+    if not replacement_info["needed"]:
+        builder.set_step("languages")
+        save_builder_to_session(builder)
+        return redirect(url_for("languages.choose_languages"))
+
+    character = builder.to_json()
+    nav = get_nav_context(builder, "species_skill_replacement")
+    return render_template(
+        "choose_species_replacement_skills.html",
+        character=character,
+        replacement_info=replacement_info,
+        **nav,
+    )
+
+
+@species_bp.route("/submit-species-replacement-skills", methods=["POST"])
+def submit_species_replacement_skills():
+    """Process species replacement skill selection submissions."""
+    builder_before = get_builder_from_session()
+    builder = get_builder_from_session()
+    if not builder:
+        return redirect(url_for("index.index"))
+
+    replacement_info = builder.get_species_skill_replacement_info()
+    needed = replacement_info["needed"]
+
+    skills = request.form.getlist("replacement_skills")[:needed]
+
+    if len(skills) < needed:
+        save_builder_to_session(builder)
+        return redirect(url_for("species.choose_species_replacement_skills"))
+
+    builder.apply_species_skill_replacement(skills)
+    log_route_processing(
+        "submit_species_replacement_skills",
+        {"replacement_skills": skills},
+        builder_before,
+        builder,
+    )
+
+    builder.set_step("languages")
+    save_builder_to_session(builder)
     return redirect(url_for("languages.choose_languages"))

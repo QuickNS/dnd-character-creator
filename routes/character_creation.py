@@ -8,6 +8,7 @@ from utils.route_helpers import (
     get_builder_from_session,
     save_builder_to_session,
     log_route_processing,
+    get_nav_context,
 )
 
 character_creation_bp = Blueprint("character_creation", __name__)
@@ -89,8 +90,9 @@ def create_character():
 
         # Instead of redirect, render the class selection page directly
         classes = dict(sorted(data_loader.classes.items()))
+        nav = get_nav_context(builder, "class")
         return render_template(
-            "choose_class.html", classes=classes, character_created=True
+            "choose_class.html", classes=classes, character_created=True, **nav
         )
 
     return render_template("create_character.html", alignments=alignments)
@@ -103,8 +105,9 @@ def choose_class():
     if not builder:
         return redirect(url_for("index.index"))
 
+    nav = get_nav_context(builder, "class")
     classes = dict(sorted(data_loader.classes.items()))
-    return render_template("choose_class.html", classes=classes)
+    return render_template("choose_class.html", classes=classes, **nav)
 
 
 @character_creation_bp.route("/select-class", methods=["POST"])
@@ -120,20 +123,6 @@ def select_class():
     builder = get_builder_from_session()
     builder.apply_choice("class", class_name)
 
-    # Check if subclass selection is needed first (level 3+ characters)
-    character_level = builder.character_data.get("level", 1)
-
-    if character_level >= 3:
-        class_data = data_loader.classes[class_name]
-        subclass_level = class_data.get("subclass_selection_level", 3)
-
-        if character_level >= subclass_level:
-            builder.set_step("subclass")
-            save_builder_to_session(builder)
-            # Log route processing
-            log_route_processing("select_class", choices, builder_before, builder)
-            return redirect(url_for("character_creation.choose_subclass"))
-
     builder.set_step("class_choices")
     save_builder_to_session(builder)
 
@@ -145,30 +134,8 @@ def select_class():
 
 @character_creation_bp.route("/choose-subclass")
 def choose_subclass():
-    """Dedicated subclass selection step."""
-    builder = get_builder_from_session()
-    if not builder or builder.get_current_step() != "subclass":
-        return redirect(url_for("index.index"))
-
-    character = builder.to_json()
-    class_name = character.get("class", "")
-
-    if not class_name or class_name not in data_loader.classes:
-        return redirect(url_for("character_creation.choose_class"))
-
-    # Load subclasses for this class
-    subclasses = data_loader.get_subclasses_for_class(class_name)
-
-    if not subclasses:
-        # No subclasses available, skip to class choices
-        builder.set_step("class_choices")
-        save_builder_to_session(builder)
-    return render_template(
-        "choose_subclass.html",
-        subclasses=subclasses,
-        class_name=class_name,
-        character_level=character.get("level", 1),
-    )
+    """Redirect to class-choices (subclass is now embedded there)."""
+    return redirect(url_for("character_creation.class_choices"))
 
 
 @character_creation_bp.route("/select-subclass", methods=["POST"])
@@ -176,7 +143,7 @@ def select_subclass():
     """Handle subclass selection and redirect to class choices."""
     subclass_name = request.form.get("subclass")
     if not subclass_name:
-        return redirect(url_for("character_creation.choose_subclass"))
+        return redirect(url_for("character_creation.class_choices"))
 
     builder_before = get_builder_from_session()
     choices = {"subclass": subclass_name}
@@ -194,7 +161,11 @@ def select_subclass():
 
 @character_creation_bp.route("/class-choices")
 def class_choices():
-    """Display all class and subclass features with choices."""
+    """Display all class and subclass features with choices.
+
+    If the character level qualifies for a subclass, the subclass picker
+    is embedded at the top of this page (Phase 2 merge).
+    """
     builder = get_builder_from_session()
     if not builder:
         return redirect(url_for("index.index"))
@@ -202,13 +173,20 @@ def class_choices():
     character = builder.to_json()
     class_name = character.get("class", "Fighter")
     character_level = character.get("level", 1)
-    character.get("subclass")
     choices_made = character.get("choices_made", {})
 
     if class_name not in data_loader.classes:
         return redirect(url_for("character_creation.choose_class"))
 
     class_data = data_loader.classes[class_name]
+
+    # Subclass selection — embedded in this page (Phase 2)
+    subclass_level = class_data.get("subclass_selection_level", 3)
+    needs_subclass = character_level >= subclass_level
+    subclasses = {}
+    current_subclass = character.get("subclass", "")
+    if needs_subclass:
+        subclasses = data_loader.get_subclasses_for_class(class_name)
 
     # Use builder to get class features and choices (business logic moved to CharacterBuilder)
     feature_data = builder.get_class_features_and_choices()
@@ -328,6 +306,7 @@ def class_choices():
             }
         )
 
+    nav = get_nav_context(builder, "class_choices")
     return render_template(
         "class_choices.html",
         character=character,
@@ -336,17 +315,27 @@ def class_choices():
         character_level=character_level,
         core_traits=core_traits,
         choices_made=choices_made,
+        needs_subclass=needs_subclass,
+        subclasses=subclasses,
+        current_subclass=current_subclass,
+        **nav,
     )
 
 
 @character_creation_bp.route("/submit-class-choices", methods=["POST"])
 def submit_class_choices():
-    """Process class choice submissions."""
+    """Process class choice submissions (including embedded subclass)."""
     builder_before = get_builder_from_session()
     builder = get_builder_from_session()
 
     # Collect all choices from the form
     choices = {}
+
+    # Process embedded subclass selection (Phase 2)
+    subclass = request.form.get("subclass")
+    if subclass:
+        builder.apply_choice("subclass", subclass)
+        choices["subclass"] = subclass
 
     # Process skill selections
     skills = request.form.getlist("skills")
@@ -364,9 +353,10 @@ def submit_class_choices():
             choice_name = key.replace("choice_", "")
             choices[choice_name] = values[0] if len(values) == 1 else values
 
-    # Apply all choices at once
-    if choices:
-        builder.apply_choices(choices)
+    # Apply all choices at once (subclass already applied above for ordering)
+    remaining = {k: v for k, v in choices.items() if k != "subclass"}
+    if remaining:
+        builder.apply_choices(remaining)
 
     builder.set_step("background")
     save_builder_to_session(builder)

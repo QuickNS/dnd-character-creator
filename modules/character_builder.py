@@ -52,14 +52,21 @@ class CharacterBuilder:
 
     # Character creation steps in order
     CREATION_STEPS = [
-        "species",
-        "lineage",  # Optional - only for species with variants
-        "class",
-        "subclass",  # Only at appropriate level
-        "background",
-        "abilities",
-        "features",  # Any additional choices (feats, skills, etc.)
-        "complete",
+        "create",           # Name + alignment
+        "class",            # Class + level selection
+        "class_choices",    # Subclass (if applicable) + class feature choices
+        "background",       # Background selection
+        "background_skill_replacement",  # Optional - overlap resolution
+        "feat_choices",     # Optional - origin feat choices
+        "species",          # Species selection
+        "species_traits",   # Optional - species trait choices
+        "species_feat_choices",  # Optional - species feat choices
+        "lineage",          # Optional - subspecies/lineage
+        "species_skill_replacement",  # Optional - species skill overlap resolution
+        "languages",        # Language selection
+        "ability_scores",   # Ability scores + background bonuses
+        "equipment",        # Equipment selection
+        "complete",         # Character summary
     ]
 
     def __init__(self, data_dir: str = None):
@@ -278,6 +285,16 @@ class CharacterBuilder:
 
     def _clear_species_features(self):
         """Clear all species-related features and effects before re-applying."""
+        # Clear species skill replacement data
+        prev_species_name = self.character_data.get("species", "") or ""
+        prev_replacements = self.character_data["choices_made"].pop(
+            "species_skill_replacements", []
+        )
+        self._remove_skills_sourced_from(prev_replacements, prev_species_name)
+        self.character_data["choices_made"].pop(
+            "species_skill_replacements_needed", None
+        )
+
         # Clear species and lineage features
         self.character_data["features"]["species"] = []
         self.character_data["features"]["lineage"] = []
@@ -338,6 +355,16 @@ class CharacterBuilder:
 
     def _clear_lineage_features(self):
         """Clear all lineage-related features and effects before re-applying."""
+        # Clear species skill replacement data (lineage change may affect overlap count)
+        species_name = self.character_data.get("species", "") or ""
+        prev_replacements = self.character_data["choices_made"].pop(
+            "species_skill_replacements", []
+        )
+        self._remove_skills_sourced_from(prev_replacements, species_name)
+        self.character_data["choices_made"].pop(
+            "species_skill_replacements_needed", None
+        )
+
         # Clear lineage features
         self.character_data["features"]["lineage"] = []
 
@@ -998,6 +1025,17 @@ class CharacterBuilder:
                     self.character_data["proficiency_sources"]["skills"][skill] = (
                         source_display
                     )
+                elif source_type in (
+                    "species", "species_choice", "lineage", "lineage_choice"
+                ):
+                    # Skill overlap — species/lineage tried to grant a skill
+                    # the character already has. Track for replacement choice.
+                    needed = self.character_data["choices_made"].get(
+                        "species_skill_replacements_needed", 0
+                    )
+                    self.character_data["choices_made"][
+                        "species_skill_replacements_needed"
+                    ] = needed + 1
 
         elif effect_type == "grant_skill_expertise":
             skills = effect.get("skills", [])
@@ -2201,6 +2239,12 @@ class CharacterBuilder:
                 self.apply_background_skill_replacement(choice_value)
             return True
 
+        # Species skill replacements — restore from saved choices
+        elif choice_key_lower == "species_skill_replacements":
+            if isinstance(choice_value, list):
+                self.apply_species_skill_replacement(choice_value)
+            return True
+
         # Spells - Legacy handler (cantrip selection removed from creation wizard)
         elif choice_key_lower == "spellcasting":
             # Old system: cantrips were selected during character creation
@@ -2687,9 +2731,17 @@ class CharacterBuilder:
                 self.apply_choice(key, choices[key])
 
         # Second pass: apply remaining choices (class-specific features, etc.)
+        # Skip species_skill_replacements — it needs a late pass after trait effects.
         for key, value in choices.items():
-            if key not in order:
+            if key not in order and key != "species_skill_replacements":
                 self.apply_choice(key, value)
+
+        # Third pass: apply species skill replacements AFTER all trait choices
+        # are processed (trait effects trigger the overlap detection).
+        if "species_skill_replacements" in choices:
+            self.apply_choice(
+                "species_skill_replacements", choices["species_skill_replacements"]
+            )
 
         # Resolve any effects that depended on choices made after species was applied
         self._apply_pending_dynamic_effects()
@@ -5461,6 +5513,71 @@ class CharacterBuilder:
 
         self.character_data["choices_made"][
             "background_skill_replacements"
+        ] = valid_skills
+        return True
+
+    # ==================== Species Skill Replacement ====================
+
+    def get_species_skill_replacement_info(self) -> Dict[str, Any]:
+        """
+        Return information about species/lineage skill replacement choices needed.
+
+        When a species or lineage grants a skill proficiency the character
+        already has (e.g. from their class or background), D&D 2024 rules
+        require offering a replacement from any skill the character doesn't
+        already have.
+
+        Returns:
+            Dict with keys:
+            - 'needed': int — number of replacement skills to choose
+            - 'options': list[str] — skills available to pick as replacements
+            - 'already_chosen': list[str] — replacements already committed
+        """
+        needed = self.character_data["choices_made"].get(
+            "species_skill_replacements_needed", 0
+        )
+        already_chosen = self.character_data["choices_made"].get(
+            "species_skill_replacements", []
+        )
+        if not needed:
+            return {"needed": 0, "options": [], "already_chosen": already_chosen}
+
+        current_profs = set(self.character_data["proficiencies"]["skills"])
+        options = [s for s in self._ALL_SKILLS if s not in current_profs]
+
+        return {"needed": needed, "options": options, "already_chosen": already_chosen}
+
+    def apply_species_skill_replacement(self, skills: List[str]) -> bool:
+        """
+        Apply replacement skill proficiencies chosen to offset species/lineage overlaps.
+
+        Args:
+            skills: Skill names selected by the player as replacements.
+
+        Returns:
+            True on success.
+        """
+        species_name = self.character_data.get("species", "Unknown")
+        needed = self.character_data["choices_made"].get(
+            "species_skill_replacements_needed", 0
+        )
+
+        # Remove previously committed replacements so re-submission is idempotent
+        prev_replacements = self.character_data["choices_made"].get(
+            "species_skill_replacements", []
+        )
+        self._remove_skills_sourced_from(prev_replacements, species_name)
+
+        # Apply new replacements (capped at the number needed)
+        skill_sources = self.character_data["proficiency_sources"]["skills"]
+        valid_skills = [s for s in skills if s in self._ALL_SKILLS][:needed]
+        for skill in valid_skills:
+            if skill not in self.character_data["proficiencies"]["skills"]:
+                self.character_data["proficiencies"]["skills"].append(skill)
+                skill_sources[skill] = species_name
+
+        self.character_data["choices_made"][
+            "species_skill_replacements"
         ] = valid_skills
         return True
 

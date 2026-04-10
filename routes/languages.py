@@ -7,6 +7,7 @@ from utils.route_helpers import (
     get_builder_from_session,
     save_builder_to_session,
     log_route_processing,
+    get_nav_context,
 )
 
 languages_bp = Blueprint("languages", __name__)
@@ -26,7 +27,7 @@ def choose_languages():
     if current_step not in [
         "languages",
         "ability_scores",
-        "background_bonuses",
+        "equipment",
         "complete",
     ]:
         return redirect(url_for("index.index"))
@@ -42,11 +43,13 @@ def choose_languages():
     base_languages = language_options["base_languages"]
     available_languages = language_options["available_languages"]
 
+    nav = get_nav_context(builder, "languages")
     return render_template(
         "choose_languages.html",
         character=character,
         base_languages=sorted(base_languages),
         available_languages=available_languages,
+        **nav,
     )
 
 

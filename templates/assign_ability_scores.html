@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "macros/wizard_nav.html" import wizard_nav %}
 
 {% block content %}
 <div class="row justify-content-center">
@@ -11,11 +12,12 @@
             </div>
             <div class="card-body">
                 <div class="alert alert-info">
-                    <h5><i class="fas fa-info-circle"></i> Standard Array</h5>
-                    <p class="mb-2">Use the balanced standard array: <strong>{{ standard_array|join(', ') }}</strong></p>
                     {% if primary_abilities %}
-                    <p class="mb-0"><strong>{{ character.class }} Primary Abilities:</strong> {{ primary_abilities|join(', ') }}</p>
+                    <h5><i class="fas fa-info-circle"></i> {{ character.class }} Primary Abilities: {{ primary_abilities|join(', ') }}</h5>
+                    {% else %}
+                    <h5><i class="fas fa-info-circle"></i> Ability Scores</h5>
                     {% endif %}
+                    <p class="mb-0">Choose how to assign your ability scores, then select how to apply your background's ability score bonuses.</p>
                 </div>
                 
                 <form method="POST" action="{{ url_for('ability_scores.submit_ability_scores') }}">
@@ -126,14 +128,81 @@
                         </div>
                     </div>
                     
-                    <div class="d-grid gap-2 mt-4">
-                        <button type="submit" class="btn btn-danger btn-lg" id="submit-btn">
-                            <i class="fas fa-arrow-right"></i> Continue to Background Bonuses
-                        </button>
-                        <a href="{{ url_for('species.choose_species') if not character.get('lineage') else url_for('species.choose_lineage') }}" class="btn btn-outline-secondary">
-                            <i class="fas fa-arrow-left"></i> Back
-                        </a>
+                    <!-- Background Ability Score Bonuses -->
+                    <div class="card mb-4" id="background-bonuses-section">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-plus"></i> Background Ability Score Bonuses</h5>
+                        </div>
+                        <div class="card-body">
+                            <p>Your <strong>{{ character.background }}</strong> background grants +{{ asi_total_points }} ability score points.</p>
+                            
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="radio" name="bonus_method" 
+                                       id="bonus_suggested" value="suggested" checked>
+                                <label class="form-check-label" for="bonus_suggested">
+                                    <strong>Suggested Bonuses</strong><br>
+                                    <div class="mt-1">
+                                        {% for ability, bonus in asi_suggested.items() %}
+                                            <span class="badge bg-success me-1">{{ ability }} +{{ bonus }}</span>
+                                        {% endfor %}
+                                    </div>
+                                </label>
+                            </div>
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="radio" name="bonus_method" 
+                                       id="bonus_manual" value="manual">
+                                <label class="form-check-label" for="bonus_manual">
+                                    <strong>Choose Manually</strong><br>
+                                    <small class="text-muted">Distribute {{ asi_total_points }} points as +2/+1 or +1/+1/+1</small>
+                                </label>
+                            </div>
+                            
+                            <div id="manual-bonuses" style="display: none;">
+                                <div class="row">
+                                    {% for ability in asi_ability_options %}
+                                    <div class="col-md-4 mb-2">
+                                        <label class="form-label small">{{ ability }}</label>
+                                        <select class="form-select form-select-sm bonus-select" name="bonus_{{ ability }}" data-ability="{{ ability }}">
+                                            <option value="0">+0</option>
+                                            <option value="1">+1</option>
+                                            <option value="2">+2</option>
+                                        </select>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                <div id="bonus-validation" class="small mt-2" style="display: none;">
+                                    Points used: <span id="bonus-points-used">0</span> / {{ asi_total_points }}
+                                </div>
+                            </div>
+                        </div>
                     </div>
+                    
+                    <!-- Cumulative Ability Score Summary -->
+                    <div class="card mb-4" id="score-summary-section">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-calculator"></i> Ability Score Summary</h5>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-muted small">Final ability scores with background bonuses applied.</p>
+                            <div class="row">
+                                {% for ability in ['Strength', 'Dexterity', 'Constitution', 'Intelligence', 'Wisdom', 'Charisma'] %}
+                                <div class="col-md-4 col-6 mb-3 text-center">
+                                    <div class="border rounded p-2">
+                                        <div class="text-muted small">{{ ability }}</div>
+                                        <div class="fs-4 fw-bold" id="summary_score_{{ ability }}">—</div>
+                                        <div class="text-muted small">
+                                            <span id="summary_base_{{ ability }}">—</span>
+                                            <span id="summary_bonus_{{ ability }}" class="text-success" style="display: none;"></span>
+                                        </div>
+                                        <div class="small fw-semibold" id="summary_mod_{{ ability }}"></div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {{ wizard_nav(back_url=back_url, back_label=back_label, next_label=next_label) }}
                 </form>
             </div>
         </div>
@@ -297,5 +366,126 @@ abilitySelects.forEach(select => {
 
 // Initialize
 updateVisibility();
+
+// ── Background Bonus section toggle ─────────────────────────────────────────
+const bonusSuggestedRadio = document.getElementById('bonus_suggested');
+const bonusManualRadio = document.getElementById('bonus_manual');
+const manualBonuses = document.getElementById('manual-bonuses');
+const bonusValidation = document.getElementById('bonus-validation');
+const bonusPointsUsed = document.getElementById('bonus-points-used');
+const bonusSelects = document.querySelectorAll('.bonus-select');
+const ASI_TOTAL = {{ asi_total_points }};
+
+function updateBonusVisibility() {
+    manualBonuses.style.display = bonusManualRadio.checked ? 'block' : 'none';
+    if (bonusManualRadio.checked) {
+        validateBonuses();
+    }
+}
+
+function validateBonuses() {
+    let total = 0;
+    bonusSelects.forEach(sel => { total += parseInt(sel.value || 0); });
+    bonusPointsUsed.textContent = total;
+    bonusValidation.style.display = 'block';
+    
+    if (total === ASI_TOTAL) {
+        bonusValidation.className = 'small mt-2 text-success';
+    } else if (total > ASI_TOTAL) {
+        bonusValidation.className = 'small mt-2 text-danger';
+    } else {
+        bonusValidation.className = 'small mt-2 text-warning';
+    }
+}
+
+bonusSuggestedRadio?.addEventListener('change', updateBonusVisibility);
+bonusManualRadio?.addEventListener('change', updateBonusVisibility);
+bonusSelects.forEach(sel => sel.addEventListener('change', () => { validateBonuses(); updateSummary(); }));
+updateBonusVisibility();
+
+// ── Cumulative Score Summary ────────────────────────────────────────────────
+const RECOMMENDED = {{ recommended_allocation|tojson }};
+const ASI_SUGGESTED = {{ asi_suggested|tojson }};
+const STANDARD_ARRAY = {{ standard_array|tojson }};
+
+function getBaseScores() {
+    if (recommendedRadio.checked) {
+        return Object.assign({}, RECOMMENDED);
+    } else if (manualRadio.checked) {
+        const scores = {};
+        ABILITIES.forEach(a => {
+            const sel = document.getElementById('ability_' + a);
+            scores[a] = sel && sel.value ? parseInt(sel.value) : 0;
+        });
+        return scores;
+    } else if (pointBuyRadio.checked) {
+        return Object.assign({}, pbScores);
+    }
+    return {};
+}
+
+function getBonuses() {
+    if (bonusSuggestedRadio && bonusSuggestedRadio.checked) {
+        return Object.assign({}, ASI_SUGGESTED);
+    } else if (bonusManualRadio && bonusManualRadio.checked) {
+        const bonuses = {};
+        bonusSelects.forEach(sel => {
+            const ability = sel.dataset.ability;
+            const val = parseInt(sel.value || 0);
+            if (val > 0) bonuses[ability] = val;
+        });
+        return bonuses;
+    }
+    return {};
+}
+
+function updateSummary() {
+    const base = getBaseScores();
+    const bonuses = getBonuses();
+    
+    ABILITIES.forEach(a => {
+        const scoreEl = document.getElementById('summary_score_' + a);
+        const baseEl = document.getElementById('summary_base_' + a);
+        const bonusEl = document.getElementById('summary_bonus_' + a);
+        const modEl = document.getElementById('summary_mod_' + a);
+        
+        const baseVal = base[a] || 0;
+        const bonusVal = bonuses[a] || 0;
+        const total = baseVal + bonusVal;
+        
+        if (baseVal > 0) {
+            scoreEl.textContent = total;
+            baseEl.textContent = 'Base ' + baseVal;
+            if (bonusVal > 0) {
+                bonusEl.textContent = ' +' + bonusVal;
+                bonusEl.style.display = 'inline';
+            } else {
+                bonusEl.style.display = 'none';
+            }
+            const mod = Math.floor((total - 10) / 2);
+            modEl.textContent = (mod >= 0 ? '+' : '') + mod;
+        } else {
+            scoreEl.textContent = '—';
+            baseEl.textContent = '—';
+            bonusEl.style.display = 'none';
+            modEl.textContent = '';
+        }
+    });
+}
+
+// Hook summary updates into all score-changing events
+recommendedRadio.addEventListener('change', () => { updateVisibility(); updateSummary(); });
+manualRadio.addEventListener('change', () => { updateVisibility(); updateSummary(); });
+pointBuyRadio.addEventListener('change', () => { updateVisibility(); updateSummary(); });
+abilitySelects.forEach(sel => sel.addEventListener('change', () => { validateManualAssignment(); updateSummary(); }));
+bonusSuggestedRadio?.addEventListener('change', updateSummary);
+bonusManualRadio?.addEventListener('change', updateSummary);
+
+// Override point buy UI update to also refresh summary
+const _origUpdatePBUI = updatePointBuyUI;
+updatePointBuyUI = function() { _origUpdatePBUI(); updateSummary(); };
+
+// Initial summary computation
+updateSummary();
 </script>
 {% endblock %}
