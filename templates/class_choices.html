@@ -134,6 +134,48 @@
                                             <span id="skill-counter">0</span> / {{ choice.count }} selected
                                         </div>
                                     
+                                    {% elif choice.type == 'tools' %}
+                                        {% if choice.count == 1 %}
+                                            <!-- Single tool choice - radio buttons -->
+                                            <div class="row">
+                                                {% for option in choice.options %}
+                                                <div class="col-md-6 mb-2">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="radio"
+                                                               name="tools" value="{{ option }}"
+                                                               id="tool_{{ loop.index }}"
+                                                               {% if choice.required %}required{% endif %}
+                                                               {% if choices_made.get('tool_choices') and option in choices_made.get('tool_choices') %}checked{% endif %}>
+                                                        <label class="form-check-label" for="tool_{{ loop.index }}">
+                                                            {{ option }}
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                                {% endfor %}
+                                            </div>
+                                        {% else %}
+                                            <!-- Multiple tool choice - checkboxes -->
+                                            <div class="row">
+                                                {% for option in choice.options %}
+                                                <div class="col-md-6 mb-2">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input tool-choice" type="checkbox"
+                                                               name="tools" value="{{ option }}"
+                                                               id="tool_{{ loop.index }}"
+                                                               data-max="{{ choice.count }}" data-group="tools"
+                                                               {% if choices_made.get('tool_choices') and option in choices_made.get('tool_choices') %}checked{% endif %}>
+                                                        <label class="form-check-label" for="tool_{{ loop.index }}">
+                                                            {{ option }}
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                                {% endfor %}
+                                            </div>
+                                            <div class="text-muted small">
+                                                <span id="tool-counter">0</span> / {{ choice.count }} selected
+                                            </div>
+                                        {% endif %}
+
                                     {% elif choice.type == 'feature' %}
                                         {% if choice.options %}
                                             {% if choice.count == 1 %}
@@ -240,6 +282,12 @@ document.addEventListener('DOMContentLoaded', function() {
             handleGroupChoice(group, group + '-counter');
         });
     });
+
+    document.querySelectorAll('.tool-choice').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            handleGroupChoice('tools', 'tool-counter');
+        });
+    });
     
     // Add listeners for parent choices that trigger nested choices
     document.querySelectorAll('input[type="radio"]').forEach(radio => {
@@ -336,6 +384,9 @@ document.addEventListener('DOMContentLoaded', function() {
     function updateAllCounters() {
         // Update skill counter
         handleGroupChoice('skills', 'skill-counter');
+        
+        // Update tool counter
+        handleGroupChoice('tools', 'tool-counter');
         
         // Update feature counters
         document.querySelectorAll('.feature-choice').forEach(checkbox => {

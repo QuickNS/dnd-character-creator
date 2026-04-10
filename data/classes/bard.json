@@ -21,8 +21,18 @@
   "weapon_proficiencies": [
     "Simple weapons"
   ],
-  "tool_proficiencies": [
-    "Three Musical Instruments"
+  "tool_proficiencies_count": 3,
+  "tool_options": [
+    "Bagpipes",
+    "Drum",
+    "Dulcimer",
+    "Flute",
+    "Horn",
+    "Lute",
+    "Lyre",
+    "Pan Flute",
+    "Shawm",
+    "Viol"
   ],
   "skill_proficiencies_count": 3,
   "skill_options": [

@@ -20,8 +20,35 @@
     "Simple weapons",
     "Martial weapons that have the Light property"
   ],
-  "tool_proficiencies": [
-    "Choose one type of artisan's tools or one musical instrument"
+  "tool_proficiencies_count": 1,
+  "tool_options": [
+    "Alchemist's Supplies",
+    "Brewer's Supplies",
+    "Calligrapher's Supplies",
+    "Carpenter's Tools",
+    "Cartographer's Tools",
+    "Cobbler's Tools",
+    "Cook's Utensils",
+    "Glassblower's Tools",
+    "Jeweler's Tools",
+    "Leatherworker's Tools",
+    "Mason's Tools",
+    "Painter's Supplies",
+    "Potter's Tools",
+    "Smith's Tools",
+    "Tinker's Tools",
+    "Weaver's Tools",
+    "Woodcarver's Tools",
+    "Bagpipes",
+    "Drum",
+    "Dulcimer",
+    "Flute",
+    "Horn",
+    "Lute",
+    "Lyre",
+    "Pan Flute",
+    "Shawm",
+    "Viol"
   ],
   "skill_proficiencies_count": 2,
   "skill_options": [

@@ -435,3 +435,53 @@ class TestBardSpellList:
             assert len(available[level]) > 0, (
                 f"Bard available_spells empty for level {level}"
             )
+
+
+class TestBardToolProficiencyChoice:
+    """Regression tests: Bard gets Three Musical Instruments as a tool proficiency choice."""
+
+    def test_bard_tool_options_in_class_data(self):
+        """Bard class data should expose tool_proficiencies_count=3 and musical instrument options."""
+        builder = CharacterBuilder()
+        class_data = builder._load_class_data("Bard")
+        assert class_data is not None
+        assert class_data.get("tool_proficiencies_count") == 3
+        tool_options = class_data.get("tool_options", [])
+        assert len(tool_options) >= 10
+        assert "Lute" in tool_options
+        assert "Flute" in tool_options
+
+    def test_bard_tool_choice_in_class_features(self):
+        """get_class_features_and_choices() should include a tool proficiency choice (count=3) for Bard."""
+        builder = CharacterBuilder()
+        builder.set_species("Human")
+        builder.set_class("Bard", 1)
+        feature_data = builder.get_class_features_and_choices()
+        choices = feature_data["choices"]
+        tool_choices = [c for c in choices if c.get("type") == "tools"]
+        assert len(tool_choices) == 1
+        tc = tool_choices[0]
+        assert tc["count"] == 3
+        assert "Lute" in tc["options"]
+
+    def test_bard_apply_three_instrument_choices(self):
+        """Applying tool_choices for three instruments should add all to proficiencies."""
+        builder = CharacterBuilder()
+        builder.apply_choices({
+            "character_name": "Test Bard",
+            "level": 1,
+            "species": "Human",
+            "class": "Bard",
+            "background": "Entertainer",
+            "ability_scores": {
+                "Strength": 8, "Dexterity": 14, "Constitution": 12,
+                "Intelligence": 13, "Wisdom": 10, "Charisma": 15,
+            },
+            "background_bonuses": {"Charisma": 2, "Dexterity": 1},
+            "tool_choices": ["Lute", "Flute", "Drum"],
+        })
+        character = builder.to_character()
+        tools = character["proficiencies"]["tools"]
+        assert "Lute" in tools
+        assert "Flute" in tools
+        assert "Drum" in tools
