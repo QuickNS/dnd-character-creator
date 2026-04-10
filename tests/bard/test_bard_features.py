@@ -1,5 +1,8 @@
 """Tests for Bard class features and subclasses (D&D 2024)."""
 
+import json
+from pathlib import Path
+
 import pytest
 from modules.character_builder import CharacterBuilder
 
@@ -324,3 +327,111 @@ class TestCollegeOfValor:
         feature_names = [f["name"] for f in subclass_features]
 
         assert "Battle Magic" in feature_names
+
+
+# ==================== Spell List Completeness (Issue Fix) ====================
+
+
+class TestBardSpellList:
+    """Regression tests for GitHub Issue: Bard spell list incomplete."""
+
+    DATA_DIR = Path(__file__).parent.parent.parent / "data"
+
+    def _load_bard_spell_list(self):
+        path = self.DATA_DIR / "spells" / "class_lists" / "bard.json"
+        with open(path) as f:
+            return json.load(f)
+
+    def test_bard_has_cantrips(self):
+        """Bard spell list must include cantrips."""
+        data = self._load_bard_spell_list()
+        assert len(data.get("cantrips", [])) >= 10, (
+            "Expected at least 10 Bard cantrips"
+        )
+
+    def test_bard_cantrips_include_key_spells(self):
+        """Key Bard cantrips (Vicious Mockery, Minor Illusion) are present."""
+        data = self._load_bard_spell_list()
+        cantrips = data.get("cantrips", [])
+        assert "Vicious Mockery" in cantrips
+        assert "Minor Illusion" in cantrips
+
+    def test_bard_has_all_spell_levels(self):
+        """Bard spell list must have spells at levels 1 through 9."""
+        data = self._load_bard_spell_list()
+        spells_by_level = data.get("spells_by_level", {})
+        for level in range(1, 10):
+            assert str(level) in spells_by_level, (
+                f"Missing Bard spells for level {level}"
+            )
+            assert len(spells_by_level[str(level)]) > 0, (
+                f"No spells listed for Bard level {level}"
+            )
+
+    def test_bard_level1_includes_key_spells(self):
+        """Level 1 Bard spells must include Healing Word and Dissonant Whispers."""
+        data = self._load_bard_spell_list()
+        level1 = data["spells_by_level"]["1"]
+        assert "Healing Word" in level1
+        assert "Dissonant Whispers" in level1
+        assert "Thunderwave" in level1
+
+    def test_bard_level3_includes_hypnotic_pattern(self):
+        """Level 3 Bard spells must include Hypnotic Pattern."""
+        data = self._load_bard_spell_list()
+        assert "Hypnotic Pattern" in data["spells_by_level"]["3"]
+
+    def test_bard_level5_includes_dominate_person(self):
+        """Level 5 Bard spells must include Dominate Person."""
+        data = self._load_bard_spell_list()
+        assert "Dominate Person" in data["spells_by_level"]["5"]
+
+    def test_bard_level9_includes_power_word_kill(self):
+        """Level 9 Bard spells must include Power Word Kill."""
+        data = self._load_bard_spell_list()
+        assert "Power Word Kill" in data["spells_by_level"]["9"]
+
+    def test_spell_definitions_exist_for_bard_spells(self):
+        """All spells in the Bard list must have a definition file."""
+        data = self._load_bard_spell_list()
+        definitions_dir = self.DATA_DIR / "spells" / "definitions"
+
+        def _to_filename(spell_name: str) -> str:
+            return (
+                spell_name.lower()
+                .replace("'", "")
+                .replace("/", "_")
+                .replace(" ", "_")
+            )
+
+        missing = []
+        for spell in data.get("cantrips", []):
+            fname = _to_filename(spell) + ".json"
+            if not (definitions_dir / fname).exists():
+                missing.append(f"cantrip: {spell} ({fname})")
+
+        for level, spells in data.get("spells_by_level", {}).items():
+            for spell in spells:
+                fname = _to_filename(spell) + ".json"
+                if not (definitions_dir / fname).exists():
+                    missing.append(f"level {level}: {spell} ({fname})")
+
+        assert missing == [], (
+            f"Missing spell definition files:\n" + "\n".join(missing)
+        )
+
+    def test_bard_spellcasting_available_spells_populated(self):
+        """CharacterBuilder should expose all 9 levels of Bard spells via spellcasting stats."""
+        builder = CharacterBuilder()
+        builder.set_species("Human")
+        builder.set_class("Bard", 20)
+        stats = builder.calculate_spellcasting_stats()
+
+        available = stats.get("available_spells", {})
+        for level in range(1, 10):
+            assert level in available, (
+                f"Bard available_spells missing level {level}"
+            )
+            assert len(available[level]) > 0, (
+                f"Bard available_spells empty for level {level}"
+            )
