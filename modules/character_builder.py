@@ -1137,6 +1137,17 @@ class CharacterBuilder:
             # Martial Melee with Light property)
             self.character_data["monk_dexterous_attacks"] = True
 
+        elif effect_type == "grant_language":
+            languages = effect.get("languages", [])
+            for lang in languages:
+                if lang not in self.character_data["proficiencies"]["languages"]:
+                    self.character_data["proficiencies"]["languages"].append(lang)
+                    if source_type in ["species", "lineage"]:
+                        source_display = self.character_data.get("species", source_name)
+                    else:
+                        source_display = source_name
+                    self.character_data["proficiency_sources"]["languages"][lang] = source_display
+
         elif effect_type == "grant_origin_feat":
             feat_name = effect.get("feat")
             if feat_name:

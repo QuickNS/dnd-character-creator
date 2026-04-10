@@ -131,70 +131,90 @@
   },
   "features_by_level": {
     "1": {
-      "Expertise": "Gain Expertise in two skills.",
-      "Sneak Attack": "Once per turn, deal extra 1d6 damage with Finesse/Ranged weapon if you have Advantage or ally within 5 feet of target.",
-      "Thieves' Cant": "Know Thieves' Cant and one other language.",
-      "Weapon Mastery": "Use mastery properties of two weapons."
+      "Expertise": {
+        "description": "Gain Expertise in two skills of your choice. Sleight of Hand and Stealth are recommended if you have proficiency in them.",
+        "effects": [
+          {"type": "grant_skill_expertise", "skills": ["__expertise_skills__"]}
+        ]
+      },
+      "Sneak Attack": "Once per turn, deal extra 1d6 damage with Finesse/Ranged weapon if you have Advantage or ally within 5 feet of target. The extra damage's type is the same as the weapon's type.",
+      "Thieves' Cant": {
+        "description": "You know Thieves' Cant and one other language of your choice.",
+        "effects": [
+          {"type": "grant_language", "languages": ["Thieves' Cant"]}
+        ]
+      },
+      "Weapon Mastery": "Use mastery properties of two weapons of your choice with which you have proficiency."
     },
     "2": {
-      "Cunning Action": "Take Dash, Disengage, or Hide as Bonus Action."
+      "Cunning Action": "Your quick thinking and agility allow you to take Dash, Disengage, or Hide as a Bonus Action on your turn."
     },
     "3": {
-      "Rogue Subclass": "Choose your roguish archetype.",
-      "Steady Aim": "As Bonus Action, give yourself Advantage on next attack (Speed 0 after)."
+      "Rogue Subclass": "Choose your roguish archetype: Arcane Trickster, Assassin, Soulknife, or Thief.",
+      "Steady Aim": "As a Bonus Action, give yourself Advantage on your next attack roll on the current turn. You can use this only if you haven't moved, and your Speed becomes 0 until the end of the turn."
     },
     "4": {
-      "Ability Score Improvement": "Gain Ability Score Improvement feat or another feat."
+      "Ability Score Improvement": "Gain Ability Score Improvement feat or another feat of your choice."
     },
     "5": {
-      "Cunning Strike": "Add effects to Sneak Attack by foregoing dice: Poison (1d6), Trip (1d6), Withdraw (1d6).",
-      "Uncanny Dodge": "When hit by attack, use Reaction to halve damage."
+      "Cunning Strike": "When you deal Sneak Attack damage, you can add one Cunning Strike effect by foregoing Sneak Attack dice. DC equals 8 + Dexterity modifier + Proficiency Bonus. Options: Poison (1d6, Con save or Poisoned 1 min, requires Poisoner's Kit), Trip (1d6, Dex save or Prone if Large or smaller), Withdraw (1d6, move half speed without provoking).",
+      "Uncanny Dodge": "When an attacker you can see hits you with an attack roll, use your Reaction to halve the attack's damage against you."
     },
     "6": {
-      "Expertise": "Gain Expertise in two more skills."
+      "Expertise": {
+        "description": "Gain Expertise in two more skills of your choice.",
+        "effects": [
+          {"type": "grant_skill_expertise", "skills": ["__expertise_skills__"]}
+        ]
+      }
     },
     "7": {
-      "Evasion": "Dexterity saves: no damage on success, half on fail.",
-      "Reliable Talent": "Treat d20 rolls of 9 or lower as 10 for skill/tool proficiencies."
+      "Evasion": "When subjected to a Dexterity saving throw for half damage, you take no damage on a success and half on a failure. You can't use this if you have the Incapacitated condition.",
+      "Reliable Talent": "Whenever you make an ability check that uses one of your skill or tool proficiencies, you can treat a d20 roll of 9 or lower as a 10."
     },
     "8": {
-      "Ability Score Improvement": "Gain Ability Score Improvement feat or another feat."
+      "Ability Score Improvement": "Gain Ability Score Improvement feat or another feat of your choice."
     },
     "9": {
       "Subclass Feature": "Gain feature from your archetype."
     },
     "10": {
-      "Ability Score Improvement": "Gain Ability Score Improvement feat or another feat."
+      "Ability Score Improvement": "Gain Ability Score Improvement feat or another feat of your choice."
     },
     "11": {
-      "Improved Cunning Strike": "Can use up to two Cunning Strike effects per Sneak Attack."
+      "Improved Cunning Strike": "You can use up to two Cunning Strike effects when you deal Sneak Attack damage, paying the die cost for each effect."
     },
     "12": {
-      "Ability Score Improvement": "Gain Ability Score Improvement feat or another feat."
+      "Ability Score Improvement": "Gain Ability Score Improvement feat or another feat of your choice."
     },
     "13": {
       "Subclass Feature": "Gain feature from your archetype."
     },
     "14": {
-      "Devious Strikes": "New Cunning Strikes: Daze (2d6), Knock Out (6d6), Obscure (3d6)."
+      "Devious Strikes": "New Cunning Strike options: Daze (2d6, Con save or limited to one action/move/bonus on next turn), Knock Out (6d6, Con save or Unconscious 1 min), Obscure (3d6, Dex save or Blinded until end of next turn)."
     },
     "15": {
-      "Slippery Mind": "Gain proficiency in Wisdom and Charisma saves."
+      "Slippery Mind": {
+        "description": "Your mind is exceptionally difficult to control. You gain proficiency in Wisdom and Charisma saving throws.",
+        "effects": [
+          {"type": "grant_save_proficiency", "abilities": ["Wisdom", "Charisma"]}
+        ]
+      }
     },
     "16": {
-      "Ability Score Improvement": "Gain Ability Score Improvement feat or another feat."
+      "Ability Score Improvement": "Gain Ability Score Improvement feat or another feat of your choice."
     },
     "17": {
       "Subclass Feature": "Gain capstone feature from your archetype."
     },
     "18": {
-      "Elusive": "No attack roll can have Advantage against you unless you're Incapacitated."
+      "Elusive": "No attack roll can have Advantage against you unless you have the Incapacitated condition."
     },
     "19": {
-      "Epic Boon": "Gain Epic Boon feat. Boon of the Night Spirit recommended."
+      "Epic Boon": "Gain an Epic Boon feat or another feat of your choice. Boon of the Night Spirit is recommended."
     },
     "20": {
-      "Stroke of Luck": "If you fail d20 Test, turn the roll into a 20. Once per Short or Long Rest."
+      "Stroke of Luck": "If you fail a d20 Test, you can turn the roll into a 20. Once per Short or Long Rest."
     }
   }
 }

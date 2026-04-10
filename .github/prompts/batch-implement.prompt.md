@@ -1,29 +1,14 @@
 ---
-description: 'Generate parallel task assignments for a batch of game content: all subclasses for a class, all missing backgrounds, etc.'
+description: 'Implement a batch of game content in parallel'
 ---
 
 Implement all {{ content_category }} for {{ scope }} in parallel.
 
-## Procedure
+Use the `add-game-content` skill for each item. Before parallelizing:
 
-1. Read `data/completeness/backlog.json` to identify all missing items in the specified category
-2. For each missing item, generate an independent task:
-   - Fetch wiki data if not cached
-   - Create/update data file with effects
-   - Validate against schema
-   - Write tests
-3. Identify shared dependencies (e.g., new effect types needed by multiple items)
-4. Resolve shared dependencies first, then parallelize independent items
-
-## Agent Assignment
-
-Each item gets the standard chain:
-1. @wiki-fetcher — Ensure wiki cache exists
-2. @data-author — Create JSON data file
-3. @data-validator — Verify schema compliance
-4. @test-writer — Write tests
-
-If new effect types are needed, @feature-implementer runs first for the shared handler.
+1. Read `data/completeness/backlog.json` to identify all missing items
+2. Identify shared dependencies (e.g., new effect types needed by multiple items) — resolve these first via `implement-class-feature` skill
+3. Then process each independent item in parallel using the `add-game-content` workflow
 
 ## Output
 
