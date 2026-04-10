@@ -3640,9 +3640,10 @@ class CharacterBuilder:
         class_name = self.character_data.get("class", "")
         class_data = self.character_data.get("class_data", {})
         hp_bonuses = self._extract_hp_bonuses()
-        max_hp = self.hp_calculator.calculate_total_hp(
+        hp_breakdown = self.hp_calculator.get_hp_breakdown(
             class_name, constitution_score, hp_bonuses, level
         )
+        max_hp = hp_breakdown["total_hp"]
 
         # Calculate AC (basic calculation - can be enhanced)
         base_ac = 10 + dex_modifier
@@ -3674,6 +3675,7 @@ class CharacterBuilder:
             "speed": speed,
             "hit_point_maximum": max_hp,  # For backward compatibility
             "hit_points": {"current": max_hp, "maximum": max_hp, "temporary": 0},
+            "hp_breakdown": hp_breakdown,
             "hit_dice": {"total": hit_dice_total, "spent": 0},
             "passive_perception": 10
             + wis_modifier

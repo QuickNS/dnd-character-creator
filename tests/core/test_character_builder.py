@@ -467,3 +467,57 @@ def test_manual_ability_scores_method_tracking():
     assert result_rebuilt["ability_scores"] == expected, (
         f"Rebuild failed. Expected {expected}, got {result_rebuilt['ability_scores']}"
     )
+
+
+def test_hp_breakdown_in_combat_stats_no_feature_bonus():
+    """Test that hp_breakdown is included in combat stats with no feature bonuses"""
+    builder = CharacterBuilder()
+    builder.apply_choices({
+        "character_name": "Plain Fighter",
+        "level": 5,
+        "species": "Human",
+        "class": "Fighter",
+        "background": "Soldier",
+        "ability_scores": {
+            "Strength": 16, "Dexterity": 14, "Constitution": 14,
+            "Intelligence": 10, "Wisdom": 12, "Charisma": 8,
+        },
+        "background_bonuses": {"Strength": 2, "Constitution": 1},
+    })
+    character = builder.to_character()
+
+    combat = character["combat"]
+    assert "hp_breakdown" in combat
+
+    bd = combat["hp_breakdown"]
+    assert bd["total_hp"] == combat["hit_points"]["maximum"]
+    assert bd["hit_die"] == 10  # Fighter uses d10
+    assert bd["feature_bonus"] == 0
+
+
+def test_hp_breakdown_in_combat_stats_with_feature_bonus():
+    """Test that hp_breakdown shows feature bonuses (e.g. Dwarven Toughness)"""
+    builder = CharacterBuilder()
+    builder.apply_choices({
+        "character_name": "Tough Dwarf",
+        "level": 5,
+        "species": "Dwarf",
+        "class": "Fighter",
+        "background": "Soldier",
+        "ability_scores": {
+            "Strength": 16, "Dexterity": 10, "Constitution": 15,
+            "Intelligence": 8, "Wisdom": 12, "Charisma": 10,
+        },
+        "background_bonuses": {"Strength": 2, "Constitution": 1},
+    })
+    character = builder.to_character()
+
+    combat = character["combat"]
+    assert "hp_breakdown" in combat
+
+    bd = combat["hp_breakdown"]
+    assert bd["feature_bonus"] > 0
+    assert len(bd["feature_breakdown"]) > 0
+    # Total HP should equal base + con + feature bonuses
+    assert bd["total_hp"] == bd["base_hp"] + bd["constitution_bonus"] + bd["feature_bonus"]
+    assert bd["total_hp"] == combat["hit_points"]["maximum"]

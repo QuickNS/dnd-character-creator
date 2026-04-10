@@ -51,7 +51,16 @@
                             <div class="card-body">
                                 <div class="row">
                                     <div class="col-sm-6 col-md-4">
-                                        <p><strong>Hit Points:</strong> {{ character.combat.hit_points.maximum }}</p>
+                                        <p><strong>Hit Points:</strong> {{ character.combat.hit_points.maximum }}
+                                            {% set bd = character.combat.hp_breakdown %}
+                                            {% if bd and bd.feature_bonus > 0 %}
+                                            <br><small class="text-muted ms-3">Base (d{{ bd.hit_die }}): {{ bd.base_hp }}</small>
+                                            <br><small class="text-muted ms-3">Constitution ({% if bd.constitution_modifier >= 0 %}+{% endif %}{{ bd.constitution_modifier }}): +{{ bd.constitution_bonus }}</small>
+                                            {% for feature in bd.feature_breakdown %}
+                                            <br><small class="text-muted ms-3">{{ feature }}</small>
+                                            {% endfor %}
+                                            {% endif %}
+                                        </p>
                                         <p><strong>Initiative:</strong> {% if character.combat.initiative_bonus >= 0 %}+{% endif %}{{ character.combat.initiative_bonus }}</p>
                                     </div>
                                     <div class="col-sm-6 col-md-4">
