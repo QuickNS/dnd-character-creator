@@ -50,8 +50,8 @@
                 
                 <!-- Subclass Selection (embedded) -->
                 {% if needs_subclass and subclasses %}
-                <div class="card mb-4 border-warning">
-                    <div class="card-header bg-warning text-dark">
+                <div class="card mb-4">
+                    <div class="card-header">
                         <h5 class="mb-0"><i class="fas fa-code-branch"></i> Choose Your {{ character.class }} Subclass</h5>
                     </div>
                     <div class="card-body">
@@ -297,31 +297,36 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Subclass selection: clicking a card selects the radio and reloads
+    // Subclass selection: clicking a card selects the radio and submits
+    function submitSubclass(value) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '{{ url_for("character_creation.select_subclass") }}';
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'subclass';
+        input.value = value;
+        form.appendChild(input);
+        document.body.appendChild(form);
+        form.submit();
+    }
+
     document.querySelectorAll('[data-subclass-option]').forEach(card => {
-        card.addEventListener('click', function() {
+        card.addEventListener('click', function(e) {
+            // Don't double-fire if clicking the radio itself
+            if (e.target.classList.contains('subclass-radio')) return;
             const radio = this.querySelector('.subclass-radio');
-            radio.checked = true;
-            document.querySelectorAll('[data-subclass-option]').forEach(c => c.classList.remove('border-primary'));
-            this.classList.add('border-primary');
+            if (!radio.checked) {
+                radio.checked = true;
+                submitSubclass(radio.value);
+            }
         });
     });
 
-    // When subclass radio changes, apply the subclass server-side and reload
     document.querySelectorAll('.subclass-radio').forEach(radio => {
         radio.addEventListener('change', function() {
             if (this.checked) {
-                // POST to select-subclass to apply, then redirect back here
-                const form = document.createElement('form');
-                form.method = 'POST';
-                form.action = '{{ url_for("character_creation.select_subclass") }}';
-                const input = document.createElement('input');
-                input.type = 'hidden';
-                input.name = 'subclass';
-                input.value = this.value;
-                form.appendChild(input);
-                document.body.appendChild(form);
-                form.submit();
+                submitSubclass(this.value);
             }
         });
     });

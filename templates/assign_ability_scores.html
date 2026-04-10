@@ -12,11 +12,12 @@
             </div>
             <div class="card-body">
                 <div class="alert alert-info">
-                    <h5><i class="fas fa-info-circle"></i> Standard Array</h5>
-                    <p class="mb-2">Use the balanced standard array: <strong>{{ standard_array|join(', ') }}</strong></p>
                     {% if primary_abilities %}
-                    <p class="mb-0"><strong>{{ character.class }} Primary Abilities:</strong> {{ primary_abilities|join(', ') }}</p>
+                    <h5><i class="fas fa-info-circle"></i> {{ character.class }} Primary Abilities: {{ primary_abilities|join(', ') }}</h5>
+                    {% else %}
+                    <h5><i class="fas fa-info-circle"></i> Ability Scores</h5>
                     {% endif %}
+                    <p class="mb-0">Choose how to assign your ability scores, then select how to apply your background's ability score bonuses.</p>
                 </div>
                 
                 <form method="POST" action="{{ url_for('ability_scores.submit_ability_scores') }}">
@@ -158,10 +159,10 @@
                             
                             <div id="manual-bonuses" style="display: none;">
                                 <div class="row">
-                                    {% for ability in ['Strength', 'Dexterity', 'Constitution', 'Intelligence', 'Wisdom', 'Charisma'] %}
+                                    {% for ability in asi_ability_options %}
                                     <div class="col-md-4 mb-2">
                                         <label class="form-label small">{{ ability }}</label>
-                                        <select class="form-select form-select-sm bonus-select" name="bonus_{{ ability }}">
+                                        <select class="form-select form-select-sm bonus-select" name="bonus_{{ ability }}" data-ability="{{ ability }}">
                                             <option value="0">+0</option>
                                             <option value="1">+1</option>
                                             <option value="2">+2</option>
@@ -172,6 +173,31 @@
                                 <div id="bonus-validation" class="small mt-2" style="display: none;">
                                     Points used: <span id="bonus-points-used">0</span> / {{ asi_total_points }}
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Cumulative Ability Score Summary -->
+                    <div class="card mb-4" id="score-summary-section">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-calculator"></i> Ability Score Summary</h5>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-muted small">Final ability scores with background bonuses applied.</p>
+                            <div class="row">
+                                {% for ability in ['Strength', 'Dexterity', 'Constitution', 'Intelligence', 'Wisdom', 'Charisma'] %}
+                                <div class="col-md-4 col-6 mb-3 text-center">
+                                    <div class="border rounded p-2">
+                                        <div class="text-muted small">{{ ability }}</div>
+                                        <div class="fs-4 fw-bold" id="summary_score_{{ ability }}">—</div>
+                                        <div class="text-muted small">
+                                            <span id="summary_base_{{ ability }}">—</span>
+                                            <span id="summary_bonus_{{ ability }}" class="text-success" style="display: none;"></span>
+                                        </div>
+                                        <div class="small fw-semibold" id="summary_mod_{{ ability }}"></div>
+                                    </div>
+                                </div>
+                                {% endfor %}
                             </div>
                         </div>
                     </div>
@@ -374,7 +400,92 @@ function validateBonuses() {
 
 bonusSuggestedRadio?.addEventListener('change', updateBonusVisibility);
 bonusManualRadio?.addEventListener('change', updateBonusVisibility);
-bonusSelects.forEach(sel => sel.addEventListener('change', validateBonuses));
+bonusSelects.forEach(sel => sel.addEventListener('change', () => { validateBonuses(); updateSummary(); }));
 updateBonusVisibility();
+
+// ── Cumulative Score Summary ────────────────────────────────────────────────
+const RECOMMENDED = {{ recommended_allocation|tojson }};
+const ASI_SUGGESTED = {{ asi_suggested|tojson }};
+const STANDARD_ARRAY = {{ standard_array|tojson }};
+
+function getBaseScores() {
+    if (recommendedRadio.checked) {
+        return Object.assign({}, RECOMMENDED);
+    } else if (manualRadio.checked) {
+        const scores = {};
+        ABILITIES.forEach(a => {
+            const sel = document.getElementById('ability_' + a);
+            scores[a] = sel && sel.value ? parseInt(sel.value) : 0;
+        });
+        return scores;
+    } else if (pointBuyRadio.checked) {
+        return Object.assign({}, pbScores);
+    }
+    return {};
+}
+
+function getBonuses() {
+    if (bonusSuggestedRadio && bonusSuggestedRadio.checked) {
+        return Object.assign({}, ASI_SUGGESTED);
+    } else if (bonusManualRadio && bonusManualRadio.checked) {
+        const bonuses = {};
+        bonusSelects.forEach(sel => {
+            const ability = sel.dataset.ability;
+            const val = parseInt(sel.value || 0);
+            if (val > 0) bonuses[ability] = val;
+        });
+        return bonuses;
+    }
+    return {};
+}
+
+function updateSummary() {
+    const base = getBaseScores();
+    const bonuses = getBonuses();
+    
+    ABILITIES.forEach(a => {
+        const scoreEl = document.getElementById('summary_score_' + a);
+        const baseEl = document.getElementById('summary_base_' + a);
+        const bonusEl = document.getElementById('summary_bonus_' + a);
+        const modEl = document.getElementById('summary_mod_' + a);
+        
+        const baseVal = base[a] || 0;
+        const bonusVal = bonuses[a] || 0;
+        const total = baseVal + bonusVal;
+        
+        if (baseVal > 0) {
+            scoreEl.textContent = total;
+            baseEl.textContent = 'Base ' + baseVal;
+            if (bonusVal > 0) {
+                bonusEl.textContent = ' +' + bonusVal;
+                bonusEl.style.display = 'inline';
+            } else {
+                bonusEl.style.display = 'none';
+            }
+            const mod = Math.floor((total - 10) / 2);
+            modEl.textContent = (mod >= 0 ? '+' : '') + mod;
+        } else {
+            scoreEl.textContent = '—';
+            baseEl.textContent = '—';
+            bonusEl.style.display = 'none';
+            modEl.textContent = '';
+        }
+    });
+}
+
+// Hook summary updates into all score-changing events
+recommendedRadio.addEventListener('change', () => { updateVisibility(); updateSummary(); });
+manualRadio.addEventListener('change', () => { updateVisibility(); updateSummary(); });
+pointBuyRadio.addEventListener('change', () => { updateVisibility(); updateSummary(); });
+abilitySelects.forEach(sel => sel.addEventListener('change', () => { validateManualAssignment(); updateSummary(); }));
+bonusSuggestedRadio?.addEventListener('change', updateSummary);
+bonusManualRadio?.addEventListener('change', updateSummary);
+
+// Override point buy UI update to also refresh summary
+const _origUpdatePBUI = updatePointBuyUI;
+updatePointBuyUI = function() { _origUpdatePBUI(); updateSummary(); };
+
+// Initial summary computation
+updateSummary();
 </script>
 {% endblock %}
