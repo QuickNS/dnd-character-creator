@@ -1348,6 +1348,23 @@ class CharacterBuilder:
 
     # ==================== Background Methods ====================
 
+    def _remove_skills_sourced_from(
+        self, skills: List[str], source_name: str
+    ) -> None:
+        """Remove character skill proficiencies that belong to *source_name*.
+
+        Iterates over *skills* and, for each entry whose source in
+        ``proficiency_sources['skills']`` equals *source_name*, removes it
+        from ``proficiencies['skills']`` and clears the source entry.
+        """
+        skill_sources = self.character_data["proficiency_sources"]["skills"]
+        for skill in skills:
+            if skill_sources.get(skill) == source_name:
+                self.character_data["proficiencies"]["skills"] = [
+                    s for s in self.character_data["proficiencies"]["skills"] if s != skill
+                ]
+                skill_sources.pop(skill, None)
+
     def _clear_background_features(self):
         """Clear all background-related features and effects before re-applying."""
         prev_bg_data = self.character_data.get("background_data") or {}
@@ -1355,13 +1372,19 @@ class CharacterBuilder:
 
         # Remove skill proficiencies granted by the previous background
         prev_skills = prev_bg_data.get("skill_proficiencies", [])
-        skill_sources = self.character_data["proficiency_sources"]["skills"]
-        for skill in prev_skills:
-            if skill_sources.get(skill) == prev_bg_name:
-                self.character_data["proficiencies"]["skills"] = [
-                    s for s in self.character_data["proficiencies"]["skills"] if s != skill
-                ]
-                skill_sources.pop(skill, None)
+        self._remove_skills_sourced_from(prev_skills, prev_bg_name)
+
+        # Also remove any replacement skills the player chose due to overlap with
+        # the previous background (tracked in choices_made)
+        prev_replacements = self.character_data["choices_made"].pop(
+            "background_skill_replacements", []
+        )
+        self._remove_skills_sourced_from(prev_replacements, prev_bg_name)
+
+        # Clear replacement-needed counter
+        self.character_data["choices_made"].pop(
+            "background_skill_replacements_needed", None
+        )
 
         # Remove tool proficiencies granted by the previous background
         prev_tools = prev_bg_data.get("tool_proficiencies", [])
@@ -1457,8 +1480,9 @@ class CharacterBuilder:
             "name", self.character_data.get("background", "Unknown")
         )
 
-        # Skill proficiencies
+        # Skill proficiencies — detect overlaps with existing class skills
         skill_profs = background_data.get("skill_proficiencies", [])
+        overlapping_skills = []
         for skill in skill_profs:
             if skill not in self.character_data["proficiencies"]["skills"]:
                 self.character_data["proficiencies"]["skills"].append(skill)
@@ -1466,6 +1490,19 @@ class CharacterBuilder:
                 self.character_data["proficiency_sources"]["skills"][skill] = (
                     background_name
                 )
+            else:
+                overlapping_skills.append(skill)
+
+        # Store the number of replacement choices needed (D&D 2024: overlapping
+        # background skill proficiencies are replaced by player's choice)
+        if overlapping_skills:
+            self.character_data["choices_made"][
+                "background_skill_replacements_needed"
+            ] = len(overlapping_skills)
+        else:
+            self.character_data["choices_made"].pop(
+                "background_skill_replacements_needed", None
+            )
 
         # Tool proficiencies
         tool_profs = background_data.get("tool_proficiencies", [])
@@ -2138,6 +2175,12 @@ class CharacterBuilder:
                         )
             return True
 
+        # Background skill replacements — restore from saved choices
+        elif choice_key_lower == "background_skill_replacements":
+            if isinstance(choice_value, list):
+                self.apply_background_skill_replacement(choice_value)
+            return True
+
         # Spells - Legacy handler (cantrip selection removed from creation wizard)
         elif choice_key_lower == "spellcasting":
             # Old system: cantrips were selected during character creation
@@ -2584,7 +2627,11 @@ class CharacterBuilder:
             "lineage_spellcasting_ability",  # Must come after lineage is applied
             "class",
             "subclass",
+            # Class skill choices must come before background so overlap can be detected
+            "skill_choices",
+            "skills",
             "background",
+            "background_skill_replacements",  # Must come after background is applied
             # Ability scores: only apply method if no explicit scores provided
             "ability_scores_method",  # This might apply standard array
             "ability_scores",
@@ -2593,8 +2640,6 @@ class CharacterBuilder:
             "background_ability_score_assignment",
             "background_bonuses_method",
             "background_bonuses",
-            "skill_choices",
-            "skills",
             "spellcasting",
             "spell_selections",  # Restore spell selections after class/subclass applied
             "weapon mastery",
@@ -5289,6 +5334,85 @@ class CharacterBuilder:
         "Nature", "Perception", "Performance", "Persuasion", "Religion",
         "Sleight of Hand", "Stealth", "Survival",
     ]
+
+    # ==================== Background Skill Replacement ====================
+
+    def get_background_skill_replacement_info(self) -> Dict[str, Any]:
+        """
+        Return information about background skill replacement choices needed.
+
+        When a background grants a skill proficiency the character already has
+        (e.g. from their class), D&D 2024 rules require offering a replacement
+        from the class's available skill options.
+
+        Returns:
+            Dict with keys:
+            - 'needed': int — number of replacement skills to choose
+            - 'options': list[str] — skills available to pick as replacements
+            - 'already_chosen': list[str] — replacements already committed
+        """
+        needed = self.character_data["choices_made"].get(
+            "background_skill_replacements_needed", 0
+        )
+        already_chosen = self.character_data["choices_made"].get(
+            "background_skill_replacements", []
+        )
+        if not needed:
+            return {"needed": 0, "options": [], "already_chosen": already_chosen}
+
+        current_profs = set(self.character_data["proficiencies"]["skills"])
+
+        # Prefer the class's own skill_options list; fall back to all skills
+        class_data = self.character_data.get("class_data") or {}
+        skill_options = class_data.get("skill_options", [])
+        if not skill_options or skill_options == ["Any"]:
+            skill_options = list(self._ALL_SKILLS)
+
+        options = [s for s in skill_options if s not in current_profs]
+
+        # If the class list is exhausted, allow any unproficient skill
+        if not options:
+            options = [s for s in self._ALL_SKILLS if s not in current_profs]
+
+        return {"needed": needed, "options": options, "already_chosen": already_chosen}
+
+    def apply_background_skill_replacement(self, skills: List[str]) -> bool:
+        """
+        Apply replacement skill proficiencies chosen to offset background overlaps.
+
+        Args:
+            skills: Skill names selected by the player as replacements.
+
+        Returns:
+            True on success.
+        """
+        background_data = self.character_data.get("background_data") or {}
+        background_name = background_data.get(
+            "name", self.character_data.get("background", "Unknown")
+        )
+        needed = self.character_data["choices_made"].get(
+            "background_skill_replacements_needed", 0
+        )
+
+        # Remove previously committed replacements so re-submission is idempotent
+        prev_replacements = self.character_data["choices_made"].get(
+            "background_skill_replacements", []
+        )
+        self._remove_skills_sourced_from(prev_replacements, background_name)
+
+        # Apply new replacements (capped at the number needed)
+        skill_sources = self.character_data["proficiency_sources"]["skills"]
+        valid_skills = [s for s in skills if s in self._ALL_SKILLS][:needed]
+        for skill in valid_skills:
+            if skill not in self.character_data["proficiencies"]["skills"]:
+                self.character_data["proficiencies"]["skills"].append(skill)
+                skill_sources[skill] = background_name
+
+        self.character_data["choices_made"][
+            "background_skill_replacements"
+        ] = valid_skills
+        return True
+
 
     def get_feat_choices(self) -> Dict[str, Any]:
         """

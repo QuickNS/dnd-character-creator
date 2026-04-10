@@ -49,12 +49,75 @@ def select_background():
 
     builder = get_builder_from_session()
     builder.apply_choice("background", background_name)
-    builder.set_step("feat_choices")
     save_builder_to_session(builder)
 
     # Log route processing
     log_route_processing("select_background", choices, builder_before, builder)
 
+    # If the background overlaps with existing class skill proficiencies,
+    # redirect to the replacement skill selection step first.
+    replacement_info = builder.get_background_skill_replacement_info()
+    if replacement_info["needed"] > 0:
+        builder.set_step("background_skill_replacement")
+        save_builder_to_session(builder)
+        return redirect(url_for("background.choose_replacement_skills"))
+
+    builder.set_step("feat_choices")
+    save_builder_to_session(builder)
+    return redirect(url_for("background.feat_choices"))
+
+
+@background_bp.route("/choose-replacement-skills")
+def choose_replacement_skills():
+    """Choose replacement skill proficiencies when background overlaps with class skills."""
+    builder = get_builder_from_session()
+    if not builder:
+        return redirect(url_for("index.index"))
+
+    replacement_info = builder.get_background_skill_replacement_info()
+    if not replacement_info["needed"]:
+        return redirect(url_for("background.feat_choices"))
+
+    character = builder.to_json()
+    background_data = character.get("background_data") or {}
+    background_skills = background_data.get("skill_proficiencies", [])
+
+    return render_template(
+        "choose_replacement_skills.html",
+        character=character,
+        replacement_info=replacement_info,
+        background_skills=background_skills,
+    )
+
+
+@background_bp.route("/submit-replacement-skills", methods=["POST"])
+def submit_replacement_skills():
+    """Process replacement skill selection submissions."""
+    builder_before = get_builder_from_session()
+    builder = get_builder_from_session()
+    if not builder:
+        return redirect(url_for("index.index"))
+
+    replacement_info = builder.get_background_skill_replacement_info()
+    needed = replacement_info["needed"]
+
+    skills = request.form.getlist("replacement_skills")[:needed]
+
+    if len(skills) < needed:
+        # Not enough skills selected — return to the replacement page
+        save_builder_to_session(builder)
+        return redirect(url_for("background.choose_replacement_skills"))
+
+    builder.apply_background_skill_replacement(skills)
+    log_route_processing(
+        "submit_replacement_skills",
+        {"replacement_skills": skills},
+        builder_before,
+        builder,
+    )
+
+    builder.set_step("feat_choices")
+    save_builder_to_session(builder)
     return redirect(url_for("background.feat_choices"))
 
 
