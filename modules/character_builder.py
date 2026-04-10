@@ -2132,6 +2132,26 @@ class CharacterBuilder:
                         )
             return True
 
+        # Tool proficiencies
+        elif choice_key_lower in ["tool_choices", "tools"]:
+            if isinstance(choice_value, list):
+                for tool in choice_value:
+                    if tool not in self.character_data["proficiencies"]["tools"]:
+                        self.character_data["proficiencies"]["tools"].append(tool)
+                        # Track that this came from class selection
+                        class_name = self.character_data.get("class", "Class")
+                        self.character_data["proficiency_sources"]["tools"][tool] = (
+                            class_name
+                        )
+            elif isinstance(choice_value, str) and choice_value:
+                if choice_value not in self.character_data["proficiencies"]["tools"]:
+                    self.character_data["proficiencies"]["tools"].append(choice_value)
+                    class_name = self.character_data.get("class", "Class")
+                    self.character_data["proficiency_sources"]["tools"][choice_value] = (
+                        class_name
+                    )
+            return True
+
         # Spells - Legacy handler (cantrip selection removed from creation wizard)
         elif choice_key_lower == "spellcasting":
             # Old system: cantrips were selected during character creation
@@ -2589,6 +2609,8 @@ class CharacterBuilder:
             "background_bonuses",
             "skill_choices",
             "skills",
+            "tool_choices",
+            "tools",
             "spellcasting",
             "spell_selections",  # Restore spell selections after class/subclass applied
             "weapon mastery",
@@ -4981,6 +5003,35 @@ class CharacterBuilder:
                 "level": 1,
             }
             choices.append(skill_choice)
+
+        # 1b) Add tool proficiency selection (level 1)
+        if "tool_options" in class_data and "tool_proficiencies_count" in class_data:
+            tool_options = class_data["tool_options"]
+            tool_count = class_data["tool_proficiencies_count"]
+
+            if 1 not in all_features_by_level:
+                all_features_by_level[1] = []
+
+            all_features_by_level[1].append(
+                {
+                    "name": "Tool Proficiency",
+                    "type": "choice",
+                    "description": f"Choose {tool_count} tool {'proficiency' if tool_count == 1 else 'proficiencies'} from the available options.",
+                    "level": 1,
+                    "source": "Class",
+                }
+            )
+
+            tool_choice = {
+                "title": "Tool Proficiency",
+                "type": "tools",
+                "description": f"Choose {tool_count} tool {'proficiency' if tool_count == 1 else 'proficiencies'} from the available options.",
+                "options": tool_options,
+                "count": tool_count,
+                "required": True,
+                "level": 1,
+            }
+            choices.append(tool_choice)
 
         # Get class and subclass features
         class_features_by_level = class_data.get("features_by_level", {})

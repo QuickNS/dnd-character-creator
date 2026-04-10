@@ -593,3 +593,92 @@ class TestWarriorOfTheOpenHandFullBuild:
         ]
         assert len(unarmored_defense) >= 1
         assert unarmored_defense[0]["ac"] == 17
+
+
+class TestMonkToolProficiencyChoice:
+    """Regression tests for GitHub Issue: Monk tool proficiency choice not offered at level 1."""
+
+    def test_monk_tool_options_available_in_class_data(self):
+        """Monk class data should expose tool_proficiencies_count and tool_options."""
+        builder = CharacterBuilder()
+        class_data = builder._load_class_data("Monk")
+        assert class_data is not None
+        assert "tool_proficiencies_count" in class_data
+        assert class_data["tool_proficiencies_count"] == 1
+        assert "tool_options" in class_data
+        assert len(class_data["tool_options"]) > 0
+        # Should include at least one artisan's tool and one musical instrument
+        artisan = [t for t in class_data["tool_options"] if "Tools" in t or "Supplies" in t or "Utensils" in t]
+        musical = [t for t in class_data["tool_options"] if t in ["Bagpipes", "Drum", "Dulcimer", "Flute", "Horn", "Lute", "Lyre", "Pan Flute", "Shawm", "Viol"]]
+        assert len(artisan) > 0, "Monk tool options should include artisan's tools"
+        assert len(musical) > 0, "Monk tool options should include musical instruments"
+
+    def test_monk_tool_choice_appears_in_class_features(self):
+        """get_class_features_and_choices() should include a tool proficiency choice for Monk."""
+        builder = CharacterBuilder()
+        builder.set_species("Human")
+        builder.set_class("Monk", 1)
+        feature_data = builder.get_class_features_and_choices()
+        choices = feature_data["choices"]
+        tool_choices = [c for c in choices if c.get("type") == "tools"]
+        assert len(tool_choices) == 1
+        tc = tool_choices[0]
+        assert tc["count"] == 1
+        assert "Flute" in tc["options"]
+        assert "Carpenter's Tools" in tc["options"]
+
+    def test_apply_tool_choice_adds_to_proficiencies(self):
+        """Applying tool_choices should add the tool to proficiencies['tools']."""
+        builder = CharacterBuilder()
+        builder.set_species("Human")
+        builder.set_class("Monk", 1)
+        builder.apply_choice("tool_choices", ["Flute"])
+        character = builder.to_character()
+        assert "Flute" in character["proficiencies"]["tools"]
+
+    def test_apply_tool_choice_carpenters_tools(self):
+        """Choosing Carpenter's Tools should add them to proficiencies['tools']."""
+        builder = CharacterBuilder()
+        builder.set_species("Human")
+        builder.set_class("Monk", 1)
+        builder.apply_choice("tool_choices", ["Carpenter's Tools"])
+        character = builder.to_character()
+        assert "Carpenter's Tools" in character["proficiencies"]["tools"]
+
+    def test_no_duplicate_tool_proficiency(self):
+        """Applying the same tool choice twice should not duplicate proficiencies."""
+        builder = CharacterBuilder()
+        builder.set_species("Human")
+        builder.set_class("Monk", 1)
+        builder.apply_choice("tool_choices", ["Lute"])
+        builder.apply_choice("tool_choices", ["Lute"])
+        character = builder.to_character()
+        assert character["proficiencies"]["tools"].count("Lute") == 1
+
+    def test_tool_choice_via_apply_choices(self):
+        """apply_choices with tool_choices key should grant the proficiency."""
+        builder = CharacterBuilder()
+        builder.apply_choices({
+            "character_name": "Test Monk",
+            "level": 1,
+            "species": "Human",
+            "class": "Monk",
+            "background": "Acolyte",
+            "ability_scores": {
+                "Strength": 10, "Dexterity": 16, "Constitution": 14,
+                "Intelligence": 8, "Wisdom": 15, "Charisma": 10,
+            },
+            "background_bonuses": {"Dexterity": 2, "Wisdom": 1},
+            "tool_choices": ["Smith's Tools"],
+        })
+        character = builder.to_character()
+        assert "Smith's Tools" in character["proficiencies"]["tools"]
+
+    def test_tool_proficiency_source_tracked(self):
+        """The source of the monk tool proficiency should be tracked as the class."""
+        builder = CharacterBuilder()
+        builder.set_species("Human")
+        builder.set_class("Monk", 1)
+        builder.apply_choice("tool_choices", ["Drum"])
+        sources = builder.character_data["proficiency_sources"]["tools"]
+        assert sources.get("Drum") == "Monk"

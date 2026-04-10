@@ -250,6 +250,16 @@ def class_choices():
             }
         )
 
+    tool_count = class_data.get("tool_proficiencies_count")
+    tool_options = class_data.get("tool_options", [])
+    if tool_count and tool_options:
+        core_traits.append(
+            {
+                "label": "Tool Proficiencies",
+                "value": f"Choose {tool_count} from: {_human_join(list(tool_options), conjunction='or')}",
+            }
+        )
+
     # Weapon proficiencies: combine base class proficiencies with any from effects
     weapon_proficiencies = list(class_data.get("weapon_proficiencies", []))
     # Add any additional weapon proficiencies from character effects
@@ -342,6 +352,11 @@ def submit_class_choices():
     skills = request.form.getlist("skills")
     if skills:
         choices["skill_choices"] = skills
+
+    # Process tool proficiency selections
+    tools = request.form.getlist("tools")
+    if tools:
+        choices["tool_choices"] = tools
 
     # Process feature choices
     for key, values in request.form.lists():
