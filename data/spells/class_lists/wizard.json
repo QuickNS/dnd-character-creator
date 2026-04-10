@@ -1,19 +1,42 @@
 {
   "class": "Wizard",
   "cantrips": [
+    "Blade Ward",
+    "Chill Touch",
     "Dancing Lights",
+    "Fire Bolt",
+    "Friends",
     "Light",
+    "Mage Hand",
     "Mending",
+    "Message",
     "Minor Illusion",
+    "Poison Spray",
     "Prestidigitation",
-    "Toll the Dead"
+    "Toll the Dead",
+    "True Strike"
   ],
   "spells_by_level": {
     "1": [
+      "Burning Hands",
+      "Charm Person",
+      "Color Spray",
+      "Comprehend Languages",
       "Detect Magic",
+      "Disguise Self",
       "Faerie Fire",
+      "False Life",
+      "Feather Fall",
+      "Identify",
+      "Illusory Script",
       "Longstrider",
-      "Ray of Sickness"
+      "Magic Missile",
+      "Ray of Sickness",
+      "Silent Image",
+      "Sleep",
+      "Tasha's Hideous Laughter",
+      "Thunderwave",
+      "Unseen Servant"
     ],
     "2": [
       "Darkness",

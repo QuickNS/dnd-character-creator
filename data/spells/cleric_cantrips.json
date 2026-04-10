@@ -1,5 +1,4 @@
 {
-  "class": "Cleric",
   "cantrips": [
     "Guidance",
     "Light",
@@ -10,14 +9,5 @@
     "Thaumaturgy",
     "Toll the Dead",
     "Word of Radiance"
-  ],
-  "spells_by_level": {
-    "1": [
-      "Bane",
-      "Command",
-      "Cure Wounds",
-      "Detect Magic",
-      "Healing Word"
-    ]
-  }
+  ]
 }
