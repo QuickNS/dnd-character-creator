@@ -1121,6 +1121,12 @@ class CharacterBuilder:
                     for feat_effect in feat_data.get("effects", []):
                         self._apply_effect(feat_effect, feat_name, "feat")
 
+                # If granted via a species/lineage choice and the feat has
+                # choices (e.g., Skilled needs 3 skill/tool picks), record the
+                # feat name so the species route can present a choices step.
+                if source_type in ("species_choice", "lineage_choice") and feat_data and feat_data.get("choices"):
+                    self.character_data["pending_species_feat"] = feat_name
+
         # Track applied effect
         self.applied_effects.append(
             {
@@ -5336,12 +5342,91 @@ class CharacterBuilder:
             "choices": choices,
         }
 
-    def apply_feat_choices(self, choices: Dict[str, Any]) -> bool:
+    def get_species_feat_choices(self) -> Dict[str, Any]:
+        """
+        Get choices required by the origin feat granted via a species trait
+        (e.g. Human Versatile → Skilled).
+
+        Works identically to :meth:`get_feat_choices` but reads the feat name
+        from ``character_data['pending_species_feat']`` instead of the
+        background data.
+
+        Returns:
+            Dict with keys:
+            - 'feat_name': str | None
+            - 'feat_description': str
+            - 'feat_benefits': list[str]
+            - 'choices': list[dict] — same shape as ``get_feat_choices``
+        """
+        feat_name = self.character_data.get("pending_species_feat")
+        if not feat_name:
+            return {"feat_name": None, "feat_description": "", "feat_benefits": [], "choices": []}
+
+        feat_data = self._load_feat_data(feat_name)
+        if not feat_data:
+            return {"feat_name": feat_name, "feat_description": "", "feat_benefits": [], "choices": []}
+
+        raw_choices = feat_data.get("choices", [])
+        if not raw_choices:
+            return {
+                "feat_name": feat_name,
+                "feat_description": feat_data.get("description", ""),
+                "feat_benefits": feat_data.get("benefits", []),
+                "choices": [],
+            }
+
+        character = self.to_json()
+        choices_made = character.get("choices_made", {})
+        choices: List[Dict[str, Any]] = []
+
+        for choice_item in raw_choices:
+            choice_name = choice_item.get("name", "choice")
+            choices_made_key = f"feat_{feat_name}_{choice_name}"
+
+            options = resolve_choice_options(choice_item, character)
+
+            already_chosen = choices_made.get(choices_made_key)
+            if isinstance(already_chosen, str):
+                already_chosen = [already_chosen]
+
+            choice = {
+                "title": f"{feat_name} — {choice_name.replace('_', ' ').title()}",
+                "type": "feature",
+                "description": feat_data.get("description", ""),
+                "options": options,
+                "count": choice_item.get("count", 1),
+                "required": True,
+                "feature_name": choice_name,
+                "choices_made_key": choices_made_key,
+                "choice_type": choice_item.get("type", "select_multiple"),
+                "option_descriptions": {},
+                "already_chosen": already_chosen or [],
+            }
+            choices.append(choice)
+
+        return {
+            "feat_name": feat_name,
+            "feat_description": feat_data.get("description", ""),
+            "feat_benefits": feat_data.get("benefits", []),
+            "choices": choices,
+        }
+
+    def clear_pending_species_feat(self) -> None:
+        """Clear the pending species feat flag after choices have been applied."""
+        self.character_data.pop("pending_species_feat", None)
+
+    def apply_feat_choices(self, choices: Dict[str, Any], feat_name: Optional[str] = None) -> bool:
         """
         Apply the selections made on the feat-choices page.
 
         ``choices`` maps the raw choice name (as returned by ``get_feat_choices``
         in ``choice['feature_name']``) to the user-submitted value(s).
+
+        Args:
+            choices: Dict mapping choice name → selected value(s).
+            feat_name: Name of the feat whose choices are being applied.
+                       If omitted the feat granted by the current background is
+                       used (backwards-compatible default).
 
         Handles:
         - ``skills_or_tools``: each item is added to ``proficiencies['skills']``
@@ -5357,8 +5442,9 @@ class CharacterBuilder:
         Returns:
             True always (errors are silently ignored to keep the wizard flowing).
         """
-        background_data = self.character_data.get("background_data") or {}
-        feat_name = background_data.get("feat", "")
+        if feat_name is None:
+            background_data = self.character_data.get("background_data") or {}
+            feat_name = background_data.get("feat", "")
 
         for choice_name, choice_value in choices.items():
             # Normalise to a list

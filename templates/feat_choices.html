@@ -10,7 +10,7 @@
                 </h4>
             </div>
             <div class="card-body">
-                <p class="lead">Your background grants you the <strong>{{ feat_name }}</strong> origin feat. Make the required selections below.</p>
+                <p class="lead">{{ source_label | default("Your background grants you") }} the <strong>{{ feat_name }}</strong> origin feat. Make the required selections below.</p>
 
                 {% if feat_description %}
                 <div class="card mb-4">
@@ -30,7 +30,7 @@
                 </div>
                 {% endif %}
 
-                <form method="POST" action="{{ url_for('background.submit_feat_choices') }}">
+                <form method="POST" action="{{ action_url | default(url_for('background.submit_feat_choices')) }}">
                     {% for choice in choices %}
                     <div class="card mb-4">
                         <div class="card-header">
@@ -93,7 +93,7 @@
                         <button type="submit" class="btn btn-primary btn-lg" id="submit-btn">
                             <i class="fas fa-arrow-right"></i> Continue
                         </button>
-                        <a href="{{ url_for('background.choose_background') }}" class="btn btn-secondary">
+                        <a href="{{ back_url | default(url_for('background.choose_background')) }}" class="btn btn-secondary">
                             <i class="fas fa-arrow-left"></i> Back
                         </a>
                     </div>
