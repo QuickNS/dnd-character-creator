@@ -109,6 +109,9 @@
               "11": "1d10",
               "17": "1d12"
             }
+          },
+          {
+            "type": "monk_dexterous_attacks"
           }
         ]
       },
