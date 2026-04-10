@@ -779,6 +779,14 @@ ul.fantasy-list li::before {
     color: var(--dnd-red);
 }
 
+/* Sub-feature list within feature descriptions */
+.sub-feature-list {
+    margin-top: 0.25rem;
+    margin-bottom: 0.25rem;
+    padding-left: 1.25rem;
+    list-style-type: disc;
+}
+
 /* Tooltip Enhancement */
 .tooltip {
     font-family: 'Source Sans Pro', sans-serif;

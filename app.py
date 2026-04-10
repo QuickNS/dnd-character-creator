@@ -247,13 +247,54 @@ import markupsafe
 
 @app.template_filter("nl2br")
 def nl2br_filter(value):
-    """Convert newlines to <br> and **bold** to <strong> for HTML rendering."""
+    """Convert newlines to <br>, **bold** to <strong>, and render sub-features as lists."""
     if not value:
         return value
-    escaped = str(markupsafe.escape(value))
+
+    # Extract embedded HTML blocks (tables, divs) before escaping
+    html_blocks = {}
+    placeholder_prefix = "\x00HTML_BLOCK_"
+
+    def _save_html(match):
+        key = f"{placeholder_prefix}{len(html_blocks)}\x00"
+        html_blocks[key] = match.group(0)
+        return key
+
+    preserved = re.sub(r"<(?:table|div)\b[^>]*>.*?</(?:table|div)>", _save_html, value, flags=re.DOTALL)
+
+    escaped = str(markupsafe.escape(preserved))
     escaped = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", escaped)
-    escaped = escaped.replace("\n", "<br>")
-    return markupsafe.Markup(escaped)
+
+    # Detect sub-features: paragraphs (after the first) that start with <strong>
+    paragraphs = escaped.split("\n\n")
+    if len(paragraphs) > 1 and any(
+        p.lstrip().startswith("<strong>") for p in paragraphs[1:]
+    ):
+        parts = []
+        list_items = []
+        for i, para in enumerate(paragraphs):
+            para_html = para.replace("\n", "<br>")
+            if i > 0 and para_html.lstrip().startswith("<strong>"):
+                list_items.append(f"<li>{para_html}</li>")
+            else:
+                if list_items:
+                    parts.append(f'<ul class="sub-feature-list">{"".join(list_items)}</ul>')
+                    list_items = []
+                if i == 0:
+                    parts.append(para_html)
+                else:
+                    parts.append(f"<br><br>{para_html}")
+        if list_items:
+            parts.append(f'<ul class="sub-feature-list">{"".join(list_items)}</ul>')
+        result = "".join(parts)
+    else:
+        result = escaped.replace("\n", "<br>")
+
+    # Restore preserved HTML blocks
+    for key, html in html_blocks.items():
+        result = result.replace(markupsafe.escape(key), html)
+
+    return markupsafe.Markup(result)
 
 
 # ==================== Blueprint Registration ====================
