@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% from "macros/wizard_nav.html" import wizard_nav %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow">
+            <div class="card-header">
+                <h4 class="card-title mb-0">
+                    <i class="fas fa-exchange-alt"></i> Replace Duplicate Skill Proficiencies
+                </h4>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <p class="mb-1">
+                        Your <strong>{{ character.species }}</strong>{% if character.lineage %} ({{ character.lineage }}){% endif %}
+                        grants a skill proficiency you already have from your class or background.
+                    </p>
+                    <p class="mb-0">
+                        Per D&amp;D 2024 rules, choose
+                        {{ replacement_info.needed }}
+                        replacement skill{% if replacement_info.needed > 1 %}s{% endif %}
+                        from any skill you're not already proficient in.
+                    </p>
+                </div>
+
+                <form method="POST" action="{{ url_for('species.submit_species_replacement_skills') }}">
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h6 class="card-title mb-0">
+                                <i class="fas fa-list"></i>
+                                Choose {{ replacement_info.needed }} Replacement Skill{% if replacement_info.needed > 1 %}s{% endif %}
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            {% if replacement_info.needed == 1 %}
+                                <!-- Single replacement — radio buttons -->
+                                <div class="row">
+                                    {% for skill in replacement_info.options %}
+                                    <div class="col-md-4 mb-2">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio"
+                                                   name="replacement_skills"
+                                                   id="skill_{{ loop.index }}"
+                                                   value="{{ skill }}"
+                                                   {% if skill in replacement_info.already_chosen %}checked{% endif %}
+                                                   required>
+                                            <label class="form-check-label" for="skill_{{ loop.index }}">
+                                                {{ skill }}
+                                            </label>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <!-- Multiple replacements — checkboxes with JS count enforcement -->
+                                <p class="text-muted small">Select exactly {{ replacement_info.needed }} skills.</p>
+                                <div class="row" id="replacement-skills-container">
+                                    {% for skill in replacement_info.options %}
+                                    <div class="col-md-4 mb-2">
+                                        <div class="form-check">
+                                            <input class="form-check-input replacement-skill-cb" type="checkbox"
+                                                   name="replacement_skills"
+                                                   id="skill_{{ loop.index }}"
+                                                   value="{{ skill }}"
+                                                   {% if skill in replacement_info.already_chosen %}checked{% endif %}>
+                                            <label class="form-check-label" for="skill_{{ loop.index }}">
+                                                {{ skill }}
+                                            </label>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                <div id="skill-selection-feedback" class="mt-2 text-muted small"></div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    {{ wizard_nav(next_label="Confirm Replacement" ~ ('s' if replacement_info.needed > 1 else '') ~ " & Continue") }}
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+{% if replacement_info.needed > 1 %}
+<script>
+(function () {
+    const needed = {{ replacement_info.needed }};
+    const container = document.getElementById('replacement-skills-container');
+    const feedback = document.getElementById('skill-selection-feedback');
+    const submitBtn = document.getElementById('submit-btn');
+
+    function updateState() {
+        const checked = container.querySelectorAll('.replacement-skill-cb:checked').length;
+        feedback.textContent = checked + ' of ' + needed + ' selected';
+        if (checked === needed) {
+            feedback.className = 'mt-2 text-success small';
+            submitBtn.disabled = false;
+        } else {
+            feedback.className = 'mt-2 text-muted small';
+            submitBtn.disabled = true;
+        }
+        container.querySelectorAll('.replacement-skill-cb').forEach(function (cb) {
+            cb.disabled = !cb.checked && checked >= needed;
+        });
+    }
+
+    container.addEventListener('change', updateState);
+    updateState();
+})();
+</script>
+{% endif %}
+{% endblock %}

@@ -182,6 +182,19 @@ def get_nav_context(builder: CharacterBuilder, current_step: str) -> Dict[str, A
         ctx["back_label"] = "Back to Species"
         ctx["next_label"] = "Continue to Languages"
 
+    elif current_step == "species_skill_replacement":
+        # Back depends on whether the species has lineages
+        if species_name and _species_has_lineages(species_name):
+            ctx["back_url"] = flask_url_for("species.choose_lineage")
+            ctx["back_label"] = "Back to Lineage"
+        elif species_name and _species_has_trait_choices(species_name):
+            ctx["back_url"] = flask_url_for("species.choose_species_traits")
+            ctx["back_label"] = "Back to Species Traits"
+        else:
+            ctx["back_url"] = flask_url_for("species.choose_species")
+            ctx["back_label"] = "Back to Species"
+        ctx["next_label"] = "Confirm & Continue"
+
     elif current_step == "languages":
         # Back: to lineage if species has lineages, else to species
         if species_name and _species_has_lineages(species_name):

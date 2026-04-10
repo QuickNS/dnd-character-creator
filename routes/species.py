@@ -17,6 +17,23 @@ data_loader = DataLoader()
 logger = logging.getLogger(__name__)
 
 
+def _redirect_to_languages_or_replacement(builder):
+    """Check for species skill overlaps before moving to languages.
+
+    If the species/lineage tried to grant a skill the character already has,
+    redirect to the replacement-skills page.  Otherwise go straight to
+    language selection.
+    """
+    info = builder.get_species_skill_replacement_info()
+    if info["needed"] and not info["already_chosen"]:
+        builder.set_step("species_skill_replacement")
+        save_builder_to_session(builder)
+        return redirect(url_for("species.choose_species_replacement_skills"))
+    builder.set_step("languages")
+    save_builder_to_session(builder)
+    return redirect(url_for("languages.choose_languages"))
+
+
 @species_bp.route("/choose-species")
 def choose_species():
     """Species selection step."""
@@ -74,13 +91,10 @@ def select_species():
         log_route_processing("select_species", choices, builder_before, builder)
         return redirect(url_for("species.choose_lineage"))
     else:
-        builder.set_step("languages")
-        save_builder_to_session(builder)
-
         # Log route processing
         log_route_processing("select_species", choices, builder_before, builder)
 
-        return redirect(url_for("languages.choose_languages"))
+        return _redirect_to_languages_or_replacement(builder)
 
 
 @species_bp.route("/choose-species-traits")
@@ -148,9 +162,7 @@ def select_species_traits():
         save_builder_to_session(builder)
         return redirect(url_for("species.choose_lineage"))
     else:
-        builder.set_step("languages")
-        save_builder_to_session(builder)
-        return redirect(url_for("languages.choose_languages"))
+        return _redirect_to_languages_or_replacement(builder)
 
 
 @species_bp.route("/species-feat-choices")
@@ -170,9 +182,7 @@ def species_feat_choices():
             builder.set_step("lineage")
             save_builder_to_session(builder)
             return redirect(url_for("species.choose_lineage"))
-        builder.set_step("languages")
-        save_builder_to_session(builder)
-        return redirect(url_for("languages.choose_languages"))
+        return _redirect_to_languages_or_replacement(builder)
 
     character = builder.to_json()
     choices_made = character.get("choices_made", {})
@@ -225,9 +235,7 @@ def submit_species_feat_choices():
         save_builder_to_session(builder)
         return redirect(url_for("species.choose_lineage"))
 
-    builder.set_step("languages")
-    save_builder_to_session(builder)
-    return redirect(url_for("languages.choose_languages"))
+    return _redirect_to_languages_or_replacement(builder)
 
 
 @species_bp.route("/choose-lineage")
@@ -290,11 +298,60 @@ def select_lineage():
 
     save_builder_to_session(builder)
 
-    # Update session step
-    builder.set_step("languages")
-    save_builder_to_session(builder)
-
     # Log route processing
     log_route_processing("select_lineage", choices, builder_before, builder)
 
+    return _redirect_to_languages_or_replacement(builder)
+
+
+@species_bp.route("/choose-species-replacement-skills")
+def choose_species_replacement_skills():
+    """Choose replacement skill profs when species/lineage overlaps with existing skills."""
+    builder = get_builder_from_session()
+    if not builder:
+        return redirect(url_for("index.index"))
+
+    replacement_info = builder.get_species_skill_replacement_info()
+    if not replacement_info["needed"]:
+        builder.set_step("languages")
+        save_builder_to_session(builder)
+        return redirect(url_for("languages.choose_languages"))
+
+    character = builder.to_json()
+    nav = get_nav_context(builder, "species_skill_replacement")
+    return render_template(
+        "choose_species_replacement_skills.html",
+        character=character,
+        replacement_info=replacement_info,
+        **nav,
+    )
+
+
+@species_bp.route("/submit-species-replacement-skills", methods=["POST"])
+def submit_species_replacement_skills():
+    """Process species replacement skill selection submissions."""
+    builder_before = get_builder_from_session()
+    builder = get_builder_from_session()
+    if not builder:
+        return redirect(url_for("index.index"))
+
+    replacement_info = builder.get_species_skill_replacement_info()
+    needed = replacement_info["needed"]
+
+    skills = request.form.getlist("replacement_skills")[:needed]
+
+    if len(skills) < needed:
+        save_builder_to_session(builder)
+        return redirect(url_for("species.choose_species_replacement_skills"))
+
+    builder.apply_species_skill_replacement(skills)
+    log_route_processing(
+        "submit_species_replacement_skills",
+        {"replacement_skills": skills},
+        builder_before,
+        builder,
+    )
+
+    builder.set_step("languages")
+    save_builder_to_session(builder)
     return redirect(url_for("languages.choose_languages"))
