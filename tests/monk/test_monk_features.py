@@ -170,6 +170,89 @@ class TestDisciplinedSurvivor:
         assert "Charisma" not in saves
 
 
+class TestMartialArtsDie:
+    """Tests for Monk Martial Arts die scaling (GitHub Issue: [Monk] Martial Arts die scaling)."""
+
+    @pytest.mark.parametrize("level,expected_die", [
+        (1, "1d6"),
+        (4, "1d6"),
+        (5, "1d8"),
+        (10, "1d8"),
+        (11, "1d10"),
+        (16, "1d10"),
+        (17, "1d12"),
+        (20, "1d12"),
+    ])
+    def test_martial_arts_die_by_level(self, level, expected_die):
+        """Martial Arts die scales with Monk level: d6→d8→d10→d12."""
+        builder = _build_monk(level=level)
+        assert builder.character_data.get("martial_arts_die") == expected_die, (
+            f"Level {level}: expected {expected_die}, "
+            f"got {builder.character_data.get('martial_arts_die')}"
+        )
+
+    @pytest.mark.parametrize("level,expected_die", [
+        (1, "1d6"),
+        (5, "1d8"),
+        (11, "1d10"),
+        (17, "1d12"),
+    ])
+    def test_unarmed_strike_uses_martial_arts_die(self, level, expected_die):
+        """Unarmed strike damage uses the correct Martial Arts die at each breakpoint."""
+        builder = _build_full_monk(level=level, ability_scores={
+            "Strength": 10, "Dexterity": 16, "Constitution": 14,
+            "Intelligence": 8, "Wisdom": 14, "Charisma": 10,
+        }, background_bonuses={"Dexterity": 2, "Wisdom": 1})
+        weapon_data = builder.calculate_weapon_attacks()
+        unarmed = next(
+            (a for a in weapon_data["attacks"] if a["name"] == "Unarmed Strike"), None
+        )
+        assert unarmed is not None
+        assert expected_die in unarmed["damage"], (
+            f"Level {level} Monk should use {expected_die}, got {unarmed['damage']}"
+        )
+
+    def test_unarmed_strike_uses_dex_modifier(self):
+        """Monk Dexterous Attacks: unarmed strike should use DEX if higher than STR."""
+        # DEX 18 (+4) > STR 10 (+0)
+        builder = _build_full_monk(level=1, ability_scores={
+            "Strength": 10, "Dexterity": 16, "Constitution": 14,
+            "Intelligence": 8, "Wisdom": 14, "Charisma": 10,
+        }, background_bonuses={"Dexterity": 2, "Wisdom": 1})
+        weapon_data = builder.calculate_weapon_attacks()
+        unarmed = next(
+            (a for a in weapon_data["attacks"] if a["name"] == "Unarmed Strike"), None
+        )
+        assert unarmed is not None
+        # DEX 18 = +4 mod, expected "1d6 + 4"
+        assert unarmed["damage"] == "1d6 + 4", (
+            f"Monk should use DEX (+4) for unarmed, got {unarmed['damage']}"
+        )
+        assert unarmed["ability"] == "DEX", (
+            f"Monk unarmed ability should be DEX, got {unarmed['ability']}"
+        )
+
+    def test_unarmed_strike_uses_str_when_higher(self):
+        """Monk unarmed strike uses STR if it's higher than DEX."""
+        # STR 18 (+4) > DEX 10 (+0)
+        builder = _build_full_monk(level=1, ability_scores={
+            "Strength": 16, "Dexterity": 10, "Constitution": 14,
+            "Intelligence": 8, "Wisdom": 14, "Charisma": 10,
+        }, background_bonuses={"Strength": 2, "Wisdom": 1})
+        weapon_data = builder.calculate_weapon_attacks()
+        unarmed = next(
+            (a for a in weapon_data["attacks"] if a["name"] == "Unarmed Strike"), None
+        )
+        assert unarmed is not None
+        # STR 18 = +4 mod, expected "1d6 + 4"
+        assert unarmed["damage"] == "1d6 + 4", (
+            f"Monk should use STR (+4) for unarmed when higher, got {unarmed['damage']}"
+        )
+        assert unarmed["ability"] == "STR", (
+            f"Monk unarmed ability should be STR when higher, got {unarmed['ability']}"
+        )
+
+
 class TestSuperiorDefense:
 
     def test_superior_defense_feature_exists_at_level_18(self):

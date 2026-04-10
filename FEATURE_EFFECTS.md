@@ -306,6 +306,30 @@ Enhances unarmed strikes with improved damage dice and grapple damage.
 
 **Grapple Damage**: At the start of your turn, you can deal 1d4 bludgeoning damage to one creature grappled by you (displayed as a damage note).
 
+#### set_martial_arts_die
+Sets the Monk's Martial Arts die for unarmed strikes and monk weapons, scaling with level. Also enables using DEX instead of STR for unarmed strike attack and damage rolls (Dexterous Attacks).
+
+**Implementation**: Handler in `_apply_effect()` resolves the correct die for the current character level and stores it in `character_data["martial_arts_die"]`. Applied in `calculate_weapon_attacks()` to override unarmed strike damage with the Martial Arts die, using `max(STR, DEX)` as the modifier.
+
+**Die Progression**:
+- Level 1–4: 1d6
+- Level 5–10: 1d8
+- Level 11–16: 1d10
+- Level 17–20: 1d12
+
+**Example**: Monk Martial Arts feature
+```json
+{
+  "type": "set_martial_arts_die",
+  "die_by_level": {
+    "1": "1d6",
+    "5": "1d8",
+    "11": "1d10",
+    "17": "1d12"
+  }
+}
+```
+
 ### Ability Score Effects
 
 #### ability_bonus
