@@ -1,7 +1,7 @@
 {
   "_meta": {
     "description": "Machine-readable backlog tracking D&D 2024 content implementation status",
-    "updated": "2026-04-09",
+    "updated": "2026-04-11",
     "last_feat_update": "2026-04-09",
     "legend": {
       "data_file": "JSON data file exists in data/",
@@ -109,14 +109,14 @@
     },
     "Rogue": {
       "data_file": true,
-      "features_validated": false,
-      "effects_implemented": false,
-      "tests_written": false,
+      "features_validated": true,
+      "effects_implemented": true,
+      "tests_written": true,
       "subclasses": {
-        "Arcane Trickster": { "data_file": true, "features_validated": false, "effects_implemented": false, "tests_written": false },
-        "Assassin": { "data_file": true, "features_validated": false, "effects_implemented": false, "tests_written": false },
-        "Soulknife": { "data_file": false, "features_validated": false, "effects_implemented": false, "tests_written": false },
-        "Thief": { "data_file": true, "features_validated": false, "effects_implemented": false, "tests_written": false }
+        "Arcane Trickster": { "data_file": true, "features_validated": true, "effects_implemented": true, "tests_written": true },
+        "Assassin": { "data_file": true, "features_validated": true, "effects_implemented": true, "tests_written": true },
+        "Soulknife": { "data_file": true, "features_validated": true, "effects_implemented": true, "tests_written": true },
+        "Thief": { "data_file": true, "features_validated": true, "effects_implemented": true, "tests_written": true }
       }
     },
     "Sorcerer": {
