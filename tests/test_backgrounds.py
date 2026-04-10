@@ -334,9 +334,7 @@ class TestBackgroundSkillReplacement:
         needed = builder.character_data["choices_made"].get(
             "background_skill_replacements_needed", 0
         )
-        assert needed == 1, (
-            f"Expected 1 replacement needed, got {needed}"
-        )
+        assert needed == 1, f"Expected 1 replacement needed, got {needed}"
 
     def test_no_overlap_no_replacements_needed(self):
         """When there is no overlap, replacements_needed is not set."""
@@ -349,9 +347,7 @@ class TestBackgroundSkillReplacement:
         needed = builder.character_data["choices_made"].get(
             "background_skill_replacements_needed", 0
         )
-        assert needed == 0, (
-            f"Expected 0 replacements needed, got {needed}"
-        )
+        assert needed == 0, f"Expected 0 replacements needed, got {needed}"
 
     # ---- replacement info ---------------------------------------------------
 
@@ -366,9 +362,7 @@ class TestBackgroundSkillReplacement:
         # Options should not include already-proficient skills
         current_profs = set(builder.character_data["proficiencies"]["skills"])
         for skill in info["options"]:
-            assert skill not in current_profs, (
-                f"Option '{skill}' is already proficient — should be excluded"
-            )
+            assert skill not in current_profs, f"Option '{skill}' is already proficient — should be excluded"
 
     def test_get_replacement_info_returns_zero_when_no_overlap(self):
         """get_background_skill_replacement_info() returns needed=0 when no overlap."""
@@ -393,9 +387,7 @@ class TestBackgroundSkillReplacement:
         builder.apply_background_skill_replacement([replacement_skill])
 
         skills = builder.character_data["proficiencies"]["skills"]
-        assert replacement_skill in skills, (
-            f"Replacement skill '{replacement_skill}' should now be proficient"
-        )
+        assert replacement_skill in skills, f"Replacement skill '{replacement_skill}' should now be proficient"
 
     def test_apply_replacement_correct_total_proficiencies(self):
         """After replacement, character should have the expected total skill count."""
@@ -408,9 +400,7 @@ class TestBackgroundSkillReplacement:
         builder.apply_background_skill_replacement([info["options"][0]])
 
         skills = builder.character_data["proficiencies"]["skills"]
-        assert len(skills) == 4, (
-            f"Expected 4 distinct skill proficiencies, got {len(skills)}: {skills}"
-        )
+        assert len(skills) == 4, f"Expected 4 distinct skill proficiencies, got {len(skills)}: {skills}"
 
     def test_apply_replacement_idempotent(self):
         """Calling apply_background_skill_replacement twice replaces the first choice."""

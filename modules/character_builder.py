@@ -1345,7 +1345,12 @@ class CharacterBuilder:
     def _remove_skills_sourced_from(
         self, skills: List[str], source_name: str
     ) -> None:
-        """Remove proficiencies whose source matches *source_name* from *skills* list."""
+        """Remove character skill proficiencies that belong to *source_name*.
+
+        Iterates over *skills* and, for each entry whose source in
+        ``proficiency_sources['skills']`` equals *source_name*, removes it
+        from ``proficiencies['skills']`` and clears the source entry.
+        """
         skill_sources = self.character_data["proficiency_sources"]["skills"]
         for skill in skills:
             if skill_sources.get(skill) == source_name:
