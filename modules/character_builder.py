@@ -947,6 +947,22 @@ class CharacterBuilder:
                         source_display
                     )
 
+        elif effect_type == "grant_tool_proficiency":
+            tools = effect.get("tools", [])
+            for tool in tools:
+                if tool not in self.character_data["proficiencies"]["tools"]:
+                    self.character_data["proficiencies"]["tools"].append(tool)
+                    # Track the source of this tool proficiency
+                    if source_type == "species_choice":
+                        source_display = self.character_data.get("species", source_name)
+                    elif source_type in ["species", "lineage"]:
+                        source_display = self.character_data.get("species", source_name)
+                    else:
+                        source_display = source_name
+                    self.character_data["proficiency_sources"]["tools"][tool] = (
+                        source_display
+                    )
+
         elif effect_type == "grant_skill_proficiency":
             skills = effect.get("skills", [])
             for skill in skills:
@@ -3912,6 +3928,7 @@ class CharacterBuilder:
         character_data["skill_proficiencies"] = proficiencies.get("skills", [])
         character_data["weapon_proficiencies"] = proficiencies.get("weapons", [])
         character_data["armor_proficiencies"] = proficiencies.get("armor", [])
+        character_data["tool_proficiencies"] = proficiencies.get("tools", [])
 
         # Include choices_made for web app compatibility
         character_data["choices_made"] = character_data.get("choices_made", {})

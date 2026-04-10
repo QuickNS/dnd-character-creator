@@ -83,6 +83,16 @@ Grants expertise in skills.
 }
 ```
 
+#### grant_tool_proficiency
+Grants tool proficiencies.
+
+```json
+{
+  "type": "grant_tool_proficiency",
+  "tools": ["Thieves' Tools", "Disguise Kit"]
+}
+```
+
 ### Saving Throw Effects
 
 #### grant_save_advantage

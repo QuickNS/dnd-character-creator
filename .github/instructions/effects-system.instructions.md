@@ -44,6 +44,7 @@ Every effect is an object inside a feature's `effects` array:
 | `grant_spell_slots` | `level`, `count` | — | Bonus spell slots |
 | `grant_weapon_proficiency` | `proficiencies` (array) | — | Protector martial weapons |
 | `grant_armor_proficiency` | `proficiencies` (array) | — | Protector heavy armor |
+| `grant_tool_proficiency` | `tools` (array) | — | Rogue Thieves' Tools, class features |
 | `grant_skill_proficiency` | `skills` (array) | — | Background skill grants |
 | `grant_skill_expertise` | `skills` (array) | — | Rogue/Bard expertise |
 | `grant_save_advantage` | `abilities` (array) | `condition`, `display` | Dwarven Resilience |

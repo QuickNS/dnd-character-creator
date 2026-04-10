@@ -414,6 +414,13 @@
                                             <small>{{ character.armor_proficiencies | join(', ') }}</small>
                                         </div>
                                         {% endif %}
+
+                                        {% if character.tool_proficiencies %}
+                                        <div class="mb-2">
+                                            <strong>Tool Proficiencies:</strong><br/>
+                                            <small>{{ character.tool_proficiencies | join(', ') }}</small>
+                                        </div>
+                                        {% endif %}
                                     </div>
                                 </div>
                                 
