@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="card shadow">
+            <div class="card-header">
+                <h4 class="card-title mb-0">
+                    <i class="fas fa-star"></i> {{ feat_name }} Feat Choices
+                </h4>
+            </div>
+            <div class="card-body">
+                <p class="lead">Your background grants you the <strong>{{ feat_name }}</strong> origin feat. Make the required selections below.</p>
+
+                {% if feat_description %}
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-scroll"></i> {{ feat_name }}</h5>
+                    </div>
+                    <div class="card-body">
+                        <p>{{ feat_description }}</p>
+                        {% if feat_benefits %}
+                        <ul class="mb-0">
+                            {% for benefit in feat_benefits %}
+                            <li>{{ benefit }}</li>
+                            {% endfor %}
+                        </ul>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <form method="POST" action="{{ url_for('background.submit_feat_choices') }}">
+                    {% for choice in choices %}
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h6 class="card-title mb-0">
+                                <i class="fas fa-cog"></i> {{ choice.title }}
+                                {% if not choice.required %}<small class="text-muted ms-2">(Optional)</small>{% endif %}
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            {% if choice.description %}
+                            <p class="card-text text-muted small">{{ choice.description }}</p>
+                            {% endif %}
+
+                            {% if choice.choice_type == 'select_single' or choice.count == 1 %}
+                                <!-- Single choice — radio buttons -->
+                                <div class="row">
+                                    {% for option in choice.options %}
+                                    <div class="col-md-6 mb-2">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio"
+                                                   name="feat_choice_{{ choice.feature_name }}" value="{{ option }}"
+                                                   id="{{ choice.feature_name }}_{{ loop.index }}"
+                                                   {% if choice.required %}required{% endif %}
+                                                   {% if option in choice.already_chosen %}checked{% endif %}>
+                                            <label class="form-check-label" for="{{ choice.feature_name }}_{{ loop.index }}">
+                                                {{ option }}
+                                            </label>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+
+                            {% else %}
+                                <!-- Multiple choice — checkboxes -->
+                                <div class="row">
+                                    {% for option in choice.options %}
+                                    <div class="col-md-6 mb-2">
+                                        <div class="form-check">
+                                            <input class="form-check-input feat-choice" type="checkbox"
+                                                   name="feat_choice_{{ choice.feature_name }}" value="{{ option }}"
+                                                   id="{{ choice.feature_name }}_{{ loop.index }}"
+                                                   data-max="{{ choice.count }}" data-group="{{ choice.feature_name }}"
+                                                   {% if option in choice.already_chosen %}checked{% endif %}>
+                                            <label class="form-check-label" for="{{ choice.feature_name }}_{{ loop.index }}">
+                                                {{ option }}
+                                            </label>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                <div class="text-muted small mt-1">
+                                    <span id="{{ choice.feature_name }}-counter">{{ choice.already_chosen | length }}</span> / {{ choice.count }} selected
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+
+                    <div class="text-center d-grid gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary btn-lg" id="submit-btn">
+                            <i class="fas fa-arrow-right"></i> Continue
+                        </button>
+                        <a href="{{ url_for('background.choose_background') }}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Back
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    updateAllCounters();
+
+    document.querySelectorAll('.feat-choice').forEach(function(checkbox) {
+        checkbox.addEventListener('change', function() {
+            handleGroupChoice(this.dataset.group, this.dataset.group + '-counter');
+        });
+    });
+
+    document.getElementById('submit-btn')?.addEventListener('click', function(e) {
+        if (!validateForm()) {
+            e.preventDefault();
+            alert('Please complete all required choices before continuing.');
+        }
+    });
+
+    function handleGroupChoice(group, counterId) {
+        const checkboxes = document.querySelectorAll(`[data-group="${group}"]`);
+        const maxCount = parseInt(checkboxes[0]?.dataset.max || 0);
+        const checkedCount = document.querySelectorAll(`[data-group="${group}"]:checked`).length;
+
+        const counter = document.getElementById(counterId);
+        if (counter) counter.textContent = checkedCount;
+
+        if (maxCount > 0) {
+            checkboxes.forEach(function(cb) {
+                if (!cb.checked) {
+                    cb.disabled = checkedCount >= maxCount;
+                }
+            });
+        }
+    }
+
+    function updateAllCounters() {
+        const groups = new Set();
+        document.querySelectorAll('.feat-choice').forEach(function(cb) {
+            if (cb.dataset.group) groups.add(cb.dataset.group);
+        });
+        groups.forEach(function(group) {
+            handleGroupChoice(group, group + '-counter');
+        });
+    }
+
+    function validateForm() {
+        let valid = true;
+
+        // Required radio groups
+        const requiredRadioGroups = new Set();
+        document.querySelectorAll('input[type="radio"][required]').forEach(function(radio) {
+            requiredRadioGroups.add(radio.name);
+        });
+        requiredRadioGroups.forEach(function(groupName) {
+            if (!document.querySelector(`input[name="${groupName}"]:checked`)) {
+                valid = false;
+            }
+        });
+
+        // Checkbox groups must reach their max count
+        const groups = new Set();
+        document.querySelectorAll('.feat-choice').forEach(function(cb) {
+            if (cb.dataset.group) groups.add(cb.dataset.group);
+        });
+        groups.forEach(function(group) {
+            const checkboxes = document.querySelectorAll(`[data-group="${group}"]`);
+            const maxCount = parseInt(checkboxes[0]?.dataset.max || 0);
+            const checkedCount = document.querySelectorAll(`[data-group="${group}"]:checked`).length;
+            if (maxCount > 0 && checkedCount !== maxCount) {
+                valid = false;
+            }
+        });
+
+        return valid;
+    }
+});
+</script>
+{% endblock %}

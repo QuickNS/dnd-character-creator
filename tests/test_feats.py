@@ -548,3 +548,128 @@ class TestSkilledChoices:
         assert "Perception" in options
         assert "Stealth" in options
         assert "Athletics" in options
+
+
+# ==================== 5. Builder Integration Tests ====================
+
+
+class TestGetFeatChoices:
+    """CharacterBuilder.get_feat_choices() should extract choices from the background feat."""
+
+    def _builder_with_skilled(self):
+        """Create a builder whose background grants the Skilled feat (Noble background)."""
+        builder = CharacterBuilder()
+        builder.apply_choices({
+            "character_name": "Test",
+            "level": 1,
+            "class": "Fighter",
+            "background": "Noble",
+            "ability_scores": {
+                "Strength": 16, "Dexterity": 14, "Constitution": 15,
+                "Intelligence": 8, "Wisdom": 10, "Charisma": 10,
+            },
+            "background_bonuses": {"Charisma": 2, "Wisdom": 1},
+        })
+        return builder
+
+    def test_returns_feat_name(self):
+        """get_feat_choices returns the correct feat name for a Skilled background."""
+        builder = self._builder_with_skilled()
+        result = builder.get_feat_choices()
+        # Soldier background grants the Skilled feat
+        assert result["feat_name"] == "Skilled"
+
+    def test_returns_one_choice(self):
+        """get_feat_choices returns exactly one choice entry for Skilled."""
+        builder = self._builder_with_skilled()
+        result = builder.get_feat_choices()
+        assert len(result["choices"]) == 1
+
+    def test_choice_has_correct_count(self):
+        """The Skilled choice should require selecting 3 options."""
+        builder = self._builder_with_skilled()
+        choice = builder.get_feat_choices()["choices"][0]
+        assert choice["count"] == 3
+
+    def test_choice_options_non_empty(self):
+        """The Skilled choice should resolve to a non-empty options list."""
+        builder = self._builder_with_skilled()
+        choice = builder.get_feat_choices()["choices"][0]
+        assert len(choice["options"]) > 0
+
+    def test_choice_feature_name_is_choice_name(self):
+        """feature_name should equal the raw choice name from the data file."""
+        builder = self._builder_with_skilled()
+        choice = builder.get_feat_choices()["choices"][0]
+        assert choice["feature_name"] == "skills_or_tools"
+
+    def test_no_background_returns_empty(self):
+        """get_feat_choices returns empty list when no background is set."""
+        builder = CharacterBuilder()
+        result = builder.get_feat_choices()
+        assert result["feat_name"] is None
+        assert result["choices"] == []
+
+
+class TestApplyFeatChoices:
+    """CharacterBuilder.apply_feat_choices() should add proficiencies correctly."""
+
+    def _builder_with_skilled(self):
+        """Create a builder whose background grants the Skilled feat (Noble background)."""
+        builder = CharacterBuilder()
+        builder.apply_choices({
+            "character_name": "Test",
+            "level": 1,
+            "class": "Fighter",
+            "background": "Noble",
+            "ability_scores": {
+                "Strength": 16, "Dexterity": 14, "Constitution": 15,
+                "Intelligence": 8, "Wisdom": 10, "Charisma": 10,
+            },
+            "background_bonuses": {"Charisma": 2, "Wisdom": 1},
+        })
+        return builder
+
+    def test_skills_added_to_skill_proficiencies(self):
+        """Chosen skills should appear in proficiencies['skills']."""
+        builder = self._builder_with_skilled()
+        builder.apply_feat_choices({"skills_or_tools": ["Arcana", "Perception", "Stealth"]})
+        character = builder.to_character()
+        skills = character["proficiencies"]["skills"]
+        assert "Arcana" in skills
+        assert "Perception" in skills
+        assert "Stealth" in skills
+
+    def test_tools_added_to_tool_proficiencies(self):
+        """Chosen tool names (not skills) should appear in proficiencies['tools']."""
+        builder = self._builder_with_skilled()
+        builder.apply_feat_choices({"skills_or_tools": ["Arcana", "Perception", "Thieves' Tools"]})
+        character = builder.to_character()
+        assert "Arcana" in character["proficiencies"]["skills"]
+        assert "Thieves' Tools" in character["proficiencies"]["tools"]
+
+    def test_mixed_skills_and_tools(self):
+        """A mix of 2 skills and 1 tool should be split into the right buckets."""
+        builder = self._builder_with_skilled()
+        builder.apply_feat_choices({"skills_or_tools": ["Athletics", "Survival", "Carpenter's Tools"]})
+        character = builder.to_character()
+        assert "Athletics" in character["proficiencies"]["skills"]
+        assert "Survival" in character["proficiencies"]["skills"]
+        assert "Carpenter's Tools" in character["proficiencies"]["tools"]
+
+    def test_choices_stored_in_choices_made(self):
+        """Selected values should be persisted in choices_made under a namespaced key."""
+        builder = self._builder_with_skilled()
+        builder.apply_feat_choices({"skills_or_tools": ["Arcana", "Deception", "History"]})
+        choices_made = builder.to_json()["choices_made"]
+        assert "feat_Skilled_skills_or_tools" in choices_made
+        assert set(choices_made["feat_Skilled_skills_or_tools"]) == {"Arcana", "Deception", "History"}
+
+    def test_no_duplicate_proficiencies(self):
+        """Applying feat choices twice should not duplicate proficiencies."""
+        builder = self._builder_with_skilled()
+        builder.apply_feat_choices({"skills_or_tools": ["Arcana", "History", "Perception"]})
+        builder.apply_feat_choices({"skills_or_tools": ["Arcana", "History", "Perception"]})
+        character = builder.to_character()
+        assert character["proficiencies"]["skills"].count("Arcana") == 1
+
