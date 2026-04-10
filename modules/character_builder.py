@@ -3285,11 +3285,11 @@ class CharacterBuilder:
             if unarmed_damage_base > 0:
                 unarmed_damage_str = str(unarmed_damage_base)
             else:
-                unarmed_damage_str = "1"  # Minimum 1 damage
+                unarmed_damage_str = "0"  # Minimum 0 damage
 
-            unarmed_avg = float(max(1, 1 + str_mod))
+            unarmed_avg = float(max(0, 1 + str_mod))
             unarmed_crit_avg = float(
-                max(1, 1 + str_mod)
+                max(0, 1 + str_mod)
             )  # Unarmed crits don't double the base 1
 
         unarmed_attack_bonus = str_mod + proficiency_bonus
