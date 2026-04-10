@@ -362,10 +362,8 @@ class TestDexterousAttacksMonkWeapons:
                 "properties": ["Thrown", "Versatile (1d8)"],
             },
         }
-        # STR 18 (+4), DEX 10 (+0)
-        builder = self._build_monk_with_weapon(spear, str_score=16, dex_score=10)
-        # Override background bonuses by rebuilding with str-focused bonuses
-        builder2 = _build_full_monk(
+        # STR 18 (+4), DEX 10 (+0) after background bonus
+        builder = _build_full_monk(
             level=1,
             ability_scores={
                 "Strength": 16, "Dexterity": 10, "Constitution": 14,
@@ -373,10 +371,10 @@ class TestDexterousAttacksMonkWeapons:
             },
             background_bonuses={"Strength": 2, "Wisdom": 1},
         )
-        if builder2.character_data.get("equipment") is None:
-            builder2.character_data["equipment"] = {"weapons": [], "armor": [], "items": [], "gold": 0}
-        builder2.character_data["equipment"].setdefault("weapons", []).append(spear)
-        weapon_data = builder2.calculate_weapon_attacks()
+        if builder.character_data.get("equipment") is None:
+            builder.character_data["equipment"] = {"weapons": [], "armor": [], "items": [], "gold": 0}
+        builder.character_data["equipment"].setdefault("weapons", []).append(spear)
+        weapon_data = builder.calculate_weapon_attacks()
         spear_attack = next(
             (a for a in weapon_data["attacks"] if a["name"] == "Spear"), None
         )
