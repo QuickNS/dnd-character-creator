@@ -17,8 +17,7 @@
   },
   "armor_proficiencies": [
     "Light armor",
-    "Medium armor",
-    "Shields (druids will not wear armor or use shields made of metal)"
+    "Shields"
   ],
   "weapon_proficiencies": [
     "Simple weapons"
@@ -40,20 +39,20 @@
   "starting_equipment": {
     "option_a": {
       "items": [
-        "Wooden Shield",
-        "Scimitar",
         "Leather Armor",
-        "Druidic Focus",
-        "Herbalism Kit",
-        "Explorer's Pack"
+        "Shield",
+        "Sickle",
+        "Druidic Focus (Quarterstaff)",
+        "Explorer's Pack",
+        "Herbalism Kit"
       ],
-      "gold": 5
+      "gold": 9
     },
     "option_b": {
-      "gold": 75
+      "gold": 50
     }
   },
-  "subclass_selection_level": 2,
+  "subclass_selection_level": 3,
   "spellcasting_ability": "Wisdom",
   "spellcasting_focus": [
     "Druidic Focus"
@@ -107,22 +106,22 @@
     "2": 5,
     "3": 6,
     "4": 7,
-    "5": 8,
-    "6": 9,
-    "7": 10,
-    "8": 11,
-    "9": 12,
-    "10": 13,
-    "11": 14,
-    "12": 15,
-    "13": 16,
+    "5": 9,
+    "6": 10,
+    "7": 11,
+    "8": 12,
+    "9": 14,
+    "10": 15,
+    "11": 16,
+    "12": 16,
+    "13": 17,
     "14": 17,
     "15": 18,
-    "16": 19,
-    "17": 20,
-    "18": 21,
-    "19": 22,
-    "20": 23
+    "16": 18,
+    "17": 19,
+    "18": 20,
+    "19": 21,
+    "20": 22
   },
   "spell_slots_by_level": {
     "1": [
@@ -346,29 +345,132 @@
       1
     ]
   },
+  "primal_orders": {
+    "Magician": {
+      "description": "You know one extra cantrip from the Druid spell list. In addition, your mystical connection to nature gives you a bonus to your Intelligence (Arcana or Nature) checks. The bonus equals your Wisdom modifier (minimum bonus of +1).",
+      "choices": {
+        "type": "select_single",
+        "count": 1,
+        "name": "magician_bonus_cantrip",
+        "source": {
+          "type": "external",
+          "file": "spells/class_lists/druid.json",
+          "list": "cantrips"
+        },
+        "optional": false
+      },
+      "effects": [
+        {
+          "type": "grant_cantrip_choice",
+          "count": 1,
+          "counts_against_limit": false,
+          "category": "always_prepared"
+        },
+        {
+          "type": "ability_bonus",
+          "ability": "Intelligence",
+          "skills": ["Arcana", "Nature"],
+          "value": "wisdom_modifier",
+          "minimum": 1
+        }
+      ]
+    },
+    "Warden": {
+      "description": "Trained for battle, you gain proficiency with Martial weapons and training with Medium armor.",
+      "effects": [
+        {
+          "type": "grant_weapon_proficiency",
+          "proficiencies": ["Martial weapons"]
+        },
+        {
+          "type": "grant_armor_proficiency",
+          "proficiencies": ["Medium armor"]
+        }
+      ]
+    }
+  },
+  "elemental_fury_options": {
+    "Potent Spellcasting": {
+      "description": "Add your Wisdom modifier to the damage you deal with any Druid cantrip. {improved_text}",
+      "scaling": {
+        "improved_text": [
+          {"min_level": 7, "value": ""},
+          {"min_level": 15, "value": "When you cast a Druid cantrip with a range of 10 feet or greater, the spell's range increases by 300 feet."}
+        ]
+      }
+    },
+    "Primal Strike": {
+      "description": "Once on each of your turns when you hit a creature with an attack roll using a weapon or a Beast form's attack in Wild Shape, you can cause the target to take an extra {strike_dice} Cold, Fire, Lightning, or Thunder damage (choose when you hit).",
+      "scaling": {
+        "strike_dice": [
+          {"min_level": 7, "value": "1d8"},
+          {"min_level": 15, "value": "2d8"}
+        ]
+      }
+    }
+  },
   "features_by_level": {
     "1": {
-      "Druidic": "You know Druidic, the secret language of druids. You can speak the language and use it to leave hidden messages. Creatures that know Druidic automatically notice such messages. Others spot the message's presence with a successful DC 15 Wisdom (Perception) check but can't decipher it without magic.",
-      "Spellcasting": "Cast spells using Wisdom. Know 2 cantrips, prepare Wisdom modifier + Druid level spells from the Druid spell list. Use a Druidic Focus as Spellcasting Focus. Can cast prepared Druid spells as rituals."
+      "Spellcasting": {
+        "description": "You can cast spells using Wisdom as your spellcasting ability. You prepare a number of spells from the Druid spell list each day. You can use a Druidic Focus as your Spellcasting Focus. You can cast any prepared Druid spell as a ritual if it has the Ritual tag."
+      },
+      "Druidic": {
+        "description": "You know Druidic, the secret language of druids. You can speak the language and use it to leave hidden messages. You always have the Speak with Animals spell prepared.",
+        "effects": [
+          {
+            "type": "grant_spell",
+            "spell": "Speak with Animals",
+            "min_level": 1
+          }
+        ]
+      },
+      "Primal Order": {
+        "description": "You have dedicated yourself to one of the following primal roles of your choice.",
+        "choices": {
+          "type": "select_single",
+          "count": 1,
+          "name": "primal_order",
+          "source": {
+            "type": "internal",
+            "list": "primal_orders"
+          },
+          "optional": false
+        }
+      }
     },
     "2": {
-      "Wild Shape": "As a Bonus Action, magically assume the shape of a beast you have seen. You can use this feature twice, regaining expended uses on Short or Long Rest. You can stay in beast shape for hours equal to half your Druid level (rounded down). CR limit: 1/4 at level 2, 1/2 at level 4, 1 at level 8.",
-      "Druid Circle": "Choose your Druid Circle subclass.",
-      "Wild Companion": "As an action, expend a spell slot to cast Find Familiar without material components. The familiar's form is determined by your Druid Circle."
+      "Wild Shape": "As a Bonus Action, you magically assume the shape of a beast you have seen. You can use this feature a number of times equal to your Wisdom modifier (minimum of once), and you regain all expended uses when you finish a Long Rest. You stay in beast form for a number of hours equal to half your Druid level (rounded down). Your temporary hit points in beast form equal your Druid level. You revert if you drop to 0 temporary hit points, use a Bonus Action, or are incapacitated. While in beast form, your game statistics are replaced by the beast's, but you retain your alignment, personality, Intelligence, Wisdom, and Charisma scores. You can't cast spells in beast form (until Beast Spells at level 18). Known forms start at a limited number and grow as you level.",
+      "Wild Companion": "You can expend a spell slot or a use of Wild Shape (no action required) to cast Find Familiar without Material components. The familiar is a Fey and disappears after a number of hours equal to half your Druid level."
     },
-    "3": {},
+    "3": {
+      "Druid Subclass": "Choose your Druid Circle subclass."
+    },
     "4": {
-      "Ability Score Improvement": "Increase one ability score by 2, or increase two ability scores by 1.",
-      "Wild Shape Improvement": "CR limit increases to 1/2."
+      "Ability Score Improvement": "Increase one ability score by 2, or increase two ability scores by 1."
     },
-    "5": {},
+    "5": {
+      "Wild Resurgence": "Once on each of your turns, if you have no uses of Wild Shape left, you can give yourself one use by expending a spell slot (no action required). In addition, you can expend one use of Wild Shape (no action required) to give yourself a level 1 spell slot, but you can't do so again until you finish a Long Rest."
+    },
     "6": {
       "Subclass Feature": "Gain a feature from your Druid Circle subclass."
     },
-    "7": {},
+    "7": {
+      "Elemental Fury": {
+        "description": "The might of the elements flows through you. Choose one of the following options.",
+        "choices": {
+          "type": "select_single",
+          "count": 1,
+          "name": "elemental_fury",
+          "source": {
+            "type": "internal",
+            "list": "elemental_fury_options"
+          },
+          "optional": false
+        }
+      }
+    },
     "8": {
-      "Ability Score Improvement": "Increase one ability score by 2, or increase two ability scores by 1.",
-      "Wild Shape Improvement": "CR limit increases to 1."
+      "Ability Score Improvement": "Increase one ability score by 2, or increase two ability scores by 1."
     },
     "9": {},
     "10": {
@@ -382,20 +484,21 @@
     "14": {
       "Subclass Feature": "Gain a feature from your Druid Circle subclass."
     },
-    "15": {},
+    "15": {
+      "Improved Elemental Fury": "The option you chose for Elemental Fury grows more powerful. The effects are updated automatically based on your level."
+    },
     "16": {
       "Ability Score Improvement": "Increase one ability score by 2, or increase two ability scores by 1."
     },
     "17": {},
     "18": {
-      "Beast Spells": "While in Wild Shape, you can cast many Druid spells. You can perform somatic and verbal components while in beast form.",
-      "Timeless Body": "The primal magic you wield slows aging. For every 10 years that pass, your body ages only 1 year."
+      "Beast Spells": "While using Wild Shape, you can cast spells in Beast form, except for any spell that has a Material component with a cost specified or that consumes its Material component."
     },
     "19": {
       "Epic Boon": "Gain an Epic Boon feat or another feat of your choice."
     },
     "20": {
-      "Archdruid": "You can use Wild Shape an unlimited number of times. You can ignore verbal and somatic components of Druid spells, and material components that lack a cost and aren't consumed."
+      "Archdruid": "The vitality of nature constantly blooms within you, granting you the following benefits. Evergreen Wild Shape: Whenever you roll Initiative and have no uses of Wild Shape left, you regain one expended use. Nature Magician: You can convert uses of Wild Shape into a spell slot (no action required), with each use contributing 2 spell levels. Once per Long Rest. Longevity: For every ten years that pass, your body ages only one year."
     }
   }
 }
