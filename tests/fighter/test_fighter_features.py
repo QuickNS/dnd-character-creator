@@ -202,8 +202,22 @@ class TestEldritchKnightFeatures:
         for feature_name in expected_features:
             assert feature_name in names, f"Expected '{feature_name}' at level {level}"
 
-
-class TestPsiWarriorFeatures:
+    def test_spellcasting_uses_wizard_spell_list(self):
+        """Regression: Eldritch Knight available spells must come from Wizard list, not Fighter."""
+        builder = CharacterBuilder()
+        builder.set_species("Human")
+        builder.set_background("Soldier")
+        builder.set_class("Fighter", 3)
+        builder.set_subclass("Eldritch Knight")
+        stats = builder.calculate_spellcasting_stats()
+        assert stats["has_spellcasting"] is True
+        # Must have Wizard cantrips (e.g., Fire Bolt) and spells available
+        assert len(stats.get("available_cantrips", [])) > 0, (
+            "Eldritch Knight should have Wizard cantrips available"
+        )
+        assert len(stats.get("available_spells", {})) > 0, (
+            "Eldritch Knight should have Wizard spells available"
+        )
     """Test Psi Warrior subclass features and effects."""
 
     def test_level_3_psionic_power(self):
