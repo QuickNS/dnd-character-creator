@@ -224,6 +224,45 @@ class TestUnarmedFighting:
         assert "attack_bonus" in unarmed
         assert unarmed["damage_type"] == "Bludgeoning"
 
+    def test_base_unarmed_strike_damage_negative_str_mod(self):
+        """Test base unarmed strike damage with a negative STR modifier floors at 0."""
+        builder = CharacterBuilder()
+        choices = {
+            "character_name": "Weakling",
+            "species": "Human",
+            "class": "Fighter",
+            "level": 1,
+            "background": "Soldier",
+            "ability_scores": {
+                "Strength": 8,  # -1 modifier
+                "Dexterity": 14,
+                "Constitution": 14,
+                "Intelligence": 10,
+                "Wisdom": 12,
+                "Charisma": 10,
+            },
+            "skill_choices": ["Athletics", "Acrobatics"],
+            "Fighting Style": "Defense",
+            "equipment_selections": {
+                "class_equipment": "option_a",
+                "background_equipment": "option_a",
+            },
+        }
+        builder.apply_choices(choices)
+        weapon_data = builder.calculate_weapon_attacks()
+        attacks = weapon_data.get("attacks", [])
+
+        unarmed = next((a for a in attacks if a["name"] == "Unarmed Strike"), None)
+        assert unarmed is not None
+
+        # 1 + (-1) = 0; floor is 0, not 1
+        assert unarmed["damage"] == "0", (
+            f"Unarmed damage with STR 8 should be 0, got {unarmed['damage']}"
+        )
+        assert unarmed["avg_damage"] == 0.0, (
+            f"Unarmed avg_damage with STR 8 should be 0.0, got {unarmed['avg_damage']}"
+        )
+
     def test_unarmed_better_than_base(
         self, fighter_with_unarmed_fighting_no_weapons, fighter_without_unarmed_fighting
     ):
