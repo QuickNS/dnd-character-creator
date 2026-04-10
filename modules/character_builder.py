@@ -5102,6 +5102,154 @@ class CharacterBuilder:
                                     }
                                     choices.append(choice)
 
+    # ==================== Feat Choices ====================
+
+    _ALL_SKILLS = [
+        "Acrobatics", "Animal Handling", "Arcana", "Athletics", "Deception",
+        "History", "Insight", "Intimidation", "Investigation", "Medicine",
+        "Nature", "Perception", "Performance", "Persuasion", "Religion",
+        "Sleight of Hand", "Stealth", "Survival",
+    ]
+
+    def get_feat_choices(self) -> Dict[str, Any]:
+        """
+        Get choices required by the background's origin feat.
+
+        Inspects the feat granted by the current background, extracts any
+        ``choices`` entries, and resolves the available options.
+
+        Returns:
+            Dict with keys:
+            - 'feat_name': str | None — name of the feat, or None if absent
+            - 'feat_description': str — feat description
+            - 'feat_benefits': list[str] — bullet-point benefits
+            - 'choices': list[dict] — choice dicts ready for template rendering,
+              each containing 'title', 'type', 'description', 'options',
+              'count', 'required', 'feature_name', 'choice_type', and
+              'option_descriptions'.
+        """
+        background_data = self.character_data.get("background_data") or {}
+        feat_name = background_data.get("feat")
+        if not feat_name:
+            return {"feat_name": None, "feat_description": "", "feat_benefits": [], "choices": []}
+
+        feat_data = self._load_feat_data(feat_name)
+        if not feat_data:
+            return {"feat_name": feat_name, "feat_description": "", "feat_benefits": [], "choices": []}
+
+        raw_choices = feat_data.get("choices", [])
+        if not raw_choices:
+            return {
+                "feat_name": feat_name,
+                "feat_description": feat_data.get("description", ""),
+                "feat_benefits": feat_data.get("benefits", []),
+                "choices": [],
+            }
+
+        character = self.to_json()
+        choices_made = character.get("choices_made", {})
+        choices: List[Dict[str, Any]] = []
+
+        for choice_item in raw_choices:
+            choice_name = choice_item.get("name", "choice")
+            choices_made_key = f"feat_{feat_name}_{choice_name}"
+
+            options = resolve_choice_options(choice_item, character)
+
+            already_chosen = choices_made.get(choices_made_key)
+            if isinstance(already_chosen, str):
+                already_chosen = [already_chosen]
+
+            choice = {
+                "title": f"{feat_name} — {choice_name.replace('_', ' ').title()}",
+                "type": "feature",
+                "description": feat_data.get("description", ""),
+                "options": options,
+                "count": choice_item.get("count", 1),
+                "required": True,
+                "feature_name": choice_name,
+                "choices_made_key": choices_made_key,
+                "choice_type": choice_item.get("type", "select_multiple"),
+                "option_descriptions": {},
+                "already_chosen": already_chosen or [],
+            }
+            choices.append(choice)
+
+        return {
+            "feat_name": feat_name,
+            "feat_description": feat_data.get("description", ""),
+            "feat_benefits": feat_data.get("benefits", []),
+            "choices": choices,
+        }
+
+    def apply_feat_choices(self, choices: Dict[str, Any]) -> bool:
+        """
+        Apply the selections made on the feat-choices page.
+
+        ``choices`` maps the raw choice name (as returned by ``get_feat_choices``
+        in ``choice['feature_name']``) to the user-submitted value(s).
+
+        Handles:
+        - ``skills_or_tools``: each item is added to ``proficiencies['skills']``
+          if it is a D&D skill, otherwise to ``proficiencies['tools']``.
+        - ``cantrips``: each item is added to ``spells['prepared']['cantrips']``
+          (e.g. Magic Initiate).
+        - any choice whose name contains ``spell``: each item is added to
+          ``spells['prepared']['spells']`` (e.g. Magic Initiate 1st-level spell).
+
+        Unrecognised choice names are still stored in ``choices_made`` so that
+        future handlers can use them.
+
+        Returns:
+            True always (errors are silently ignored to keep the wizard flowing).
+        """
+        background_data = self.character_data.get("background_data") or {}
+        feat_name = background_data.get("feat", "")
+
+        for choice_name, choice_value in choices.items():
+            # Normalise to a list
+            if isinstance(choice_value, str):
+                values = [choice_value]
+            elif isinstance(choice_value, list):
+                values = choice_value
+            else:
+                values = []
+
+            # Persist in choices_made under a namespaced key
+            self.character_data["choices_made"][f"feat_{feat_name}_{choice_name}"] = values
+
+            if choice_name == "skills_or_tools":
+                for item in values:
+                    if item in self._ALL_SKILLS:
+                        if item not in self.character_data["proficiencies"]["skills"]:
+                            self.character_data["proficiencies"]["skills"].append(item)
+                            self.character_data["proficiency_sources"]["skills"][item] = feat_name
+                    else:
+                        if item not in self.character_data["proficiencies"]["tools"]:
+                            self.character_data["proficiencies"]["tools"].append(item)
+
+            elif choice_name == "cantrips":
+                for cantrip in values:
+                    self.character_data["spells"]["prepared"]["cantrips"][cantrip] = {}
+                    self.character_data["spell_metadata"][cantrip] = {
+                        "source": feat_name,
+                        "always_prepared": True,
+                        "once_per_day": False,
+                        "counts_against_limit": False,
+                    }
+
+            elif "spell" in choice_name:
+                for spell in values:
+                    self.character_data["spells"]["prepared"]["spells"][spell] = {}
+                    self.character_data["spell_metadata"][spell] = {
+                        "source": feat_name,
+                        "always_prepared": True,
+                        "once_per_day": True,
+                        "counts_against_limit": False,
+                    }
+
+        return True
+
     def validate(self) -> Dict[str, List[str]]:
         """
         Validate character data.

@@ -9,6 +9,7 @@ from utils.route_helpers import (
     log_route_processing,
 )
 
+
 background_bp = Blueprint("background", __name__)
 data_loader = DataLoader()
 logger = logging.getLogger(__name__)
@@ -48,10 +49,66 @@ def select_background():
 
     builder = get_builder_from_session()
     builder.apply_choice("background", background_name)
-    builder.set_step("species")
+    builder.set_step("feat_choices")
     save_builder_to_session(builder)
 
     # Log route processing
     log_route_processing("select_background", choices, builder_before, builder)
+
+    return redirect(url_for("background.feat_choices"))
+
+
+@background_bp.route("/feat-choices")
+def feat_choices():
+    """Display origin feat choices granted by the selected background (if any)."""
+    builder = get_builder_from_session()
+    if not builder:
+        return redirect(url_for("index.index"))
+
+    feat_choice_data = builder.get_feat_choices()
+
+    # Nothing to choose — skip straight to species
+    if not feat_choice_data["choices"]:
+        builder.set_step("species")
+        save_builder_to_session(builder)
+        return redirect(url_for("species.choose_species"))
+
+    character = builder.to_json()
+    choices_made = character.get("choices_made", {})
+
+    return render_template(
+        "feat_choices.html",
+        character=character,
+        feat_name=feat_choice_data["feat_name"],
+        feat_description=feat_choice_data["feat_description"],
+        feat_benefits=feat_choice_data["feat_benefits"],
+        choices=feat_choice_data["choices"],
+        choices_made=choices_made,
+    )
+
+
+@background_bp.route("/submit-feat-choices", methods=["POST"])
+def submit_feat_choices():
+    """Process origin feat choice submissions."""
+    builder_before = get_builder_from_session()
+    builder = get_builder_from_session()
+    if not builder:
+        return redirect(url_for("index.index"))
+
+    # Collect feat choices from the form (field names: feat_choice_<choice_name>)
+    # Always keep values as a list so apply_feat_choices handles them uniformly.
+    choices: dict = {}
+    for key, values in request.form.lists():
+        if key.startswith("feat_choice_"):
+            choice_name = key[len("feat_choice_"):]
+            choices[choice_name] = values
+
+    if choices:
+        builder.apply_feat_choices(choices)
+
+    builder.set_step("species")
+    save_builder_to_session(builder)
+
+    log_route_processing("submit_feat_choices", choices, builder_before, builder)
 
     return redirect(url_for("species.choose_species"))
