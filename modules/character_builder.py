@@ -1027,6 +1027,18 @@ class CharacterBuilder:
             # These are processed in calculate_ac_options()
             pass  # Tracked via applied_effects
 
+        elif effect_type == "set_martial_arts_die":
+            # Monk: resolve the correct Martial Arts die for the current level
+            die_by_level = effect.get("die_by_level", {})
+            level = self.character_data.get("level", 1)
+            resolved_die = "1d6"  # fallback
+            for level_threshold, die in sorted(
+                die_by_level.items(), key=lambda x: int(x[0])
+            ):
+                if level >= int(level_threshold):
+                    resolved_die = die
+            self.character_data["martial_arts_die"] = resolved_die
+
         elif effect_type == "grant_origin_feat":
             feat_name = effect.get("feat")
             if feat_name:
@@ -3244,8 +3256,13 @@ class CharacterBuilder:
         # Add Unarmed Strike
         # Base unarmed strike: 1 + STR modifier
         # With Unarmed Fighting: 1d6 + STR (or 1d8 + STR if no weapons/shield)
+        # With Martial Arts (Monk): martial_arts_die + max(STR, DEX)
         str_mod = ability_scores.get("strength", {}).get("modifier", 0)
+        dex_mod = ability_scores.get("dexterity", {}).get("modifier", 0)
         has_unarmed_fighting = False
+        martial_arts_die = self.character_data.get("martial_arts_die")
+        has_weapons_or_shield = False
+        has_shield = False
 
         if hasattr(self, "applied_effects"):
             for effect_wrapper in self.applied_effects:
@@ -3253,31 +3270,33 @@ class CharacterBuilder:
                     has_unarmed_fighting = True
                     break
 
-        if has_unarmed_fighting:
-            # Check if character has weapons or shield equipped
+        # Determine the damage die and ability modifier for the unarmed strike
+        if martial_arts_die:
+            # Monk: Martial Arts die + max(STR, DEX) (Dexterous Attacks)
+            unarmed_mod = max(str_mod, dex_mod)
+            unarmed_damage_dice = martial_arts_die
+        elif has_unarmed_fighting:
+            unarmed_mod = str_mod
             has_weapons_or_shield = len(all_weapons) > 0
-
-            # Check for shield in armor
             armor_list = equipment.get("armor", [])
             has_shield = any("Shield" in armor.get("name", "") for armor in armor_list)
+            unarmed_damage_dice = "1d6" if (has_weapons_or_shield or has_shield) else "1d8"
+        else:
+            unarmed_mod = str_mod
+            unarmed_damage_dice = None
 
-            # Determine damage die
-            if has_weapons_or_shield or has_shield:
-                unarmed_damage_dice = "1d6"
-            else:
-                unarmed_damage_dice = "1d8"
-
-            # Format damage string
-            if str_mod > 0:
-                unarmed_damage_str = f"{unarmed_damage_dice} + {str_mod}"
-            elif str_mod < 0:
-                unarmed_damage_str = f"{unarmed_damage_dice} - {abs(str_mod)}"
+        # Format damage string and calculate averages
+        if unarmed_damage_dice:
+            # Shared formatting for die-based unarmed strikes
+            if unarmed_mod > 0:
+                unarmed_damage_str = f"{unarmed_damage_dice} + {unarmed_mod}"
+            elif unarmed_mod < 0:
+                unarmed_damage_str = f"{unarmed_damage_dice} - {abs(unarmed_mod)}"
             else:
                 unarmed_damage_str = unarmed_damage_dice
-
-            unarmed_avg = self._calculate_average_damage(unarmed_damage_dice, str_mod)
+            unarmed_avg = self._calculate_average_damage(unarmed_damage_dice, unarmed_mod)
             unarmed_crit_avg = self._calculate_average_damage(
-                unarmed_damage_dice, str_mod, is_crit=True
+                unarmed_damage_dice, unarmed_mod, is_crit=True
             )
         else:
             # Base unarmed strike: 1 + STR modifier
@@ -3292,10 +3311,10 @@ class CharacterBuilder:
                 max(0, 1 + str_mod)
             )  # Unarmed crits don't double the base 1
 
-        unarmed_attack_bonus = str_mod + proficiency_bonus
+        unarmed_attack_bonus = unarmed_mod + proficiency_bonus
 
         unarmed_notes = []
-        if has_unarmed_fighting:
+        if has_unarmed_fighting and not martial_arts_die:
             if has_weapons_or_shield or has_shield:
                 unarmed_notes.append("1d8 if no weapons or shield equipped")
             else:
@@ -3313,7 +3332,7 @@ class CharacterBuilder:
             "avg_damage": unarmed_avg,
             "avg_crit": unarmed_crit_avg,
             "properties": [],
-            "ability": "STR",
+            "ability": "DEX" if martial_arts_die and dex_mod >= str_mod else "STR",
             "proficient": True,  # Everyone is proficient with unarmed strikes
             "mastery": None,
             "icon": "/static/images/weapons/strike.svg",
