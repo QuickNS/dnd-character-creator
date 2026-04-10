@@ -1342,6 +1342,18 @@ class CharacterBuilder:
 
     # ==================== Background Methods ====================
 
+    def _remove_skills_sourced_from(
+        self, skills: List[str], source_name: str
+    ) -> None:
+        """Remove proficiencies whose source matches *source_name* from *skills* list."""
+        skill_sources = self.character_data["proficiency_sources"]["skills"]
+        for skill in skills:
+            if skill_sources.get(skill) == source_name:
+                self.character_data["proficiencies"]["skills"] = [
+                    s for s in self.character_data["proficiencies"]["skills"] if s != skill
+                ]
+                skill_sources.pop(skill, None)
+
     def _clear_background_features(self):
         """Clear all background-related features and effects before re-applying."""
         prev_bg_data = self.character_data.get("background_data") or {}
@@ -1349,25 +1361,14 @@ class CharacterBuilder:
 
         # Remove skill proficiencies granted by the previous background
         prev_skills = prev_bg_data.get("skill_proficiencies", [])
-        skill_sources = self.character_data["proficiency_sources"]["skills"]
-        for skill in prev_skills:
-            if skill_sources.get(skill) == prev_bg_name:
-                self.character_data["proficiencies"]["skills"] = [
-                    s for s in self.character_data["proficiencies"]["skills"] if s != skill
-                ]
-                skill_sources.pop(skill, None)
+        self._remove_skills_sourced_from(prev_skills, prev_bg_name)
 
         # Also remove any replacement skills the player chose due to overlap with
         # the previous background (tracked in choices_made)
         prev_replacements = self.character_data["choices_made"].pop(
             "background_skill_replacements", []
         )
-        for skill in prev_replacements:
-            if skill_sources.get(skill) == prev_bg_name:
-                self.character_data["proficiencies"]["skills"] = [
-                    s for s in self.character_data["proficiencies"]["skills"] if s != skill
-                ]
-                skill_sources.pop(skill, None)
+        self._remove_skills_sourced_from(prev_replacements, prev_bg_name)
 
         # Clear replacement-needed counter
         self.character_data["choices_made"].pop(
@@ -5370,20 +5371,15 @@ class CharacterBuilder:
         needed = self.character_data["choices_made"].get(
             "background_skill_replacements_needed", 0
         )
-        skill_sources = self.character_data["proficiency_sources"]["skills"]
 
         # Remove previously committed replacements so re-submission is idempotent
         prev_replacements = self.character_data["choices_made"].get(
             "background_skill_replacements", []
         )
-        for skill in prev_replacements:
-            if skill_sources.get(skill) == background_name:
-                self.character_data["proficiencies"]["skills"] = [
-                    s for s in self.character_data["proficiencies"]["skills"] if s != skill
-                ]
-                skill_sources.pop(skill, None)
+        self._remove_skills_sourced_from(prev_replacements, background_name)
 
         # Apply new replacements (capped at the number needed)
+        skill_sources = self.character_data["proficiency_sources"]["skills"]
         valid_skills = [s for s in skills if s in self._ALL_SKILLS][:needed]
         for skill in valid_skills:
             if skill not in self.character_data["proficiencies"]["skills"]:

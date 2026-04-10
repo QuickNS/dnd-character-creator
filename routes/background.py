@@ -103,14 +103,18 @@ def submit_replacement_skills():
 
     skills = request.form.getlist("replacement_skills")[:needed]
 
-    if len(skills) == needed:
-        builder.apply_background_skill_replacement(skills)
-        log_route_processing(
-            "submit_replacement_skills",
-            {"replacement_skills": skills},
-            builder_before,
-            builder,
-        )
+    if len(skills) < needed:
+        # Not enough skills selected — return to the replacement page
+        save_builder_to_session(builder)
+        return redirect(url_for("background.choose_replacement_skills"))
+
+    builder.apply_background_skill_replacement(skills)
+    log_route_processing(
+        "submit_replacement_skills",
+        {"replacement_skills": skills},
+        builder_before,
+        builder,
+    )
 
     builder.set_step("feat_choices")
     save_builder_to_session(builder)
