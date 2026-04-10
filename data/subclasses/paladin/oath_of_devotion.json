@@ -6,41 +6,35 @@
   "features_by_level": {
     "3": {
       "Oath Spells": {
-        "description": "You always have certain spells prepared.",
-        "spells": {
-          "3": [
-            "Protection from Evil and Good",
-            "Sanctuary"
-          ],
-          "5": [
-            "Lesser Restoration",
-            "Zone of Truth"
-          ],
-          "9": [
-            "Beacon of Hope",
-            "Dispel Magic"
-          ],
-          "13": [
-            "Freedom of Movement",
-            "Guardian of Faith"
-          ],
-          "17": [
-            "Commune",
-            "Flame Strike"
-          ]
-        }
+        "description": "The magic of your oath ensures you always have certain spells ready.",
+        "effects": [
+          {"type": "grant_spell", "spell": "Protection from Evil and Good", "min_level": 3},
+          {"type": "grant_spell", "spell": "Shield of Faith", "min_level": 3},
+          {"type": "grant_spell", "spell": "Aid", "min_level": 5},
+          {"type": "grant_spell", "spell": "Zone of Truth", "min_level": 5},
+          {"type": "grant_spell", "spell": "Beacon of Hope", "min_level": 9},
+          {"type": "grant_spell", "spell": "Dispel Magic", "min_level": 9},
+          {"type": "grant_spell", "spell": "Freedom of Movement", "min_level": 13},
+          {"type": "grant_spell", "spell": "Guardian of Faith", "min_level": 13},
+          {"type": "grant_spell", "spell": "Commune", "min_level": 17},
+          {"type": "grant_spell", "spell": "Flame Strike", "min_level": 17}
+        ]
       },
-      "Sacred Weapon": "As a Channel Divinity action, you can imbue one weapon you're holding with positive energy for 1 minute. For the duration, you add your Charisma modifier to attack rolls made with that weapon (minimum +1), it emits Bright Light in a 20-foot radius and Dim Light 20 feet beyond that, and it counts as magical. You can end this effect as a Bonus Action.",
-      "Turn the Unholy": "As a Channel Divinity action, each Fiend or Undead within 30 feet that can see or hear you must make a Wisdom save or be Turned for 1 minute or until it takes damage."
+      "Sacred Weapon": "When you take the Attack action, you can expend one use of your Channel Divinity to imbue one Melee weapon that you are holding with positive energy. For 10 minutes or until you use this feature again, you add your Charisma modifier to attack rolls you make with that weapon (minimum bonus of +1), and each time you hit with it, you cause it to deal its normal damage type or Radiant damage. The weapon also emits Bright Light in a 20-foot radius and Dim Light 20 feet beyond that."
     },
     "7": {
-      "Aura of Devotion": "You and friendly creatures within 10 feet can't be Charmed while you are conscious. At 18th level, range increases to 30 feet."
+      "Aura of Devotion": {
+        "description": "You and your allies have Immunity to the Charmed condition while in your Aura of Protection. If a Charmed ally enters the aura, that condition has no effect on that ally while there.",
+        "effects": [
+          {"type": "grant_condition_immunity", "condition": "Charmed"}
+        ]
+      }
     },
     "15": {
-      "Purity of Spirit": "You are always under the effects of a Protection from Evil and Good spell."
+      "Smite of Protection": "Your magical smite now radiates protective energy. Whenever you cast Divine Smite, you and your allies have Half Cover while in your Aura of Protection until the start of your next turn."
     },
     "20": {
-      "Holy Nimbus": "As a Bonus Action, you can emanate an aura of sunlight for 1 minute. During this time, you emit Bright Light in a 30-foot radius and Dim Light 30 feet beyond that. Whenever an enemy creature starts its turn in the Bright Light, it takes 10 Radiant damage. You also have Advantage on saving throws against spells cast by Fiends and Undead. Once used, can't use again until Long Rest."
+      "Holy Nimbus": "As a Bonus Action, you can imbue your Aura of Protection with holy power, granting the benefits below for 10 minutes or until you end them (no action required). Once you use this feature, you can't use it again until you finish a Long Rest. You can also restore your use of it by expending a level 5 spell slot (no action required). Holy Ward: You have Advantage on any saving throw you are forced to make by a Fiend or an Undead. Radiant Damage: Whenever an enemy starts its turn in the aura, that creature takes Radiant damage equal to your Charisma modifier plus your Proficiency Bonus. Sunlight: The aura is filled with Bright Light that is sunlight."
     }
   }
 }

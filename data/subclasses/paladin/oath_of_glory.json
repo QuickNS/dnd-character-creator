@@ -6,41 +6,36 @@
   "features_by_level": {
     "3": {
       "Oath Spells": {
-        "description": "You always have certain spells prepared.",
-        "spells": {
-          "3": [
-            "Guiding Bolt",
-            "Heroism"
-          ],
-          "5": [
-            "Enhance Ability",
-            "Magic Weapon"
-          ],
-          "9": [
-            "Haste",
-            "Protection from Energy"
-          ],
-          "13": [
-            "Compulsion",
-            "Freedom of Movement"
-          ],
-          "17": [
-            "Commune",
-            "Flame Strike"
-          ]
-        }
+        "description": "The magic of your oath ensures you always have certain spells ready.",
+        "effects": [
+          {"type": "grant_spell", "spell": "Guiding Bolt", "min_level": 3},
+          {"type": "grant_spell", "spell": "Heroism", "min_level": 3},
+          {"type": "grant_spell", "spell": "Enhance Ability", "min_level": 5},
+          {"type": "grant_spell", "spell": "Magic Weapon", "min_level": 5},
+          {"type": "grant_spell", "spell": "Haste", "min_level": 9},
+          {"type": "grant_spell", "spell": "Protection from Energy", "min_level": 9},
+          {"type": "grant_spell", "spell": "Compulsion", "min_level": 13},
+          {"type": "grant_spell", "spell": "Freedom of Movement", "min_level": 13},
+          {"type": "grant_spell", "spell": "Legend Lore", "min_level": 17},
+          {"type": "grant_spell", "spell": "Yolande's Regal Presence", "min_level": 17}
+        ]
       },
-      "Peerless Athlete": "As a Channel Divinity Bonus Action, you gain Advantage on Strength (Athletics) and Dexterity (Acrobatics) checks for 10 minutes. During this time, you can add your Charisma modifier (minimum +1) to any Strength check you make, your carrying capacity doubles, and the distance of your Long Jump and High Jump increases by a number of feet equal to your Charisma modifier.",
-      "Inspiring Smite": "Immediately after you deal damage with Divine Smite, you can use Channel Divinity to distribute Temporary Hit Points to creatures of your choice within 30 feet (including yourself). Total Temporary HP equals 2d8 + your Paladin level, divided as you choose."
+      "Inspiring Smite": "Immediately after you cast Divine Smite, you can expend one use of your Channel Divinity and distribute Temporary Hit Points to creatures of your choice within 30 feet of yourself, which can include you. The total number of Temporary Hit Points equals 2d8 plus your Paladin level, divided among the chosen creatures however you like.",
+      "Peerless Athlete": "As a Bonus Action, you can expend one use of your Channel Divinity to augment your athleticism. For 1 hour, you have Advantage on Strength (Athletics) and Dexterity (Acrobatics) checks, and the distance of your Long and High Jumps increases by 10 feet (this extra distance costs movement as normal)."
     },
     "7": {
-      "Aura of Alacrity": "You and friendly creatures within 10 feet gain a bonus to their Walking Speed equal to 5 feet. At 18th level, range increases to 30 feet."
+      "Aura of Alacrity": {
+        "description": "Your Speed increases by 10 feet. In addition, whenever an ally enters your Aura of Protection for the first time on a turn or starts their turn there, the ally's Speed increases by 10 feet until the end of their next turn.",
+        "effects": [
+          {"type": "increase_speed", "value": 10}
+        ]
+      }
     },
     "15": {
-      "Glorious Defense": "When you or another creature you can see within 10 feet is hit by an attack roll, you can use your Reaction to grant a bonus to the target's AC against that attack equal to your Charisma modifier (minimum +1). If the attack misses, you can make one weapon attack against the attacker as part of this Reaction if the attacker is within your weapon's range. You can use this feature a number of times equal to your Charisma modifier (minimum 1), regaining all uses on Long Rest."
+      "Glorious Defense": "You can turn defense into a sudden strike. When you or another creature you can see within 10 feet of you is hit by an attack roll, you can take a Reaction to grant a bonus to the target's AC against that attack, potentially causing it to miss. The bonus equals your Charisma modifier (minimum of +1). If the attack misses, you can make one attack with a weapon against the attacker as part of this Reaction if the attacker is within your weapon's range. You can use this feature a number of times equal to your Charisma modifier (minimum of once), and you regain all expended uses when you finish a Long Rest."
     },
     "20": {
-      "Living Legend": "As a Bonus Action, you become an avatar of victory for 1 minute. During this time: You have Advantage on Charisma checks; Once on each of your turns when you miss with a weapon attack, you can cause that attack to hit instead; When you successfully start a grapple or knock a creature Prone using Shove, you can deal Bludgeoning damage equal to your Charisma modifier to the creature. Once used, can't use again until Long Rest."
+      "Living Legend": "As a Bonus Action, you gain the benefits below for 10 minutes. Once you use this feature, you can't use it again until you finish a Long Rest. You can also restore your use of it by expending a level 5 spell slot (no action required). Charismatic: You are blessed with an otherworldly presence and have Advantage on all Charisma checks. Saving Throw Reroll: If you fail a saving throw, you can take a Reaction to reroll it. You must use the new roll. Unerring Strike: Once on each of your turns when you make an attack roll with a weapon and miss, you can cause that attack to hit instead."
     }
   }
 }
