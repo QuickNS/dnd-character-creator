@@ -224,3 +224,81 @@ class TestNewBackgroundsIntegration:
         assert character["background"] == "Wayfarer"
         assert "Insight" in character.get("skill_proficiencies", [])
         assert "Stealth" in character.get("skill_proficiencies", [])
+
+
+class TestBackgroundReselection:
+    """Regression tests for GitHub Issue: origin feats accumulate when changing background."""
+
+    def _base_choices(self, background):
+        return {
+            "character_name": "Test Hero",
+            "level": 1,
+            "species": "Human",
+            "class": "Fighter",
+            "background": background,
+            "ability_scores": {
+                "Strength": 15, "Dexterity": 13, "Constitution": 14,
+                "Intelligence": 10, "Wisdom": 12, "Charisma": 8
+            },
+            "background_bonuses": {"Strength": 2, "Constitution": 1},
+        }
+
+    def test_changing_background_replaces_feat(self):
+        """Switching background replaces the origin feat, not accumulates it."""
+        builder = CharacterBuilder()
+        # First pick Soldier (Savage Attacker)
+        builder.apply_choices(self._base_choices("Soldier"))
+        # Then switch to Guard (Alert)
+        builder.set_background("Guard")
+        character = builder.to_character()
+
+        feat_names = [f["name"] for f in character["features"]["feats"]]
+        assert "Alert" in feat_names, "New background feat should be present"
+        assert "Savage Attacker" not in feat_names, "Old background feat should be removed"
+        assert feat_names.count("Alert") == 1, "Feat should appear exactly once"
+
+    def test_changing_background_removes_old_skills(self):
+        """Switching background removes the old background's skill proficiencies."""
+        builder = CharacterBuilder()
+        builder.apply_choices(self._base_choices("Soldier"))  # Athletics, Intimidation
+        builder.set_background("Guard")   # Athletics, Perception
+        character = builder.to_character()
+
+        # Guard skills present
+        assert "Athletics" in character.get("skill_proficiencies", [])
+        assert "Perception" in character.get("skill_proficiencies", [])
+        # Soldier-only skill gone
+        assert "Intimidation" not in character.get("skill_proficiencies", [])
+
+    def test_tough_hp_bonus_not_multiplied(self):
+        """Switching to a background with Tough does not multiply the bonus_hp effect."""
+        builder = CharacterBuilder()
+        # Start with Sage (Magic Initiate Wizard)
+        builder.apply_choices(self._base_choices("Sage"))
+        # Switch to Folk Hero (Tough)
+        builder.set_background("Folk Hero")
+
+        # Count bonus_hp effects from Tough to confirm it's applied exactly once
+        tough_hp_effects = [
+            e for e in builder.applied_effects
+            if e.get("source") == "Tough" and e["effect"].get("type") == "bonus_hp"
+        ]
+        assert len(tough_hp_effects) == 1, (
+            f"Tough's bonus_hp should appear exactly once, got {len(tough_hp_effects)}"
+        )
+
+    def test_multiple_background_changes_no_accumulation(self):
+        """Multiple background changes result in exactly one feat from the final background."""
+        builder = CharacterBuilder()
+        builder.apply_choices(self._base_choices("Sage"))
+        builder.set_background("Soldier")
+        builder.set_background("Guard")
+        builder.set_background("Folk Hero")
+        character = builder.to_character()
+
+        feat_names = [f["name"] for f in character["features"]["feats"]]
+        # Only Tough (from Folk Hero) should remain
+        assert "Tough" in feat_names
+        assert "Alert" not in feat_names
+        assert "Savage Attacker" not in feat_names
+        assert feat_names.count("Tough") == 1
