@@ -176,6 +176,7 @@ class CharacterBuilder:
             },
             "speed": 30,
             "darkvision": 0,
+            "speed_bonuses": {},
             "resistances": [],
             "immunities": [],
             "condition_immunities": [],
@@ -265,6 +266,7 @@ class CharacterBuilder:
         # Reset species-specific attributes to defaults
         self.character_data["speed"] = 30  # Default speed
         self.character_data["darkvision"] = 0  # No darkvision
+        self.character_data["speed_bonuses"] = {}  # Clear tracked speed bonuses
 
         # Clear species and lineage data
         old_languages = []
@@ -999,7 +1001,13 @@ class CharacterBuilder:
 
         elif effect_type == "increase_speed":
             speed_increase = effect.get("value", 0)
-            self.character_data["speed"] += speed_increase
+            feature_group = effect.get("feature_group")
+            if feature_group:
+                previous = self.character_data["speed_bonuses"].get(feature_group, 0)
+                self.character_data["speed"] = self.character_data["speed"] - previous + speed_increase
+                self.character_data["speed_bonuses"][feature_group] = speed_increase
+            else:
+                self.character_data["speed"] += speed_increase
 
         elif effect_type == "ability_bonus":
             # Store ability bonuses for later calculation (like Thaumaturge)
