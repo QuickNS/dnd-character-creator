@@ -340,6 +340,22 @@ Sets the Monk's Martial Arts die for unarmed strikes and monk weapons, scaling w
 }
 ```
 
+#### monk_dexterous_attacks
+Enables using `max(STR, DEX)` for attack and damage rolls of monk weapons (Simple Melee, or Martial Melee with the Light property). Implements the "Dexterous Attacks" part of the Monk's Martial Arts feature.
+
+**Implementation**: Handler in `_apply_effect()` sets `character_data["monk_dexterous_attacks"] = True`. In `calculate_weapon_attacks()`, when this flag is set and the weapon qualifies as a monk weapon, `max(str_mod, dex_mod)` is used instead of `str_mod`.
+
+**Monk weapon criteria**:
+- Category is `"Simple Melee"`, OR
+- Category is `"Martial Melee"` AND weapon has the `"Light"` property
+
+**Example**: Monk Martial Arts feature
+```json
+{
+  "type": "monk_dexterous_attacks"
+}
+```
+
 ### Ability Score Effects
 
 #### ability_bonus

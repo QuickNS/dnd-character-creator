@@ -1093,6 +1093,12 @@ class CharacterBuilder:
                     resolved_die = die
             self.character_data["martial_arts_die"] = resolved_die
 
+        elif effect_type == "monk_dexterous_attacks":
+            # Monk: Dexterous Attacks allows using DEX instead of STR for
+            # attack and damage rolls of monk weapons (Simple Melee, or
+            # Martial Melee with Light property)
+            self.character_data["monk_dexterous_attacks"] = True
+
         elif effect_type == "grant_origin_feat":
             feat_name = effect.get("feat")
             if feat_name:
@@ -3159,8 +3165,19 @@ class CharacterBuilder:
                 ability_mod = ability_scores.get("dexterity", {}).get("modifier", 0)
                 ability_name = "DEX"
             else:
-                ability_mod = ability_scores.get("strength", {}).get("modifier", 0)
-                ability_name = "STR"
+                str_mod = ability_scores.get("strength", {}).get("modifier", 0)
+                dex_mod = ability_scores.get("dexterity", {}).get("modifier", 0)
+                # Check if this is a monk weapon eligible for Dexterous Attacks:
+                # Simple Melee, or Martial Melee with Light property
+                is_monk_weapon = category == "Simple Melee" or (
+                    category == "Martial Melee" and "Light" in properties
+                )
+                if self.character_data.get("monk_dexterous_attacks") and is_monk_weapon:
+                    ability_mod = max(str_mod, dex_mod)
+                    ability_name = f"STR/DEX ({'STR' if str_mod >= dex_mod else 'DEX'})"
+                else:
+                    ability_mod = str_mod
+                    ability_name = "STR"
 
             # Check proficiency
             is_proficient = self._has_weapon_proficiency(weapon_props, weapon_profs)
