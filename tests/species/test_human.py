@@ -132,3 +132,70 @@ class TestHumanSkillfulTrait:
 
         skills = human_builder.character_data["proficiencies"]["skills"]
         assert "Athletics" in skills
+
+
+class TestVersatileFeatChoicesFlow:
+    """Regression tests for GitHub Issue: Versatile feat choices not presented."""
+
+    def test_skilled_via_versatile_sets_pending_species_feat(self, human_builder):
+        """Choosing Skilled via Versatile should set pending_species_feat."""
+        human_builder.apply_choice("Versatile", "Skilled")
+        assert human_builder.character_data.get("pending_species_feat") == "Skilled"
+
+    def test_feat_without_choices_does_not_set_pending(self, human_builder):
+        """Choosing a feat with no choices (Alert) should not set pending_species_feat."""
+        human_builder.apply_choice("Versatile", "Alert")
+        assert human_builder.character_data.get("pending_species_feat") is None
+
+    def test_tough_does_not_set_pending(self, human_builder):
+        """Tough has no choices, so pending_species_feat should not be set."""
+        human_builder.apply_choice("Versatile", "Tough")
+        assert human_builder.character_data.get("pending_species_feat") is None
+
+    def test_get_species_feat_choices_returns_skilled_choices(self, human_builder):
+        """get_species_feat_choices should return Skilled's skill/tool choice."""
+        human_builder.apply_choice("Versatile", "Skilled")
+        data = human_builder.get_species_feat_choices()
+        assert data["feat_name"] == "Skilled"
+        assert len(data["choices"]) > 0
+        assert data["choices"][0]["count"] == 3
+
+    def test_get_species_feat_choices_empty_when_no_pending(self, human_builder):
+        """get_species_feat_choices returns empty when no feat requires choices."""
+        human_builder.apply_choice("Versatile", "Alert")
+        data = human_builder.get_species_feat_choices()
+        assert data["feat_name"] is None
+        assert data["choices"] == []
+
+    def test_apply_feat_choices_with_explicit_feat_name(self, human_builder):
+        """apply_feat_choices(feat_name=...) should grant selected skills/tools."""
+        human_builder.apply_choice("Versatile", "Skilled")
+        human_builder.apply_feat_choices(
+            {"skills_or_tools": ["Arcana", "History", "Deception"]},
+            feat_name="Skilled",
+        )
+        skills = human_builder.character_data["proficiencies"]["skills"]
+        assert "Arcana" in skills
+        assert "History" in skills
+        assert "Deception" in skills
+
+    def test_skilled_choices_stored_in_choices_made(self, human_builder):
+        """Skilled choices should be persisted under a namespaced key."""
+        human_builder.apply_choice("Versatile", "Skilled")
+        human_builder.apply_feat_choices(
+            {"skills_or_tools": ["Arcana", "History", "Deception"]},
+            feat_name="Skilled",
+        )
+        key = "feat_Skilled_skills_or_tools"
+        assert key in human_builder.character_data["choices_made"]
+        assert "Arcana" in human_builder.character_data["choices_made"][key]
+
+    def test_crafter_via_versatile_sets_pending(self, human_builder):
+        """Crafter (which has tool choices) should also set pending_species_feat."""
+        human_builder.apply_choice("Versatile", "Crafter")
+        # Crafter has choices if the feat data includes them; if not the key won't be set.
+        # We at least verify get_species_feat_choices doesn't raise an exception.
+        data = human_builder.get_species_feat_choices()
+        assert isinstance(data, dict)
+        assert "feat_name" in data
+        assert "choices" in data

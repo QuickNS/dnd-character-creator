@@ -131,6 +131,14 @@ def select_species_traits():
     # Log route processing
     log_route_processing("select_species_traits", choices, builder_before, builder)
 
+    # If any species trait granted an origin feat that requires choices,
+    # redirect to the species feat choices step before proceeding.
+    species_feat_data = builder.get_species_feat_choices()
+    if species_feat_data["choices"]:
+        builder.set_step("species_feat_choices")
+        save_builder_to_session(builder)
+        return redirect(url_for("species.species_feat_choices"))
+
     # Check if species has lineages
     if species_data.get("lineages"):
         builder.set_step("lineage")
@@ -140,6 +148,82 @@ def select_species_traits():
         builder.set_step("languages")
         save_builder_to_session(builder)
         return redirect(url_for("languages.choose_languages"))
+
+
+@species_bp.route("/species-feat-choices")
+def species_feat_choices():
+    """Display origin feat choices granted by a species trait (e.g. Human Versatile)."""
+    builder = get_builder_from_session()
+    if not builder:
+        return redirect(url_for("index.index"))
+
+    feat_choice_data = builder.get_species_feat_choices()
+
+    # Nothing to choose — skip to next step
+    if not feat_choice_data["choices"]:
+        species_name = builder.to_json().get("species", "")
+        species_data = data_loader.species.get(species_name, {})
+        if species_data.get("lineages"):
+            builder.set_step("lineage")
+            save_builder_to_session(builder)
+            return redirect(url_for("species.choose_lineage"))
+        builder.set_step("languages")
+        save_builder_to_session(builder)
+        return redirect(url_for("languages.choose_languages"))
+
+    character = builder.to_json()
+    choices_made = character.get("choices_made", {})
+
+    return render_template(
+        "feat_choices.html",
+        character=character,
+        feat_name=feat_choice_data["feat_name"],
+        feat_description=feat_choice_data["feat_description"],
+        feat_benefits=feat_choice_data["feat_benefits"],
+        choices=feat_choice_data["choices"],
+        choices_made=choices_made,
+        action_url=url_for("species.submit_species_feat_choices"),
+        back_url=url_for("species.choose_species_traits"),
+        source_label="Your species grants you",
+    )
+
+
+@species_bp.route("/submit-species-feat-choices", methods=["POST"])
+def submit_species_feat_choices():
+    """Process origin feat choice submissions from a species trait."""
+    builder_before = get_builder_from_session()
+    builder = get_builder_from_session()
+    if not builder:
+        return redirect(url_for("index.index"))
+
+    # Collect feat choices from the form (field names: feat_choice_<choice_name>)
+    choices: dict = {}
+    for key, values in request.form.lists():
+        if key.startswith("feat_choice_"):
+            choice_name = key[len("feat_choice_"):]
+            choices[choice_name] = values
+
+    if choices:
+        feat_name = builder.character_data.get("pending_species_feat")
+        builder.apply_feat_choices(choices, feat_name=feat_name)
+
+    # Clear the pending flag now that choices have been applied
+    builder.clear_pending_species_feat()
+
+    character = builder.to_json()
+    species_name = character.get("species", "")
+    species_data = data_loader.species.get(species_name, {})
+
+    log_route_processing("submit_species_feat_choices", choices, builder_before, builder)
+
+    if species_data.get("lineages"):
+        builder.set_step("lineage")
+        save_builder_to_session(builder)
+        return redirect(url_for("species.choose_lineage"))
+
+    builder.set_step("languages")
+    save_builder_to_session(builder)
+    return redirect(url_for("languages.choose_languages"))
 
 
 @species_bp.route("/choose-lineage")
