@@ -1336,6 +1336,83 @@ class CharacterBuilder:
 
     # ==================== Background Methods ====================
 
+    def _clear_background_features(self):
+        """Clear all background-related features and effects before re-applying."""
+        prev_bg_data = self.character_data.get("background_data") or {}
+        prev_bg_name = prev_bg_data.get("name", self.character_data.get("background", ""))
+
+        # Remove skill proficiencies granted by the previous background
+        prev_skills = prev_bg_data.get("skill_proficiencies", [])
+        skill_sources = self.character_data["proficiency_sources"]["skills"]
+        for skill in prev_skills:
+            if skill_sources.get(skill) == prev_bg_name:
+                self.character_data["proficiencies"]["skills"] = [
+                    s for s in self.character_data["proficiencies"]["skills"] if s != skill
+                ]
+                skill_sources.pop(skill, None)
+
+        # Remove tool proficiencies granted by the previous background
+        prev_tools = prev_bg_data.get("tool_proficiencies", [])
+        tool_sources = self.character_data["proficiency_sources"]["tools"]
+        for tool in prev_tools:
+            if tool_sources.get(tool) == prev_bg_name:
+                self.character_data["proficiencies"]["tools"] = [
+                    t for t in self.character_data["proficiencies"]["tools"] if t != tool
+                ]
+                tool_sources.pop(tool, None)
+
+        # Remove language proficiencies granted by the previous background
+        prev_languages = prev_bg_data.get("languages", [])
+        if isinstance(prev_languages, list):
+            lang_sources = self.character_data["proficiency_sources"]["languages"]
+            for lang in prev_languages:
+                if lang_sources.get(lang) == prev_bg_name:
+                    self.character_data["proficiencies"]["languages"] = [
+                        l for l in self.character_data["proficiencies"]["languages"] if l != lang
+                    ]
+                    lang_sources.pop(lang, None)
+        elif isinstance(prev_languages, int):
+            self.character_data["choices_made"].pop("language_choices_needed", None)
+
+        # Clear background features list
+        self.character_data["features"]["background"] = []
+
+        # Remove the origin feat granted by the previous background
+        prev_feat_name = prev_bg_data.get("feat")
+        if prev_feat_name:
+            self.character_data["features"]["feats"] = [
+                f for f in self.character_data["features"]["feats"]
+                if f.get("name") != prev_feat_name
+            ]
+
+            # Clear spells granted by the feat (e.g. Magic Initiate cantrips/spells)
+            spell_metadata = self.character_data.get("spell_metadata", {})
+            spells_to_remove = set()
+            for collection in (
+                self.character_data["spells"]["prepared"]["cantrips"],
+                self.character_data["spells"]["prepared"]["spells"],
+                self.character_data["spells"]["always_prepared"],
+                self.character_data["spells"]["background_spells"],
+            ):
+                for spell_name in list(collection):
+                    if spell_metadata.get(spell_name, {}).get("source") == prev_feat_name:
+                        del collection[spell_name]
+                        spells_to_remove.add(spell_name)
+            for spell_name in spells_to_remove:
+                spell_metadata.pop(spell_name, None)
+
+            # Remove feat-related choices from choices_made
+            feat_choice_prefix = f"feat_{prev_feat_name}_"
+            for key in [k for k in self.character_data["choices_made"] if k.startswith(feat_choice_prefix)]:
+                del self.character_data["choices_made"][key]
+
+            # Clear applied effects that originated from the previous background's feat
+            if hasattr(self, "applied_effects"):
+                self.applied_effects = [
+                    e for e in self.applied_effects
+                    if not (e.get("source_type") == "feat" and e.get("source") == prev_feat_name)
+                ]
+
     def set_background(self, background_name: str) -> bool:
         """
         Set the character's background.
@@ -1349,6 +1426,9 @@ class CharacterBuilder:
         background_data = self._load_background_data(background_name)
         if not background_data:
             return False
+
+        # Clear previous background features before applying new ones
+        self._clear_background_features()
 
         self.character_data["background"] = background_name
         self.character_data["background_data"] = background_data
@@ -1380,6 +1460,8 @@ class CharacterBuilder:
         for tool in tool_profs:
             if tool not in self.character_data["proficiencies"]["tools"]:
                 self.character_data["proficiencies"]["tools"].append(tool)
+                # Track source so it can be cleared on background change
+                self.character_data["proficiency_sources"]["tools"][tool] = background_name
 
         # Languages - can be either a list or a number
         languages = background_data.get("languages", [])
@@ -1387,6 +1469,8 @@ class CharacterBuilder:
             for lang in languages:
                 if lang not in self.character_data["proficiencies"]["languages"]:
                     self.character_data["proficiencies"]["languages"].append(lang)
+                    # Track source so it can be cleared on background change
+                    self.character_data["proficiency_sources"]["languages"][lang] = background_name
         elif isinstance(languages, int):
             # Store that they need to choose N languages
             self.character_data["choices_made"]["language_choices_needed"] = languages
