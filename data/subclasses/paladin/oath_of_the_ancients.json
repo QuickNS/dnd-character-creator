@@ -6,41 +6,37 @@
   "features_by_level": {
     "3": {
       "Oath Spells": {
-        "description": "You always have certain spells prepared.",
-        "spells": {
-          "3": [
-            "Ensnaring Strike",
-            "Speak with Animals"
-          ],
-          "5": [
-            "Misty Step",
-            "Moonbeam"
-          ],
-          "9": [
-            "Plant Growth",
-            "Protection from Energy"
-          ],
-          "13": [
-            "Ice Storm",
-            "Stoneskin"
-          ],
-          "17": [
-            "Commune with Nature",
-            "Tree Stride"
-          ]
-        }
+        "description": "The magic of your oath ensures you always have certain spells ready.",
+        "effects": [
+          {"type": "grant_spell", "spell": "Ensnaring Strike", "min_level": 3},
+          {"type": "grant_spell", "spell": "Speak with Animals", "min_level": 3},
+          {"type": "grant_spell", "spell": "Misty Step", "min_level": 5},
+          {"type": "grant_spell", "spell": "Moonbeam", "min_level": 5},
+          {"type": "grant_spell", "spell": "Plant Growth", "min_level": 9},
+          {"type": "grant_spell", "spell": "Protection from Energy", "min_level": 9},
+          {"type": "grant_spell", "spell": "Ice Storm", "min_level": 13},
+          {"type": "grant_spell", "spell": "Stoneskin", "min_level": 13},
+          {"type": "grant_spell", "spell": "Commune with Nature", "min_level": 17},
+          {"type": "grant_spell", "spell": "Tree Stride", "min_level": 17}
+        ]
       },
-      "Nature's Wrath": "As a Channel Divinity action, spectral vines spring up and reach for a creature within 10 feet. The creature must succeed on a Strength or Dexterity save (its choice) or be Restrained. While Restrained, the creature repeats the save at the end of each of its turns. On a success, it frees itself and the vines vanish.",
-      "Turn the Faithless": "As a Channel Divinity action, each Fey or Fiend within 30 feet that can see or hear you must make a Wisdom save or be Turned for 1 minute or until it takes damage."
+      "Nature's Wrath": "As a Magic action, you can expend one of your uses of Channel Divinity to conjure spectral vines around nearby creatures. Each creature of your choice that you can see within 15 feet of yourself must succeed on a Strength saving throw or have the Restrained condition for 1 minute. A Restrained creature repeats the save at the end of each of its turns, ending the effect on a success."
     },
     "7": {
-      "Aura of Warding": "You and friendly creatures within 10 feet have Resistance to damage from spells. At 18th level, range increases to 30 feet."
+      "Aura of Warding": {
+        "description": "Ancient magic lies so heavily upon you that it forms an eldritch ward, blunting energy from beyond the Material Plane; you and your allies have Resistance to Necrotic, Psychic, and Radiant damage while in your Aura of Protection.",
+        "effects": [
+          {"type": "grant_damage_resistance", "damage_type": "Necrotic"},
+          {"type": "grant_damage_resistance", "damage_type": "Psychic"},
+          {"type": "grant_damage_resistance", "damage_type": "Radiant"}
+        ]
+      }
     },
     "15": {
-      "Undying Sentinel": "When you are reduced to 0 Hit Points but not killed outright, you can drop to 1 Hit Point instead. Once you use this feature, you can't use it again until you finish a Long Rest. Additionally, you don't suffer the drawbacks of old age, and you can't be aged magically."
+      "Undying Sentinel": "When you are reduced to 0 Hit Points and not killed outright, you can drop to 1 Hit Point instead, and regain a number of Hit Points equal to three times your Paladin level. Once you use this feature, you can't do so again until you finish a Long Rest. Additionally, you can't be aged magically, and you cease visibly aging."
     },
     "20": {
-      "Elder Champion": "As a Bonus Action, you assume the form of a force of nature for 1 minute. During this time, you gain the following benefits: At the start of each of your turns, you regain 10 Hit Points; Whenever you cast a Paladin spell with a casting time of an action, you can cast it as a Bonus Action instead; Enemy creatures within 10 feet have Disadvantage on saving throws against your Paladin spells and Channel Divinity options. Once used, can't use again until Long Rest."
+      "Elder Champion": "As a Bonus Action, you can imbue your Aura of Protection with primal power, granting the benefits below for 1 minute or until you end them (no action required). Once you use this feature, you can't use it again until you finish a Long Rest. You can also restore your use of it by expending a level 5 spell slot (no action required). Diminish Defiance: Enemies in the aura have Disadvantage on saving throws against your spells and Channel Divinity options. Regeneration: At the start of each of your turns, you regain 10 Hit Points. Swift Spells: Whenever you cast a spell that has a casting time of an action, you can cast it using a Bonus Action instead."
     }
   }
 }

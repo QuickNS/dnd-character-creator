@@ -332,6 +332,28 @@
       0
     ]
   },
+  "prepared_spells_by_level": {
+    "1": 2,
+    "2": 3,
+    "3": 4,
+    "4": 5,
+    "5": 6,
+    "6": 6,
+    "7": 7,
+    "8": 7,
+    "9": 9,
+    "10": 9,
+    "11": 10,
+    "12": 10,
+    "13": 11,
+    "14": 11,
+    "15": 12,
+    "16": 12,
+    "17": 14,
+    "18": 14,
+    "19": 15,
+    "20": 15
+  },
   "masteries_by_level": {
     "1": 2,
     "2": 2,
@@ -356,63 +378,86 @@
   },
   "features_by_level": {
     "1": {
-      "Lay On Hands": "Pool of healing equal to 5 times your level. Bonus Action to restore HP or expend 5 HP to remove Poisoned.",
-      "Spellcasting": "Prepare 2 Paladin spells. Charisma is spellcasting ability.",
-      "Weapon Mastery": "Use mastery properties of two weapons."
+      "Lay On Hands": "Your blessed touch can heal wounds. You have a pool of healing power that replenishes when you finish a Long Rest equal to five times your Paladin level. As a Bonus Action, you can touch a creature and restore Hit Points from the pool. You can also expend 5 Hit Points from the pool to remove the Poisoned condition.",
+      "Spellcasting": "You have learned to cast spells through prayer and meditation. Charisma is your spellcasting ability. You can use a Holy Symbol as a Spellcasting Focus.",
+      "Weapon Mastery": "Your training with weapons allows you to use the mastery properties of two kinds of weapons of your choice with which you have proficiency."
     },
     "2": {
-      "Fighting Style": "Gain Fighting Style feat or Blessed Warrior (2 Cleric cantrips).",
-      "Paladin's Smite": "Always have Divine Smite prepared. Cast once without spell slot per Long Rest."
+      "Fighting Style": {
+        "description": "You gain a Fighting Style feat of your choice. Instead of choosing one of those feats, you can choose Blessed Warrior: learn two Cleric cantrips (Charisma is your spellcasting ability for them).",
+        "choices": {
+          "type": "select_single",
+          "count": 1,
+          "name": "fighting_style",
+          "source": {
+            "type": "external",
+            "file": "fighting_styles.json",
+            "list": "fighting_styles"
+          },
+          "optional": false
+        }
+      },
+      "Paladin's Smite": {
+        "description": "You always have the Divine Smite spell prepared. You can cast it once without expending a spell slot, regaining this ability when you finish a Long Rest.",
+        "effects": [
+          {"type": "grant_spell", "spell": "Divine Smite", "min_level": 2}
+        ]
+      }
     },
     "3": {
-      "Channel Divinity": "Use twice per Long Rest (one use back on Short Rest). Divine Sense: Detect Celestials, Fiends, Undead within 60 feet for 10 minutes.",
-      "Paladin Subclass": "Choose your sacred oath."
+      "Channel Divinity": "You can channel divine energy directly from the Outer Planes. You can use Channel Divinity twice per Long Rest (regain one use on Short Rest, additional use at level 11). Divine Sense: As a Bonus Action, detect Celestials, Fiends, and Undead within 60 feet for 10 minutes.",
+      "Paladin Subclass": "You gain a Paladin Subclass of your choice: Oath of Devotion, Oath of Glory, Oath of the Ancients, or Oath of Vengeance."
     },
     "4": {
-      "Ability Score Improvement": "Gain Ability Score Improvement feat or another feat."
+      "Ability Score Improvement": "You gain the Ability Score Improvement feat or another feat of your choice."
     },
     "5": {
-      "Extra Attack": "Attack twice with Attack action.",
-      "Faithful Steed": "Always have Find Steed prepared. Cast once without spell slot per Long Rest."
+      "Extra Attack": "You can attack twice instead of once whenever you take the Attack action on your turn.",
+      "Faithful Steed": {
+        "description": "You always have the Find Steed spell prepared. You can also cast it once without expending a spell slot, regaining this ability when you finish a Long Rest.",
+        "effects": [
+          {"type": "grant_spell", "spell": "Find Steed", "min_level": 5}
+        ]
+      }
     },
     "6": {
-      "Aura of Protection": "You and allies within 10 feet gain bonus to saves equal to Charisma modifier (minimum +1)."
+      "Aura of Protection": "You radiate a protective, unseeable aura in a 10-foot Emanation. You and your allies in the aura gain a bonus to saving throws equal to your Charisma modifier (minimum bonus of +1). Inactive while you have the Incapacitated condition."
     },
     "7": {
-      "Subclass Feature": "Gain feature from your oath."
+      "Subclass Feature": "You gain a feature from your sacred oath."
     },
     "8": {
-      "Ability Score Improvement": "Gain Ability Score Improvement feat or another feat."
+      "Ability Score Improvement": "You gain the Ability Score Improvement feat or another feat of your choice."
     },
     "9": {
-      "Abjure Foes": "As Magic action, expend Channel Divinity. Target Charisma modifier creatures within 60 feet; they make Wisdom save or are Frightened for 1 minute."
+      "Abjure Foes": "As a Magic action, expend one use of Channel Divinity. Target a number of creatures equal to your Charisma modifier (minimum of one) within 60 feet. Each must succeed on a Wisdom saving throw or have the Frightened condition for 1 minute or until it takes any damage. While Frightened this way, can only do one of: move, take an action, or take a Bonus Action."
     },
     "10": {
-      "Aura of Courage": "You and allies have Immunity to Frightened while in Aura of Protection."
+      "Aura of Courage": "You and your allies have Immunity to the Frightened condition while in your Aura of Protection. If a Frightened ally enters the aura, that condition has no effect on that ally while there."
     },
     "11": {
-      "Radiant Strikes": "When you hit with Melee weapon or Unarmed Strike, deal extra 1d8 Radiant damage."
+      "Radiant Strikes": "Your strikes carry supernatural power. When you hit a target with an attack roll using a Melee weapon or an Unarmed Strike, the target takes an extra 1d8 Radiant damage."
     },
     "12": {
-      "Ability Score Improvement": "Gain Ability Score Improvement feat or another feat."
+      "Ability Score Improvement": "You gain the Ability Score Improvement feat or another feat of your choice."
     },
     "14": {
-      "Restoring Touch": "When using Lay On Hands, expend 5 HP to remove Blinded, Charmed, Deafened, Frightened, Paralyzed, or Stunned."
+      "Restoring Touch": "When you use Lay On Hands on a creature, you can also remove one or more of the following conditions: Blinded, Charmed, Deafened, Frightened, Paralyzed, or Stunned. You must expend 5 Hit Points from the healing pool for each condition you remove; those points don't also restore Hit Points."
     },
     "15": {
-      "Subclass Feature": "Gain feature from your oath."
+      "Subclass Feature": "You gain a feature from your sacred oath."
     },
     "16": {
-      "Ability Score Improvement": "Gain Ability Score Improvement feat or another feat."
+      "Ability Score Improvement": "You gain the Ability Score Improvement feat or another feat of your choice."
     },
     "18": {
-      "Aura Expansion": "Aura of Protection becomes 30-foot Emanation."
+      "Aura Expansion": "Your Aura of Protection is now a 30-foot Emanation."
     },
     "19": {
-      "Epic Boon": "Gain Epic Boon feat. Boon of Truesight recommended."
+      "Epic Boon": "You gain an Epic Boon feat or another feat of your choice. Boon of Truesight is recommended."
     },
     "20": {
-      "Subclass Feature": "Gain capstone feature from your oath."
+      "Subclass Feature": "You gain your capstone feature from your sacred oath."
     }
   }
 }

@@ -85,14 +85,14 @@
     },
     "Paladin": {
       "data_file": true,
-      "features_validated": false,
-      "effects_implemented": false,
-      "tests_written": false,
+      "features_validated": true,
+      "effects_implemented": true,
+      "tests_written": true,
       "subclasses": {
-        "Oath of Devotion": { "data_file": true, "features_validated": false, "effects_implemented": false, "tests_written": false },
-        "Oath of Glory": { "data_file": true, "features_validated": false, "effects_implemented": false, "tests_written": false },
-        "Oath of the Ancients": { "data_file": true, "features_validated": false, "effects_implemented": false, "tests_written": false },
-        "Oath of Vengeance": { "data_file": true, "features_validated": false, "effects_implemented": false, "tests_written": false }
+        "Oath of Devotion": { "data_file": true, "features_validated": true, "effects_implemented": true, "tests_written": true },
+        "Oath of Glory": { "data_file": true, "features_validated": true, "effects_implemented": true, "tests_written": true },
+        "Oath of the Ancients": { "data_file": true, "features_validated": true, "effects_implemented": true, "tests_written": true },
+        "Oath of Vengeance": { "data_file": true, "features_validated": true, "effects_implemented": true, "tests_written": true }
       }
     },
     "Ranger": {
