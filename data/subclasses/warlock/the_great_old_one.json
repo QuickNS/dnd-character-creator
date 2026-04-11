@@ -1,21 +1,47 @@
 {
   "name": "The Great Old One",
-  "description": "Your patron is a mysterious entity whose nature is utterly foreign to the fabric of reality. It might come from the Far Realm, the space beyond reality, or it could be one of the elder gods known only in legends. Its motives are incomprehensible to mortals, and its knowledge so immense and ancient that even the greatest libraries pale in comparison to the vast secrets it holds.",
+  "class": "Warlock",
+  "description": "When you choose this subclass, you might bind yourself to an unspeakable being from the Far Realm or an elder god—a being such as Tharizdun, the Chained God; Zargon, the Returner; Hadar, the Dark Hunger; or Great Cthulhu. Or you might invoke several entities without yoking yourself to one. The motives of these beings are incomprehensible, and the Great Old One might be indifferent to your existence. But the secrets you've learned nevertheless allow you to draw strange magic from it.",
+  "source": "Player's Handbook 2024",
   "features_by_level": {
-    "1": {
-      "Expanded Spell List": "1st level: Dissonant Whispers, Tasha's Hideous Laughter. 2nd level: Calm Emotions, Detect Thoughts. 3rd level: Clairvoyance, Sending. 4th level: Dominate Beast, Evard's Black Tentacles. 5th level: Dominate Person, Modify Memory.",
-      "Telepathic Communication": "Your patron bestows upon you the ability to communicate telepathically. You can telepathically speak to any creature you can see within 30 feet of you. You don't need to share a language with the creature for it to understand your telepathic utterances, but the creature must be able to understand at least one language."
+    "3": {
+      "Great Old One Spells": {
+        "description": "The magic of your patron ensures you always have certain spells ready; when you reach a Warlock level specified in the Great Old One Spells table, you thereafter always have the listed spells prepared.",
+        "effects": [
+          {"type": "grant_spell", "spell": "Detect Thoughts", "min_level": 3, "counts_against_limit": false},
+          {"type": "grant_spell", "spell": "Dissonant Whispers", "min_level": 3, "counts_against_limit": false},
+          {"type": "grant_spell", "spell": "Phantasmal Force", "min_level": 3, "counts_against_limit": false},
+          {"type": "grant_spell", "spell": "Tasha's Hideous Laughter", "min_level": 3, "counts_against_limit": false},
+          {"type": "grant_spell", "spell": "Clairvoyance", "min_level": 5, "counts_against_limit": false},
+          {"type": "grant_spell", "spell": "Hunger of Hadar", "min_level": 5, "counts_against_limit": false},
+          {"type": "grant_spell", "spell": "Confusion", "min_level": 7, "counts_against_limit": false},
+          {"type": "grant_spell", "spell": "Summon Aberration", "min_level": 7, "counts_against_limit": false},
+          {"type": "grant_spell", "spell": "Modify Memory", "min_level": 9, "counts_against_limit": false},
+          {"type": "grant_spell", "spell": "Telekinesis", "min_level": 9, "counts_against_limit": false}
+        ]
+      },
+      "Awakened Mind": "You can form a telepathic connection between your mind and the mind of another. As a Bonus Action, choose one creature you can see within 30 feet of yourself. You and the chosen creature can communicate telepathically with each other while the two of you are within a number of miles of each other equal to your Charisma modifier (minimum of 1 mile). To understand each other, you each must mentally use a language the other knows.\n\nThe telepathic connection lasts for a number of minutes equal to your Warlock level. It ends early if you use this feature to connect with a different creature.",
+      "Psychic Spells": "When you cast a Warlock spell that deals damage, you can change its damage type to Psychic. In addition, when you cast a Warlock spell that is an Enchantment or Illusion, you can do so without Verbal or Somatic components."
     },
     "6": {
-      "Entropic Ward": "You learn to magically ward yourself against attack and to turn an enemy's failed strike into good luck for yourself. When a creature makes an attack roll against you, you can use your reaction to impose disadvantage on that roll. If the attack misses you, your next attack roll against the creature has advantage if you make it before the end of your next turn. Once you use this feature, you can't use it again until you finish a short or long rest."
+      "Clairvoyant Combatant": "When you form a telepathic bond with a creature using your Awakened Mind, you can force that creature to make a Wisdom saving throw against your spell save DC. On a failed save, the creature has Disadvantage on attack rolls against you, and you have Advantage on attack rolls against that creature for the duration of the bond.\n\nOnce you use this feature, you can't use it again until you finish a Short or Long Rest unless you expend a Pact Magic spell slot (no action required) to restore your use of it."
     },
     "10": {
-      "Thought Shield": "Your thoughts can't be read by telepathy or other means unless you allow it. You also have resistance to psychic damage, and whenever a creature deals psychic damage to you, that creature takes the same amount of damage that you do."
+      "Eldritch Hex": {
+        "description": "Your alien patron grants you a powerful curse. You always have the Hex spell prepared. When you cast Hex and choose an ability, the target also has Disadvantage on saving throws of the chosen ability for the duration of the spell.",
+        "effects": [
+          {"type": "grant_spell", "spell": "Hex", "counts_against_limit": false}
+        ]
+      },
+      "Thought Shield": {
+        "description": "Your thoughts can't be read by telepathy or other means unless you allow it. You also have Resistance to Psychic damage, and whenever a creature deals Psychic damage to you, that creature takes the same amount of damage that you take.",
+        "effects": [
+          {"type": "grant_damage_resistance", "damage_type": "Psychic"}
+        ]
+      }
     },
     "14": {
-      "Create Thrall": "You gain the ability to infect a humanoid's mind with the alien magic of your patron. You can use your action to choose a humanoid that you can see within 30 feet of you. The target must succeed on a Wisdom saving throw against your warlock spell save DC or be charmed by you until a Remove Curse spell is cast on it, the charmed condition is removed from it, or you use this feature again. You can communicate telepathically with the charmed creature as long as the two of you are on the same plane of existence."
+      "Create Thrall": "When you cast Summon Aberration, you can modify it so that it doesn't require Concentration. If you do so, the spell's duration becomes 1 minute for that casting, and when summoned, the Aberration has a number of Temporary Hit Points equal to your Warlock level plus your Charisma modifier.\n\nIn addition, the first time each turn the Aberration hits a creature under the effect of your Hex, the Aberration deals extra Psychic damage to the target equal to the bonus damage of that spell."
     }
-  },
-  "class": "Warlock",
-  "source": "Player's Handbook 2024"
+  }
 }
