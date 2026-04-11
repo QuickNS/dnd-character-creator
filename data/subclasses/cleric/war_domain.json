@@ -5,39 +5,36 @@
   "source": "Player's Handbook 2024",
   "features_by_level": {
     "3": {
-      "Bonus Proficiencies": "You gain proficiency with Heavy armor and Martial weapons.",
-      "War Priest": "When you take the Attack action, you can make one weapon attack as a Bonus Action. You can use this feature a number of times equal to your Wisdom modifier (minimum 1). Regain all uses on Long Rest.",
-      "Domain Spells": {
+      "Guided Strike": "When you or a creature within 30 feet of you misses with an attack roll, you can expend one use of your Channel Divinity and give that roll a +10 bonus, potentially causing it to hit. When you use this feature to benefit another creature's attack roll, you must take a Reaction to do so.",
+      "War Domain Spells": {
         "description": "You always have certain spells prepared.",
-        "spells": {
-          "1": [
-            "Divine Favor",
-            "Shield of Faith"
-          ],
-          "3": [
-            "Magic Weapon",
-            "Spiritual Weapon"
-          ],
-          "5": [
-            "Crusader's Mantle",
-            "Spirit Guardians"
-          ],
-          "7": [
-            "Freedom of Movement",
-            "Stoneskin"
-          ],
-          "9": [
-            "Flame Strike",
-            "Hold Monster"
-          ]
-        }
-      }
+        "effects": [
+          {"type": "grant_spell", "spell": "Guiding Bolt", "min_level": 3},
+          {"type": "grant_spell", "spell": "Magic Weapon", "min_level": 3},
+          {"type": "grant_spell", "spell": "Shield of Faith", "min_level": 3},
+          {"type": "grant_spell", "spell": "Spiritual Weapon", "min_level": 3},
+          {"type": "grant_spell", "spell": "Crusader's Mantle", "min_level": 5},
+          {"type": "grant_spell", "spell": "Spirit Guardians", "min_level": 5},
+          {"type": "grant_spell", "spell": "Fire Shield", "min_level": 7},
+          {"type": "grant_spell", "spell": "Freedom of Movement", "min_level": 7},
+          {"type": "grant_spell", "spell": "Hold Monster", "min_level": 9},
+          {"type": "grant_spell", "spell": "Steel Wind Strike", "min_level": 9}
+        ]
+      },
+      "War Priest": "As a Bonus Action, you can make one attack with a weapon or an Unarmed Strike. You can use this Bonus Action a number of times equal to your Wisdom modifier (minimum of once). You regain all expended uses when you finish a Short or Long Rest."
     },
     "6": {
-      "Guided Strike": "When you or a creature within 30 feet makes an attack roll, you can use Channel Divinity to grant +10 bonus to the roll (use before or after roll, but before knowing outcome)."
+      "War God's Blessing": "You can expend a use of your Channel Divinity to cast Shield of Faith or Spiritual Weapon rather than expending a spell slot. When you cast either spell in this way, the spell doesn't require Concentration. Instead the spell lasts for 1 minute, but it ends early if you cast that spell again, have the Incapacitated condition, or die."
     },
     "17": {
-      "Avatar of Battle": "You gain Resistance to Bludgeoning, Piercing, and Slashing damage from nonmagical attacks."
+      "Avatar of Battle": {
+        "description": "You gain Resistance to Bludgeoning, Piercing, and Slashing damage.",
+        "effects": [
+          {"type": "grant_damage_resistance", "damage_type": "Bludgeoning"},
+          {"type": "grant_damage_resistance", "damage_type": "Piercing"},
+          {"type": "grant_damage_resistance", "damage_type": "Slashing"}
+        ]
+      }
     }
   }
 }
