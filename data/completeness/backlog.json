@@ -18,28 +18,48 @@
       "tests_written": true,
       "subclasses": {
         "Path of the Berserker": {
+         
           "data_file": true,
+         
           "features_validated": true,
+         
           "effects_implemented": true,
+         
           "tests_written": true
+       
         },
         "Path of the Wild Heart": {
+         
           "data_file": true,
+         
           "features_validated": true,
+         
           "effects_implemented": true,
+         
           "tests_written": true
+       
         },
         "Path of the World Tree": {
+         
           "data_file": true,
+         
           "features_validated": true,
+         
           "effects_implemented": true,
+         
           "tests_written": true
+       
         },
         "Path of the Zealot": {
+         
           "data_file": true,
+         
           "features_validated": true,
+         
           "effects_implemented": true,
+         
           "tests_written": true
+       
         }
       }
     },
@@ -338,60 +358,100 @@
       "tests_written": true,
       "subclasses": {
         "The Archfey": {
+         
           "data_file": true,
+         
           "features_validated": true,
+         
           "effects_implemented": true,
+         
           "tests_written": true
+       
         },
         "The Celestial": {
+         
           "data_file": true,
+         
           "features_validated": true,
+         
           "effects_implemented": true,
+         
           "tests_written": true
+       
         },
         "The Fiend": {
+         
           "data_file": true,
+         
           "features_validated": true,
+         
           "effects_implemented": true,
+         
           "tests_written": true
+       
         },
         "The Great Old One": {
+         
           "data_file": true,
+         
           "features_validated": true,
+         
           "effects_implemented": true,
+         
           "tests_written": true
+       
         }
       }
     },
     "Wizard": {
       "data_file": true,
-      "features_validated": false,
-      "effects_implemented": false,
-      "tests_written": false,
+      "features_validated": true,
+      "effects_implemented": true,
+      "tests_written": true,
       "subclasses": {
         "Abjurer": {
+         
           "data_file": true,
-          "features_validated": false,
-          "effects_implemented": false,
-          "tests_written": false
+         
+          "features_validated": true,
+         
+          "effects_implemented": true,
+         
+          "tests_written": true
+       
         },
         "Diviner": {
+         
           "data_file": true,
-          "features_validated": false,
-          "effects_implemented": false,
-          "tests_written": false
+         
+          "features_validated": true,
+         
+          "effects_implemented": true,
+         
+          "tests_written": true
+       
         },
         "Evoker": {
+         
           "data_file": true,
-          "features_validated": false,
-          "effects_implemented": false,
-          "tests_written": false
+         
+          "features_validated": true,
+         
+          "effects_implemented": true,
+         
+          "tests_written": true
+       
         },
         "Illusionist": {
-          "data_file": false,
-          "features_validated": false,
-          "effects_implemented": false,
-          "tests_written": false
+         
+          "data_file": true,
+         
+          "features_validated": true,
+         
+          "effects_implemented": true,
+         
+          "tests_written": true
+       
         }
       }
     }
