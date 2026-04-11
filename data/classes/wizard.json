@@ -32,15 +32,16 @@
   "starting_equipment": {
     "option_a": {
       "items": [
-        "Quarterstaff",
-        "Arcane Focus",
+        "2 Daggers",
+        "Arcane Focus (Quarterstaff)",
+        "Robe",
         "Spellbook",
         "Scholar's Pack"
       ],
       "gold": 5
     },
     "option_b": {
-      "gold": 50
+      "gold": 55
     }
   },
   "spellcasting_ability": "Intelligence",
@@ -48,7 +49,7 @@
     "Arcane focus",
     "Spellbook"
   ],
-  "subclass_selection_level": 2,
+  "subclass_selection_level": 3,
   "proficiency_bonus_by_level": {
     "1": 2,
     "2": 2,
@@ -81,7 +82,7 @@
       "Scholar": "Choose one of the following skills in which you have proficiency: Arcana, History, Investigation, Medicine, Nature, or Religion. You have Expertise in the chosen skill."
     },
     "3": {
-      "Wizard Subclass": "You gain a Wizard subclass of your choice. A subclass grants you features at levels 2, 6, 10, and 14."
+      "Wizard Subclass": "You gain a Wizard subclass of your choice. A subclass is a specialization that grants you features at certain Wizard levels."
     },
     "4": {
       "Ability Score Improvement": "You gain the Ability Score Improvement feat or another feat of your choice for which you qualify."
@@ -124,7 +125,10 @@
             "type": "computed",
             "from": "spellbook",
             "filter": {
-              "level": [1, 2],
+              "level": [
+                1,
+                2
+              ],
               "casting_time": "1 action"
             }
           },
