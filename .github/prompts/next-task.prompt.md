@@ -1,8 +1,9 @@
 ---
 description: 'Find the next highest-priority task from the backlog and generate a work plan'
+agent: 'agent'
 ---
 
-Use the `update-backlog` skill to scan current completeness, then identify the highest-priority incomplete item.
+Read `data/completeness/backlog.json` and identify the highest-priority incomplete item.
 
 ## Priority Order
 
@@ -18,5 +19,5 @@ Report:
 - **Next task**: What to implement
 - **Category**: Class/subclass/background/feat/spell
 - **Priority**: Why this was selected
-- **Skills to use**: Which skills apply (`implement-class-feature`, `add-game-content`, etc.)
+- **Prompt to use**: Which prompt to invoke next (e.g., `/implement-class`, `/implement-species`)
 - **Dependencies**: Any blockers (missing wiki data, missing effect types)

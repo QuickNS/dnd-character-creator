@@ -24,23 +24,13 @@ tests/
 └── test_api.py              # API endpoint tests
 ```
 
-## Approach
+## Key References
 
-1. Understand what needs testing (new feature, effect type, class, species, API)
-2. Check existing tests for patterns: `tests/core/test_character_builder.py`, `tests/integration/test_character_recreation.py`
-3. Write tests using `CharacterBuilder` directly:
-   ```python
-   from modules.character_builder import CharacterBuilder
-   
-   def test_feature():
-       builder = CharacterBuilder()
-       builder.apply_choices({...})
-       character = builder.to_character()
-       assert character[...] == expected
-   ```
-4. For API tests, use Flask test client with `/api/choices-to-character`
-5. Run `pytest tests/ -x -q --tb=short` to validate
-6. Ensure coverage of: happy path, edge cases, effect application, calculated values
+Consult these when writing tests:
+- [CharacterBuilder API, output shape, and assertion paths](../instructions/character-builder-api.instructions.md)
+- [Pytest conventions and patterns](../instructions/testing.instructions.md)
+
+Check existing tests for patterns: `tests/core/test_character_builder.py`, `tests/integration/test_character_recreation.py`
 
 ## Testing Patterns
 

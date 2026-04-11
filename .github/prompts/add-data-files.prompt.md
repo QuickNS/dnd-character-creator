@@ -1,8 +1,7 @@
 ---
-agent: 'agent'
-description: 'Adds data files for a specific class'
+description: 'Adds or updates D&D game data files for a specific content type'
+agent: 'data-author'
+argument-hint: 'e.g., class=Fighter, species=Elf, background=Sailor'
 ---
 
-Use the `add-game-content` skill to add data files for **{{ class_name }}**:
-- Class data file: `data/classes/{{ class_name }}.json`
-- Subclass data files: `data/subclasses/{{ class_name }}/`
+Add data files for **{{ content_type }}**.

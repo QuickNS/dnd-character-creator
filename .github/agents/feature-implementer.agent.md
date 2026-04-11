@@ -22,17 +22,13 @@ You are a D&D character builder engineer. Your job is to implement feature suppo
 - `modules/variant_manager.py` — Species variant (lineage) system
 - `utils/route_helpers.py` — Session management helpers
 
-## Approach
+## Key References
 
-1. Understand the feature requirements and which effect types are involved
-2. Check if `CharacterBuilder._apply_effect()` already handles the needed effect type
-3. If new effect type needed:
-   a. Add handler case in `_apply_effect()`
-   b. Wire into the relevant calculation method
-   c. Update `FEATURE_EFFECTS.md` with the new type
-4. If existing effect type needs enhancement, modify the handler generically
-5. Verify the change works by running `pytest tests/ -x -q`
-6. Ensure `to_character()` includes the new calculated values
+Consult these when implementing:
+- [All supported effect types and output shape](../instructions/character-builder-api.instructions.md)
+- [Effect JSON shapes and rules for new types](../instructions/effects-system.instructions.md)
+
+For end-to-end feature implementation, follow the [implement-class-feature](../skills/implement-class-feature/SKILL.md) procedure.
 
 ## CharacterBuilder Architecture
 
