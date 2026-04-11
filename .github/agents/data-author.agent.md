@@ -26,15 +26,15 @@ Wiki URL patterns:
 - Feats: `http://dnd2024.wikidot.com/feat:{name}`
 - Spells: `http://dnd2024.wikidot.com/spell:{name}`
 
-## Approach
+## Key References
 
-1. Read the relevant schema from `models/` (class_schema.json, subclass_schema.json, etc.)
-2. Check `wiki_data/` for cached source material
-3. If no cache, fetch from the wiki and note what was found
-4. Create/update the JSON data file following the schema exactly
-5. Ensure all mechanical benefits use structured `effects` arrays (see `FEATURE_EFFECTS.md`)
-6. Verify `features_by_level` uses **objects** (never arrays)
-7. Run `python validate_data.py` to confirm schema compliance
+Consult these when writing data:
+- [Effect types and JSON shapes](../instructions/effects-system.instructions.md)
+- [Class, subclass, species, background schemas](../instructions/data-schemas.instructions.md)
+- [CharacterBuilder API and output shape](../instructions/character-builder-api.instructions.md)
+
+For batch content workflows, follow the [add-game-content](../skills/add-game-content/SKILL.md) procedure.
+For feature-level implementation, follow the [implement-class-feature](../skills/implement-class-feature/SKILL.md) procedure.
 
 ## Output Format
 
