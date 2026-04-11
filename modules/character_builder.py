@@ -581,8 +581,8 @@ class CharacterBuilder:
                     self._apply_effect(effect, trait_name, source)
                 return
 
-        # 2. Simple string features that start with "Choose"
-        if isinstance(description, str) and description.lower().startswith("choose"):
+        # 2. Simple short string features that start with "Choose" (choice placeholders)
+        if isinstance(description, str) and description.lower().startswith("choose") and len(description) < 100:
             return
 
         # Map source to feature category and get descriptive source name
