@@ -87,7 +87,6 @@ class TestRangerBaseFeatures:
             e["type"] == "increase_speed" for e in effects
         ), "Expected increase_speed effect from Roving"
 
-    @pytest.mark.xfail(reason="Level 9 Expertise feature not loaded by builder (missing from output)")
     def test_level_9_expertise(self):
         character = build_ranger(9, "Hunter")
         class_features = [f["name"] for f in character["features"]["class"]]

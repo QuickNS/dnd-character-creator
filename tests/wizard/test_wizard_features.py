@@ -180,15 +180,6 @@ class TestWizardBaseClass:
                 f"Expected '{feature_name}' at level {level}, got {names}"
             )
 
-    # -- Scholar is a "Choose" feature and is intentionally skipped --
-
-    def test_scholar_is_choice_and_not_listed(self):
-        """Scholar starts with 'Choose' so the builder doesn't list it as a feature."""
-        character = build_wizard(2)
-        names = [f["name"] for f in character["features"]["class"]]
-        # Scholar is filtered because its description starts with "Choose"
-        assert "Scholar" not in names
-
 
 # ---------------------------------------------------------------------------
 # 2. Abjurer (Abjuration) Subclass
@@ -202,13 +193,6 @@ class TestAbjurerSubclass:
         character = build_wizard(3, "Abjuration")
         names = [f["name"] for f in character["features"]["subclass"]]
         assert "Arcane Ward" in names
-
-    def test_level_3_abjuration_savant_skipped(self):
-        """Abjuration Savant description starts with 'Choose' and is filtered."""
-        character = build_wizard(3, "Abjuration")
-        names = [f["name"] for f in character["features"]["subclass"]]
-        # The savant features begin with "Choose" and are intentionally skipped
-        assert "Abjuration Savant" not in names
 
     def test_level_6_projected_ward(self):
         character = build_wizard(6, "Abjuration")
@@ -306,12 +290,6 @@ class TestDivinerSubclass:
         names = [f["name"] for f in character["features"]["subclass"]]
         assert "Portent" in names
 
-    def test_level_3_divination_savant_skipped(self):
-        """Divination Savant description starts with 'Choose' and is filtered."""
-        character = build_wizard(3, "Divination")
-        names = [f["name"] for f in character["features"]["subclass"]]
-        assert "Divination Savant" not in names
-
     def test_level_6_expert_divination(self):
         character = build_wizard(6, "Divination")
         names = [f["name"] for f in character["features"]["subclass"]]
@@ -363,12 +341,7 @@ class TestEvokerSubclass:
         names = [f["name"] for f in character["features"]["subclass"]]
         assert "Potent Cantrip" in names
 
-    def test_level_3_evocation_savant_skipped(self):
-        """Evocation Savant description starts with 'Choose' and is filtered."""
-        character = build_wizard(3, "Evocation")
-        names = [f["name"] for f in character["features"]["subclass"]]
-        assert "Evocation Savant" not in names
-
+    
     def test_sculpt_spells_not_at_level_3(self):
         """Sculpt Spells is a L6 feature, not L3 (2024 rules)."""
         character = build_wizard(3, "Evocation")
@@ -433,11 +406,6 @@ class TestIllusionistSubclass:
         names = [f["name"] for f in character["features"]["subclass"]]
         assert "Improved Illusions" in names
 
-    def test_level_3_illusion_savant_skipped(self):
-        """Illusion Savant description starts with 'Choose' and is filtered."""
-        character = build_wizard(3, "Illusionist")
-        names = [f["name"] for f in character["features"]["subclass"]]
-        assert "Illusion Savant" not in names
 
     def test_improved_illusions_grants_minor_illusion(self):
         """Improved Illusions should add Minor Illusion as always prepared."""

@@ -568,20 +568,6 @@ class CharacterBuilder:
                     description = description.replace(f"{{{var_name}}}", resolved)
 
         # Skip features that are just choice placeholders
-        # 1. Features with choices dict but minimal description
-        if isinstance(trait_data, dict) and "choices" in trait_data:
-            if (
-                not description
-                or len(description) < 20
-                or description.lower().startswith("choose")
-            ):
-                # Still apply effects if present
-                effects = trait_data.get("effects", [])
-                for effect in effects:
-                    self._apply_effect(effect, trait_name, source)
-                return
-
-        # 2. Simple short string features that start with "Choose" are choice placeholders
         # (e.g. "Choose a subclass") and should be skipped. Use a length threshold to
         # avoid skipping meaningful feature descriptions that happen to start with "Choose"
         # (e.g. Fiendish Resilience: "Choose one damage type when you finish a Short Rest...").
