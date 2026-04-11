@@ -581,8 +581,12 @@ class CharacterBuilder:
                     self._apply_effect(effect, trait_name, source)
                 return
 
-        # 2. Simple short string features that start with "Choose" (choice placeholders)
-        if isinstance(description, str) and description.lower().startswith("choose") and len(description) < 100:
+        # 2. Simple short string features that start with "Choose" are choice placeholders
+        # (e.g. "Choose a subclass") and should be skipped. Use a length threshold to
+        # avoid skipping meaningful feature descriptions that happen to start with "Choose"
+        # (e.g. Fiendish Resilience: "Choose one damage type when you finish a Short Rest...").
+        CHOICE_PLACEHOLDER_MAX_LENGTH = 100
+        if isinstance(description, str) and description.lower().startswith("choose") and len(description) < CHOICE_PLACEHOLDER_MAX_LENGTH:
             return
 
         # Map source to feature category and get descriptive source name
