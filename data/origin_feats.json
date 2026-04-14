@@ -19,7 +19,36 @@
       ],
       "category": "Origin",
       "prerequisite": "None",
-      "source": "Player's Handbook 2024"
+      "source": "Player's Handbook 2024",
+      "choices": [
+        {
+          "type": "select_multiple",
+          "count": 3,
+          "name": "artisan_tools",
+          "source": {
+            "type": "fixed_list",
+            "options": [
+              "Alchemist's Supplies",
+              "Brewer's Supplies",
+              "Calligrapher's Supplies",
+              "Carpenter's Tools",
+              "Cartographer's Tools",
+              "Cobbler's Tools",
+              "Cook's Utensils",
+              "Glassblower's Tools",
+              "Jeweler's Tools",
+              "Leatherworker's Tools",
+              "Mason's Tools",
+              "Painter's Supplies",
+              "Potter's Tools",
+              "Smith's Tools",
+              "Tinker's Tools",
+              "Weaver's Tools",
+              "Woodcarver's Tools"
+            ]
+          }
+        }
+      ]
     },
     "Healer": {
       "description": "You have the training and intuition to administer first aid and other care effectively, granting you the following benefits:",
@@ -135,7 +164,29 @@
       ],
       "category": "Origin",
       "prerequisite": "None",
-      "source": "Player's Handbook 2024"
+      "source": "Player's Handbook 2024",
+      "choices": [
+        {
+          "type": "select_multiple",
+          "count": 3,
+          "name": "musical_instruments",
+          "source": {
+            "type": "fixed_list",
+            "options": [
+              "Bagpipes",
+              "Drum",
+              "Dulcimer",
+              "Flute",
+              "Horn",
+              "Lute",
+              "Lyre",
+              "Pan Flute",
+              "Shawm",
+              "Viol"
+            ]
+          }
+        }
+      ]
     },
     "Savage Attacker": {
       "description": "You've trained to deal particularly damaging strikes. Once per turn when you hit a target with a weapon, you can roll the weapon's damage dice twice and use either roll against the target.",
@@ -229,7 +280,13 @@
       ],
       "category": "Origin",
       "prerequisite": "None",
-      "source": "Player's Handbook 2024"
+      "source": "Player's Handbook 2024",
+      "effects": [
+        {
+          "type": "grant_weapon_proficiency",
+          "proficiencies": ["Improvised weapons"]
+        }
+      ]
     },
     "Tough": {
       "description": "Your hit point maximum increases by an amount equal to twice your character level when you gain this feat. Whenever you gain a level thereafter, your hit point maximum increases by an additional 2 hit points.",

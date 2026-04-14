@@ -717,3 +717,141 @@ class TestApplyFeatChoices:
         character = builder.to_character()
         assert character["proficiencies"]["skills"].count("Arcana") == 1
 
+
+# ==================== 6. Tavern Brawler Effects ====================
+
+
+class TestTavernBrawlerEffectsData:
+    """Tavern Brawler origin feat effect data validation."""
+
+    def test_tavern_brawler_has_weapon_proficiency_effect(self, origin_feats):
+        """Tavern Brawler must have a grant_weapon_proficiency effect."""
+        effects = origin_feats["Tavern Brawler"].get("effects", [])
+        weapon_effects = [e for e in effects if e["type"] == "grant_weapon_proficiency"]
+        assert len(weapon_effects) == 1
+
+    def test_tavern_brawler_grants_improvised_weapons(self, origin_feats):
+        """Tavern Brawler's weapon proficiency effect must include 'Improvised weapons'."""
+        effects = origin_feats["Tavern Brawler"]["effects"]
+        weapon_effect = next(e for e in effects if e["type"] == "grant_weapon_proficiency")
+        assert "Improvised weapons" in weapon_effect["proficiencies"]
+
+
+class TestTavernBrawlerIntegration:
+    """Integration test: Sailor background grants Tavern Brawler which grants Improvised weapons."""
+
+    def _build_sailor_fighter(self):
+        builder = CharacterBuilder()
+        builder.apply_choices({
+            "character_name": "Test",
+            "level": 1,
+            "species": "Human",
+            "class": "Fighter",
+            "background": "Sailor",
+            "ability_scores": {
+                "Strength": 15, "Dexterity": 13, "Constitution": 14,
+                "Intelligence": 10, "Wisdom": 12, "Charisma": 8
+            },
+            "background_bonuses": {"Strength": 2, "Constitution": 1},
+        })
+        return builder.to_character()
+
+    def test_tavern_brawler_feat_present(self):
+        """Sailor background should grant Tavern Brawler feat."""
+        character = self._build_sailor_fighter()
+        feat_names = [f["name"] for f in character["features"]["feats"]]
+        assert "Tavern Brawler" in feat_names
+
+    def test_improvised_weapons_in_proficiencies(self):
+        """Tavern Brawler effect should add 'Improvised weapons' to weapon proficiencies."""
+        character = self._build_sailor_fighter()
+        assert "Improvised weapons" in character["proficiencies"]["weapons"]
+
+
+# ==================== 7. Crafter Choices ====================
+
+
+class TestCrafterChoices:
+    """Crafter origin feat choice structure validation."""
+
+    def test_crafter_has_one_choice(self, origin_feats):
+        """Crafter must have exactly 1 choice entry."""
+        choices = origin_feats["Crafter"]["choices"]
+        assert len(choices) == 1
+
+    def test_crafter_choice_type(self, origin_feats):
+        """Crafter choice type must be select_multiple."""
+        choice = origin_feats["Crafter"]["choices"][0]
+        assert choice["type"] == "select_multiple"
+
+    def test_crafter_choice_count(self, origin_feats):
+        """Crafter allows selecting 3 artisan tools."""
+        choice = origin_feats["Crafter"]["choices"][0]
+        assert choice["count"] == 3
+
+    def test_crafter_choice_name(self, origin_feats):
+        """Crafter choice name must be 'artisan_tools'."""
+        choice = origin_feats["Crafter"]["choices"][0]
+        assert choice["name"] == "artisan_tools"
+
+    def test_crafter_choice_source_type(self, origin_feats):
+        """Crafter choice source must be a fixed_list."""
+        choice = origin_feats["Crafter"]["choices"][0]
+        assert choice["source"]["type"] == "fixed_list"
+
+    def test_crafter_has_expected_tools(self, origin_feats):
+        """Crafter options must include key artisan tools."""
+        options = origin_feats["Crafter"]["choices"][0]["source"]["options"]
+        assert "Smith's Tools" in options
+        assert "Carpenter's Tools" in options
+        assert "Alchemist's Supplies" in options
+
+    def test_crafter_option_count(self, origin_feats):
+        """Crafter must have exactly 17 artisan tool options."""
+        options = origin_feats["Crafter"]["choices"][0]["source"]["options"]
+        assert len(options) == 17
+
+
+# ==================== 8. Musician Choices ====================
+
+
+class TestMusicianChoices:
+    """Musician origin feat choice structure validation."""
+
+    def test_musician_has_one_choice(self, origin_feats):
+        """Musician must have exactly 1 choice entry."""
+        choices = origin_feats["Musician"]["choices"]
+        assert len(choices) == 1
+
+    def test_musician_choice_type(self, origin_feats):
+        """Musician choice type must be select_multiple."""
+        choice = origin_feats["Musician"]["choices"][0]
+        assert choice["type"] == "select_multiple"
+
+    def test_musician_choice_count(self, origin_feats):
+        """Musician allows selecting 3 musical instruments."""
+        choice = origin_feats["Musician"]["choices"][0]
+        assert choice["count"] == 3
+
+    def test_musician_choice_name(self, origin_feats):
+        """Musician choice name must be 'musical_instruments'."""
+        choice = origin_feats["Musician"]["choices"][0]
+        assert choice["name"] == "musical_instruments"
+
+    def test_musician_choice_source_type(self, origin_feats):
+        """Musician choice source must be a fixed_list."""
+        choice = origin_feats["Musician"]["choices"][0]
+        assert choice["source"]["type"] == "fixed_list"
+
+    def test_musician_has_expected_instruments(self, origin_feats):
+        """Musician options must include key instruments."""
+        options = origin_feats["Musician"]["choices"][0]["source"]["options"]
+        assert "Lute" in options
+        assert "Drum" in options
+        assert "Flute" in options
+
+    def test_musician_option_count(self, origin_feats):
+        """Musician must have exactly 10 musical instrument options."""
+        options = origin_feats["Musician"]["choices"][0]["source"]["options"]
+        assert len(options) == 10
+
