@@ -5,7 +5,7 @@
   "size": "Medium",
   "size_description": "about 5-7 feet tall",
   "speed": 30,
-  "darkvision_range": 60,
+  "darkvision": 60,
   "traits": {
     "Draconic Ancestry": {
       "description": "Your lineage stems from a dragon progenitor. Choose the kind of dragon from the list. Your choice affects your Breath Weapon and Damage Resistance traits as well as your appearance.",
