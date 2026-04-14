@@ -18,48 +18,28 @@
       "tests_written": true,
       "subclasses": {
         "Path of the Berserker": {
-         
           "data_file": true,
-         
           "features_validated": true,
-         
           "effects_implemented": true,
-         
           "tests_written": true
-       
         },
         "Path of the Wild Heart": {
-         
           "data_file": true,
-         
           "features_validated": true,
-         
           "effects_implemented": true,
-         
           "tests_written": true
-       
         },
         "Path of the World Tree": {
-         
           "data_file": true,
-         
           "features_validated": true,
-         
           "effects_implemented": true,
-         
           "tests_written": true
-       
         },
         "Path of the Zealot": {
-         
           "data_file": true,
-         
           "features_validated": true,
-         
           "effects_implemented": true,
-         
           "tests_written": true
-       
         }
       }
     },
@@ -358,48 +338,28 @@
       "tests_written": true,
       "subclasses": {
         "The Archfey": {
-         
           "data_file": true,
-         
           "features_validated": true,
-         
           "effects_implemented": true,
-         
           "tests_written": true
-       
         },
         "The Celestial": {
-         
           "data_file": true,
-         
           "features_validated": true,
-         
           "effects_implemented": true,
-         
           "tests_written": true
-       
         },
         "The Fiend": {
-         
           "data_file": true,
-         
           "features_validated": true,
-         
           "effects_implemented": true,
-         
           "tests_written": true
-       
         },
         "The Great Old One": {
-         
           "data_file": true,
-         
           "features_validated": true,
-         
           "effects_implemented": true,
-         
           "tests_written": true
-       
         }
       }
     },
@@ -410,48 +370,28 @@
       "tests_written": true,
       "subclasses": {
         "Abjurer": {
-         
           "data_file": true,
-         
           "features_validated": true,
-         
           "effects_implemented": true,
-         
           "tests_written": true
-       
         },
         "Diviner": {
-         
           "data_file": true,
-         
           "features_validated": true,
-         
           "effects_implemented": true,
-         
           "tests_written": true
-       
         },
         "Evoker": {
-         
           "data_file": true,
-         
           "features_validated": true,
-         
           "effects_implemented": true,
-         
           "tests_written": true
-       
         },
         "Illusionist": {
-         
           "data_file": true,
-         
           "features_validated": true,
-         
           "effects_implemented": true,
-         
           "tests_written": true
-       
         }
       }
     }
@@ -686,47 +626,47 @@
     "origin": {
       "Alert": {
         "data_file": true,
-        "effects_implemented": false,
+        "effects_implemented": true,
         "tests_written": true
       },
       "Crafter": {
         "data_file": true,
-        "effects_implemented": false,
+        "effects_implemented": true,
         "tests_written": true
       },
       "Healer": {
         "data_file": true,
-        "effects_implemented": false,
+        "effects_implemented": true,
         "tests_written": true
       },
       "Lucky": {
         "data_file": true,
-        "effects_implemented": false,
+        "effects_implemented": true,
         "tests_written": true
       },
       "Magic Initiate": {
         "data_file": true,
-        "effects_implemented": false,
+        "effects_implemented": true,
         "tests_written": true
       },
       "Musician": {
         "data_file": true,
-        "effects_implemented": false,
+        "effects_implemented": true,
         "tests_written": true
       },
       "Savage Attacker": {
         "data_file": true,
-        "effects_implemented": false,
+        "effects_implemented": true,
         "tests_written": true
       },
       "Skilled": {
         "data_file": true,
-        "effects_implemented": false,
+        "effects_implemented": true,
         "tests_written": true
       },
       "Tavern Brawler": {
         "data_file": true,
-        "effects_implemented": false,
+        "effects_implemented": true,
         "tests_written": true
       },
       "Tough": {
@@ -736,7 +676,7 @@
       }
     },
     "general": {
-      "_note": "44 general feats \u2014 all have data files, effects partially implemented",
+      "_note": "44 general feats — all have data files, effects partially implemented",
       "Ability Score Improvement": {
         "data_file": true,
         "effects_implemented": false,
