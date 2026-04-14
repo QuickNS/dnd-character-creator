@@ -90,6 +90,7 @@ cat wiki_data/{category}/{name}.json | python -m json.tool | head -100
 # If missing, fetch it
 python update_classes.py --class {class_name}      # classes/subclasses
 python update_species.py --species {species_name}   # species
+python update_spells.py --class {class_name}        # spell lists
 ```
 
 Parse `content.text` to understand the feature's intended mechanics. Never guess — the wiki is the source of truth.

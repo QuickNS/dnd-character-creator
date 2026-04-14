@@ -54,6 +54,11 @@ Use ONE explore agent call to gather ALL of the following at once:
 
 Delegate to **wiki-fetcher** (in parallel with step 2 if wiki gaps are already known): ensure `wiki_data/classes/{class_name}.json` and `wiki_data/subclasses/{class_name}/` are cached.
 
+For spellcasting classes, also fetch spell lists:
+```bash
+python update_spells.py --class {class_name}
+```
+
 ### 4. Write Data Files
 
 Delegate to **data-author**: create or update all JSON data files for the class and its subclasses under `data/`.
@@ -94,6 +99,9 @@ Stage only the files you changed — use explicit paths:
 ```bash
 git add data/classes/{class_name}.json \
        data/subclasses/{class_name}/*.json \
+       data/spells/{class_name}_cantrips.json \
+       data/spells/{class_name}_spells.json \
+       data/spells/class_lists/{class_name}.json \
        data/completeness/backlog.json \
        tests/{class_name}/__init__.py \
        tests/{class_name}/test_{class_name}_features.py

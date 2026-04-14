@@ -28,12 +28,22 @@ python update_species.py --species elf
 
 # Overwrite existing species
 python update_species.py --species elf --overwrite
+
+# Fetch a specific class's spell list
+python update_spells.py --class sorcerer
+
+# Overwrite existing spell list
+python update_spells.py --class sorcerer --overwrite
+
+# Fetch all spellcasting class spell lists
+python update_spells.py --all
 ```
 
 ## Wiki URL Patterns
 
 - Classes: `http://dnd2024.wikidot.com/{class}:main`
 - Subclasses: `http://dnd2024.wikidot.com/{class}:{subclass-slug}`
+- Spell lists: `http://dnd2024.wikidot.com/{class}:spell-list`
 - Backgrounds: `http://dnd2024.wikidot.com/background:{name}`
 - Species: `http://dnd2024.wikidot.com/species:{name}`
 - Feats: `http://dnd2024.wikidot.com/feat:{name}`

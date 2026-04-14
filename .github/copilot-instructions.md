@@ -38,6 +38,7 @@ See `.github/instructions/data-schemas.instructions.md` for full schemas.
 3. http://dnd2024.wikidot.com/ — Live wiki (only when cache is missing)
 
 Use `update_classes.py --class <name>` or `update_species.py --species <name>` to fetch/cache wiki data.
+Use `update_spells.py --class <name>` to fetch spell lists (cantrips + leveled spells) for a class.
 
 ## Architecture Overview
 

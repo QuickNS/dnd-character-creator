@@ -46,9 +46,10 @@ python update_classes.py --class ranger
 # Subclasses auto-fetched if class is fetched
 ```
 
-For other content types, fetch manually:
+For spell lists:
 ```bash
-# No script yet — use web fetch
+python update_spells.py --class sorcerer
+# Generates {class}_cantrips.json, {class}_spells.json, and class_lists/{class}.json
 ```
 
 ### 3. Create Data Files from Templates
