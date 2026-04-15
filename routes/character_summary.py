@@ -17,6 +17,12 @@ character_summary_bp = Blueprint("character_summary", __name__)
 data_loader = DataLoader()
 logger = logging.getLogger(__name__)
 
+# Maps spell slot ordinal names (as stored in spell_slots) to integer spell levels.
+_ORDINAL_TO_INT = {
+    "1st": 1, "2nd": 2, "3rd": 3, "4th": 4, "5th": 5,
+    "6th": 6, "7th": 7, "8th": 8, "9th": 9,
+}
+
 
 # ==================== Route Handlers ====================
 
@@ -191,6 +197,23 @@ def api_spell_management_data():
                 for name in spell_names
             ]
 
+        # Determine which spell levels the character can actually use based on
+        # available spell slots, and filter available_spells accordingly.
+        # Characters should only be able to prepare spells for levels they have slots.
+        character = builder.to_character()
+        spell_slots = character.get("spell_slots", {})
+        available_slot_levels = {
+            _ORDINAL_TO_INT[name]
+            for name in spell_slots
+            if name in _ORDINAL_TO_INT and spell_slots[name] > 0
+        }
+        if available_slot_levels:
+            available_spells = {
+                level: spells
+                for level, spells in available_spells.items()
+                if int(level) in available_slot_levels
+            }
+
         # Get current selections from character
         # Handle both old (list) and new (dict) spell storage formats
         spells_data = builder.character_data.get("spells", {})
@@ -297,6 +320,7 @@ def api_spell_management_data():
                 "always_prepared": always_prepared,
                 "available_cantrips": available_cantrips,
                 "available_spells": available_spells,
+                "spell_slots": spell_slots,
                 "current_selections": current_selections,
                 "limits": {
                     "cantrips": stats.get("max_cantrips_to_prepare", 0),
@@ -314,6 +338,7 @@ def api_spell_management_data():
 @character_summary_bp.route("/api/save-spell-selections", methods=["POST"])
 def api_save_spell_selections():
     """Save spell selections from the modal."""
+    from pathlib import Path
     from flask import request
     from utils.route_helpers import save_builder_to_session
 
@@ -327,6 +352,60 @@ def api_save_spell_selections():
         # Validate selections
         if not selections:
             return jsonify({"error": "No selections provided"}), 400
+
+        # Determine the maximum spell slot level available to this character
+        # so we can reject spells above that level (defense-in-depth).
+        character = builder.to_character()
+        spell_slots = character.get("spell_slots", {})
+        available_slot_levels = {
+            _ORDINAL_TO_INT[name]
+            for name in spell_slots
+            if name in _ORDINAL_TO_INT and spell_slots[name] > 0
+        }
+        max_slot_level = max(available_slot_levels, default=0)
+
+        # Validate that each submitted leveled spell does not exceed the
+        # character's highest available spell slot level.
+        if available_slot_levels:
+            data_dir = (
+                Path(__file__).parent.parent / "data" / "spells" / "definitions"
+            )
+            invalid_spells = []
+            for spell_name in selections.get("spells", []):
+                filename = (
+                    spell_name.lower()
+                    .replace(" ", "_")
+                    .replace("'", "")
+                    .replace("-", "_")
+                    + ".json"
+                )
+                spell_file = data_dir / filename
+                # Security: ensure resolved path stays within data_dir
+                try:
+                    resolved = spell_file.resolve()
+                    if not resolved.is_relative_to(data_dir.resolve()):
+                        continue  # Skip any path that escapes the data directory
+                except (OSError, ValueError):
+                    continue
+                if spell_file.exists():
+                    try:
+                        with open(resolved) as f:
+                            spell_data = json.load(f)
+                        spell_level = spell_data.get("level", 0)
+                        if spell_level > max_slot_level:
+                            invalid_spells.append(spell_name)
+                    except (json.JSONDecodeError, IOError):
+                        pass  # If spell data can't be read, allow it through
+
+            if invalid_spells:
+                return jsonify(
+                    {
+                        "error": (
+                            f"Cannot prepare spells above your highest available slot "
+                            f"level ({max_slot_level}): {', '.join(invalid_spells)}"
+                        )
+                    }
+                ), 400
 
         # Initialize spell storage if it doesn't exist
         if "spells" not in builder.character_data:
