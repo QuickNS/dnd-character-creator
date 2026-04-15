@@ -376,3 +376,47 @@ class TestSpellManagement:
         # Should have Light from Light Domain and Guidance from Thaumaturge
         assert "Light" in cantrip_names
         assert "Guidance" in cantrip_names
+
+    def test_spell_management_data_loads_definitions(self, wizard_builder):
+        """Regression test: spell management data returns actual spell definitions, not 'Unknown'.
+
+        Simulates what api_spell_management_data does after the fix so that the
+        spell preparation modal shows real school, casting_time, range, etc.
+        """
+        stats = wizard_builder.calculate_spellcasting_stats()
+        assert stats["has_spellcasting"] is True
+
+        # Simulate what the route now does for available cantrips
+        available_cantrips = [
+            wizard_builder._load_spell_definition(name)
+            for name in stats.get("available_cantrips", [])
+        ]
+        assert len(available_cantrips) > 0, "Wizard should have available cantrips"
+
+        for spell_def in available_cantrips:
+            assert "name" in spell_def
+            assert "school" in spell_def, (
+                f"Spell '{spell_def['name']}' should have 'school' field"
+            )
+            assert spell_def["school"] != "Unknown", (
+                f"Spell '{spell_def['name']}' should have actual school, not 'Unknown'"
+            )
+
+        # Simulate what the route does for available leveled spells
+        available_spells = {}
+        for level, spell_names in stats.get("available_spells", {}).items():
+            available_spells[str(level)] = [
+                wizard_builder._load_spell_definition(name)
+                for name in spell_names
+            ]
+
+        level_1 = available_spells.get("1", [])
+        assert len(level_1) > 0, "Wizard should have level 1 spells available"
+
+        for spell_def in level_1:
+            assert "school" in spell_def, (
+                f"Spell '{spell_def['name']}' should have 'school' field"
+            )
+            assert spell_def["school"] != "Unknown", (
+                f"Spell '{spell_def['name']}' should have actual school, not 'Unknown'"
+            )
