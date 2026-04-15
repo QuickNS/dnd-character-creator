@@ -1,10 +1,17 @@
 {
   "cantrips": [
     "Druidcraft",
+    "Elementalism",
     "Guidance",
     "Mending",
+    "Message",
     "Poison Spray",
+    "Produce Flame",
     "Resistance",
-    "Starry Wisp"
+    "Shillelagh",
+    "Spare the Dying",
+    "Starry Wisp",
+    "Thorn Whip",
+    "Thunderclap"
   ]
 }
