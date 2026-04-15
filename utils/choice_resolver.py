@@ -83,7 +83,14 @@ def get_option_descriptions(
                 if full_path.exists():
                     with open(full_path, "r") as f:
                         data = json.load(f)
-                        choice_list = data.get(list_name, {})
+                        # Support dot-notation for nested keys
+                        choice_list = data
+                        for key in list_name.split("."):
+                            if isinstance(choice_list, dict):
+                                choice_list = choice_list.get(key, {})
+                            else:
+                                choice_list = {}
+                                break
                         if isinstance(choice_list, dict):
                             # Extract descriptions from structured objects
                             descriptions = {}
@@ -125,7 +132,11 @@ def get_option_descriptions(
 
 
 def load_external_choice_list(file_path: str, list_name: str) -> list:
-    """Load choice options from external JSON file."""
+    """Load choice options from external JSON file.
+
+    ``list_name`` may use dot-notation to traverse nested keys,
+    e.g. ``"spells_by_level.1"`` resolves ``data["spells_by_level"]["1"]``.
+    """
     try:
         # Get the project root directory (parent of utils/)
         project_root = Path(__file__).parent.parent
@@ -133,7 +144,13 @@ def load_external_choice_list(file_path: str, list_name: str) -> list:
         if full_path.exists():
             with open(full_path, "r") as f:
                 data = json.load(f)
-                choice_list = data.get(list_name, {})
+                # Support dot-notation for nested keys
+                choice_list = data
+                for key in list_name.split("."):
+                    if isinstance(choice_list, dict):
+                        choice_list = choice_list.get(key, {})
+                    else:
+                        return []
                 if isinstance(choice_list, dict):
                     return list(choice_list.keys())
                 elif isinstance(choice_list, list):

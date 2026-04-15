@@ -518,9 +518,9 @@ class TestMagicInitiateChoices:
         assert spell_choices[0]["type"] == "select_single"
 
     @pytest.mark.parametrize("variant,expected_file", [
-        ("Magic Initiate (Cleric)", "spells/cleric_cantrips.json"),
-        ("Magic Initiate (Druid)", "spells/druid_cantrips.json"),
-        ("Magic Initiate (Wizard)", "spells/wizard_cantrips.json"),
+        ("Magic Initiate (Cleric)", "spells/class_lists/cleric.json"),
+        ("Magic Initiate (Druid)", "spells/class_lists/druid.json"),
+        ("Magic Initiate (Wizard)", "spells/class_lists/wizard.json"),
     ])
     def test_cantrip_source_file(self, origin_feats, variant, expected_file):
         """Cantrip choices should reference the correct external spell file."""
@@ -530,9 +530,9 @@ class TestMagicInitiateChoices:
         assert cantrip_choice["source"]["file"] == expected_file
 
     @pytest.mark.parametrize("variant,expected_file", [
-        ("Magic Initiate (Cleric)", "spells/cleric_spells.json"),
-        ("Magic Initiate (Druid)", "spells/druid_spells.json"),
-        ("Magic Initiate (Wizard)", "spells/wizard_spells.json"),
+        ("Magic Initiate (Cleric)", "spells/class_lists/cleric.json"),
+        ("Magic Initiate (Druid)", "spells/class_lists/druid.json"),
+        ("Magic Initiate (Wizard)", "spells/class_lists/wizard.json"),
     ])
     def test_spell_source_file(self, origin_feats, variant, expected_file):
         """1st-level spell choices should reference the correct external spell file."""
@@ -568,7 +568,8 @@ class TestMagicInitiateChoices:
         choices = origin_feats[variant]["choices"]
         spell_choice = next(c for c in choices if c["name"] == "1st_level_spell")
         file_path = spell_choice["source"]["file"]
-        options = load_external_choice_list(file_path, "1st_level")
+        list_name = spell_choice["source"]["list"]
+        options = load_external_choice_list(file_path, list_name)
         assert len(options) > 0, f"{variant} 1st-level spell options should not be empty"
         for spell in expected_spells:
             assert spell in options, f"{spell} should be in {variant} 1st-level spell options"

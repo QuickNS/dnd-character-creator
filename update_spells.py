@@ -9,8 +9,6 @@ Usage:
     python update_spells.py --class wizard --overwrite  # Overwrite existing files
 
 Generates:
-    data/spells/{class}_cantrips.json
-    data/spells/{class}_spells.json
     data/spells/class_lists/{class}.json
 """
 
@@ -188,9 +186,9 @@ def update_class_spells(class_name, overwrite=False):
           f"{sum(len(v) for v in leveled.values())} leveled spells")
 
     if cantrips:
-        write_cantrips_file(class_name, cantrips, overwrite)
-    write_spells_file(class_name, leveled, overwrite)
-    write_class_list_file(class_name, cantrips, leveled, overwrite)
+        write_class_list_file(class_name, cantrips, leveled, overwrite)
+    else:
+        write_class_list_file(class_name, [], leveled, overwrite)
     return True
 
 

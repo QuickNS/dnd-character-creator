@@ -77,7 +77,7 @@
           "name": "cantrips",
           "source": {
             "type": "external",
-            "file": "spells/cleric_cantrips.json",
+            "file": "spells/class_lists/cleric.json",
             "list": "cantrips"
           }
         },
@@ -86,8 +86,8 @@
           "name": "1st_level_spell",
           "source": {
             "type": "external",
-            "file": "spells/cleric_spells.json",
-            "list": "1st_level"
+            "file": "spells/class_lists/cleric.json",
+            "list": "spells_by_level.1"
           }
         }
       ]
@@ -109,7 +109,7 @@
           "name": "cantrips",
           "source": {
             "type": "external",
-            "file": "spells/druid_cantrips.json",
+            "file": "spells/class_lists/druid.json",
             "list": "cantrips"
           }
         },
@@ -118,8 +118,8 @@
           "name": "1st_level_spell",
           "source": {
             "type": "external",
-            "file": "spells/druid_spells.json",
-            "list": "1st_level"
+            "file": "spells/class_lists/druid.json",
+            "list": "spells_by_level.1"
           }
         }
       ]
@@ -141,7 +141,7 @@
           "name": "cantrips",
           "source": {
             "type": "external",
-            "file": "spells/wizard_cantrips.json",
+            "file": "spells/class_lists/wizard.json",
             "list": "cantrips"
           }
         },
@@ -150,8 +150,8 @@
           "name": "1st_level_spell",
           "source": {
             "type": "external",
-            "file": "spells/wizard_spells.json",
-            "list": "1st_level"
+            "file": "spells/class_lists/wizard.json",
+            "list": "spells_by_level.1"
           }
         }
       ]
