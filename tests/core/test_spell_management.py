@@ -440,7 +440,7 @@ class TestSpellManagement:
         # The raw class spell list contains spells of many levels
         available_spells = stats.get("available_spells", {})
         levels_in_list = {int(k) for k in available_spells}
-        # Wizard spell list should include at least 1st through 5th level spells
+        # Wizard spell list should include at least 1st through 3rd level spells
         assert levels_in_list.issuperset({1, 2, 3})
 
     def test_slot_filtering_removes_unavailable_levels(self):

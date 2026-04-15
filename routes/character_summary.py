@@ -1,5 +1,7 @@
 """Character summary and download routes."""
 
+from pathlib import Path
+
 from flask import (
     Blueprint,
     render_template,
@@ -10,6 +12,7 @@ from flask import (
 )
 import json
 import logging
+import re
 from modules.data_loader import DataLoader
 from utils.route_helpers import get_builder_from_session
 
@@ -22,6 +25,13 @@ _ORDINAL_TO_INT = {
     "1st": 1, "2nd": 2, "3rd": 3, "4th": 4, "5th": 5,
     "6th": 6, "7th": 7, "8th": 8, "9th": 9,
 }
+
+# Base directory for spell definition JSON files.
+_SPELL_DEFINITIONS_DIR = Path(__file__).parent.parent / "data" / "spells" / "definitions"
+
+# Matches only safe spell-definition filenames: lowercase letters, digits,
+# underscores, ending in ".json" — no path separators or special characters.
+_SAFE_SPELL_FILENAME_RE = re.compile(r'^[a-z0-9_]+\.json$')
 
 
 # ==================== Route Handlers ====================
@@ -123,18 +133,17 @@ def character_sheet():
 @character_summary_bp.route("/api/spell-details/<spell_name>")
 def api_spell_details(spell_name):
     """Return spell details for a given spell name."""
-    from pathlib import Path
-    import json
-
-    # Load spell definition from data files
-    data_dir = Path(__file__).parent.parent / "data" / "spells" / "definitions"
-
     # Convert spell name to filename format (lowercase, underscores)
     filename = (
         spell_name.lower().replace(" ", "_").replace("'", "").replace("-", "_")
         + ".json"
     )
-    spell_file = data_dir / filename
+
+    # Only allow safe filenames to prevent path traversal
+    if not _SAFE_SPELL_FILENAME_RE.match(filename):
+        return jsonify({"error": f"Spell '{spell_name}' not found"}), 404
+
+    spell_file = _SPELL_DEFINITIONS_DIR / filename
 
     if not spell_file.exists():
         return jsonify({"error": f"Spell '{spell_name}' not found"}), 404
@@ -338,7 +347,6 @@ def api_spell_management_data():
 @character_summary_bp.route("/api/save-spell-selections", methods=["POST"])
 def api_save_spell_selections():
     """Save spell selections from the modal."""
-    from pathlib import Path
     from flask import request
     from utils.route_helpers import save_builder_to_session
 
@@ -362,41 +370,25 @@ def api_save_spell_selections():
             for name in spell_slots
             if name in _ORDINAL_TO_INT and spell_slots[name] > 0
         }
-        max_slot_level = max(available_slot_levels, default=0)
 
         # Validate that each submitted leveled spell does not exceed the
         # character's highest available spell slot level.
+        # We build the spell→level lookup from the character's own stats
+        # (no file I/O needed, no user input used in path operations).
         if available_slot_levels:
-            data_dir = (
-                Path(__file__).parent.parent / "data" / "spells" / "definitions"
-            )
-            invalid_spells = []
-            for spell_name in selections.get("spells", []):
-                filename = (
-                    spell_name.lower()
-                    .replace(" ", "_")
-                    .replace("'", "")
-                    .replace("-", "_")
-                    + ".json"
-                )
-                spell_file = data_dir / filename
-                # Security: ensure resolved path stays within data_dir
-                try:
-                    resolved = spell_file.resolve()
-                    if not resolved.is_relative_to(data_dir.resolve()):
-                        continue  # Skip any path that escapes the data directory
-                except (OSError, ValueError):
-                    continue
-                if spell_file.exists():
-                    try:
-                        with open(resolved) as f:
-                            spell_data = json.load(f)
-                        spell_level = spell_data.get("level", 0)
-                        if spell_level > max_slot_level:
-                            invalid_spells.append(spell_name)
-                    except (json.JSONDecodeError, IOError):
-                        pass  # If spell data can't be read, allow it through
-
+            max_slot_level = max(available_slot_levels)
+            stats = builder.calculate_spellcasting_stats()
+            # Build {spell_name: level} from the available spell list
+            spell_level_lookup = {
+                spell_name: int(level)
+                for level, spell_names in stats.get("available_spells", {}).items()
+                for spell_name in spell_names
+            }
+            invalid_spells = [
+                spell_name
+                for spell_name in selections.get("spells", [])
+                if spell_level_lookup.get(spell_name, 0) > max_slot_level
+            ]
             if invalid_spells:
                 return jsonify(
                     {
