@@ -364,6 +364,76 @@ class TestGeneralFeatEffects:
         assert len(spell_effects) == 1
         assert spell_effects[0]["spell"] == "Detect Thoughts"
 
+    def test_actor_effects(self, general_feats):
+        """Actor grants Charisma +1."""
+        effects = general_feats["Actor"]["effects"]
+        ability_effects = [e for e in effects if e["type"] == "ability_bonus"]
+        assert len(ability_effects) == 1
+        assert ability_effects[0]["ability"] == "Charisma"
+        assert ability_effects[0]["value"] == 1
+
+    def test_crossbow_expert_effects(self, general_feats):
+        """Crossbow Expert grants Dexterity +1."""
+        effects = general_feats["Crossbow Expert"]["effects"]
+        ability_effects = [e for e in effects if e["type"] == "ability_bonus"]
+        assert len(ability_effects) == 1
+        assert ability_effects[0]["ability"] == "Dexterity"
+        assert ability_effects[0]["value"] == 1
+
+    def test_defensive_duelist_effects(self, general_feats):
+        """Defensive Duelist grants Dexterity +1."""
+        effects = general_feats["Defensive Duelist"]["effects"]
+        ability_effects = [e for e in effects if e["type"] == "ability_bonus"]
+        assert len(ability_effects) == 1
+        assert ability_effects[0]["ability"] == "Dexterity"
+        assert ability_effects[0]["value"] == 1
+
+    def test_durable_effects(self, general_feats):
+        """Durable grants Constitution +1."""
+        effects = general_feats["Durable"]["effects"]
+        ability_effects = [e for e in effects if e["type"] == "ability_bonus"]
+        assert len(ability_effects) == 1
+        assert ability_effects[0]["ability"] == "Constitution"
+        assert ability_effects[0]["value"] == 1
+
+    def test_keen_mind_effects(self, general_feats):
+        """Keen Mind grants Intelligence +1."""
+        effects = general_feats["Keen Mind"]["effects"]
+        ability_effects = [e for e in effects if e["type"] == "ability_bonus"]
+        assert len(ability_effects) == 1
+        assert ability_effects[0]["ability"] == "Intelligence"
+        assert ability_effects[0]["value"] == 1
+
+    def test_shield_master_effects(self, general_feats):
+        """Shield Master grants Strength +1."""
+        effects = general_feats["Shield Master"]["effects"]
+        ability_effects = [e for e in effects if e["type"] == "ability_bonus"]
+        assert len(ability_effects) == 1
+        assert ability_effects[0]["ability"] == "Strength"
+        assert ability_effects[0]["value"] == 1
+
+    def test_skulker_effects(self, general_feats):
+        """Skulker grants Dexterity +1."""
+        effects = general_feats["Skulker"]["effects"]
+        ability_effects = [e for e in effects if e["type"] == "ability_bonus"]
+        assert len(ability_effects) == 1
+        assert ability_effects[0]["ability"] == "Dexterity"
+        assert ability_effects[0]["value"] == 1
+
+    def test_chef_effects(self, general_feats):
+        """Chef grants Cook's Utensils proficiency."""
+        effects = general_feats["Chef"]["effects"]
+        tool_effects = [e for e in effects if e["type"] == "grant_tool_proficiency"]
+        assert len(tool_effects) == 1
+        assert "Cook's Utensils" in tool_effects[0]["tools"]
+
+    def test_poisoner_effects(self, general_feats):
+        """Poisoner grants Poisoner's Kit proficiency."""
+        effects = general_feats["Poisoner"]["effects"]
+        tool_effects = [e for e in effects if e["type"] == "grant_tool_proficiency"]
+        assert len(tool_effects) == 1
+        assert "Poisoner's Kit" in tool_effects[0]["tools"]
+
 
 class TestOriginFeatEffects:
     """Origin feats with effects should have correct definitions."""
@@ -388,6 +458,15 @@ FEATS_WITH_EFFECTS = [
     ("Fey Touched", "grant_spell"),
     ("Shadow Touched", "grant_spell"),
     ("Telepathic", "grant_spell"),
+    ("Actor", "ability_bonus"),
+    ("Crossbow Expert", "ability_bonus"),
+    ("Defensive Duelist", "ability_bonus"),
+    ("Durable", "ability_bonus"),
+    ("Keen Mind", "ability_bonus"),
+    ("Shield Master", "ability_bonus"),
+    ("Skulker", "ability_bonus"),
+    ("Chef", "grant_tool_proficiency"),
+    ("Poisoner", "grant_tool_proficiency"),
 ]
 
 

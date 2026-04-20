@@ -29,7 +29,10 @@
       ],
       "category": "General",
       "prerequisite": "4th Level, Charisma 13+",
-      "source": "Player's Handbook 2024"
+      "source": "Player's Handbook 2024",
+      "effects": [
+        {"type": "ability_bonus", "ability": "Charisma", "value": 1}
+      ]
     },
     "Athlete": {
       "description": "You have undergone extensive physical training, gaining the following benefits:",
@@ -103,6 +106,9 @@
             ]
           }
         }
+      ],
+      "effects": [
+        {"type": "grant_tool_proficiency", "tools": ["Cook's Utensils"]}
       ]
     },
     "Crossbow Expert": {
@@ -115,7 +121,10 @@
       ],
       "category": "General",
       "prerequisite": "4th Level, Dexterity 13+",
-      "source": "Player's Handbook 2024"
+      "source": "Player's Handbook 2024",
+      "effects": [
+        {"type": "ability_bonus", "ability": "Dexterity", "value": 1}
+      ]
     },
     "Crusher": {
       "description": "You are practiced in the art of crushing your enemies, granting you the following benefits:",
@@ -149,7 +158,10 @@
       ],
       "category": "General",
       "prerequisite": "4th Level, Dexterity 13+",
-      "source": "Player's Handbook 2024"
+      "source": "Player's Handbook 2024",
+      "effects": [
+        {"type": "ability_bonus", "ability": "Dexterity", "value": 1}
+      ]
     },
     "Dual Wielder": {
       "description": "You master fighting with two weapons, gaining the following benefits:",
@@ -171,7 +183,10 @@
       ],
       "category": "General",
       "prerequisite": "4th Level",
-      "source": "Player's Handbook 2024"
+      "source": "Player's Handbook 2024",
+      "effects": [
+        {"type": "ability_bonus", "ability": "Constitution", "value": 1}
+      ]
     },
     "Elemental Adept": {
       "description": "You have studied a damage type's secrets, gaining the following benefits:",
@@ -403,6 +418,9 @@
             ]
           }
         }
+      ],
+      "effects": [
+        {"type": "ability_bonus", "ability": "Intelligence", "value": 1}
       ]
     },
     "Lightly Armored": {
@@ -658,6 +676,9 @@
             ]
           }
         }
+      ],
+      "effects": [
+        {"type": "grant_tool_proficiency", "tools": ["Poisoner's Kit"]}
       ]
     },
     "Polearm Master": {
@@ -801,7 +822,10 @@
       ],
       "category": "General",
       "prerequisite": "4th Level, Shield Training",
-      "source": "Player's Handbook 2024"
+      "source": "Player's Handbook 2024",
+      "effects": [
+        {"type": "ability_bonus", "ability": "Strength", "value": 1}
+      ]
     },
     "Skill Expert": {
       "description": "You have honed your proficiency with particular skills, granting you the following benefits:",
@@ -895,7 +919,10 @@
       ],
       "category": "General",
       "prerequisite": "4th Level, Dexterity 13+",
-      "source": "Player's Handbook 2024"
+      "source": "Player's Handbook 2024",
+      "effects": [
+        {"type": "ability_bonus", "ability": "Dexterity", "value": 1}
+      ]
     },
     "Slasher": {
       "description": "You've learned where to cut to have the greatest results, granting you the following benefits:",

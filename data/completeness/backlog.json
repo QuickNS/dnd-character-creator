@@ -1,7 +1,7 @@
 {
   "_meta": {
     "description": "Machine-readable backlog tracking D&D 2024 content implementation status",
-    "updated": "2026-04-11",
+    "updated": "2026-04-20",
     "last_feat_update": "2026-04-09",
     "legend": {
       "data_file": "JSON data file exists in data/",
@@ -676,7 +676,7 @@
       }
     },
     "general": {
-      "_note": "44 general feats — all have data files, effects partially implemented",
+      "_note": "44 general feats \u2014 all have data files, 40/44 effects implemented (4 need choice-dependent effect handling)",
       "Ability Score Improvement": {
         "data_file": true,
         "effects_implemented": false,
@@ -684,52 +684,52 @@
       },
       "Actor": {
         "data_file": true,
-        "effects_implemented": false,
+        "effects_implemented": true,
         "tests_written": true
       },
       "Athlete": {
         "data_file": true,
-        "effects_implemented": false,
+        "effects_implemented": true,
         "tests_written": true
       },
       "Charger": {
         "data_file": true,
-        "effects_implemented": false,
+        "effects_implemented": true,
         "tests_written": true
       },
       "Chef": {
         "data_file": true,
-        "effects_implemented": false,
+        "effects_implemented": true,
         "tests_written": true
       },
       "Crossbow Expert": {
         "data_file": true,
-        "effects_implemented": false,
+        "effects_implemented": true,
         "tests_written": true
       },
       "Crusher": {
         "data_file": true,
-        "effects_implemented": false,
+        "effects_implemented": true,
         "tests_written": true
       },
       "Defensive Duelist": {
         "data_file": true,
-        "effects_implemented": false,
+        "effects_implemented": true,
         "tests_written": true
       },
       "Dual Wielder": {
         "data_file": true,
-        "effects_implemented": false,
+        "effects_implemented": true,
         "tests_written": true
       },
       "Durable": {
         "data_file": true,
-        "effects_implemented": false,
+        "effects_implemented": true,
         "tests_written": true
       },
       "Elemental Adept": {
         "data_file": true,
-        "effects_implemented": false,
+        "effects_implemented": true,
         "tests_written": true
       },
       "Fey Touched": {
@@ -739,12 +739,12 @@
       },
       "Grappler": {
         "data_file": true,
-        "effects_implemented": false,
+        "effects_implemented": true,
         "tests_written": true
       },
       "Great Weapon Master": {
         "data_file": true,
-        "effects_implemented": false,
+        "effects_implemented": true,
         "tests_written": true
       },
       "Heavily Armored": {
@@ -754,17 +754,17 @@
       },
       "Heavy Armor Master": {
         "data_file": true,
-        "effects_implemented": false,
+        "effects_implemented": true,
         "tests_written": true
       },
       "Inspiring Leader": {
         "data_file": true,
-        "effects_implemented": false,
+        "effects_implemented": true,
         "tests_written": true
       },
       "Keen Mind": {
         "data_file": true,
-        "effects_implemented": false,
+        "effects_implemented": true,
         "tests_written": true
       },
       "Lightly Armored": {
@@ -774,12 +774,12 @@
       },
       "Lucky": {
         "data_file": true,
-        "effects_implemented": false,
+        "effects_implemented": true,
         "tests_written": true
       },
       "Mage Slayer": {
         "data_file": true,
-        "effects_implemented": false,
+        "effects_implemented": true,
         "tests_written": true
       },
       "Martial Weapon Training": {
@@ -789,7 +789,7 @@
       },
       "Medium Armor Master": {
         "data_file": true,
-        "effects_implemented": false,
+        "effects_implemented": true,
         "tests_written": true
       },
       "Moderately Armored": {
@@ -799,7 +799,7 @@
       },
       "Mounted Combatant": {
         "data_file": true,
-        "effects_implemented": false,
+        "effects_implemented": true,
         "tests_written": true
       },
       "Observant": {
@@ -809,17 +809,17 @@
       },
       "Piercer": {
         "data_file": true,
-        "effects_implemented": false,
+        "effects_implemented": true,
         "tests_written": true
       },
       "Poisoner": {
         "data_file": true,
-        "effects_implemented": false,
+        "effects_implemented": true,
         "tests_written": true
       },
       "Polearm Master": {
         "data_file": true,
-        "effects_implemented": false,
+        "effects_implemented": true,
         "tests_written": true
       },
       "Resilient": {
@@ -829,12 +829,12 @@
       },
       "Ritual Caster": {
         "data_file": true,
-        "effects_implemented": false,
+        "effects_implemented": true,
         "tests_written": true
       },
       "Sentinel": {
         "data_file": true,
-        "effects_implemented": false,
+        "effects_implemented": true,
         "tests_written": true
       },
       "Shadow Touched": {
@@ -844,12 +844,12 @@
       },
       "Sharpshooter": {
         "data_file": true,
-        "effects_implemented": false,
+        "effects_implemented": true,
         "tests_written": true
       },
       "Shield Master": {
         "data_file": true,
-        "effects_implemented": false,
+        "effects_implemented": true,
         "tests_written": true
       },
       "Skill Expert": {
@@ -859,12 +859,12 @@
       },
       "Skulker": {
         "data_file": true,
-        "effects_implemented": false,
+        "effects_implemented": true,
         "tests_written": true
       },
       "Slasher": {
         "data_file": true,
-        "effects_implemented": false,
+        "effects_implemented": true,
         "tests_written": true
       },
       "Speedy": {
@@ -874,7 +874,7 @@
       },
       "Spell Sniper": {
         "data_file": true,
-        "effects_implemented": false,
+        "effects_implemented": true,
         "tests_written": true
       },
       "Telekinetic": {
@@ -889,12 +889,12 @@
       },
       "War Caster": {
         "data_file": true,
-        "effects_implemented": false,
+        "effects_implemented": true,
         "tests_written": true
       },
       "Weapon Master": {
         "data_file": true,
-        "effects_implemented": false,
+        "effects_implemented": true,
         "tests_written": true
       }
     }
