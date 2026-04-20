@@ -17,8 +17,45 @@
               "+1 to two abilities"
             ]
           }
+        },
+        {
+          "type": "select_single",
+          "name": "ability_plus_2",
+          "source": {
+            "type": "fixed_list",
+            "options": ["Strength", "Dexterity", "Constitution", "Intelligence", "Wisdom", "Charisma"]
+          },
+          "optional": true
+        },
+        {
+          "type": "select_multiple",
+          "count": 2,
+          "name": "abilities_plus_1",
+          "source": {
+            "type": "fixed_list",
+            "options": ["Strength", "Dexterity", "Constitution", "Intelligence", "Wisdom", "Charisma"]
+          },
+          "optional": true
         }
-      ]
+      ],
+      "choice_effects": {
+        "ability_plus_2": {
+          "Strength": [{"type": "ability_bonus", "ability": "Strength", "value": 2}],
+          "Dexterity": [{"type": "ability_bonus", "ability": "Dexterity", "value": 2}],
+          "Constitution": [{"type": "ability_bonus", "ability": "Constitution", "value": 2}],
+          "Intelligence": [{"type": "ability_bonus", "ability": "Intelligence", "value": 2}],
+          "Wisdom": [{"type": "ability_bonus", "ability": "Wisdom", "value": 2}],
+          "Charisma": [{"type": "ability_bonus", "ability": "Charisma", "value": 2}]
+        },
+        "abilities_plus_1": {
+          "Strength": [{"type": "ability_bonus", "ability": "Strength", "value": 1}],
+          "Dexterity": [{"type": "ability_bonus", "ability": "Dexterity", "value": 1}],
+          "Constitution": [{"type": "ability_bonus", "ability": "Constitution", "value": 1}],
+          "Intelligence": [{"type": "ability_bonus", "ability": "Intelligence", "value": 1}],
+          "Wisdom": [{"type": "ability_bonus", "ability": "Wisdom", "value": 1}],
+          "Charisma": [{"type": "ability_bonus", "ability": "Charisma", "value": 1}]
+        }
+      }
     },
     "Actor": {
       "description": "Skilled at mimicry and dramatics, you gain the following benefits:",
@@ -628,7 +665,18 @@
             ]
           }
         }
-      ]
+      ],
+      "choice_effects": {
+        "ability": {
+          "Intelligence": [{"type": "ability_bonus", "ability": "Intelligence", "value": 1}],
+          "Wisdom": [{"type": "ability_bonus", "ability": "Wisdom", "value": 1}]
+        },
+        "keen_observer_skill": {
+          "Insight": [{"type": "grant_skill_proficiency_or_expertise", "skills": ["Insight"]}],
+          "Investigation": [{"type": "grant_skill_proficiency_or_expertise", "skills": ["Investigation"]}],
+          "Perception": [{"type": "grant_skill_proficiency_or_expertise", "skills": ["Perception"]}]
+        }
+      }
     },
     "Piercer": {
       "description": "You have achieved a penetrating precision in combat, granting you the following benefits:",
@@ -716,7 +764,35 @@
             ]
           }
         }
-      ]
+      ],
+      "choice_effects": {
+        "ability": {
+          "Strength": [
+            {"type": "ability_bonus", "ability": "Strength", "value": 1},
+            {"type": "grant_save_proficiency", "abilities": ["Strength"]}
+          ],
+          "Dexterity": [
+            {"type": "ability_bonus", "ability": "Dexterity", "value": 1},
+            {"type": "grant_save_proficiency", "abilities": ["Dexterity"]}
+          ],
+          "Constitution": [
+            {"type": "ability_bonus", "ability": "Constitution", "value": 1},
+            {"type": "grant_save_proficiency", "abilities": ["Constitution"]}
+          ],
+          "Intelligence": [
+            {"type": "ability_bonus", "ability": "Intelligence", "value": 1},
+            {"type": "grant_save_proficiency", "abilities": ["Intelligence"]}
+          ],
+          "Wisdom": [
+            {"type": "ability_bonus", "ability": "Wisdom", "value": 1},
+            {"type": "grant_save_proficiency", "abilities": ["Wisdom"]}
+          ],
+          "Charisma": [
+            {"type": "ability_bonus", "ability": "Charisma", "value": 1},
+            {"type": "grant_save_proficiency", "abilities": ["Charisma"]}
+          ]
+        }
+      }
     },
     "Ritual Caster": {
       "description": "You have learned a number of spells that you can cast as Rituals. You gain the following benefits:",
@@ -907,7 +983,57 @@
             ]
           }
         }
-      ]
+      ],
+      "choice_effects": {
+        "ability": {
+          "Strength": [{"type": "ability_bonus", "ability": "Strength", "value": 1}],
+          "Dexterity": [{"type": "ability_bonus", "ability": "Dexterity", "value": 1}],
+          "Constitution": [{"type": "ability_bonus", "ability": "Constitution", "value": 1}],
+          "Intelligence": [{"type": "ability_bonus", "ability": "Intelligence", "value": 1}],
+          "Wisdom": [{"type": "ability_bonus", "ability": "Wisdom", "value": 1}],
+          "Charisma": [{"type": "ability_bonus", "ability": "Charisma", "value": 1}]
+        },
+        "skill_proficiency": {
+          "Acrobatics": [{"type": "grant_skill_proficiency", "skills": ["Acrobatics"]}],
+          "Animal Handling": [{"type": "grant_skill_proficiency", "skills": ["Animal Handling"]}],
+          "Arcana": [{"type": "grant_skill_proficiency", "skills": ["Arcana"]}],
+          "Athletics": [{"type": "grant_skill_proficiency", "skills": ["Athletics"]}],
+          "Deception": [{"type": "grant_skill_proficiency", "skills": ["Deception"]}],
+          "History": [{"type": "grant_skill_proficiency", "skills": ["History"]}],
+          "Insight": [{"type": "grant_skill_proficiency", "skills": ["Insight"]}],
+          "Intimidation": [{"type": "grant_skill_proficiency", "skills": ["Intimidation"]}],
+          "Investigation": [{"type": "grant_skill_proficiency", "skills": ["Investigation"]}],
+          "Medicine": [{"type": "grant_skill_proficiency", "skills": ["Medicine"]}],
+          "Nature": [{"type": "grant_skill_proficiency", "skills": ["Nature"]}],
+          "Perception": [{"type": "grant_skill_proficiency", "skills": ["Perception"]}],
+          "Performance": [{"type": "grant_skill_proficiency", "skills": ["Performance"]}],
+          "Persuasion": [{"type": "grant_skill_proficiency", "skills": ["Persuasion"]}],
+          "Religion": [{"type": "grant_skill_proficiency", "skills": ["Religion"]}],
+          "Sleight of Hand": [{"type": "grant_skill_proficiency", "skills": ["Sleight of Hand"]}],
+          "Stealth": [{"type": "grant_skill_proficiency", "skills": ["Stealth"]}],
+          "Survival": [{"type": "grant_skill_proficiency", "skills": ["Survival"]}]
+        },
+        "skill_expertise": {
+          "Acrobatics": [{"type": "grant_skill_expertise", "skills": ["Acrobatics"]}],
+          "Animal Handling": [{"type": "grant_skill_expertise", "skills": ["Animal Handling"]}],
+          "Arcana": [{"type": "grant_skill_expertise", "skills": ["Arcana"]}],
+          "Athletics": [{"type": "grant_skill_expertise", "skills": ["Athletics"]}],
+          "Deception": [{"type": "grant_skill_expertise", "skills": ["Deception"]}],
+          "History": [{"type": "grant_skill_expertise", "skills": ["History"]}],
+          "Insight": [{"type": "grant_skill_expertise", "skills": ["Insight"]}],
+          "Intimidation": [{"type": "grant_skill_expertise", "skills": ["Intimidation"]}],
+          "Investigation": [{"type": "grant_skill_expertise", "skills": ["Investigation"]}],
+          "Medicine": [{"type": "grant_skill_expertise", "skills": ["Medicine"]}],
+          "Nature": [{"type": "grant_skill_expertise", "skills": ["Nature"]}],
+          "Perception": [{"type": "grant_skill_expertise", "skills": ["Perception"]}],
+          "Performance": [{"type": "grant_skill_expertise", "skills": ["Performance"]}],
+          "Persuasion": [{"type": "grant_skill_expertise", "skills": ["Persuasion"]}],
+          "Religion": [{"type": "grant_skill_expertise", "skills": ["Religion"]}],
+          "Sleight of Hand": [{"type": "grant_skill_expertise", "skills": ["Sleight of Hand"]}],
+          "Stealth": [{"type": "grant_skill_expertise", "skills": ["Stealth"]}],
+          "Survival": [{"type": "grant_skill_expertise", "skills": ["Survival"]}]
+        }
+      }
     },
     "Skulker": {
       "description": "You are expert at slinking through shadows, gaining the following benefits:",

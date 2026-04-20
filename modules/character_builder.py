@@ -896,6 +896,7 @@ class CharacterBuilder:
                 # Also track in spell_metadata for compatibility
                 self.character_data["spell_metadata"][spell_name] = {
                     "source": display_source,
+                    "source_type": source_type,
                     "always_prepared": True,
                     "once_per_day": False,
                     "counts_against_limit": counts_against_limit,
@@ -1037,6 +1038,24 @@ class CharacterBuilder:
                     continue
                 if skill not in self.character_data["skill_expertise"]:
                     self.character_data["skill_expertise"].append(skill)
+
+        elif effect_type == "grant_skill_proficiency_or_expertise":
+            # D&D 2024 pattern: "If you lack proficiency, gain proficiency;
+            # if you already have proficiency, gain Expertise."
+            skills = effect.get("skills", [])
+            if "skill_expertise" not in self.character_data:
+                self.character_data["skill_expertise"] = []
+            for skill in skills:
+                if skill in self.character_data["proficiencies"]["skills"]:
+                    # Already proficient → grant expertise
+                    if skill not in self.character_data["skill_expertise"]:
+                        self.character_data["skill_expertise"].append(skill)
+                else:
+                    # Not proficient → grant proficiency
+                    self.character_data["proficiencies"]["skills"].append(skill)
+                    self.character_data["proficiency_sources"]["skills"][skill] = (
+                        source_name
+                    )
 
         elif effect_type == "grant_save_advantage":
             abilities = effect.get("abilities", [])
@@ -1200,11 +1219,17 @@ class CharacterBuilder:
             return False
 
         # If class is changing or level is changing, clear existing class features
+        class_is_changing = self.character_data.get("class") != class_name
         if (
-            self.character_data.get("class") != class_name
+            class_is_changing
             or self.character_data.get("level") != level
         ):
             self._clear_class_features()
+            # If the class itself is changing, subclass is no longer valid
+            if class_is_changing and self.character_data.get("subclass"):
+                self._clear_subclass_features()
+                self.character_data["subclass"] = None
+                self.character_data["subclass_data"] = None
 
         self.character_data["class"] = class_name
         self.character_data["class_data"] = class_data
@@ -1223,7 +1248,7 @@ class CharacterBuilder:
         # Apply class features
         self._apply_class_features(class_data, level)
 
-        # Re-apply subclass features if subclass exists
+        # Re-apply subclass features if subclass exists (same class, level change)
         if self.character_data.get("subclass"):
             subclass_data = self.character_data.get("subclass_data")
             if subclass_data:
@@ -1241,6 +1266,8 @@ class CharacterBuilder:
 
     def _clear_class_features(self):
         """Clear all class-related features and effects before re-applying."""
+        old_class_name = self.character_data.get("class", "")
+
         # Clear class features
         self.character_data["features"]["class"] = []
 
@@ -1248,6 +1275,42 @@ class CharacterBuilder:
         self.character_data["proficiencies"]["saving_throws"] = []
         self.character_data["proficiencies"]["weapons"] = []
         self.character_data["proficiencies"]["armor"] = []
+
+        # Remove skill proficiencies sourced from the old class
+        skill_sources = self.character_data["proficiency_sources"]["skills"]
+        old_class_skills = [
+            s for s, src in skill_sources.items() if src == old_class_name
+        ]
+        for skill in old_class_skills:
+            self.character_data["proficiencies"]["skills"] = [
+                s for s in self.character_data["proficiencies"]["skills"] if s != skill
+            ]
+            skill_sources.pop(skill, None)
+
+        # Remove tool proficiencies sourced from the old class
+        tool_sources = self.character_data["proficiency_sources"]["tools"]
+        old_class_tools = [
+            t for t, src in tool_sources.items() if src == old_class_name
+        ]
+        for tool in old_class_tools:
+            self.character_data["proficiencies"]["tools"] = [
+                t for t in self.character_data["proficiencies"]["tools"] if t != tool
+            ]
+            tool_sources.pop(tool, None)
+
+        # Clear class-related entries from choices_made
+        class_choice_keys = [
+            "skill_choices", "skills", "tool_choices", "tools", "subclass",
+        ]
+        for key in class_choice_keys:
+            self.character_data["choices_made"].pop(key, None)
+        # Also remove dynamic class feature choices (e.g. "Divine Order", "Fighting Style")
+        if self.character_data.get("class_data"):
+            features_by_level = self.character_data["class_data"].get("features_by_level", {})
+            for level_features in features_by_level.values():
+                if isinstance(level_features, dict):
+                    for feature_name in level_features:
+                        self.character_data["choices_made"].pop(feature_name, None)
 
         # Clear applied effects from class source
         if hasattr(self, "applied_effects"):
@@ -1268,18 +1331,44 @@ class CharacterBuilder:
                 e for e in self.applied_effects if e.get("source_type") != "subclass"
             ]
 
-        # Clear subclass spells from prepared list
+        # Clear subclass spells from prepared cantrips and spells
         spell_metadata = self.character_data.get("spell_metadata", {})
-        prepared_spells = self.character_data["spells"]["prepared"]
+        prepared = self.character_data["spells"]["prepared"]
 
-        # Remove spells that were from subclass (using source_type)
-        for spell_name in list(prepared_spells):
-            if (
-                spell_name in spell_metadata
-                and spell_metadata[spell_name].get("source_type") == "subclass"
-            ):
-                prepared_spells.remove(spell_name)
-                del spell_metadata[spell_name]
+        for collection in (prepared.get("cantrips", {}), prepared.get("spells", {})):
+            for spell_name in list(collection):
+                if (
+                    spell_name in spell_metadata
+                    and spell_metadata[spell_name].get("source_type") == "subclass"
+                ):
+                    del collection[spell_name]
+                    del spell_metadata[spell_name]
+
+        # Clear subclass spells from always_prepared
+        subclass_name = self.character_data.get("subclass", "")
+        always_prepared = self.character_data["spells"]["always_prepared"]
+        for spell_name in list(always_prepared):
+            meta = spell_metadata.get(spell_name, {})
+            ap_info = always_prepared[spell_name]
+            source_type = meta.get("source_type", "")
+            # Also check the always_prepared entry itself for source info
+            if isinstance(ap_info, dict):
+                source_type = source_type or ap_info.get("source_type", "")
+            # Check source_type directly, or fall back to matching source name
+            source_name = meta.get("source", "")
+            if not source_name and isinstance(ap_info, dict):
+                source_name = ap_info.get("source", "")
+            if source_type == "subclass" or (subclass_name and source_name == subclass_name):
+                del always_prepared[spell_name]
+                spell_metadata.pop(spell_name, None)
+
+        # Clear subclass-related entries from choices_made
+        if self.character_data.get("subclass_data"):
+            features_by_level = self.character_data["subclass_data"].get("features_by_level", {})
+            for level_features in features_by_level.values():
+                if isinstance(level_features, dict):
+                    for feature_name in level_features:
+                        self.character_data["choices_made"].pop(feature_name, None)
 
     def set_subclass(self, subclass_name: str) -> bool:
         """
@@ -2195,10 +2284,22 @@ class CharacterBuilder:
         # Languages
         elif choice_key_lower == "languages":
             if isinstance(choice_value, list):
-                # Add languages that aren't already known
+                # Clear previously user-selected languages before applying new ones
+                lang_sources = self.character_data["proficiency_sources"]["languages"]
+                old_user_langs = [
+                    l for l, src in lang_sources.items() if src == "user_choice"
+                ]
+                for lang in old_user_langs:
+                    self.character_data["proficiencies"]["languages"] = [
+                        l for l in self.character_data["proficiencies"]["languages"] if l != lang
+                    ]
+                    lang_sources.pop(lang, None)
+
+                # Add new language selections
                 for lang in choice_value:
                     if lang not in self.character_data["proficiencies"]["languages"]:
                         self.character_data["proficiencies"]["languages"].append(lang)
+                        self.character_data["proficiency_sources"]["languages"][lang] = "user_choice"
             return True
 
         # Skills
@@ -2625,6 +2726,76 @@ class CharacterBuilder:
                         self._apply_effect(effect, choice_value, "class_choice")
                     return
 
+    def _clear_species_choice_effects_for_trait(self, trait_name: str) -> None:
+        """Remove effects previously applied for a species/lineage trait choice.
+
+        When a user re-selects a different option for a species trait (e.g.,
+        choosing Perception instead of Insight for Keen Senses), this method
+        undoes the mechanical impact of the old choice before the new one is
+        applied.
+        """
+        if not hasattr(self, "applied_effects"):
+            return
+
+        species_name = self.character_data.get("species", "")
+        trait_prefix = f"{trait_name}:"
+        old_effects = [
+            e for e in self.applied_effects
+            if e.get("source_type") == "species_choice"
+            and isinstance(e.get("source"), str)
+            and e["source"].startswith(trait_prefix)
+        ]
+
+        for effect in old_effects:
+            etype = effect.get("type", "")
+            effect_data = effect.get("effect", {})
+
+            if etype == "grant_skill_proficiency":
+                for skill in effect_data.get("skills", []):
+                    src = self.character_data["proficiency_sources"]["skills"].get(skill)
+                    if src == species_name:
+                        self.character_data["proficiencies"]["skills"] = [
+                            s for s in self.character_data["proficiencies"]["skills"] if s != skill
+                        ]
+                        self.character_data["proficiency_sources"]["skills"].pop(skill, None)
+
+            elif etype == "grant_tool_proficiency":
+                for tool in effect_data.get("tools", []):
+                    src = self.character_data["proficiency_sources"]["tools"].get(tool)
+                    if src == species_name:
+                        self.character_data["proficiencies"]["tools"] = [
+                            t for t in self.character_data["proficiencies"]["tools"] if t != tool
+                        ]
+                        self.character_data["proficiency_sources"]["tools"].pop(tool, None)
+
+            elif etype == "grant_weapon_proficiency":
+                for prof in effect_data.get("proficiencies", []):
+                    src = self.character_data["proficiency_sources"]["weapons"].get(prof)
+                    if src == species_name:
+                        self.character_data["proficiencies"]["weapons"] = [
+                            w for w in self.character_data["proficiencies"]["weapons"] if w != prof
+                        ]
+                        self.character_data["proficiency_sources"]["weapons"].pop(prof, None)
+
+            elif etype == "grant_armor_proficiency":
+                for prof in effect_data.get("proficiencies", []):
+                    src = self.character_data["proficiency_sources"]["armor"].get(prof)
+                    if src == species_name:
+                        self.character_data["proficiencies"]["armor"] = [
+                            a for a in self.character_data["proficiencies"]["armor"] if a != prof
+                        ]
+                        self.character_data["proficiency_sources"]["armor"].pop(prof, None)
+
+        # Remove the old effects from applied_effects
+        self.applied_effects = [
+            e for e in self.applied_effects
+            if not (
+                e.get("source_type") == "species_choice"
+                and isinstance(e.get("source"), str)
+                and e["source"].startswith(trait_prefix)
+            )
+        ]
+
     def _apply_species_choice_effects(
         self, choice_key: str, choice_value: Any, source_data: Dict[str, Any]
     ):
@@ -2641,6 +2812,9 @@ class CharacterBuilder:
                 f"WARNING: _apply_species_choice_effects received non-dict source_data: {type(source_data)}"
             )
             return
+
+        # Clear old effects from a previous choice for this same trait
+        self._clear_species_choice_effects_for_trait(choice_key)
 
         # Look for traits with choice_effects
         traits = source_data.get("traits", {})
@@ -3159,15 +3333,32 @@ class CharacterBuilder:
 
     def calculate_processed_ability_scores(self) -> Dict[str, Dict[str, Any]]:
         """Calculate ability scores with modifiers and saving throws."""
-        raw_scores = self.ability_scores.final_scores
+        raw_scores = dict(self.ability_scores.final_scores)
         level = self.character_data.get("level", 1)
         proficiency_bonus = self.calculate_proficiency_bonus(level)
 
-        # Get saving throw proficiencies
+        # Apply feat/feature ability bonuses (e.g., Actor CHA+1, Resilient, ASI)
+        for bonus in self.character_data.get("ability_bonuses", []):
+            ability = bonus.get("ability")
+            try:
+                value = int(bonus.get("value", 0))
+                minimum = int(bonus.get("minimum", 0))
+            except (TypeError, ValueError):
+                continue
+            if ability in raw_scores and value != 0 or minimum > 0:
+                raw_scores[ability] = max(raw_scores[ability] + value, minimum)
+                # Cap at 20
+                raw_scores[ability] = min(raw_scores[ability], 20)
+
+        # Get saving throw proficiencies from class + effects
         class_data = self.character_data.get("class_data")
         if class_data is None:
             class_data = {}
-        saving_throw_profs = class_data.get("saving_throw_proficiencies", [])
+        saving_throw_profs = list(class_data.get("saving_throw_proficiencies", []))
+        # Include save proficiencies granted by effects (e.g., Resilient feat)
+        for ability in self.character_data.get("proficiencies", {}).get("saving_throws", []):
+            if ability not in saving_throw_profs:
+                saving_throw_profs.append(ability)
 
         processed_scores = {}
         for ability_name, score in raw_scores.items():
@@ -5727,6 +5918,61 @@ class CharacterBuilder:
         """Clear the pending species feat flag after choices have been applied."""
         self.character_data.pop("pending_species_feat", None)
 
+    def _clear_feat_choices(self, feat_name: str) -> None:
+        """Clear previously applied feat choices so they can be re-applied cleanly.
+
+        Removes skills, tools, cantrips, and spells that were granted by previous
+        selections for the given feat, using the namespaced choices_made keys
+        (``feat_{feat_name}_{choice_name}``) to identify what was previously chosen.
+        """
+        prefix = f"feat_{feat_name}_"
+        choices_made = self.character_data["choices_made"]
+
+        # Gather previous selections before removing them
+        for key in [k for k in choices_made if k.startswith(prefix)]:
+            choice_name = key[len(prefix):]
+            old_values = choices_made[key]
+            if isinstance(old_values, str):
+                old_values = [old_values]
+            if not isinstance(old_values, list):
+                continue
+
+            if choice_name == "skills_or_tools":
+                skill_sources = self.character_data["proficiency_sources"]["skills"]
+                tool_sources = self.character_data["proficiency_sources"]["tools"]
+                for item in old_values:
+                    if item in self._ALL_SKILLS:
+                        if skill_sources.get(item) == feat_name:
+                            self.character_data["proficiencies"]["skills"] = [
+                                s for s in self.character_data["proficiencies"]["skills"] if s != item
+                            ]
+                            skill_sources.pop(item, None)
+                    else:
+                        self.character_data["proficiencies"]["tools"] = [
+                            t for t in self.character_data["proficiencies"]["tools"] if t != item
+                        ]
+                        tool_sources.pop(item, None)
+
+            elif choice_name == "cantrips":
+                for cantrip in old_values:
+                    self.character_data["spells"]["prepared"]["cantrips"].pop(cantrip, None)
+                    self.character_data["spell_metadata"].pop(cantrip, None)
+
+            elif "spell" in choice_name:
+                for spell in old_values:
+                    self.character_data["spells"]["prepared"]["spells"].pop(spell, None)
+                    self.character_data["spell_metadata"].pop(spell, None)
+
+            # Remove the old choices_made entry
+            del choices_made[key]
+
+        # Clear any applied effects from this feat's choices
+        if hasattr(self, "applied_effects"):
+            self.applied_effects = [
+                e for e in self.applied_effects
+                if not (e.get("source_type") == "feat" and e.get("source") == feat_name)
+            ]
+
     def apply_feat_choices(self, choices: Dict[str, Any], feat_name: Optional[str] = None) -> bool:
         """
         Apply the selections made on the feat-choices page.
@@ -5757,6 +6003,9 @@ class CharacterBuilder:
         if feat_name is None:
             background_data = self.character_data.get("background_data") or {}
             feat_name = background_data.get("feat", "")
+
+        # Clear previous selections for this feat before applying new ones
+        self._clear_feat_choices(feat_name)
 
         for choice_name, choice_value in choices.items():
             # Normalise to a list
@@ -5799,6 +6048,21 @@ class CharacterBuilder:
                         "once_per_day": True,
                         "counts_against_limit": False,
                     }
+
+        # Apply choice_effects from feat data (data-driven choice → effect mapping)
+        feat_data = self._load_feat_data(feat_name) if feat_name else None
+        if feat_data and "choice_effects" in feat_data:
+            feat_choice_effects = feat_data["choice_effects"]
+            for choice_name, choice_value in choices.items():
+                if choice_name not in feat_choice_effects:
+                    continue
+                choice_effect_map = feat_choice_effects[choice_name]
+                # Normalise to a list
+                values = [choice_value] if isinstance(choice_value, str) else (choice_value if isinstance(choice_value, list) else [])
+                for val in values:
+                    if val in choice_effect_map:
+                        for effect in choice_effect_map[val]:
+                            self._apply_effect(effect, feat_name, "feat")
 
         return True
 

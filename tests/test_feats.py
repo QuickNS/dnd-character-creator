@@ -935,3 +935,252 @@ class TestMusicianChoices:
         options = origin_feats["Musician"]["choices"][0]["source"]["options"]
         assert len(options) == 10
 
+
+# ==================== 5. Choice-Dependent Effects (General Feats) ====================
+
+
+class TestAbilityScoreImprovementEffects:
+    """ASI feat: +2 to one ability or +1 to two abilities via choice_effects."""
+
+    def _build_with_asi(self, asi_choices):
+        builder = CharacterBuilder()
+        builder.apply_choices({
+            "character_name": "ASI Test",
+            "level": 4,
+            "species": "Human",
+            "class": "Fighter",
+            "background": "Soldier",
+            "ability_scores": {
+                "Strength": 15, "Dexterity": 13, "Constitution": 14,
+                "Intelligence": 10, "Wisdom": 12, "Charisma": 8
+            },
+            "background_bonuses": {"Strength": 2, "Constitution": 1},
+        })
+        builder.apply_feat_choices(asi_choices, feat_name="Ability Score Improvement")
+        return builder.to_character()
+
+    def test_asi_has_choice_effects(self, general_feats):
+        """ASI must have choice_effects for both ability_plus_2 and abilities_plus_1."""
+        ce = general_feats["Ability Score Improvement"]["choice_effects"]
+        assert "ability_plus_2" in ce
+        assert "abilities_plus_1" in ce
+
+    def test_asi_plus_2_one_ability(self):
+        """Choosing +2 to Strength should increase Strength by 2."""
+        char_with = self._build_with_asi({"ability_plus_2": "Strength"})
+        char_without = self._build_with_asi({})
+        str_with = char_with["abilities"]["strength"]["score"]
+        str_without = char_without["abilities"]["strength"]["score"]
+        assert str_with == str_without + 2
+
+    def test_asi_plus_1_two_abilities(self):
+        """Choosing +1 to Dexterity and Wisdom should increase each by 1."""
+        char_with = self._build_with_asi({"abilities_plus_1": ["Dexterity", "Wisdom"]})
+        char_without = self._build_with_asi({})
+        dex_diff = char_with["abilities"]["dexterity"]["score"] - char_without["abilities"]["dexterity"]["score"]
+        wis_diff = char_with["abilities"]["wisdom"]["score"] - char_without["abilities"]["wisdom"]["score"]
+        assert dex_diff == 1
+        assert wis_diff == 1
+
+    def test_asi_does_not_exceed_20(self):
+        """ASI should cap ability scores at 20."""
+        builder = CharacterBuilder()
+        builder.apply_choices({
+            "character_name": "Cap Test",
+            "level": 4,
+            "species": "Human",
+            "class": "Fighter",
+            "background": "Soldier",
+            "ability_scores": {
+                "Strength": 15, "Dexterity": 13, "Constitution": 14,
+                "Intelligence": 10, "Wisdom": 12, "Charisma": 8
+            },
+            "background_bonuses": {"Strength": 2, "Constitution": 1},
+        })
+        # Strength is 15 + 2 (background) = 17, +2 ASI = 19 (under cap)
+        builder.apply_feat_choices({"ability_plus_2": "Strength"}, feat_name="Ability Score Improvement")
+        char = builder.to_character()
+        assert char["abilities"]["strength"]["score"] <= 20
+
+
+class TestResilientFeatEffects:
+    """Resilient feat: +1 to chosen ability + saving throw proficiency."""
+
+    def _build_with_resilient(self, ability):
+        builder = CharacterBuilder()
+        builder.apply_choices({
+            "character_name": "Resilient Test",
+            "level": 4,
+            "species": "Human",
+            "class": "Rogue",
+            "background": "Criminal",
+            "ability_scores": {
+                "Strength": 10, "Dexterity": 16, "Constitution": 14,
+                "Intelligence": 12, "Wisdom": 13, "Charisma": 8
+            },
+            "background_bonuses": {"Dexterity": 2, "Constitution": 1},
+        })
+        builder.apply_feat_choices({"ability": ability}, feat_name="Resilient")
+        return builder.to_character()
+
+    def test_resilient_has_choice_effects(self, general_feats):
+        """Resilient must have choice_effects for all 6 abilities."""
+        ce = general_feats["Resilient"]["choice_effects"]["ability"]
+        for ability in ["Strength", "Dexterity", "Constitution", "Intelligence", "Wisdom", "Charisma"]:
+            assert ability in ce
+
+    def test_resilient_constitution_score_increase(self):
+        """Resilient (Constitution) should increase CON by 1."""
+        char = self._build_with_resilient("Constitution")
+        # Base 14 + background 1 + Resilient 1 = 16
+        assert char["abilities"]["constitution"]["score"] == 16
+
+    def test_resilient_constitution_save_proficiency(self):
+        """Resilient (Constitution) should grant CON save proficiency."""
+        char = self._build_with_resilient("Constitution")
+        assert char["abilities"]["constitution"]["saving_throw_proficient"] is True
+
+    def test_resilient_wisdom_save_proficiency(self):
+        """Resilient (Wisdom) should grant WIS save proficiency."""
+        char = self._build_with_resilient("Wisdom")
+        assert char["abilities"]["wisdom"]["saving_throw_proficient"] is True
+
+    def test_resilient_save_bonus_includes_proficiency(self):
+        """Resilient save bonus should include proficiency bonus."""
+        char = self._build_with_resilient("Constitution")
+        prof_bonus = char["proficiency_bonus"]
+        con_mod = char["abilities"]["constitution"]["modifier"]
+        expected_save = con_mod + prof_bonus
+        assert char["abilities"]["constitution"]["saving_throw"] == expected_save
+
+    def test_resilient_does_not_affect_other_saves(self):
+        """Resilient (Constitution) should not affect unrelated saves."""
+        char = self._build_with_resilient("Constitution")
+        # Strength is not proficient from Rogue (DEX/INT) or Resilient (CON)
+        assert char["abilities"]["strength"]["saving_throw_proficient"] is False
+
+
+class TestSkillExpertFeatEffects:
+    """Skill Expert: +1 ability, skill proficiency, skill expertise via choice_effects."""
+
+    def _build_with_skill_expert(self, ability, skill_prof, skill_exp):
+        builder = CharacterBuilder()
+        builder.apply_choices({
+            "character_name": "Skill Expert Test",
+            "level": 4,
+            "species": "Human",
+            "class": "Fighter",
+            "background": "Soldier",
+            "skill_choices": ["Athletics", "Perception"],
+            "ability_scores": {
+                "Strength": 15, "Dexterity": 13, "Constitution": 14,
+                "Intelligence": 10, "Wisdom": 12, "Charisma": 8
+            },
+            "background_bonuses": {"Strength": 2, "Constitution": 1},
+        })
+        builder.apply_feat_choices(
+            {"ability": ability, "skill_proficiency": skill_prof, "skill_expertise": skill_exp},
+            feat_name="Skill Expert",
+        )
+        return builder.to_character()
+
+    def test_skill_expert_has_choice_effects(self, general_feats):
+        """Skill Expert must have choice_effects for ability, skill_proficiency, skill_expertise."""
+        ce = general_feats["Skill Expert"]["choice_effects"]
+        assert "ability" in ce
+        assert "skill_proficiency" in ce
+        assert "skill_expertise" in ce
+
+    def test_skill_expert_ability_increase(self):
+        """Skill Expert should increase chosen ability by 1."""
+        char = self._build_with_skill_expert("Wisdom", "Stealth", "Athletics")
+        # Base 12 + Skill Expert 1 = 13
+        assert char["abilities"]["wisdom"]["score"] == 13
+
+    def test_skill_expert_grants_skill_proficiency(self):
+        """Skill Expert should grant proficiency in chosen skill."""
+        char = self._build_with_skill_expert("Strength", "Stealth", "Athletics")
+        assert "Stealth" in char["proficiencies"]["skills"]
+
+    def test_skill_expert_grants_expertise(self):
+        """Skill Expert should grant expertise in chosen skill."""
+        char = self._build_with_skill_expert("Strength", "Stealth", "Athletics")
+        assert "Athletics" in char.get("skill_expertise", [])
+
+    def test_skill_expert_expertise_doubles_proficiency(self):
+        """Expertise from Skill Expert should double proficiency bonus in skill calculations."""
+        char = self._build_with_skill_expert("Strength", "Stealth", "Athletics")
+        athletics = char["skills"]["athletics"]
+        assert athletics["expertise"] is True
+        prof_bonus = char["proficiency_bonus"]
+        str_mod = char["abilities"]["strength"]["modifier"]
+        assert athletics["bonus"] == str_mod + prof_bonus * 2
+
+
+class TestObservantFeatEffects:
+    """Observant feat: +1 INT/WIS, proficiency-or-expertise in chosen skill."""
+
+    def _build_with_observant(self, ability, skill, extra_skill_prof=None):
+        choices = {
+            "character_name": "Observant Test",
+            "level": 4,
+            "species": "Human",
+            "class": "Rogue",
+            "background": "Criminal",
+            "skill_choices": ["Stealth", "Investigation"],
+            "ability_scores": {
+                "Strength": 8, "Dexterity": 16, "Constitution": 14,
+                "Intelligence": 13, "Wisdom": 14, "Charisma": 10
+            },
+            "background_bonuses": {"Dexterity": 2, "Intelligence": 1},
+        }
+        if extra_skill_prof:
+            choices["skill_choices"].append(extra_skill_prof)
+        builder = CharacterBuilder()
+        builder.apply_choices(choices)
+        builder.apply_feat_choices(
+            {"ability": ability, "keen_observer_skill": skill},
+            feat_name="Observant",
+        )
+        return builder.to_character()
+
+    def test_observant_has_choice_effects(self, general_feats):
+        """Observant must have choice_effects for ability and keen_observer_skill."""
+        ce = general_feats["Observant"]["choice_effects"]
+        assert "ability" in ce
+        assert "keen_observer_skill" in ce
+
+    def test_observant_intelligence_increase(self):
+        """Observant (Intelligence) should increase INT by 1."""
+        char = self._build_with_observant("Intelligence", "Perception")
+        # Base 13 + background 1 + Observant 1 = 15
+        assert char["abilities"]["intelligence"]["score"] == 15
+
+    def test_observant_wisdom_increase(self):
+        """Observant (Wisdom) should increase WIS by 1."""
+        char = self._build_with_observant("Wisdom", "Perception")
+        # Base 14 + Observant 1 = 15
+        assert char["abilities"]["wisdom"]["score"] == 15
+
+    def test_observant_grants_proficiency_when_lacking(self):
+        """Observant should grant proficiency if character lacks it in the chosen skill."""
+        # Perception is NOT in Rogue class skills selected
+        char = self._build_with_observant("Wisdom", "Perception")
+        assert "Perception" in char["proficiencies"]["skills"]
+        # Should NOT get expertise since they didn't already have proficiency
+        assert "Perception" not in char.get("skill_expertise", [])
+
+    def test_observant_grants_expertise_when_already_proficient(self):
+        """Observant should grant expertise if character already has proficiency."""
+        # Investigation IS selected as a Rogue skill
+        char = self._build_with_observant("Intelligence", "Investigation")
+        assert "Investigation" in char["proficiencies"]["skills"]
+        assert "Investigation" in char.get("skill_expertise", [])
+
+    def test_observant_keen_observer_options(self, general_feats):
+        """Keen Observer skill choice must offer Insight, Investigation, Perception."""
+        choices = general_feats["Observant"]["choices"]
+        skill_choice = next(c for c in choices if c["name"] == "keen_observer_skill")
+        options = skill_choice["source"]["options"]
+        assert set(options) == {"Insight", "Investigation", "Perception"}
+
