@@ -50,7 +50,29 @@ def choose_species():
 
     species = dict(sorted(data_loader.species.items()))
     nav = get_nav_context(builder, "species")
-    return render_template("choose_species.html", species=species, character=character, **nav)
+
+    # Build a per-species next-label map so the template can update the button
+    # dynamically via JavaScript when the user selects a species card.
+    species_next_labels = {}
+    for name, data in species.items():
+        has_trait_choices = any(
+            isinstance(t, dict) and t.get("type") == "choice"
+            for t in data.get("traits", {}).values()
+        )
+        if has_trait_choices:
+            species_next_labels[name] = "Continue to Species Traits"
+        elif data.get("lineages"):
+            species_next_labels[name] = "Continue to Lineage"
+        else:
+            species_next_labels[name] = "Continue to Languages"
+
+    return render_template(
+        "choose_species.html",
+        species=species,
+        character=character,
+        species_next_labels=species_next_labels,
+        **nav,
+    )
 
 
 @species_bp.route("/select-species", methods=["POST"])
