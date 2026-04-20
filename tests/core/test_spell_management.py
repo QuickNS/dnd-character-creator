@@ -8,6 +8,7 @@ and the effects-based spell granting system (grant_spell, grant_cantrip).
 
 import pytest
 from modules.character_builder import CharacterBuilder
+from routes.character_summary import _ORDINAL_TO_INT
 
 
 class TestSpellManagement:
@@ -420,3 +421,169 @@ class TestSpellManagement:
             assert spell_def["school"] != "Unknown", (
                 f"Spell '{spell_def['name']}' should have actual school, not 'Unknown'"
             )
+
+    # -----------------------------------------------------------------------
+    # Tests for spell slot level filtering (issue: modal allowed spells above
+    # the character's available slot levels)
+    # -----------------------------------------------------------------------
+
+    def test_level1_wizard_only_has_1st_level_slots(self):
+        """A level 1 Wizard should only have 1st-level spell slots."""
+        builder = CharacterBuilder()
+        builder.apply_choices(
+            {
+                "character_name": "Baby Wizard",
+                "species": "Human",
+                "class": "Wizard",
+                "level": 1,
+                "background": "Sage",
+                "ability_scores": {
+                    "Strength": 8,
+                    "Dexterity": 14,
+                    "Constitution": 13,
+                    "Intelligence": 16,
+                    "Wisdom": 12,
+                    "Charisma": 10,
+                },
+                "background_bonuses": {"Intelligence": 2, "Wisdom": 1},
+            }
+        )
+        character = builder.to_character()
+        spell_slots = character.get("spell_slots", {})
+
+        # Only 1st-level slots should be present (non-zero)
+        assert "1st" in spell_slots and spell_slots["1st"] > 0
+        # No higher-level slots for a level 1 Wizard
+        for high_level in ["2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "9th"]:
+            assert high_level not in spell_slots or spell_slots[high_level] == 0
+
+    def test_available_spells_includes_levels_beyond_slots_before_filtering(self):
+        """Without slot filtering, the spell list would include levels the character
+        cannot cast. This test confirms the raw spell list has higher levels."""
+        builder = CharacterBuilder()
+        builder.apply_choices(
+            {
+                "character_name": "Baby Wizard",
+                "species": "Human",
+                "class": "Wizard",
+                "level": 1,
+                "background": "Sage",
+                "ability_scores": {
+                    "Strength": 8,
+                    "Dexterity": 14,
+                    "Constitution": 13,
+                    "Intelligence": 16,
+                    "Wisdom": 12,
+                    "Charisma": 10,
+                },
+                "background_bonuses": {"Intelligence": 2, "Wisdom": 1},
+            }
+        )
+        stats = builder.calculate_spellcasting_stats()
+
+        # The raw class spell list contains spells of many levels
+        available_spells = stats.get("available_spells", {})
+        levels_in_list = {int(k) for k in available_spells}
+        # Wizard spell list should include at least 1st through 3rd level spells
+        assert levels_in_list.issuperset({1, 2, 3})
+
+    def test_slot_filtering_removes_unavailable_levels(self):
+        """Verify the filtering logic used in the route correctly narrows down
+        available_spells to only levels the character has slots for."""
+        builder = CharacterBuilder()
+        builder.apply_choices(
+            {
+                "character_name": "Baby Wizard",
+                "species": "Human",
+                "class": "Wizard",
+                "level": 1,
+                "background": "Sage",
+                "ability_scores": {
+                    "Strength": 8,
+                    "Dexterity": 14,
+                    "Constitution": 13,
+                    "Intelligence": 16,
+                    "Wisdom": 12,
+                    "Charisma": 10,
+                },
+                "background_bonuses": {"Intelligence": 2, "Wisdom": 1},
+            }
+        )
+        character = builder.to_character()
+        spell_slots = character.get("spell_slots", {})
+        stats = builder.calculate_spellcasting_stats()
+
+        # Replicate the route filtering logic
+        available_slot_levels = {
+            _ORDINAL_TO_INT[name]
+            for name in spell_slots
+            if name in _ORDINAL_TO_INT and spell_slots[name] > 0
+        }
+
+        # Build available_spells as the route does (string keys)
+        raw_available = {
+            str(level): spells
+            for level, spells in stats.get("available_spells", {}).items()
+        }
+
+        # Apply filtering
+        filtered = {
+            level: spells
+            for level, spells in raw_available.items()
+            if int(level) in available_slot_levels
+        }
+
+        # Level 1 Wizard only has 1st-level slots → only "1" should survive
+        assert set(filtered.keys()) == {"1"}, (
+            f"Expected only '1' but got {set(filtered.keys())}"
+        )
+
+    def test_level3_wizard_has_1st_and_2nd_level_spells_after_filtering(self):
+        """A level 3 Wizard with 1st and 2nd-level slots should see spells up to level 2."""
+        builder = CharacterBuilder()
+        builder.apply_choices(
+            {
+                "character_name": "Apprentice Wizard",
+                "species": "Human",
+                "class": "Wizard",
+                "level": 3,
+                "background": "Sage",
+                "ability_scores": {
+                    "Strength": 8,
+                    "Dexterity": 14,
+                    "Constitution": 13,
+                    "Intelligence": 16,
+                    "Wisdom": 12,
+                    "Charisma": 10,
+                },
+                "background_bonuses": {"Intelligence": 2, "Wisdom": 1},
+            }
+        )
+        character = builder.to_character()
+        spell_slots = character.get("spell_slots", {})
+
+        # Level 3 Wizard has both 1st and 2nd-level slots
+        assert "1st" in spell_slots and spell_slots["1st"] > 0
+        assert "2nd" in spell_slots and spell_slots["2nd"] > 0
+
+        # Apply filtering
+        available_slot_levels = {
+            _ORDINAL_TO_INT[name]
+            for name in spell_slots
+            if name in _ORDINAL_TO_INT and spell_slots[name] > 0
+        }
+        stats = builder.calculate_spellcasting_stats()
+        raw_available = {
+            str(level): spells
+            for level, spells in stats.get("available_spells", {}).items()
+        }
+        filtered = {
+            level: spells
+            for level, spells in raw_available.items()
+            if int(level) in available_slot_levels
+        }
+
+        # Should include levels 1 and 2, but NOT 3+
+        assert "1" in filtered
+        assert "2" in filtered
+        assert "3" not in filtered
