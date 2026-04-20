@@ -195,14 +195,14 @@ def api_spell_management_data():
         # Get available cantrips and spells from spellcasting stats
         # (stats already resolves the correct spell list, e.g. Wizard for Eldritch Knight)
         available_cantrips = [
-            {"name": name, "school": "Unknown"}
+            builder._load_spell_definition(name)
             for name in stats.get("available_cantrips", [])
         ]
 
         available_spells = {}
         for level, spell_names in stats.get("available_spells", {}).items():
             available_spells[str(level)] = [
-                {"name": name, "school": "Unknown"}
+                builder._load_spell_definition(name)
                 for name in spell_names
             ]
 
@@ -267,7 +267,7 @@ def api_spell_management_data():
                             cantrip_names = bg_spell_list_data.get("cantrips", [])
                             for spell_name in cantrip_names:
                                 bg_cantrips.append(
-                                    {"name": spell_name, "school": "Unknown"}
+                                    builder._load_spell_definition(spell_name)
                                 )
 
                 background_requirements["cantrips"] = {
@@ -306,7 +306,7 @@ def api_spell_management_data():
                             ).get("1", [])
                             for spell_name in spell_names:
                                 bg_spells.append(
-                                    {"name": spell_name, "school": "Unknown"}
+                                    builder._load_spell_definition(spell_name)
                                 )
 
                 background_requirements["spells"] = {
