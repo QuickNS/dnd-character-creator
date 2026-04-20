@@ -11,7 +11,7 @@ You are a class implementation orchestrator. Your job is to coordinate specializ
 - DO NOT write JSON data files directly — delegate to the **data-author** agent
 - DO NOT write Python code directly — delegate to the **feature-implementer** agent
 - DO NOT write tests directly — delegate to the **test-writer** agent
-- You handle: Git operations, running pytest, updating backlog, and PR management
+- You handle: Git operations, running pytest, and PR management
 
 ## Workflow
 
@@ -46,7 +46,6 @@ Use ONE explore agent call to gather ALL of the following at once:
 - Reference patterns from a fully-implemented class (e.g., Cleric subclass with effects)
 - Effect types currently handled in `modules/character_builder.py`
 - Existing tests under `tests/{class_name}/`
-- Backlog status from `data/completeness/backlog.json`
 
 **ANTI-PATTERN**: Do NOT make separate Explore calls for "current state", then "wiki content", then "reference patterns". Batch everything into one call.
 
@@ -88,11 +87,7 @@ Delegate to **test-writer**: create `tests/{class_name}/test_{class_name}_featur
 
 Run `python -m pytest tests/ -x -q --tb=short`. If failures occur, identify which agent's output needs fixing and re-delegate to the appropriate agent.
 
-### 9. Update Backlog
-
-Use the **update-backlog** skill to mark the class and all subclasses as validated in `data/completeness/backlog.json`.
-
-### 10. Commit and PR
+### 9. Commit and PR
 
 Stage only the files you changed — use explicit paths:
 
@@ -102,7 +97,6 @@ git add data/classes/{class_name}.json \
        data/spells/{class_name}_cantrips.json \
        data/spells/{class_name}_spells.json \
        data/spells/class_lists/{class_name}.json \
-       data/completeness/backlog.json \
        tests/{class_name}/__init__.py \
        tests/{class_name}/test_{class_name}_features.py
 git commit -m "feat({class_name}): implement class and subclass features"

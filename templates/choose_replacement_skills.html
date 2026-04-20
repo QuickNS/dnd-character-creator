@@ -79,7 +79,7 @@
                         </div>
                     </div>
 
-                    {{ wizard_nav(next_label="Confirm Replacement" ~ ('s' if replacement_info.needed > 1 else '') ~ " & Continue") }}
+                    {{ wizard_nav(next_label="Confirm Replacement" ~ ('s' if replacement_info.needed > 1 else '') ~ " & Continue", editing=editing) }}
                 </form>
             </div>
         </div>

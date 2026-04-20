@@ -6,9 +6,19 @@ including session management and logging utilities.
 
 import logging
 from typing import Optional, Dict, Any
-from flask import session, url_for as flask_url_for
+from flask import session, url_for as flask_url_for, redirect
 from modules.character_builder import CharacterBuilder
 from modules.data_loader import DataLoader
+
+# Valid edit sections and the builder step each one sets
+EDIT_SECTIONS = {
+    "class": "class",
+    "background": "background",
+    "species": "species",
+    "languages": "languages",
+    "abilities": "ability_scores",
+    "equipment": "equipment",
+}
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +47,43 @@ def save_builder_to_session(builder: CharacterBuilder):
     """
     session["builder_state"] = builder.to_json()
     session.modified = True
+
+
+# ==================== Edit Mode Helpers ====================
+
+
+def is_editing() -> bool:
+    """Check if the user is currently editing from the summary page."""
+    return "editing_section" in session
+
+
+def get_editing_section() -> Optional[str]:
+    """Get the section currently being edited, or None."""
+    return session.get("editing_section")
+
+
+def clear_editing():
+    """Clear the editing flag from the session."""
+    session.pop("editing_section", None)
+    session.modified = True
+
+
+def set_editing(section: str):
+    """Set the editing section flag in the session."""
+    session["editing_section"] = section
+    session.modified = True
+
+
+def redirect_after_edit_or(default_endpoint: str, **kwargs):
+    """If editing, clear flag and redirect to summary. Otherwise redirect to default."""
+    if is_editing():
+        clear_editing()
+        builder = get_builder_from_session()
+        if builder:
+            builder.set_step("complete")
+            save_builder_to_session(builder)
+        return redirect(flask_url_for("character_summary.character_summary"))
+    return redirect(flask_url_for(default_endpoint, **kwargs))
 
 
 def log_route_processing(
@@ -222,5 +269,24 @@ def get_nav_context(builder: CharacterBuilder, current_step: str) -> Dict[str, A
         ctx["back_url"] = None
         ctx["back_label"] = "Back"
         ctx["next_label"] = "Continue"
+
+    # Edit mode: override labels and add editing flag
+    editing = is_editing()
+    ctx["editing"] = editing
+    if editing:
+        # Map each section to its terminal steps (where the section ends)
+        editing_section = get_editing_section()
+        terminal_steps = {
+            "class": ["class_choices"],
+            "background": ["feat_choices", "background_skill_replacement"],
+            "species": ["species", "species_traits", "species_feat_choices",
+                        "lineage", "species_skill_replacement"],
+            "languages": ["languages"],
+            "abilities": ["ability_scores"],
+            "equipment": ["equipment"],
+        }
+        section_terminals = terminal_steps.get(editing_section, [])
+        if current_step in section_terminals:
+            ctx["next_label"] = "Save & Return to Summary"
 
     return ctx

@@ -8,6 +8,7 @@ from utils.route_helpers import (
     save_builder_to_session,
     log_route_processing,
     get_nav_context,
+    redirect_after_edit_or,
 )
 
 
@@ -138,7 +139,7 @@ def feat_choices():
     if not feat_choice_data["choices"]:
         builder.set_step("species")
         save_builder_to_session(builder)
-        return redirect(url_for("species.choose_species"))
+        return redirect_after_edit_or("species.choose_species")
 
     character = builder.to_json()
     choices_made = character.get("choices_made", {})
@@ -180,4 +181,4 @@ def submit_feat_choices():
 
     log_route_processing("submit_feat_choices", choices, builder_before, builder)
 
-    return redirect(url_for("species.choose_species"))
+    return redirect_after_edit_or("species.choose_species")

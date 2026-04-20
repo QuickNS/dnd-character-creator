@@ -273,7 +273,7 @@
                             {% endif %}
                             
                             <div class="text-center">
-                                {{ wizard_nav(back_url=back_url, back_label=back_label, next_label=next_label) }}
+                                {{ wizard_nav(back_url=back_url, back_label=back_label, next_label=next_label, editing=editing) }}
                             </div>
                         </form>
                         {% else %}
@@ -285,7 +285,7 @@
                             {% if needs_subclass and subclasses %}
                             <input type="hidden" name="subclass" id="subclass-hidden-noform" value="{{ current_subclass }}">
                             {% endif %}
-                            {{ wizard_nav(back_url=back_url, back_label=back_label, next_label=next_label) }}
+                            {{ wizard_nav(back_url=back_url, back_label=back_label, next_label=next_label, editing=editing) }}
                         </form>
                         {% endif %}
                     </div>

@@ -208,13 +208,6 @@ mcp_github_issue_write(owner="QuickNS", repo="dnd-character-creator", issue_numb
 git checkout main && git pull
 ```
 
-If ALL issues for a class/species/category are resolved and verified complete, also update boolean flags in `data/completeness/backlog.json`:
-```json
-"features_validated": true,
-"effects_implemented": true,
-"tests_written": true
-```
-
 ## Tips
 
 - Fix one issue at a time. Run tests between each fix.

@@ -13,10 +13,18 @@
     is_final    – if True, renders a green "Complete" button instead
     disabled    – if True, the submit button starts disabled
     extra_class – additional CSS class(es) on the submit button
+    editing     – if True, shows edit-mode styling with return-to-summary link
 #}
-{% macro wizard_nav(back_url=None, back_label="Back", next_label="Continue", submit_id="submit-btn", is_final=False, disabled=False, extra_class="") %}
+{% macro wizard_nav(back_url=None, back_label="Back", next_label="Continue", submit_id="submit-btn", is_final=False, disabled=False, extra_class="", editing=False) %}
 <div class="d-grid gap-2 mt-4">
-    {% if is_final %}
+    {% if editing %}
+    <button type="submit" class="btn btn-success btn-lg {{ extra_class }}" id="{{ submit_id }}"{% if disabled %} disabled{% endif %}>
+        <i class="fas fa-check"></i> {{ next_label }}
+    </button>
+    <a href="{{ url_for('character_summary.character_summary') }}" class="btn btn-outline-secondary">
+        <i class="fas fa-times"></i> Cancel &amp; Return to Summary
+    </a>
+    {% elif is_final %}
     <button type="submit" class="btn btn-success btn-lg {{ extra_class }}" id="{{ submit_id }}"{% if disabled %} disabled{% endif %}>
         <i class="fas fa-check"></i> {{ next_label }}
     </button>
@@ -25,7 +33,7 @@
         <i class="fas fa-arrow-right"></i> {{ next_label }}
     </button>
     {% endif %}
-    {% if back_url %}
+    {% if back_url and not editing %}
     <a href="{{ back_url }}" class="btn btn-outline-secondary">
         <i class="fas fa-arrow-left"></i> {{ back_label }}
     </a>

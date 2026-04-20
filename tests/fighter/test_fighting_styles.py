@@ -161,3 +161,57 @@ def test_defense_fighting_style():
     assert defense_effects[0]["type"] == "bonus_ac", (
         "Defense effect should be type 'bonus_ac'"
     )
+
+
+def _build_fighter_with_style(style_name):
+    """Helper: build a level 1 Fighter with the given fighting style."""
+    builder = CharacterBuilder()
+    builder.apply_choices({
+        "species": "Human",
+        "class": "Fighter",
+        "level": 1,
+        "background": "Soldier",
+        "ability_scores": {
+            "Strength": 16,
+            "Dexterity": 14,
+            "Constitution": 14,
+            "Intelligence": 10,
+            "Wisdom": 12,
+            "Charisma": 8,
+        },
+        "Fighting Style": style_name,
+    })
+    return builder
+
+
+def test_blind_fighting_style():
+    """Test that Blind Fighting style is recorded as a class feature."""
+    builder = _build_fighter_with_style("Blind Fighting")
+    character = builder.to_character()
+
+    class_feature_names = [f["name"] for f in character["features"]["class"]]
+    assert any("Blind Fighting" in n for n in class_feature_names), (
+        "Blind Fighting should appear in class features"
+    )
+
+
+def test_interception_fighting_style():
+    """Test that Interception style is recorded as a class feature."""
+    builder = _build_fighter_with_style("Interception")
+    character = builder.to_character()
+
+    class_feature_names = [f["name"] for f in character["features"]["class"]]
+    assert any("Interception" in n for n in class_feature_names), (
+        "Interception should appear in class features"
+    )
+
+
+def test_protection_fighting_style():
+    """Test that Protection style is recorded as a class feature."""
+    builder = _build_fighter_with_style("Protection")
+    character = builder.to_character()
+
+    class_feature_names = [f["name"] for f in character["features"]["class"]]
+    assert any("Protection" in n for n in class_feature_names), (
+        "Protection should appear in class features"
+    )

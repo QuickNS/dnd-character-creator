@@ -73,7 +73,6 @@ When implementing any feature:
 3. Implement generic handler if new effect type needed
 4. Validate data against schema (`python validate_data.py`)
 5. Write tests (`pytest tests/`)
-6. Check backlog: `data/completeness/backlog.json`
 
 ## Issue Tracking
 

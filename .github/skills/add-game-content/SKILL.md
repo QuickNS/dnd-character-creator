@@ -16,28 +16,7 @@ Workflow for adding a batch of game content (e.g., all subclasses for a class, m
 
 ## Procedure
 
-### 1. Check Backlog
-
-Read `data/completeness/backlog.json` to identify what's missing:
-
-```bash
-cat data/completeness/backlog.json | python -m json.tool
-```
-
-Or filter for a specific category:
-```python
-import json
-with open('data/completeness/backlog.json') as f:
-    backlog = json.load(f)
-
-# Find missing subclasses for Ranger
-ranger = backlog['classes']['Ranger']
-for sc_name, sc_status in ranger['subclasses'].items():
-    if not sc_status['features_validated']:
-        print(f"  ❌ {sc_name}")
-```
-
-### 2. Fetch Wiki Data
+### 1. Fetch Wiki Data
 
 Ensure wiki cache has the needed content:
 
@@ -52,24 +31,24 @@ python update_spells.py --class sorcerer
 # Generates {class}_cantrips.json, {class}_spells.json, and class_lists/{class}.json
 ```
 
-### 3. Create Data Files from Templates
+### 2. Create Data Files from Templates
 
 Use these templates as starting points:
 
 #### Class Template
 See [data file templates](./references/data-file-templates.md).
 
-### 4. Add Effects
+### 3. Add Effects
 
 For each feature with mechanical benefits, add an `effects` array. Reference the effect type catalog in `.github/skills/implement-class-feature/references/effect-type-catalog.md`.
 
-### 5. Validate
+### 4. Validate
 
 ```bash
 python validate_data.py
 ```
 
-### 6. Write Tests
+### 5. Write Tests
 
 Create at least one integration test per class/species added:
 
@@ -81,11 +60,7 @@ def test_new_subclass_features():
     # Assert key features are present
 ```
 
-### 7. Update Backlog
-
-After adding content, update `data/completeness/backlog.json` to reflect new status.
-
-### 8. Run Full Suite
+### 6. Run Full Suite
 
 ```bash
 pytest tests/ -x -q --tb=short
@@ -94,5 +69,4 @@ pytest tests/ -x -q --tb=short
 ## Reference Files
 
 - [Data File Templates](./references/data-file-templates.md)
-- `data/completeness/backlog.json` — Completeness tracking
 - `models/class_schema.json`, `models/subclass_schema.json` — Schemas

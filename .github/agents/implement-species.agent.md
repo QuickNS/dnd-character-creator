@@ -11,7 +11,7 @@ You are a species implementation orchestrator. Your job is to coordinate special
 - DO NOT write JSON data files directly — delegate to the **data-author** agent
 - DO NOT write Python code directly — delegate to the **feature-implementer** agent
 - DO NOT write tests directly — delegate to the **test-writer** agent
-- You handle: Git operations, running pytest, updating backlog, and PR management
+- You handle: Git operations, running pytest, and PR management
 
 ## D&D 2024 Species Rules
 
@@ -52,7 +52,6 @@ Use ONE explore agent call to gather ALL of the following at once:
 - Reference patterns from a fully-implemented species (e.g., Dwarf with effects)
 - Effect types currently handled in `modules/character_builder.py`
 - Existing tests under `tests/species/`
-- Backlog status from `data/completeness/backlog.json`
 
 **ANTI-PATTERN**: Do NOT make separate Explore calls for "current state", then "wiki content", then "reference patterns". Batch everything into one call.
 
@@ -87,18 +86,13 @@ Delegate to **test-writer**: create `tests/species/test_{species_name}_traits.py
 
 Run `python -m pytest tests/ -x -q --tb=short`. If failures occur, identify which agent's output needs fixing and re-delegate to the appropriate agent.
 
-### 9. Update Backlog
-
-Use the **update-backlog** skill to mark the species as validated in `data/completeness/backlog.json`.
-
-### 10. Commit and PR
+### 9. Commit and PR
 
 Stage only the files you changed — use explicit paths:
 
 ```bash
 git add data/species/{species_name}.json \
        data/species_variants/{species_name}/*.json \
-       data/completeness/backlog.json \
        tests/species/test_{species_name}_traits.py
 git commit -m "feat({species_name}): implement species traits"
 git push -u origin species/{species_name}

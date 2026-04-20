@@ -14,7 +14,14 @@ import json
 import logging
 import re
 from modules.data_loader import DataLoader
-from utils.route_helpers import get_builder_from_session
+from utils.route_helpers import (
+    get_builder_from_session,
+    save_builder_to_session,
+    set_editing,
+    clear_editing,
+    is_editing,
+    EDIT_SECTIONS,
+)
 
 character_summary_bp = Blueprint("character_summary", __name__)
 data_loader = DataLoader()
@@ -33,6 +40,81 @@ _SPELL_DEFINITIONS_DIR = Path(__file__).parent.parent / "data" / "spells" / "def
 # underscores, ending in ".json" — no path separators or special characters.
 _SAFE_SPELL_FILENAME_RE = re.compile(r'^[a-z0-9_]+\.json$')
 
+# Regex patterns for extracting damage cantrip info from descriptions.
+_DAMAGE_DICE_RE = re.compile(r'(\d+d\d+)\s+(\w+)\s+damage', re.IGNORECASE)
+_SPELL_ATTACK_RE = re.compile(r'make\s+a\s+(melee|ranged)\s+spell\s+attack', re.IGNORECASE)
+_SAVING_THROW_RE = re.compile(r'succeed\s+on\s+an?\s+(\w+)\s+saving\s+throw', re.IGNORECASE)
+
+
+def _build_damage_cantrip_rows(character_data):
+    """Extract damage cantrips from character's known cantrips for sheet display.
+
+    Returns a list of dicts with keys: name, atk_display, damage, damage_type, notes.
+    """
+    cantrips = character_data.get("spells_by_level", {}).get(0, [])
+    spell_stats = character_data.get("spellcasting_stats", {})
+    level = character_data.get("level", 1)
+    rows = []
+    for cantrip in cantrips:
+        desc = cantrip.get("description", "")
+        # Only include cantrips that deal damage
+        dmg_match = _DAMAGE_DICE_RE.search(desc)
+        if not dmg_match:
+            continue
+
+        base_dice = dmg_match.group(1)
+        damage_type = dmg_match.group(2).capitalize()
+
+        # Scale cantrip damage by character level
+        damage = _scale_cantrip_damage(base_dice, level)
+
+        # Determine attack type
+        atk_match = _SPELL_ATTACK_RE.search(desc)
+        save_match = _SAVING_THROW_RE.search(desc)
+        if atk_match:
+            bonus = spell_stats.get("spell_attack_bonus", 0)
+            atk_display = f"+{bonus}" if bonus >= 0 else str(bonus)
+        elif save_match:
+            dc = spell_stats.get("spell_save_dc", 0)
+            atk_display = f"DC {dc}"
+        else:
+            atk_display = ""
+
+        rows.append({
+            "name": cantrip.get("name", ""),
+            "atk_display": atk_display,
+            "damage": damage,
+            "damage_type": damage_type,
+            "notes": cantrip.get("source", ""),
+        })
+    return rows
+
+
+def _scale_cantrip_damage(base_dice, level):
+    """Scale cantrip damage dice based on character level.
+
+    Cantrips scale at levels 5, 11, and 17.
+    """
+    # Parse base dice (e.g., "1d8")
+    match = re.match(r'(\d+)d(\d+)', base_dice)
+    if not match:
+        return base_dice
+    base_count = int(match.group(1))
+    die = match.group(2)
+
+    # Cantrip scaling tiers
+    if level >= 17:
+        multiplier = 4
+    elif level >= 11:
+        multiplier = 3
+    elif level >= 5:
+        multiplier = 2
+    else:
+        multiplier = 1
+
+    count = base_count * multiplier
+    return f"{count}d{die}"
+
 
 # ==================== Route Handlers ====================
 
@@ -41,8 +123,17 @@ _SAFE_SPELL_FILENAME_RE = re.compile(r'^[a-z0-9_]+\.json$')
 def character_summary():
     """Display final character summary."""
     builder = get_builder_from_session()
-    if not builder or builder.get_current_step() != "complete":
+    if not builder:
         return redirect(url_for("index.index"))
+
+    # If returning from an edit flow (cancel or step mismatch), restore state
+    if builder.get_current_step() != "complete":
+        if is_editing():
+            clear_editing()
+            builder.set_step("complete")
+            save_builder_to_session(builder)
+        else:
+            return redirect(url_for("index.index"))
 
     # Get complete character data with all calculations
     # (ac_options, spells_by_level, and spell_slots are now part of character_data)
@@ -65,6 +156,37 @@ def character_summary():
     )
 
     return render_template("character_summary.html", character=character_data)
+
+
+# Section → first wizard page endpoint
+_SECTION_ENTRY_POINTS = {
+    "class": "character_creation.choose_class",
+    "background": "background.choose_background",
+    "species": "species.choose_species",
+    "languages": "languages.choose_languages",
+    "abilities": "ability_scores.assign_ability_scores",
+    "equipment": "equipment.choose_equipment",
+}
+
+
+@character_summary_bp.route("/edit/<section>")
+def edit_section(section):
+    """Enter edit mode for a character section and redirect to the wizard step."""
+    if section not in EDIT_SECTIONS:
+        return redirect(url_for("character_summary.character_summary"))
+
+    builder = get_builder_from_session()
+    if not builder or builder.get_current_step() != "complete":
+        return redirect(url_for("index.index"))
+
+    # Set the builder step so the target page allows access
+    builder.set_step(EDIT_SECTIONS[section])
+    save_builder_to_session(builder)
+
+    # Store editing flag in session
+    set_editing(section)
+
+    return redirect(url_for(_SECTION_ENTRY_POINTS[section]))
 
 
 @character_summary_bp.route("/download-character")
@@ -127,7 +249,14 @@ def character_sheet():
     # No transformations needed - template uses data as-is
     character_data = builder.to_character()
 
-    return render_template("character_sheet_pdf.html", character=character_data)
+    # Build damage cantrip display rows for the Weapons & Damage Cantrips section
+    damage_cantrips = _build_damage_cantrip_rows(character_data)
+
+    return render_template(
+        "character_sheet_pdf.html",
+        character=character_data,
+        damage_cantrips=damage_cantrips,
+    )
 
 
 @character_summary_bp.route("/api/spell-details/<spell_name>")

@@ -17,7 +17,6 @@ You are a data quality auditor for the D&D character creator. Your job is to ver
 2. **Structure audit**: Verify `features_by_level` uses objects (not arrays) in all class/subclass files
 3. **Effects coverage**: Check that features with mechanical benefits have `effects` arrays
 4. **D&D 2024 accuracy**: Compare data files against `wiki_data/` cache for rule correctness
-5. **Completeness**: Check `data/completeness/backlog.json` for missing content items
 
 ## Validation Commands
 

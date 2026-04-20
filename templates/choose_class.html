@@ -24,6 +24,22 @@
                 </div>
                 
                 <form method="POST" action="{{ url_for('character_creation.select_class') }}">
+                    {% if editing %}
+                    <!-- Level selector (edit mode) -->
+                    <div class="card mb-4 border-info">
+                        <div class="card-body">
+                            <div class="row align-items-center">
+                                <div class="col-auto">
+                                    <label for="level" class="form-label mb-0"><strong>Character Level</strong></label>
+                                </div>
+                                <div class="col-auto">
+                                    <input type="number" class="form-control" id="level" name="level" 
+                                           min="1" max="20" value="{{ current_level }}" style="width: 80px;">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
                     <div class="row">
                         {% for class_name, class_data in classes.items() %}
                         <div class="col-lg-6 mb-4">
@@ -61,7 +77,7 @@
                         {% endfor %}
                     </div>
                     
-                    {{ wizard_nav(back_url=back_url, back_label=back_label, next_label=next_label) }}
+                    {{ wizard_nav(back_url=back_url, back_label=back_label, next_label=next_label, editing=editing) }}
                 </form>
             </div>
         </div>

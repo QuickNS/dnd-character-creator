@@ -8,6 +8,7 @@ from utils.route_helpers import (
     save_builder_to_session,
     log_route_processing,
     get_nav_context,
+    clear_editing,
 )
 
 equipment_bp = Blueprint("equipment", __name__)
@@ -69,6 +70,9 @@ def select_equipment():
     # Mark character creation as complete
     builder.set_step("complete")
     save_builder_to_session(builder)
+
+    # Clear any editing flag
+    clear_editing()
 
     # Log route processing
     log_route_processing("select_equipment", equipment_choices, builder_before, builder)

@@ -228,7 +228,7 @@
                 <div style="position: absolute; top: 118px; left: 0px;">
                     {% for skill_key in skill_keys %}
                     {% set skill = character.skills[skill_key] %}
-                    <input type="checkbox" style="position: absolute; width: 12px; top: {{ 7 + loop.index0 * 19 }}px; left: 8px;" {% if skill.proficient or skill.expertise %}checked{% endif %}>
+                    <input type="checkbox" style="position: absolute; width: 12px; top: {{ 7 + loop.index0 * 19 }}px; left: 9px;" {% if skill.proficient or skill.expertise %}checked{% endif %}>
                     <input type="text" style="position:absolute; top: {{ 2 + loop.index0 * 19 }}px; left: 22px; font-size: 9pt; width:20px" class="char-field" value="{{ '+' if skill.modifier >= 0 else '' }}{{ skill.modifier }}">
                     {% endfor %}
                 </div>
@@ -242,6 +242,39 @@
             {{ ability_block('Intelligence', 'ability-int', ['arcana', 'history', 'investigation', 'nature', 'religion']) }}
             {{ ability_block('Wisdom', 'ability-wis', ['animal_handling', 'insight', 'medicine', 'perception', 'survival']) }}
             {{ ability_block('Charisma', 'ability-cha', ['deception', 'intimidation', 'performance', 'persuasion']) }}
+
+            <!-- Weapons & Damage Cantrips -->
+            {% set attacks_list = character.attacks[:6] %}
+            {% set cantrip_slots = 6 - attacks_list|length %}
+            {% set cantrip_rows = damage_cantrips[:cantrip_slots] if cantrip_slots > 0 else [] %}
+            {% for weapon in attacks_list %}
+            <input type="text" class="char-field" style="top: {{ 272 + loop.index0 * 26 }}px; left: 307px; width: 152px; height: 22px; font-size: 8pt; text-align: left;" value="{{ weapon.name }}">
+            <input type="text" class="char-field" style="top: {{ 272 + loop.index0 * 26 }}px; left: 448px; width: 70px; height: 22px; font-size: 8pt;" value="{{ weapon.attack_bonus_display }}">
+            <input type="text" class="char-field" style="top: {{ 272 + loop.index0 * 26 }}px; left: 520px; width: 128px; height: 22px; font-size: 8pt; text-align: left;" value="{{ weapon.damage }} {{ weapon.damage_type }}">
+            <input type="text" class="char-field" style="top: {{ 272 + loop.index0 * 26 }}px; left: 666px; width: 126px; height: 22px; font-size: 8pt; text-align: left;" value="{% if weapon.properties %}{{ weapon.properties | join(', ') }}{% endif %}">
+            {% endfor %}
+            {% for cantrip in cantrip_rows %}
+            {% set row_idx = attacks_list|length + loop.index0 %}
+            <input type="text" class="char-field" style="top: {{ 272 + row_idx * 26 }}px; left: 307px; width: 152px; height: 22px; font-size: 8pt; text-align: left;" value="{{ cantrip.name }}">
+            <input type="text" class="char-field" style="top: {{ 272 + row_idx * 26 }}px; left: 448px; width: 70px; height: 22px; font-size: 8pt;" value="{{ cantrip.atk_display }}">
+            <input type="text" class="char-field" style="top: {{ 272 + row_idx * 26 }}px; left: 520px; width: 128px; height: 22px; font-size: 8pt; text-align: left;" value="{{ cantrip.damage }} {{ cantrip.damage_type }}">
+            <input type="text" class="char-field" style="top: {{ 272 + row_idx * 26 }}px; left: 666px; width: 126px; height: 22px; font-size: 8pt; text-align: left;" value="{{ cantrip.notes }}">
+            {% endfor %}
+            {# Fill remaining empty rows up to 6 #}
+            {% for i in range(attacks_list|length + cantrip_rows|length, 6) %}
+            <input type="text" class="char-field" style="top: {{ 272 + i * 26 }}px; left: 307px; width: 152px; height: 22px; font-size: 8pt; text-align: left;" value="">
+            <input type="text" class="char-field" style="top: {{ 272 + i * 26 }}px; left: 448px; width: 70px; height: 22px; font-size: 8pt;" value="">
+            <input type="text" class="char-field" style="top: {{ 272 + i * 26 }}px; left: 520px; width: 128px; height: 22px; font-size: 8pt; text-align: left;" value="">
+            <input type="text" class="char-field" style="top: {{ 272 + i * 26 }}px; left: 666px; width: 126px; height: 22px; font-size: 8pt; text-align: left;" value="">
+            {% endfor %}
+
+            <!-- Equipment Training & Proficiencies -->
+            <input type="checkbox" style="position: absolute; width: 14px; top: 878px; left: 75px;" {% if 'Light armor' in character.armor_proficiencies %}checked{% endif %}>
+            <input type="checkbox" style="position: absolute; width: 14px; top: 878px; left: 122px;" {% if 'Medium armor' in character.armor_proficiencies %}checked{% endif %}>
+            <input type="checkbox" style="position: absolute; width: 14px; top: 878px; left: 182px;" {% if 'Heavy armor' in character.armor_proficiencies %}checked{% endif %}>
+            <input type="checkbox" style="position: absolute; width: 14px; top: 878px; left: 233px;" {% if 'Shields' in character.armor_proficiencies %}checked{% endif %}>
+            <textarea class="char-field" style="top: 910px; left: 16px; width: 258px; height: 52px; font-size: 7pt; text-align: left; resize: none; overflow: hidden; line-height: 1.3;">{{ character.weapon_proficiencies | join(', ') }}</textarea>
+            <textarea class="char-field" style="top: 992px; left: 16px; width: 258px; height: 28px; font-size: 7pt; text-align: left; resize: none; overflow: hidden; line-height: 1.3;">{{ character.tool_proficiencies | join(', ') }}</textarea>
 
             <!-- Features and Traits -->
             <div id="class-features" style="position: absolute; top: 473px; left: 306px; width: 490px; height: 285px;">

@@ -8,6 +8,7 @@ from utils.route_helpers import (
     save_builder_to_session,
     log_route_processing,
     get_nav_context,
+    redirect_after_edit_or,
 )
 
 languages_bp = Blueprint("languages", __name__)
@@ -69,4 +70,4 @@ def select_languages():
     # Log route processing
     log_route_processing("select_languages", choices, builder_before, builder)
 
-    return redirect(url_for("ability_scores.assign_ability_scores"))
+    return redirect_after_edit_or("ability_scores.assign_ability_scores")

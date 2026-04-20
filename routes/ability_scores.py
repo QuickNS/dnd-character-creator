@@ -9,6 +9,7 @@ from utils.route_helpers import (
     save_builder_to_session,
     log_route_processing,
     get_nav_context,
+    redirect_after_edit_or,
 )
 
 ability_scores_bp = Blueprint("ability_scores", __name__)
@@ -169,7 +170,7 @@ def submit_ability_scores():
     # Log route processing
     log_route_processing("submit_ability_scores", choices, builder_before, builder)
 
-    return redirect(url_for("equipment.choose_equipment"))
+    return redirect_after_edit_or("equipment.choose_equipment")
 
 
 @ability_scores_bp.route("/background-bonuses")

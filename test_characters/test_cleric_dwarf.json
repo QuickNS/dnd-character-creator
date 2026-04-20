@@ -1,31 +1,26 @@
 {
-  "Blessed Strikes": "Potent Spellcasting",
   "Divine Order": "Thaumaturge",
   "Thaumaturge_bonus_cantrip": "Guidance",
-  "ability_scores": {
-    "Charisma": 10,
-    "Constitution": 14,
-    "Dexterity": 13,
-    "Intelligence": 12,
-    "Strength": 8,
-    "Wisdom": 15
-  },
-  "ability_scores_method": "manual",
+  "ability_scores_method": "recommended",
   "alignment": "Lawful Good",
   "background": "Sage",
-  "background_bonuses": {
-    "Constitution": 1,
-    "Wisdom": 2
-  },
+  "background_bonuses_method": "suggested",
   "character_name": "Albrek",
   "class": "Cleric",
   "equipment_selections": {
     "background_equipment": "option_b",
     "class_equipment": "option_a"
   },
+  "feat_Magic Initiate (Wizard)_1st_level_spell": [
+    "Burning Hands"
+  ],
+  "feat_Magic Initiate (Wizard)_cantrips": [
+    "Mind Sliver",
+    "Ray of Frost"
+  ],
   "language_choices_needed": 2,
   "languages": [],
-  "level": 7,
+  "level": 3,
   "skill_choices": [
     "Insight",
     "Persuasion"
@@ -34,9 +29,18 @@
   "spell_selections": {
     "background_cantrips": [],
     "background_spells": [],
-    "cantrips": [],
+    "cantrips": [
+      "Mind Sliver",
+      "Ray of Frost",
+      "Toll the Dead"
+    ],
     "spells": [
-      "Detect Magic"
+      "Shield of Faith",
+      "Guiding Bolt",
+      "Hold Person",
+      "Spiritual Weapon",
+      "Detect Magic",
+      "Silence"
     ]
   },
   "subclass": "Light Domain"

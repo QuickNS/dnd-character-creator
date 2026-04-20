@@ -9,6 +9,8 @@ from utils.route_helpers import (
     save_builder_to_session,
     log_route_processing,
     get_nav_context,
+    redirect_after_edit_or,
+    is_editing,
 )
 
 character_creation_bp = Blueprint("character_creation", __name__)
@@ -105,9 +107,15 @@ def choose_class():
     if not builder:
         return redirect(url_for("index.index"))
 
+    character = builder.to_json()
     nav = get_nav_context(builder, "class")
     classes = dict(sorted(data_loader.classes.items()))
-    return render_template("choose_class.html", classes=classes, **nav)
+    return render_template(
+        "choose_class.html",
+        classes=classes,
+        current_level=character.get("level", 1),
+        **nav,
+    )
 
 
 @character_creation_bp.route("/select-class", methods=["POST"])
@@ -121,7 +129,22 @@ def select_class():
     choices = {"class": class_name}
 
     builder = get_builder_from_session()
-    builder.apply_choice("class", class_name)
+
+    # Handle level change when editing from summary
+    new_level = None
+    if is_editing():
+        level_str = request.form.get("level")
+        if level_str:
+            new_level = max(1, min(20, int(level_str)))
+            choices["level"] = new_level
+
+    # Apply class (and level if changed) — set_class handles clearing old features
+    if new_level is not None:
+        builder.set_class(class_name, new_level)
+        builder.character_data["choices_made"]["class"] = class_name
+        builder.character_data["choices_made"]["level"] = new_level
+    else:
+        builder.apply_choice("class", class_name)
 
     builder.set_step("class_choices")
     save_builder_to_session(builder)
@@ -364,4 +387,4 @@ def submit_class_choices():
     # Log route processing
     log_route_processing("submit_class_choices", choices, builder_before, builder)
 
-    return redirect(url_for("background.choose_background"))
+    return redirect_after_edit_or("background.choose_background")

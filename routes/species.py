@@ -10,6 +10,8 @@ from utils.route_helpers import (
     save_builder_to_session,
     log_route_processing,
     get_nav_context,
+    redirect_after_edit_or,
+    is_editing,
 )
 
 species_bp = Blueprint("species", __name__)
@@ -31,7 +33,7 @@ def _redirect_to_languages_or_replacement(builder):
         return redirect(url_for("species.choose_species_replacement_skills"))
     builder.set_step("languages")
     save_builder_to_session(builder)
-    return redirect(url_for("languages.choose_languages"))
+    return redirect_after_edit_or("languages.choose_languages")
 
 
 @species_bp.route("/choose-species")
@@ -101,7 +103,7 @@ def select_species():
 def choose_species_traits():
     """Species trait choice step (e.g., Keen Senses)."""
     builder = get_builder_from_session()
-    if not builder or builder.get_current_step() != "species_traits":
+    if not builder or (builder.get_current_step() != "species_traits" and not is_editing()):
         return redirect(url_for("index.index"))
 
     character = builder.to_json()
@@ -354,4 +356,4 @@ def submit_species_replacement_skills():
 
     builder.set_step("languages")
     save_builder_to_session(builder)
-    return redirect(url_for("languages.choose_languages"))
+    return redirect_after_edit_or("languages.choose_languages")

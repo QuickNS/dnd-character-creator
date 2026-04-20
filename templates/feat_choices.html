@@ -91,7 +91,7 @@
                     {% endfor %}
 
                     <div class="text-center">
-                        {{ wizard_nav(back_url=back_url|default(url_for('background.choose_background')), back_label=back_label|default('Back'), next_label=next_label|default('Continue')) }}
+                        {{ wizard_nav(back_url=back_url|default(url_for('background.choose_background')), back_label=back_label|default('Back'), next_label=next_label|default('Continue'), editing=editing) }}
                     </div>
                 </form>
             </div>

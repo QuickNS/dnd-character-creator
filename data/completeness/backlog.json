@@ -516,109 +516,109 @@
     "Acolyte": {
       "data_file": true,
       "features_validated": true,
-      "feat_implemented": false,
+      "feat_implemented": true,
       "tests_written": true
     },
     "Artisan": {
       "data_file": true,
       "features_validated": true,
-      "feat_implemented": false,
+      "feat_implemented": true,
       "tests_written": true
     },
     "Charlatan": {
       "data_file": true,
       "features_validated": true,
-      "feat_implemented": false,
+      "feat_implemented": true,
       "tests_written": true
     },
     "Criminal": {
       "data_file": true,
       "features_validated": true,
-      "feat_implemented": false,
+      "feat_implemented": true,
       "tests_written": true
     },
     "Entertainer": {
       "data_file": true,
       "features_validated": true,
-      "feat_implemented": false,
+      "feat_implemented": true,
       "tests_written": true
     },
     "Farmer": {
       "data_file": true,
       "features_validated": true,
-      "feat_implemented": false,
+      "feat_implemented": true,
       "tests_written": true
     },
     "Folk Hero": {
       "data_file": true,
       "features_validated": true,
-      "feat_implemented": false,
+      "feat_implemented": true,
       "tests_written": true
     },
     "Guard": {
       "data_file": true,
       "features_validated": true,
-      "feat_implemented": false,
+      "feat_implemented": true,
       "tests_written": true
     },
     "Guide": {
       "data_file": true,
       "features_validated": true,
-      "feat_implemented": false,
+      "feat_implemented": true,
       "tests_written": true
     },
     "Guild Artisan": {
       "data_file": true,
       "features_validated": true,
-      "feat_implemented": false,
+      "feat_implemented": true,
       "tests_written": true
     },
     "Hermit": {
       "data_file": true,
       "features_validated": true,
-      "feat_implemented": false,
+      "feat_implemented": true,
       "tests_written": true
     },
     "Merchant": {
       "data_file": true,
       "features_validated": true,
-      "feat_implemented": false,
+      "feat_implemented": true,
       "tests_written": true
     },
     "Noble": {
       "data_file": true,
       "features_validated": true,
-      "feat_implemented": false,
+      "feat_implemented": true,
       "tests_written": true
     },
     "Sage": {
       "data_file": true,
       "features_validated": true,
-      "feat_implemented": false,
+      "feat_implemented": true,
       "tests_written": true
     },
     "Sailor": {
       "data_file": true,
       "features_validated": true,
-      "feat_implemented": false,
+      "feat_implemented": true,
       "tests_written": true
     },
     "Scribe": {
       "data_file": true,
       "features_validated": true,
-      "feat_implemented": false,
+      "feat_implemented": true,
       "tests_written": true
     },
     "Soldier": {
       "data_file": true,
       "features_validated": true,
-      "feat_implemented": false,
+      "feat_implemented": true,
       "tests_written": true
     },
     "Wayfarer": {
       "data_file": true,
       "features_validated": true,
-      "feat_implemented": false,
+      "feat_implemented": true,
       "tests_written": true
     }
   },
@@ -676,10 +676,10 @@
       }
     },
     "general": {
-      "_note": "44 general feats \u2014 all have data files, 40/44 effects implemented (4 need choice-dependent effect handling)",
+      "_note": "44 general feats — all have data files, all effects implemented",
       "Ability Score Improvement": {
         "data_file": true,
-        "effects_implemented": false,
+        "effects_implemented": true,
         "tests_written": true
       },
       "Actor": {
@@ -804,7 +804,7 @@
       },
       "Observant": {
         "data_file": true,
-        "effects_implemented": false,
+        "effects_implemented": true,
         "tests_written": true
       },
       "Piercer": {
@@ -824,7 +824,7 @@
       },
       "Resilient": {
         "data_file": true,
-        "effects_implemented": false,
+        "effects_implemented": true,
         "tests_written": true
       },
       "Ritual Caster": {
@@ -854,7 +854,7 @@
       },
       "Skill Expert": {
         "data_file": true,
-        "effects_implemented": false,
+        "effects_implemented": true,
         "tests_written": true
       },
       "Skulker": {
@@ -908,7 +908,7 @@
     "Blind Fighting": {
       "data_file": true,
       "effects_implemented": true,
-      "tests_written": false
+      "tests_written": true
     },
     "Defense": {
       "data_file": true,
@@ -928,12 +928,12 @@
     "Interception": {
       "data_file": true,
       "effects_implemented": true,
-      "tests_written": false
+      "tests_written": true
     },
     "Protection": {
       "data_file": true,
       "effects_implemented": true,
-      "tests_written": false
+      "tests_written": true
     },
     "Thrown Weapon Fighting": {
       "data_file": true,
