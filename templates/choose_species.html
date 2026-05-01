@@ -59,6 +59,15 @@
 
 {% block scripts %}
 <script>
+const speciesNextLabels = {{ species_next_labels | tojson }};
+const submitBtn = document.getElementById('submit-btn');
+
+function updateNextLabel(speciesName) {
+    if (submitBtn && speciesNextLabels[speciesName]) {
+        submitBtn.innerHTML = '<i class="fas fa-arrow-right"></i> ' + speciesNextLabels[speciesName];
+    }
+}
+
 document.querySelectorAll('.species-card').forEach(card => {
     card.addEventListener('click', function() {
         const radio = this.querySelector('input[type="radio"]');
@@ -67,7 +76,21 @@ document.querySelectorAll('.species-card').forEach(card => {
         // Update visual selection
         document.querySelectorAll('.species-card').forEach(c => c.classList.remove('border-info'));
         this.classList.add('border-info');
+
+        // Update next button label based on selected species
+        updateNextLabel(this.dataset.species);
     });
 });
+
+// If a species is already selected on page load (e.g. user navigated back),
+// update the button label immediately.
+const preSelected = document.querySelector('.species-card input[type="radio"]:checked');
+if (preSelected) {
+    const card = preSelected.closest('.species-card');
+    if (card) {
+        card.classList.add('border-info');
+        updateNextLabel(card.dataset.species);
+    }
+}
 </script>
 {% endblock %}
