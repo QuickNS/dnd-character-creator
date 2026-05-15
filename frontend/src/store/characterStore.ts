@@ -88,6 +88,25 @@ export const useCharacterStore = create<CharacterState>()(
     {
       name: STORAGE_KEY,
       storage: createJSONStorage(() => localStorage),
+      // Versioned migration shim. Bump `version` when the in-progress
+      // store shape changes and add a `migrate` branch to transform
+      // older blobs forward (forward-compatible with a future Postgres
+      // sync that will rely on the same version field).
+      version: 1,
+      migrate: (persisted, version) => {
+        // No structural changes yet — guard against truly foreign
+        // shapes by falling back to defaults.
+        if (
+          !persisted ||
+          typeof persisted !== "object" ||
+          version > 1
+        ) {
+          return { choicesMade: {}, currentStepId: null } as Partial<
+            CharacterState
+          >;
+        }
+        return persisted as Partial<CharacterState>;
+      },
       partialize: (state) => ({
         choicesMade: state.choicesMade,
         currentStepId: state.currentStepId,

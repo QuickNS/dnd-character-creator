@@ -318,6 +318,46 @@ except Exception as e:
     logger.error(f"Error registering blueprints: {e}")
     raise
 
+# ==================== React SPA serving (Phase 7) ====================
+#
+# In production, the React SPA's built bundle (`frontend/dist/`) is
+# served from the Flask root. Any path not claimed by a blueprint
+# (`/api/v1/*`, `/api/test/*`, `/legacy/*`, `/static/*`) falls through
+# to `index.html` so client-side routing handles it.
+#
+# In development, you typically run `npm run dev` (Vite on :5173) and
+# Flask serves only the API; this catch-all just returns a friendly
+# message until you've run `npm run build`.
+
+from pathlib import Path
+from flask import send_from_directory, jsonify
+
+_SPA_DIR = Path(__file__).resolve().parent / "frontend" / "dist"
+
+
+@app.route("/", defaults={"path": ""})
+@app.route("/<path:path>")
+def serve_spa(path: str):
+    """Serve the built React SPA, or a friendly placeholder."""
+    if not _SPA_DIR.exists() or not (_SPA_DIR / "index.html").exists():
+        return jsonify({
+            "error": "React SPA bundle not built.",
+            "hint": "Run `npm run build` in frontend/, or use the Vite dev "
+                    "server at http://localhost:5173 during development.",
+            "legacy_ui": "/legacy/",
+            "api": "/api/v1/health",
+        }), 503
+
+    # Serve a real asset if it exists (e.g. /assets/index-abc.js).
+    if path:
+        candidate = _SPA_DIR / path
+        if candidate.is_file():
+            return send_from_directory(_SPA_DIR, path)
+
+    # Otherwise serve index.html so client-side routing takes over.
+    return send_from_directory(_SPA_DIR, "index.html")
+
+
 # ==================== Application Entry Point ====================
 
 if __name__ == "__main__":

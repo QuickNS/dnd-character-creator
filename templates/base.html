@@ -14,8 +14,12 @@
         <div class="container">
             <a class="navbar-brand" href="{{ url_for('index.index') }}">
                 <i class="fas fa-dice-d20 me-2"></i> D&D 2024 Character Creator
+                <span class="badge bg-secondary ms-2" style="font-size: 0.55em; vertical-align: middle;">LEGACY</span>
             </a>
             <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/" title="Open the new React UI">
+                    <i class="fas fa-sparkles me-1"></i> Try the new UI
+                </a>
                 <a class="nav-link" href="{{ url_for('index.reset') }}">
                     <i class="fas fa-redo-alt me-1"></i> Start Over
                 </a>

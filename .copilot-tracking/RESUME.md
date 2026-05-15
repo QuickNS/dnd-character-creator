@@ -17,7 +17,10 @@ Conversational context is disposable; this folder is the source of truth.
 - **Phase 4b (Remaining Rich Pickers):** COMPLETE — `AbilitiesStep` (standard-array + point-buy + background ASI), `EquipmentStep` (starting-equipment cart), background skill-replacement picker, origin/species feat pickers via `FeatChoicesPicker`. Typecheck + build green.
 - **Phase 5 (Character Sheet View):** COMPLETE — read-only sheet at `/sheet` rendering header / combat / abilities / skills / AC / attacks / proficiencies / languages / spells / features from `/api/v1/character/build`. Typecheck + build green.
 - **Phase 4c (Spells / Masteries / Invocations Pickers):** COMPLETE — `ClassAdvancedChoices` panel inside `ClassStep` wires `/character/derived` (spell_management, mastery_management, invocation_management) into pickers writing `spell_selections`, `weapon_mastery_selections`, `eldritch_invocation_selections`; silently hides when 400. Typecheck + build green.
-- **Awaiting:** explicit user approval to proceed to Phase 5b (PDF parity) or Phase 6 (PWA + persistence).
+- **Phase 5b (Printable Sheet / PDF Parity):** COMPLETE — `/sheet/pdf` renders an 8.5×11in canvas with the official `sheet1.png`/`sheet2.png` background and read-only overlay fields at the same positions as `templates/character_sheet_pdf.html`; weapons + damage cantrips wired through `/character/derived?view=damage_cantrips`; `window.print()` toolbar; desktop-only gating (<900px). PWA precache excludes the sheet PNGs via `workbox.globIgnores`. Typecheck + build green.
+- **Phase 6 (PWA + Persistence):** COMPLETE — `PersistenceAdapter` abstraction (`frontend/src/lib/persistence.ts`) with `LocalStoragePersistence` impl and versioned migration shim (Postgres-ready seam); `rosterStore` for save/load/delete of multiple character snapshots wired into Home page; `UpdatePrompt` using `virtual:pwa-register/react` (reload + offline-ready toasts, hourly update check); `OfflineIndicator` pill; character store bumped to `version: 1` with defensive `migrate`. Typecheck + build green.
+- **Phase 7 (Cutover + Legacy Quarantine):** COMPLETE — Legacy Jinja UI mounted under `/legacy/*` (10 blueprints, prefix in `routes/__init__.py`); Flask catch-all in `app.py` serves the SPA from `frontend/dist/` (with 503 hint when bundle missing); Home gains `Compare with legacy →`; legacy navbar gains LEGACY badge + `Try the new UI` link; 54 test URLs prefixed with `/legacy`; `pytest tests/` 1882/1882 passing; `npm run build` green.
+- **Awaiting:** explicit user approval before retiring `/legacy/*` in any future phase.
 
 ## Resume Procedure
 
@@ -30,8 +33,11 @@ Conversational context is disposable; this folder is the source of truth.
 7. Read [changes/phase-4b-remaining-pickers.md](changes/phase-4b-remaining-pickers.md) for abilities/equipment/feat/skill-replacement pickers.
 8. Read [changes/phase-5-sheet.md](changes/phase-5-sheet.md) for the read-only character sheet.
 9. Read [changes/phase-4c-spells-masteries-invocations.md](changes/phase-4c-spells-masteries-invocations.md) for the spell/mastery/invocation pickers.
-10. Verify on-disk reality matches the changes logs by listing `frontend/src/`, `routes/api/`, `modules/derived_stats.py`, and re-reading `.devcontainer/devcontainer.json`.
-11. Continue from the **Next Actions** block in whichever phase log is in progress.
+10. Read [changes/phase-5b-pdf-parity.md](changes/phase-5b-pdf-parity.md) for the printable PDF-parity sheet at `/sheet/pdf`.
+11. Read [changes/phase-6-pwa-persistence.md](changes/phase-6-pwa-persistence.md) for the PWA prompts and multi-character roster.
+12. Read [changes/phase-7-cutover-legacy-quarantine.md](changes/phase-7-cutover-legacy-quarantine.md) for the SPA cutover and legacy `/legacy/*` mount.
+13. Verify on-disk reality matches the changes logs by listing `frontend/src/`, `routes/api/`, `modules/derived_stats.py`, and re-reading `.devcontainer/devcontainer.json`.
+14. Continue from the **Next Actions** block in whichever phase log is in progress.
 
 ## Operating Rules (carry over from prior session)
 

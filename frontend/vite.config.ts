@@ -19,6 +19,9 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ["**/*.{js,css,html,svg,png,woff2}"],
+        // Sheet background PNGs are large (>2 MB each) and only needed
+        // by the printable sheet view — exclude from precache.
+        globIgnores: ["**/pdf_template/**"],
       },
     }),
   ],

@@ -3,6 +3,7 @@ import { Home } from "@/pages/Home";
 import { WizardIndex } from "@/pages/WizardIndex";
 import { WizardStep } from "@/pages/WizardStep";
 import { Sheet } from "@/pages/Sheet";
+import { SheetPdf } from "@/pages/SheetPdf";
 import { WizardLayout } from "@/components/layout/WizardLayout";
 
 export const router = createBrowserRouter([
@@ -16,5 +17,6 @@ export const router = createBrowserRouter([
     ],
   },
   { path: "/sheet", element: <Sheet /> },
+  { path: "/sheet/pdf", element: <SheetPdf /> },
   { path: "*", element: <Navigate to="/" replace /> },
 ]);

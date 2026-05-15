@@ -17,20 +17,27 @@ def register_blueprints(app: Flask):
     """
     Register all blueprint modules with the Flask app.
 
+    Phase 7: legacy Jinja UI is quarantined under `/legacy/*` so the
+    React SPA can own root paths (`/`, `/wizard*`, `/sheet*`) while
+    the legacy site remains available as a side-by-side comparison
+    tool. Both UIs share the same `CharacterBuilder` + Flask session.
+
     Args:
         app: The Flask application instance
     """
-    # Register blueprints
-    app.register_blueprint(index_bp)
-    app.register_blueprint(load_character_bp)
-    app.register_blueprint(starter_characters_bp)
-    app.register_blueprint(character_creation_bp)
-    app.register_blueprint(background_bp)
-    app.register_blueprint(species_bp)
-    app.register_blueprint(languages_bp)
-    app.register_blueprint(ability_scores_bp)
-    app.register_blueprint(equipment_bp)
-    app.register_blueprint(character_summary_bp)
+    LEGACY_PREFIX = "/legacy"
+
+    # Legacy Jinja UI — all under /legacy/*
+    app.register_blueprint(index_bp, url_prefix=LEGACY_PREFIX)
+    app.register_blueprint(load_character_bp, url_prefix=LEGACY_PREFIX)
+    app.register_blueprint(starter_characters_bp, url_prefix=LEGACY_PREFIX)
+    app.register_blueprint(character_creation_bp, url_prefix=LEGACY_PREFIX)
+    app.register_blueprint(background_bp, url_prefix=LEGACY_PREFIX)
+    app.register_blueprint(species_bp, url_prefix=LEGACY_PREFIX)
+    app.register_blueprint(languages_bp, url_prefix=LEGACY_PREFIX)
+    app.register_blueprint(ability_scores_bp, url_prefix=LEGACY_PREFIX)
+    app.register_blueprint(equipment_bp, url_prefix=LEGACY_PREFIX)
+    app.register_blueprint(character_summary_bp, url_prefix=LEGACY_PREFIX)
 
     # Register test API endpoints (dev/testing helpers — always available)
     from routes.test_api import test_api_bp

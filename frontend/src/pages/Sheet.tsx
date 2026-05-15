@@ -92,12 +92,20 @@ function Shell({ children }: { children: React.ReactNode }) {
           <Link to="/" className="text-xs text-muted-foreground hover:text-foreground">
             ← Home
           </Link>
-          <Link
-            to="/wizard"
-            className="text-xs text-muted-foreground hover:text-foreground"
-          >
-            Edit in wizard →
-          </Link>
+          <div className="flex items-center gap-4">
+            <Link
+              to="/sheet/pdf"
+              className="text-xs text-primary hover:text-primary/80"
+            >
+              Printable sheet →
+            </Link>
+            <Link
+              to="/wizard"
+              className="text-xs text-muted-foreground hover:text-foreground"
+            >
+              Edit in wizard →
+            </Link>
+          </div>
         </div>
         {children}
       </div>

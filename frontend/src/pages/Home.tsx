@@ -1,17 +1,39 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useCharacterStore } from "@/store/characterStore";
+import { useRosterStore } from "@/store/rosterStore";
+import { summarizeChoices } from "@/lib/persistence";
 
 export function Home() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const reset = useCharacterStore((s) => s.reset);
+  const choicesMade = useCharacterStore((s) => s.choicesMade);
+  const rosterEntries = useRosterStore((s) => s.entries);
+  const rosterLoaded = useRosterStore((s) => s.loaded);
+  const loadRoster = useRosterStore((s) => s.load);
+  const saveCurrent = useRosterStore((s) => s.saveCurrent);
+  const deleteEntry = useRosterStore((s) => s.delete);
   const [importError, setImportError] = useState<string | null>(null);
   const [importOpen, setImportOpen] = useState(false);
   const [pasteText, setPasteText] = useState("");
+  const [saveName, setSaveName] = useState("");
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [savedFlash, setSavedFlash] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!rosterLoaded) {
+      void loadRoster();
+    }
+  }, [rosterLoaded, loadRoster]);
+
+  const hasInProgress = Object.keys(choicesMade).length > 0;
+  const inProgressSummary = hasInProgress
+    ? summarizeChoices(choicesMade)
+    : "";
 
   function applyChoices(choices: Record<string, unknown>) {
     // Replace persisted store state directly so the import lands atomically
@@ -84,6 +106,44 @@ export function Home() {
     }
   }
 
+  function handleSaveCurrent() {
+    setSaveError(null);
+    if (!hasInProgress) {
+      setSaveError("Nothing to save yet — start the wizard first.");
+      return;
+    }
+    const name =
+      saveName.trim() ||
+      (typeof choicesMade.character_name === "string"
+        ? (choicesMade.character_name as string)
+        : "Unnamed character");
+    saveCurrent(choicesMade, name)
+      .then((entry) => {
+        setSaveName("");
+        setSavedFlash(`Saved “${entry.name}” to your roster.`);
+        window.setTimeout(() => setSavedFlash(null), 3000);
+      })
+      .catch((err: unknown) => {
+        setSaveError(
+          err instanceof Error ? err.message : "Failed to save character.",
+        );
+      });
+  }
+
+  function handleLoadEntry(id: string) {
+    const entry = rosterEntries.find((e) => e.id === id);
+    if (!entry) return;
+    applyChoices(entry.choices as Record<string, unknown>);
+    navigate("/wizard");
+  }
+
+  function handleDeleteEntry(id: string, name: string) {
+    if (!window.confirm(`Delete "${name}" from your roster? This cannot be undone.`)) {
+      return;
+    }
+    void deleteEntry(id);
+  }
+
   function handleStartFresh(e: React.MouseEvent) {
     e.preventDefault();
     reset();
@@ -135,6 +195,13 @@ export function Home() {
           >
             View Sheet
           </Link>
+          <a
+            href="/legacy/"
+            className="inline-flex items-center rounded-md border border-border px-6 py-3 text-muted-foreground hover:bg-secondary hover:text-foreground"
+            title="Open the legacy Jinja UI in this tab for side-by-side comparison"
+          >
+            Compare with legacy →
+          </a>
         </div>
 
         {importOpen && (
@@ -217,6 +284,107 @@ export function Home() {
             Import failed: {importError}
           </p>
         )}
+
+        <section className="mt-12">
+          <div className="flex items-baseline justify-between mb-4">
+            <h2 className="font-display text-2xl text-primary">
+              Saved Characters
+            </h2>
+            <span className="text-xs text-muted-foreground">
+              Stored locally in this browser
+            </span>
+          </div>
+
+          <div className="rounded-md border border-border bg-card/50 p-5">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+              <div className="flex-1">
+                <label
+                  htmlFor="save-name"
+                  className="block text-xs uppercase tracking-widest text-muted-foreground mb-1"
+                >
+                  Save current progress
+                </label>
+                <input
+                  id="save-name"
+                  type="text"
+                  value={saveName}
+                  onChange={(e) => setSaveName(e.target.value)}
+                  placeholder={
+                    hasInProgress
+                      ? typeof choicesMade.character_name === "string"
+                        ? (choicesMade.character_name as string)
+                        : "Character name"
+                      : "Start the wizard first"
+                  }
+                  disabled={!hasInProgress}
+                  className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-40"
+                />
+                {hasInProgress && (
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {inProgressSummary}
+                  </p>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={handleSaveCurrent}
+                disabled={!hasInProgress}
+                className="inline-flex items-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                Save to roster
+              </button>
+            </div>
+            {saveError && (
+              <p className="mt-3 text-xs text-destructive">{saveError}</p>
+            )}
+            {savedFlash && (
+              <p className="mt-3 text-xs text-emerald-500">{savedFlash}</p>
+            )}
+          </div>
+
+          {rosterEntries.length === 0 ? (
+            <p className="mt-6 text-sm text-muted-foreground">
+              No saved characters yet. Save your current progress above
+              to keep multiple characters around.
+            </p>
+          ) : (
+            <ul className="mt-6 space-y-2">
+              {rosterEntries.map((entry) => (
+                <li
+                  key={entry.id}
+                  className="rounded-md border border-border bg-card/50 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
+                >
+                  <div className="min-w-0">
+                    <p className="font-semibold text-foreground truncate">
+                      {entry.name}
+                    </p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {entry.summary ?? summarizeChoices(entry.choices)}
+                      {" · "}
+                      {new Date(entry.savedAt).toLocaleString()}
+                    </p>
+                  </div>
+                  <div className="flex gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => handleLoadEntry(entry.id)}
+                      className="rounded-md border border-primary px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/10"
+                    >
+                      Load
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteEntry(entry.id, entry.name)}
+                      className="rounded-md border border-border px-3 py-1.5 text-xs text-muted-foreground hover:text-destructive hover:border-destructive"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
       </div>
     </main>
   );

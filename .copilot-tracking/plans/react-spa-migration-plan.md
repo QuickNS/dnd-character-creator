@@ -93,21 +93,65 @@ Extract calculation logic from Jinja-coupled routes into pure functions exposed 
 
 **Deferred to Phase 4c**: spells/cantrips picker, maneuver picker, eldritch invocation picker.
 
-### Phase 5 — Character Sheet View + PDF Parity (PARTIAL — read-only sheet shipped)
+### Phase 5 — Character Sheet View + PDF Parity (COMPLETE)
 
 - [x] `Sheet.tsx` reads `/api/v1/character/build` and renders header / combat / abilities / skills / AC / attacks / proficiencies / languages / spells / features
 - [x] Friendly fallback while wizard is incomplete
 - [x] `npm run typecheck` + `npm run build` clean
-- [ ] PDF parity (background-image overlay, desktop-only gating) — deferred to Phase 5b
+- [x] PDF parity (background-image overlay, desktop-only gating) — shipped in Phase 5b
 - [ ] Present Phase 5 for approval
 
-### Phase 6 — PWA + Persistence (NOT STARTED)
+### Phase 5b — Printable PDF-Parity Sheet (COMPLETE, awaiting approval)
 
-Enable Vite PWA plugin, install offline assets, wire localStorage persistence with a migration shim for future Postgres backend.
+- [x] `/sheet/pdf` renders 8.5×11in canvas with `sheet1.png`/`sheet2.png` background and read-only overlay fields
+- [x] Weapons + damage cantrips wired through `/api/v1/character/derived?view=damage_cantrips`
+- [x] Desktop-only gate (<900px viewport shows friendly message)
+- [x] `window.print()` toolbar; print stylesheet matches legacy template
+- [x] Sheet PNGs copied to `frontend/public/pdf_template/`; excluded from PWA precache via `workbox.globIgnores`
+- [x] `npm run typecheck` + `npm run build` clean
+- [ ] Present Phase 5b for approval
 
-### Phase 7 — Cutover + Legacy Removal (NOT STARTED)
+### Phase 6 — PWA + Persistence (COMPLETE, awaiting approval)
 
-Serve built React bundle from Flask; remove obsolete Jinja routes; finalize CORS posture.
+- [x] `PersistenceAdapter` interface + `LocalStoragePersistence` impl with versioned migration shim (`frontend/src/lib/persistence.ts`)
+- [x] `rosterStore` (Zustand) wrapping the adapter (`frontend/src/store/rosterStore.ts`)
+- [x] Character store bumped to `version: 1` with defensive `migrate`
+- [x] `UpdatePrompt` using `virtual:pwa-register/react` — reload + offline-ready toasts, hourly update check
+- [x] `OfflineIndicator` pill driven by `navigator.onLine`
+- [x] Home page "Saved Characters" section: save current, list, load, delete
+- [x] `npm run typecheck` + `npm run build` clean
+- [ ] Present Phase 6 for approval
+
+### Phase 7 — Cutover + Legacy Quarantine (IN PROGRESS)
+
+Serve the built React bundle from Flask at `/`, mount the existing
+Jinja UI under `/legacy/*` so it remains available as a side-by-side
+comparison tool, and tighten CORS to production posture.
+**Do NOT remove the legacy routes** — they share the same
+`CharacterBuilder` + session, which is exactly what makes the
+comparison useful.
+
+- [ ] Re-register all legacy blueprints (`index`, `load_character`,
+      `starter_characters`, `character_creation`, `background`,
+      `species`, `languages`, `ability_scores`, `equipment`,
+      `character_summary`) with `url_prefix="/legacy"`. The API
+      (`/api/v1`) and test API (`/api/test`) blueprints stay put.
+- [ ] Add a Flask catch-all that serves `frontend/dist/index.html` for
+      any unmatched path (and `dist/<asset>` for built assets), so the
+      SPA owns `/`, `/wizard*`, `/sheet*`, etc. in production.
+- [ ] Add cross-links: "Try the new UI →" in the legacy navbar,
+      "Compare with legacy →" on the SPA Home page.
+- [ ] Tighten CORS: keep the dev-only `localhost:5173` allowance
+      gated by `FLASK_ENV=development`; no change needed once SPA is
+      same-origin.
+- [ ] Update tests that hit hardcoded legacy URLs to use the
+      `/legacy/...` prefix.
+- [ ] Run pytest regression + frontend `npm run build`.
+- [ ] Present Phase 7 for approval.
+
+The legacy site stays mounted indefinitely as a comparison surface;
+removing it is deferred to a future phase only when explicitly
+requested.
 
 ## Approval Gates
 

@@ -66,7 +66,7 @@ class TestSpeciesFeatChoicesRoute:
         """GET /species-feat-choices should return 200 when feat has choices."""
         _seed_session(client, skilled_builder)
 
-        response = client.get("/species-feat-choices")
+        response = client.get("/legacy/species-feat-choices")
         assert response.status_code == 200
         assert b"Skilled" in response.data
 
@@ -74,7 +74,7 @@ class TestSpeciesFeatChoicesRoute:
         """The feat choices page should list skill/tool options from Skilled."""
         _seed_session(client, skilled_builder)
 
-        response = client.get("/species-feat-choices")
+        response = client.get("/legacy/species-feat-choices")
         assert response.status_code == 200
         assert b"Arcana" in response.data
 
@@ -82,7 +82,7 @@ class TestSpeciesFeatChoicesRoute:
         """The page should say the species grants the feat, not the background."""
         _seed_session(client, skilled_builder)
 
-        response = client.get("/species-feat-choices")
+        response = client.get("/legacy/species-feat-choices")
         assert response.status_code == 200
         assert b"species" in response.data.lower()
 
@@ -91,7 +91,7 @@ class TestSpeciesFeatChoicesRoute:
         _seed_session(client, skilled_builder)
 
         response = client.post(
-            "/submit-species-feat-choices",
+            "/legacy/submit-species-feat-choices",
             data={
                 "feat_choice_skills_or_tools": ["Arcana", "History", "Deception"],
             },
@@ -112,7 +112,7 @@ class TestSpeciesFeatChoicesRoute:
         _seed_session(client, skilled_builder)
 
         client.post(
-            "/submit-species-feat-choices",
+            "/legacy/submit-species-feat-choices",
             data={
                 "feat_choice_skills_or_tools": ["Arcana", "History", "Deception"],
             },
@@ -127,7 +127,7 @@ class TestSpeciesFeatChoicesRoute:
         _seed_session(client, skilled_builder)
 
         response = client.post(
-            "/submit-species-feat-choices",
+            "/legacy/submit-species-feat-choices",
             data={
                 "feat_choice_skills_or_tools": ["Arcana", "History", "Deception"],
             },
@@ -144,7 +144,7 @@ class TestSpeciesFeatChoicesRoute:
         builder.set_step("species_feat_choices")
         _seed_session(client, builder)
 
-        response = client.get("/species-feat-choices", follow_redirects=False)
+        response = client.get("/legacy/species-feat-choices", follow_redirects=False)
         # Should redirect (no choices to present)
         assert response.status_code == 302
 
@@ -159,7 +159,7 @@ class TestSelectSpeciesTraitsRedirect:
         _seed_session(client, builder)
 
         response = client.post(
-            "/select-species-traits",
+            "/legacy/select-species-traits",
             data={
                 "trait_skillful": "Arcana",
                 "trait_versatile": "Skilled",
@@ -176,7 +176,7 @@ class TestSelectSpeciesTraitsRedirect:
         _seed_session(client, builder)
 
         response = client.post(
-            "/select-species-traits",
+            "/legacy/select-species-traits",
             data={
                 "trait_skillful": "Arcana",
                 "trait_versatile": "Alert",

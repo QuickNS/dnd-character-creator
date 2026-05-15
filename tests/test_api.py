@@ -10,7 +10,7 @@ class TestChoicesToCharacterAPI:
 
     def test_valid_character_build(self, client, dwarf_cleric_choices):
         response = client.post(
-            "/api/choices-to-character",
+            "/legacy/api/choices-to-character",
             json={"choices_made": dwarf_cleric_choices},
             content_type="application/json"
         )
@@ -21,7 +21,7 @@ class TestChoicesToCharacterAPI:
 
     def test_missing_choices_made(self, client):
         response = client.post(
-            "/api/choices-to-character",
+            "/legacy/api/choices-to-character",
             json={"invalid": "data"},
             content_type="application/json"
         )
@@ -29,7 +29,7 @@ class TestChoicesToCharacterAPI:
 
     def test_wrong_content_type(self, client):
         response = client.post(
-            "/api/choices-to-character",
+            "/legacy/api/choices-to-character",
             data="not json"
         )
         assert response.status_code == 400

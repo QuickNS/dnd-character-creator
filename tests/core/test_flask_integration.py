@@ -28,7 +28,7 @@ def test_species_selection_integration(client):
         # Start a new character - follow actual app flow
         print("\n1. Creating new character...")
         response = client.post(
-            "/create",
+            "/legacy/create",
             data={"name": "Test Character", "level": "3", "alignment": "Neutral Good"},
             follow_redirects=False,
         )
@@ -40,21 +40,21 @@ def test_species_selection_integration(client):
         # Choose class
         print("\n2. Selecting class...")
         response = client.post(
-            "/select-class", data={"class": "Ranger"}, follow_redirects=False
+            "/legacy/select-class", data={"class": "Ranger"}, follow_redirects=False
         )
         assert response.status_code == 302, "Should redirect after class selection"
         print("   ✓ Class selection successful")
 
         # Skip class choices (or submit empty) to get to background
         print("\n3. Submitting class choices...")
-        response = client.post("/submit-class-choices", data={}, follow_redirects=False)
+        response = client.post("/legacy/submit-class-choices", data={}, follow_redirects=False)
         # This should redirect to background bonuses
         print(f"   Response: {response.status_code}")
 
         # Choose background
         print("\n4. Selecting background...")
         response = client.post(
-            "/select-background", data={"background": "Sage"}, follow_redirects=False
+            "/legacy/select-background", data={"background": "Sage"}, follow_redirects=False
         )
         assert response.status_code == 302, "Should redirect after background selection"
         print("   ✓ Background selection successful")
@@ -62,14 +62,14 @@ def test_species_selection_integration(client):
         # Choose species using CharacterBuilder
         print("\n5. Selecting species (using CharacterBuilder)...")
         response = client.post(
-            "/select-species", data={"species": "Elf"}, follow_redirects=False
+            "/legacy/select-species", data={"species": "Elf"}, follow_redirects=False
         )
         assert response.status_code == 302, "Should redirect after species selection"
         print("   ✓ Species selection successful")
 
         # Check lineage page loads
         print("\n6. Loading lineage selection page...")
-        response = client.get("/choose-lineage", follow_redirects=True)
+        response = client.get("/legacy/choose-lineage", follow_redirects=True)
         print(f"   Status: {response.status_code}")
         assert response.status_code == 200, "Lineage page should load"
 
@@ -89,7 +89,7 @@ def test_species_selection_integration(client):
         # Select lineage using CharacterBuilder
         print("\n7. Selecting lineage (using CharacterBuilder)...")
         response = client.post(
-            "/select-lineage",
+            "/legacy/select-lineage",
             data={"lineage": "Wood Elf", "spellcasting_ability": "Wisdom"},
             follow_redirects=False,
         )
@@ -114,33 +114,33 @@ def test_character_summary_with_builder():
 
         # Create character
         client.post(
-            "/create",
+            "/legacy/create",
             data={"name": "Test Ranger", "level": "3", "alignment": "Neutral Good"},
         )
 
         # Class
-        client.post("/select-class", data={"class": "Ranger"})
+        client.post("/legacy/select-class", data={"class": "Ranger"})
 
         # Class choices (submit empty to skip)
-        client.post("/submit-class-choices", data={})
+        client.post("/legacy/submit-class-choices", data={})
 
         # Background
-        client.post("/select-background", data={"background": "Sage"})
+        client.post("/legacy/select-background", data={"background": "Sage"})
 
         # Species (using CharacterBuilder!)
-        response = client.post("/select-species", data={"species": "Elf"})
+        response = client.post("/legacy/select-species", data={"species": "Elf"})
         print(f"   Species response: {response.status_code}")
 
         # Lineage (using CharacterBuilder!)
         response = client.post(
-            "/select-lineage",
+            "/legacy/select-lineage",
             data={"lineage": "Wood Elf", "spellcasting_ability": "Wisdom"},
         )
         print(f"   Lineage response: {response.status_code}")
 
         # Get character summary
         print("\n2. Loading character summary...")
-        response = client.get("/character-summary", follow_redirects=True)
+        response = client.get("/legacy/character-summary", follow_redirects=True)
 
         print(f"   Status: {response.status_code}")
 
