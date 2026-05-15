@@ -1,5 +1,5 @@
 ---
-description: "Use when creating or modifying Flask route handlers, the REST API v1, the legacy Jinja routes, or session management code for the character creator."
+description: "Use when creating or modifying Flask route handlers in the REST API v1. Legacy Jinja routes are quarantined and must not be modified."
 applyTo: "routes/**/*.py"
 ---
 

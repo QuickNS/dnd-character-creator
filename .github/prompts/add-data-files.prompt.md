@@ -1,6 +1,6 @@
 ---
 description: 'Adds or updates D&D game data files for a specific content type'
-agent: 'data-author'
+agent: 'backend'
 argument-hint: 'e.g., class=Fighter, species=Elf, background=Sailor'
 ---
 

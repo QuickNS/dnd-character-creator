@@ -216,7 +216,7 @@ git checkout main && git pull
 ## Tips
 
 - Fix one issue at a time. Run tests between each fix.
-- For missing feature issues, use the implement-class-feature skill's effect mapping table to choose the right effect types.
+- For missing feature issues, use the implement-feature skill's effect mapping table to choose the right effect types.
 - When an issue requires a new effect type, also update `docs/FEATURE_EFFECTS.md` and `_apply_effect()`.
 - Subclass issues will have titles like `[Monk/Warrior of Shadow] ...`.
 - For species issues, check `data/species_variants/` if the species has lineage variants.

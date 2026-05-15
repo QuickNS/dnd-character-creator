@@ -5,44 +5,33 @@ description: "Validate a complete character build by rebuilding from choices and
 
 # Validate Character
 
-Workflow for validating that a character build produces correct calculated values.
+Manual end-to-end sanity check: build a character from raw choices and confirm the computed output is correct. Use this when an automated test would be heavy-handed (exploratory check after a refactor, verifying a bug fix in context, eyeballing a new build).
+
+For canonical assertion paths into the response, see `.github/instructions/character-builder-api.instructions.md` and `docs/APIContract.md`. Do not duplicate those shapes here — they drift.
 
 ## When to Use
 
-- After implementing a new feature to verify it works in a full build
-- Checking if a bug fix resolved a calculation issue
-- Validating test character files are still correct
-- Verifying a class/species combination works end-to-end
+- After implementing a feature, to verify it lights up in a full build.
+- Confirming a bug fix resolved the user-visible calculation.
+- Spot-checking a new class/species/background combo end-to-end.
+- Validating that a `test_characters/*.json` reference is still correct.
+
+For repeatable regression coverage, write a pytest test instead (delegate to the `test` agent).
 
 ## Procedure
 
-### 1. Choose or Create Character Choices
+### 1. Define or load choices
 
-Use an existing test character or define choices:
+Either reuse a reference build or compose a minimal `choices_made` dict:
 
-```python
-choices = {
-    "character_name": "Test Character",
-    "level": 3,
-    "species": "Dwarf",
-    "class": "Cleric",
-    "subclass": "Light Domain",
-    "background": "Acolyte",
-    "ability_scores": {
-        "Strength": 14, "Dexterity": 8, "Constitution": 15,
-        "Intelligence": 10, "Wisdom": 16, "Charisma": 12
-    },
-    "background_bonuses": {"Wisdom": 2, "Constitution": 1}
-}
-```
-
-Reference builds are in `test_characters/`:
 - `test_characters/test_cleric_dwarf.json`
 - `test_characters/test_figher_wood_elf.json`
 
-### 2. Build via API
+Required keys mirror the wizard: `character_name`, `level`, `species`, `class`, `subclass` (when relevant), `background`, `ability_scores`, `background_bonuses`. Add choice keys (`origin_feat`, `fighting_style`, `spells`, `cantrips`, `equipment_selections`, …) as the build demands.
 
-Use the stateless API endpoint (the same one the React SPA uses):
+### 2. Build via the API or in Python
+
+API (matches what the React SPA does):
 
 ```bash
 curl -X POST http://localhost:5000/api/v1/character/build \
@@ -50,9 +39,8 @@ curl -X POST http://localhost:5000/api/v1/character/build \
   -d '{"choices_made": {...}}'
 ```
 
-Response: `{"character": <to_character() output>}`.
+Python:
 
-Or in Python:
 ```python
 from modules.character_builder import CharacterBuilder
 
@@ -61,63 +49,33 @@ builder.apply_choices(choices)
 character = builder.to_character()
 ```
 
-### 3. Verify Calculated Values
+### 3. Walk the output
 
-Check each category against expected values:
+Read the character dict and confirm each area looks right. Use `.github/instructions/character-builder-api.instructions.md` to find the field paths. Areas to scan:
 
-#### HP
-```python
-# HP = (hit_die at L1) + (avg at L2+) + (CON mod × level) + bonuses
-# Dwarf Cleric L3: 8 + 5 + 5 + (2×3) + (1×3) = 27
-assert character['combat']['hit_points']['maximum'] == expected
-```
+- Identity & level (`name`, `level`, `class`, `subclass`, `species`, `background`)
+- Ability scores and modifiers
+- Combat block (HP, AC options, initiative, speed)
+- Saving throws and skills (proficient/expertise flags)
+- Proficiencies (armor, weapons, tools, languages)
+- Attacks and attack combinations
+- Spellcasting (slots, prepared/known, cantrips, DC, attack mod)
+- Effects array (resistances, immunities, save advantages, …)
+- Selection echoes (`spell_selections`, `weapon_mastery_selections`, `eldritch_invocation_selections` inside `choices_made`)
 
-#### Proficiencies
-```python
-assert set(['Light armor', 'Medium armor', 'Shields']).issubset(set(character['proficiencies']['armor']))
-assert 'Wisdom' in character['proficiencies']['saving_throws']
-```
+### 4. Compare against a reference (optional)
 
-#### Effects
-```python
-effects = character.get('effects', [])
-# Check resistances
-assert any(e['type'] == 'grant_damage_resistance' and e['damage_type'] == 'Poison' for e in effects)
-# Check save advantages
-assert any(e['type'] == 'grant_save_advantage' for e in effects)
-```
-
-#### Spells (for casters)
-```python
-cantrips = character['spells']['prepared']['cantrips']
-assert 'Light' in cantrips  # Light Domain bonus cantrip
-```
-
-#### Skills
-```python
-skills = character.get('skills', {})
-insight = skills.get('Insight', {})
-assert insight.get('proficient') is True
-```
-
-### 4. Compare with Previous Build
-
-If a reference character exists, diff the output:
-
-```python
-import json
-
-with open('test_characters/test_cleric_dwarf.json') as f:
-    reference = json.load(f)
-
-# Compare key sections
-assert character['combat'] == reference['combat']
-assert character['proficiencies'] == reference['proficiencies']
-```
+If a baseline file exists (e.g. in `test_characters/`), diff the two dicts with `json.dumps(..., sort_keys=True, indent=2)` and a text diff tool, or assert section-by-section in a REPL.
 
 ### 5. Report
 
-Summarize:
-- All checks passed / failed
-- Any unexpected values with expected vs actual
-- Suggestions for fixes if failures found
+Summarise:
+- Areas checked.
+- Discrepancies: expected vs actual, with the field path.
+- Suggested next step (file an issue via `issue-tracker`, hand off to `backend` for a fix, or write a regression test via `test`).
+
+## Related
+
+- `.github/instructions/character-builder-api.instructions.md` — authoritative output paths
+- `docs/APIContract.md` — `Character` response shape
+- `.github/skills/implement-feature/SKILL.md` — when validation surfaces a missing/incorrect feature
