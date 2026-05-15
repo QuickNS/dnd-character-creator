@@ -70,7 +70,9 @@ export function EffectsPanel() {
     );
   }
 
-  const c = (buildQuery.data?.character ?? {}) as ComputedCharacter;
+  const c = ((buildQuery.data as { character?: ComputedCharacter } | undefined)?.character ??
+    (buildQuery.data as ComputedCharacter | undefined) ??
+    {}) as ComputedCharacter;
   const combat = c.combat ?? {};
   const hp = readNumber(combat.hp, combat.hit_points);
   const ac = readNumber(combat.armor_class, combat.ac);
