@@ -42,6 +42,19 @@ if str(Path(__file__).parent.parent) not in sys.path:
 from utils.choice_resolver import resolve_choice_options, get_option_descriptions
 
 
+def _humanize(snake: str) -> str:
+    """Title-case a snake_case identifier for display.
+
+    Unlike :py:meth:`str.title`, this does not capitalize the letter that
+    follows a digit, so ``"1st_level_spell"`` becomes ``"1st Level Spell"``
+    rather than ``"1St Level Spell"``.
+    """
+    return " ".join(
+        (w[0].upper() + w[1:]) if w and w[0].isalpha() else w
+        for w in snake.split("_")
+    )
+
+
 class CharacterBuilder:
     """
     Stateful builder for D&D 2024 character creation.
@@ -2128,7 +2141,7 @@ class CharacterBuilder:
         formula_parts = []
         if ac_base != 10:
             formula_parts.append(f"Armor base ({ac_base})")
-        if dex_bonus > 0:
+        if dex_bonus != 0 or "Light" in category or "Medium" in category:
             formula_parts.append(f"Dex modifier ({dex_bonus})")
         if shield_bonus > 0:
             formula_parts.append(f"Shield ({shield_bonus})")
@@ -3360,6 +3373,12 @@ class CharacterBuilder:
             if ability not in saving_throw_profs:
                 saving_throw_profs.append(ability)
 
+        species_bonuses = getattr(self.ability_scores, "species_bonuses", {}) or {}
+        background_bonuses = (
+            getattr(self.ability_scores, "background_bonuses", {}) or {}
+        )
+        base_scores = getattr(self.ability_scores, "base_scores", {}) or {}
+
         processed_scores = {}
         for ability_name, score in raw_scores.items():
             ability_lower = ability_name.lower()
@@ -3372,6 +3391,9 @@ class CharacterBuilder:
                 "modifier": modifier,
                 "saving_throw": saving_throw_bonus,
                 "saving_throw_proficient": is_proficient,
+                "base_score": base_scores.get(ability_name, score),
+                "species_bonus": species_bonuses.get(ability_name, 0),
+                "background_bonus": background_bonuses.get(ability_name, 0),
             }
 
         return processed_scores
@@ -5300,6 +5322,7 @@ class CharacterBuilder:
             )
 
             skill_choice = {
+                "choice_key": "skill_choices",
                 "title": "Skill Proficiencies",
                 "type": "skills",
                 "description": f"Choose {class_data['skill_proficiencies_count']} skill proficiencies from the available options.",
@@ -5329,6 +5352,7 @@ class CharacterBuilder:
             )
 
             tool_choice = {
+                "choice_key": "tool_choices",
                 "title": "Tool Proficiency",
                 "type": "tools",
                 "description": f"Choose {tool_count} tool {'proficiency' if tool_count == 1 else 'proficiencies'} from the available options.",
@@ -5824,7 +5848,7 @@ class CharacterBuilder:
                 already_chosen = [already_chosen]
 
             choice = {
-                "title": f"{feat_name} — {choice_name.replace('_', ' ').title()}",
+                "title": f"{feat_name} — {_humanize(choice_name)}",
                 "type": "feature",
                 "description": feat_data.get("description", ""),
                 "options": options,
@@ -5893,7 +5917,7 @@ class CharacterBuilder:
                 already_chosen = [already_chosen]
 
             choice = {
-                "title": f"{feat_name} — {choice_name.replace('_', ' ').title()}",
+                "title": f"{feat_name} — {_humanize(choice_name)}",
                 "type": "feature",
                 "description": feat_data.get("description", ""),
                 "options": options,

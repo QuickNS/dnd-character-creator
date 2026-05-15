@@ -1,0 +1,943 @@
+import { Link } from "react-router-dom";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
+import { api } from "@/lib/api";
+import { useCharacterStore } from "@/store/characterStore";
+
+// `to_character()` is too sprawling to fully type at the boundary.
+// We treat it as a loose record and narrow only where we read.
+type Char = Record<string, unknown>;
+
+function num(v: unknown): number | undefined {
+  return typeof v === "number" ? v : undefined;
+}
+function str(v: unknown): string | undefined {
+  return typeof v === "string" ? v : undefined;
+}
+function arr<T = unknown>(v: unknown): T[] {
+  return Array.isArray(v) ? (v as T[]) : [];
+}
+function rec(v: unknown): Record<string, unknown> {
+  return v && typeof v === "object" && !Array.isArray(v)
+    ? (v as Record<string, unknown>)
+    : {};
+}
+function signed(v: number | undefined): string {
+  if (v === undefined) return "—";
+  return v >= 0 ? `+${v}` : String(v);
+}
+
+export function Sheet() {
+  const choicesMade = useCharacterStore((s) => s.choicesMade);
+  const buildQuery = useQuery({
+    queryKey: ["character", "build", choicesMade],
+    queryFn: () => api.character.build(choicesMade),
+    retry: false,
+    placeholderData: keepPreviousData,
+  });
+
+  if (buildQuery.isLoading) {
+    return (
+      <Shell>
+        <p className="text-muted-foreground">Building character…</p>
+      </Shell>
+    );
+  }
+  if (buildQuery.error) {
+    return (
+      <Shell>
+        <p className="text-destructive">
+          Cannot build character yet: {String(buildQuery.error)}
+        </p>
+        <p className="mt-3 text-sm text-muted-foreground">
+          Finish the wizard first.{" "}
+          <Link to="/wizard" className="text-primary underline">
+            Go to wizard →
+          </Link>
+        </p>
+      </Shell>
+    );
+  }
+
+  const c = (buildQuery.data?.character ?? {}) as Char;
+  return (
+    <Shell>
+      <Header c={c} />
+      <CoreStats c={c} />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6 lg:items-stretch">
+        <div className="flex flex-col gap-6 lg:h-full">
+          <Abilities c={c} className="flex-1" />
+          <SavingThrows c={c} />
+        </div>
+        <Skills c={c} />
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+        <ACOptions c={c} />
+        <Attacks c={c} />
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+        <Proficiencies c={c} />
+        <Languages c={c} />
+      </div>
+      <Spells c={c} />
+      <Features c={c} />
+    </Shell>
+  );
+}
+
+function Shell({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="min-h-dvh bg-background text-foreground">
+      <div className="container py-10 max-w-5xl">
+        <div className="flex items-center justify-between mb-6">
+          <Link to="/" className="text-xs text-muted-foreground hover:text-foreground">
+            ← Home
+          </Link>
+          <Link
+            to="/wizard"
+            className="text-xs text-muted-foreground hover:text-foreground"
+          >
+            Edit in wizard →
+          </Link>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function Section({
+  title,
+  children,
+  className,
+}: {
+  title: string;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <section
+      className={
+        "rounded-md border border-border bg-card/50 p-4 flex flex-col" +
+        (className ? " " + className : "")
+      }
+    >
+      <h2 className="font-display text-lg text-primary mb-3">{title}</h2>
+      {children}
+    </section>
+  );
+}
+
+function Header({ c }: { c: Char }) {
+  const name = str(c.name) ?? str(c.character_name) ?? "Unnamed";
+  const cls = str(c.class) ?? "—";
+  const sub = str(c.subclass);
+  const species = str(c.species) ?? "—";
+  const lineage = str(c.lineage);
+  const bg = str(c.background);
+  const level = num(c.level) ?? "—";
+  const alignment = str(c.alignment) ?? "Unspecified";
+  return (
+    <header className="rounded-md border border-border bg-card/50 p-5 mb-4">
+      <h1 className="font-display text-3xl text-primary">{name}</h1>
+      <p className="mt-1 text-sm text-muted-foreground">
+        Level {level} {cls}
+        {sub ? ` (${sub})` : ""} · {species}
+        {lineage ? ` (${lineage})` : ""}
+        {bg ? ` · ${bg}` : ""} · {alignment}
+      </p>
+    </header>
+  );
+}
+
+function CoreStats({ c }: { c: Char }) {
+  const combat = rec(c.combat);
+  const hp = rec(combat.hit_points);
+  const speed = num(c.speed) ?? num(combat.speed);
+  const init = num(combat.initiative_bonus) ?? num(combat.initiative);
+  const passive = num(combat.passive_perception);
+  const pb = num(c.proficiency_bonus);
+  const hpMax = num(hp.maximum) ?? num(combat.hp);
+  const classData = rec(c.class_data);
+  const hitDie = num(classData.hit_die);
+  const level = num(c.level);
+  return (
+    <Section title="Combat">
+      <dl className="grid grid-cols-2 sm:grid-cols-3 gap-y-3 gap-x-6 text-sm">
+        <Stat label="Hit Points" value={hpMax} />
+        <Stat label="Initiative" value={signed(init)} />
+        <Stat label="Speed" value={speed !== undefined ? `${speed} ft` : "—"} />
+        <Stat label="Passive Perception" value={passive} />
+        <Stat label="Proficiency Bonus" value={signed(pb)} />
+        <Stat
+          label="Hit Dice"
+          value={
+            level !== undefined && hitDie !== undefined
+              ? `${level}d${hitDie}`
+              : "—"
+          }
+        />
+      </dl>
+    </Section>
+  );
+}
+
+function Stat({
+  label,
+  value,
+}: {
+  label: string;
+  value: string | number | undefined;
+}) {
+  return (
+    <div>
+      <dt className="text-xs uppercase tracking-widest text-muted-foreground">
+        {label}
+      </dt>
+      <dd className="text-lg font-semibold">{value ?? "—"}</dd>
+    </div>
+  );
+}
+
+function Abilities({ c, className }: { c: Char; className?: string }) {
+  const abilities = rec(c.abilities);
+  const order = [
+    "Strength",
+    "Dexterity",
+    "Constitution",
+    "Intelligence",
+    "Wisdom",
+    "Charisma",
+  ];
+  type AbilityView = {
+    score?: number;
+    modifier?: number;
+    base?: number;
+    speciesBonus?: number;
+    backgroundBonus?: number;
+  };
+  function pick(name: string): AbilityView {
+    const direct = rec(
+      abilities[name] ?? abilities[name.toLowerCase()] ?? abilities[name.slice(0, 3).toLowerCase()],
+    );
+    if (Object.keys(direct).length) {
+      return {
+        score: num(direct.score),
+        modifier: num(direct.modifier) ?? num(direct.mod),
+        base: num(direct.base_score),
+        speciesBonus: num(direct.species_bonus),
+        backgroundBonus: num(direct.background_bonus),
+      };
+    }
+    const rawScores = rec(c.ability_scores);
+    const raw =
+      rawScores[name] ?? rawScores[name.toLowerCase()] ?? rawScores[name.slice(0, 3).toLowerCase()];
+    return { score: num(raw) };
+  }
+
+  const views = order.map((a) => ({ name: a, v: pick(a) }));
+
+  const abbr = (name: string) => name.slice(0, 3).toUpperCase();
+  const fmtBonus = (n: number) => (n > 0 ? `+${n}` : String(n));
+
+  // Collect contribution rows grouped by source
+  type Contribution = { ability: string; value: number };
+  const groups: Array<{ source: string; contribs: Contribution[] }> = [];
+
+  // Background bonuses (from per-ability breakdown)
+  const backgroundContribs: Contribution[] = views
+    .filter(({ v }) => (v.backgroundBonus ?? 0) !== 0)
+    .map(({ name, v }) => ({ ability: name, value: v.backgroundBonus ?? 0 }));
+  if (backgroundContribs.length > 0) {
+    const bgName = str(c.background);
+    groups.push({
+      source: bgName ? `${bgName} (Background)` : "Background",
+      contribs: backgroundContribs,
+    });
+  }
+
+  // Feat / ASI contributions from ability_bonuses[]
+  const featBonuses = arr<Record<string, unknown>>(c.ability_bonuses);
+  const bySource = new Map<string, Contribution[]>();
+  for (const b of featBonuses) {
+    const ability = str(b.ability);
+    const value = num(b.value);
+    const source = str(b.source) ?? "Feat";
+    if (!ability || value === undefined || value === 0) continue;
+    if (!bySource.has(source)) bySource.set(source, []);
+    bySource.get(source)!.push({ ability, value });
+  }
+  for (const [source, contribs] of bySource) {
+    groups.push({ source, contribs });
+  }
+
+  return (
+    <Section title="Abilities" className={className}>
+      <div className="grid grid-cols-3 gap-2 flex-1 content-start">
+        {views.map(({ name, v }) => (
+          <div
+            key={name}
+            className="rounded border border-border bg-background/40 p-2 text-center flex flex-col"
+          >
+            <div className="text-xs uppercase text-muted-foreground">
+              {abbr(name)}
+            </div>
+            <div className="text-2xl font-semibold">{v.score ?? "—"}</div>
+            <div className="text-sm text-muted-foreground">
+              {signed(v.modifier)}
+            </div>
+          </div>
+        ))}
+      </div>
+      {groups.length > 0 && (
+        <div className="mt-3 border-t border-border/60 pt-2 text-[11px] text-muted-foreground/90">
+          <div className="mb-1 text-[10px] uppercase tracking-wide text-muted-foreground/70">
+            Contributions
+          </div>
+          <ul className="space-y-0.5">
+            {groups.map(({ source, contribs }, i) => (
+              <li key={i} className="flex flex-wrap gap-x-2">
+                <span className="font-semibold text-foreground/90">
+                  {source}:
+                </span>
+                <span>
+                  {contribs
+                    .map((cn) => `${abbr(cn.ability)} ${fmtBonus(cn.value)}`)
+                    .join(", ")}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </Section>
+  );
+}
+
+const SAVE_ORDER = [
+  "Strength",
+  "Dexterity",
+  "Constitution",
+  "Intelligence",
+  "Wisdom",
+  "Charisma",
+];
+
+function SavingThrows({ c }: { c: Char }) {
+  const abilities = rec(c.abilities);
+  const advantages = arr<Record<string, unknown>>(c.save_advantages);
+  const hasAnyAdvantage = advantages.length > 0;
+
+  const advantageFor = (name: string) => {
+    for (const sa of advantages) {
+      const list = arr<string>(sa.abilities);
+      if (list.includes(name)) {
+        return str(sa.display) ?? "Advantage on save";
+      }
+    }
+    return undefined;
+  };
+
+  return (
+    <Section title="Saving Throws">
+      <ul className="space-y-1 text-sm">
+        {SAVE_ORDER.map((name) => {
+          const data = rec(abilities[name.toLowerCase()]);
+          const bonus = num(data.saving_throw);
+          const proficient = data.saving_throw_proficient === true;
+          const advLabel = advantageFor(name);
+          return (
+            <li
+              key={name}
+              className="flex items-center justify-between gap-2 py-0.5"
+            >
+              <span className="flex min-w-0 items-center gap-1.5">
+                <span
+                  className={
+                    proficient
+                      ? "font-semibold text-foreground"
+                      : "text-muted-foreground"
+                  }
+                >
+                  {name}
+                </span>
+                {proficient && (
+                  <span className="shrink-0 text-primary">★</span>
+                )}
+                {advLabel && (
+                  <span
+                    title={advLabel}
+                    className="shrink-0 rounded bg-emerald-600/80 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white"
+                  >
+                    Adv
+                  </span>
+                )}
+              </span>
+              <span
+                className={
+                  "shrink-0 tabular-nums " +
+                  (proficient ? "text-foreground font-semibold" : "text-muted-foreground")
+                }
+              >
+                {signed(bonus)}
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+      <div className="mt-3 border-t border-border/60 pt-2 text-[10px] uppercase tracking-wide text-muted-foreground/80">
+        <span className="text-primary">★</span> Proficient
+        {hasAnyAdvantage && (
+          <>
+            {" · "}
+            <span className="rounded bg-emerald-600/80 px-1 py-0.5 text-white">
+              Adv
+            </span>{" "}
+            Advantage on save
+          </>
+        )}
+      </div>
+    </Section>
+  );
+}
+
+function Skills({ c }: { c: Char }) {
+  const skills = rec(c.skills);
+  const entries = Object.entries(skills);
+  const formatName = (key: string) =>
+    key
+      .split("_")
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(" ");
+  return (
+    <Section title="Skills">
+      {entries.length === 0 ? (
+        <p className="text-xs text-muted-foreground">No skill data.</p>
+      ) : (
+        <>
+          <ul className="grid grid-cols-1 gap-y-1 text-sm">
+            {entries
+              .sort(([a], [b]) => a.localeCompare(b))
+              .map(([name, data]) => {
+                const d = rec(data);
+                const bonus = num(d.bonus) ?? num(d.modifier);
+                const ability = str(d.ability);
+                const proficient = d.proficient === true;
+                const expertise = d.expertise === true;
+                const marked = proficient || expertise;
+                const source = str(d.source);
+                const showSource = marked && source && source !== "None";
+                const marker = expertise ? "★" : proficient ? "★" : "○";
+                const markerClass = expertise
+                  ? "text-amber-400"
+                  : proficient
+                    ? "text-primary"
+                    : "text-muted-foreground/60";
+                return (
+                  <li
+                    key={name}
+                    className="flex items-center justify-between gap-2 py-0.5"
+                  >
+                    <span className="flex min-w-0 items-center gap-1.5">
+                      <span className={"shrink-0 " + markerClass}>
+                        {marker}
+                      </span>
+                      <span
+                        className={
+                          "truncate " +
+                          (marked
+                            ? "font-semibold text-foreground"
+                            : "text-muted-foreground")
+                        }
+                      >
+                        {formatName(name)}
+                      </span>
+                      {ability && (
+                        <span className="shrink-0 text-xs uppercase text-muted-foreground/70">
+                          ({ability.slice(0, 3)})
+                        </span>
+                      )}
+                      {showSource && (
+                        <span className="shrink-0 rounded border border-border bg-secondary/60 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
+                          {source}
+                        </span>
+                      )}
+                    </span>
+                    <span
+                      className={
+                        "shrink-0 tabular-nums " +
+                        (marked ? "text-foreground" : "text-muted-foreground")
+                      }
+                    >
+                      {signed(bonus)}
+                    </span>
+                  </li>
+                );
+              })}
+          </ul>
+          <div className="mt-3 border-t border-border/60 pt-2 text-[10px] uppercase tracking-wide text-muted-foreground/80">
+            <span className="text-primary">★</span> Proficient ·{" "}
+            <span className="text-amber-400">★</span> Expertise
+          </div>
+        </>
+      )}
+    </Section>
+  );
+}
+
+function ACOptions({ c }: { c: Char }) {
+  const options = arr<Record<string, unknown>>(c.ac_options);
+  return (
+    <Section title="Armor Class">
+      {options.length === 0 ? (
+        <p className="text-xs text-muted-foreground">
+          No AC options computed.
+        </p>
+      ) : (
+        <ul className="space-y-2 text-sm">
+          {options.slice(0, 4).map((opt, i) => {
+            const ac = num(opt.ac);
+            const armor = str(opt.armor);
+            const shield = opt.shield;
+            const formula = str(opt.formula);
+            return (
+              <li
+                key={i}
+                className={
+                  "rounded border p-2 " +
+                  (i === 0
+                    ? "border-primary bg-secondary"
+                    : "border-border bg-background/40")
+                }
+              >
+                <div className="flex justify-between">
+                  <span className="font-semibold">
+                    {i === 0 ? "★ " : ""}AC {ac ?? "—"}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {armor ?? "Unarmored"}
+                    {shield ? " + Shield" : ""}
+                  </span>
+                </div>
+                {formula && (
+                  <div className="text-xs text-muted-foreground mt-1">
+                    {formula}
+                  </div>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </Section>
+  );
+}
+
+const MASTERY_CLASSES = new Set([
+  "Fighter",
+  "Rogue",
+  "Barbarian",
+  "Ranger",
+  "Paladin",
+]);
+
+function Attacks({ c }: { c: Char }) {
+  const attacks = arr<Record<string, unknown>>(c.attacks);
+  const className = str(c.class) ?? "";
+  const showMastery = MASTERY_CLASSES.has(className);
+  return (
+    <Section title="Attacks">
+      {attacks.length === 0 ? (
+        <p className="text-xs text-muted-foreground">No weapon attacks.</p>
+      ) : (
+        <ul className="space-y-3 text-sm">
+          {attacks.map((a, i) => {
+            const name = str(a.name) ?? str(a.weapon) ?? "Attack";
+            const bonus = num(a.attack_bonus) ?? num(a.bonus);
+            const bonusDisplay =
+              str(a.attack_bonus_display) ?? signed(bonus);
+            const damage = str(a.damage) ?? str(a.damage_string);
+            const damageType = str(a.damage_type);
+            const avgDamage = num(a.avg_damage);
+            const avgCrit = num(a.avg_crit);
+            const range = str(a.range);
+            const ability = str(a.ability);
+            const properties = arr<string>(a.properties);
+            const damageNotes = arr<string>(a.damage_notes);
+            const mastery = str(a.mastery);
+            const proficient = a.proficient !== false;
+            const throwDamage = str(a.throw_damage);
+            const avgThrow = num(a.avg_throw_damage);
+            const oneHanded = str(a.damage_one_handed);
+            const twoHanded = str(a.damage_two_handed);
+            const avgOne = num(a.avg_one_handed);
+            const avgTwo = num(a.avg_two_handed);
+
+            return (
+              <li
+                key={i}
+                className="rounded border border-border bg-background/40 p-3"
+              >
+                <div className="flex items-baseline justify-between gap-2">
+                  <span className="font-semibold text-foreground">{name}</span>
+                  {ability && (
+                    <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                      {ability.slice(0, 3)}
+                    </span>
+                  )}
+                </div>
+
+                <dl className="mt-2 space-y-1 text-xs">
+                  <div className="flex flex-wrap gap-x-2">
+                    <dt className="font-semibold text-muted-foreground">
+                      Attack:
+                    </dt>
+                    <dd className="text-foreground">
+                      {bonusDisplay} to hit
+                    </dd>
+                    {range && (
+                      <dd className="text-muted-foreground">
+                        (Range: {range})
+                      </dd>
+                    )}
+                  </div>
+
+                  {damage && (
+                    <div className="flex flex-wrap gap-x-2">
+                      <dt className="font-semibold text-muted-foreground">
+                        Damage:
+                      </dt>
+                      <dd className="text-foreground">
+                        {damage}
+                        {damageType ? ` ${damageType}` : ""}
+                      </dd>
+                      {(avgDamage !== undefined || avgCrit !== undefined) && (
+                        <dd className="text-muted-foreground">
+                          (Avg: {avgDamage ?? "—"}
+                          {avgCrit !== undefined ? `, Crit: ${avgCrit}` : ""})
+                        </dd>
+                      )}
+                    </div>
+                  )}
+
+                  {throwDamage && (
+                    <div className="flex flex-wrap gap-x-2">
+                      <dt className="font-semibold text-muted-foreground">
+                        Throw:
+                      </dt>
+                      <dd className="text-foreground">
+                        {throwDamage}
+                        {damageType ? ` ${damageType}` : ""}
+                      </dd>
+                      {avgThrow !== undefined && (
+                        <dd className="text-muted-foreground">
+                          (Avg: {avgThrow})
+                        </dd>
+                      )}
+                    </div>
+                  )}
+
+                  {oneHanded && twoHanded && (
+                    <>
+                      <div className="flex flex-wrap gap-x-2">
+                        <dt className="font-semibold text-muted-foreground">
+                          One-Handed:
+                        </dt>
+                        <dd className="text-foreground">
+                          {oneHanded}
+                          {damageType ? ` ${damageType}` : ""}
+                        </dd>
+                        {avgOne !== undefined && (
+                          <dd className="text-muted-foreground">
+                            (Avg: {avgOne})
+                          </dd>
+                        )}
+                      </div>
+                      <div className="flex flex-wrap gap-x-2">
+                        <dt className="font-semibold text-muted-foreground">
+                          Two-Handed:
+                        </dt>
+                        <dd className="text-foreground">
+                          {twoHanded}
+                          {damageType ? ` ${damageType}` : ""}
+                        </dd>
+                        {avgTwo !== undefined && (
+                          <dd className="text-muted-foreground">
+                            (Avg: {avgTwo})
+                          </dd>
+                        )}
+                      </div>
+                    </>
+                  )}
+
+                  {properties.length > 0 && (
+                    <div className="flex flex-wrap gap-x-2">
+                      <dt className="font-semibold text-muted-foreground">
+                        Properties:
+                      </dt>
+                      <dd className="text-muted-foreground">
+                        {properties.join(", ")}
+                      </dd>
+                    </div>
+                  )}
+
+                  {mastery && showMastery && (
+                    <div className="flex flex-wrap items-center gap-x-2">
+                      <dt className="font-semibold text-muted-foreground">
+                        Mastery:
+                      </dt>
+                      <dd>
+                        <span className="rounded border border-border bg-secondary/60 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-foreground">
+                          {mastery}
+                        </span>
+                      </dd>
+                    </div>
+                  )}
+                </dl>
+
+                {damageNotes.length > 0 && (
+                  <ul className="mt-2 space-y-0.5 text-[11px] text-emerald-400/90">
+                    {damageNotes.map((n, j) => (
+                      <li key={j}>+ {n}</li>
+                    ))}
+                  </ul>
+                )}
+
+                {!proficient && (
+                  <div className="mt-2 text-[11px] text-amber-400">
+                    ⚠ Not proficient — no proficiency bonus applied
+                  </div>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </Section>
+  );
+}
+
+function Proficiencies({ c }: { c: Char }) {
+  const groups: Array<[string, string[]]> = [
+    ["Armor", arr<string>(c.armor_proficiencies)],
+    ["Weapons", arr<string>(c.weapon_proficiencies)],
+    ["Tools", arr<string>(c.tool_proficiencies)],
+  ];
+  return (
+    <Section title="Proficiencies">
+      <div className="space-y-2 text-sm">
+        {groups.map(([label, list]) => (
+          <div key={label}>
+            <div className="text-xs uppercase text-muted-foreground">
+              {label}
+            </div>
+            <div>{list.length > 0 ? list.join(", ") : "—"}</div>
+          </div>
+        ))}
+      </div>
+    </Section>
+  );
+}
+
+function Languages({ c }: { c: Char }) {
+  const langs = arr<string>(c.languages);
+  return (
+    <Section title="Languages">
+      <p className="text-sm">{langs.length > 0 ? langs.join(", ") : "—"}</p>
+    </Section>
+  );
+}
+
+function Spells({ c }: { c: Char }) {
+  const byLevel = rec(c.spells_by_level);
+  const slots = rec(c.spell_slots);
+  const stats = rec(c.spellcasting_stats);
+  const hasSpellcasting = stats.has_spellcasting === true;
+  const levels = Object.keys(byLevel).sort((a, b) => Number(a) - Number(b));
+
+  if (!hasSpellcasting && levels.length === 0 && Object.keys(slots).length === 0) {
+    return null;
+  }
+
+  const ability = str(stats.spellcasting_ability);
+  const saveDC = num(stats.spell_save_dc);
+  const attackBonus = num(stats.spell_attack_bonus);
+  const castingMod = num(stats.spellcasting_modifier);
+  const cantripsPrepared =
+    num(stats.cantrips_always_prepared) !== undefined ||
+    num(stats.cantrips_to_prepare) !== undefined
+      ? (num(stats.cantrips_always_prepared) ?? 0) +
+        (num(stats.cantrips_to_prepare) ?? 0)
+      : undefined;
+  const maxCantrips = num(stats.max_cantrips_prepared);
+  const spellsPrepared = num(stats.spells_prepared);
+  const maxSpells = num(stats.max_spells_prepared);
+  const ritual = stats.ritual_casting === true;
+
+  return (
+    <div className="mt-6">
+      <Section title="Spellcasting">
+        {hasSpellcasting && (
+          <>
+            <dl className="grid grid-cols-2 sm:grid-cols-4 gap-y-3 gap-x-6 text-sm">
+              <Stat label="Spellcasting Ability" value={ability ?? "—"} />
+              <Stat label="Spell Save DC" value={saveDC ?? "—"} />
+              <Stat
+                label="Spell Attack Bonus"
+                value={signed(attackBonus)}
+              />
+              <Stat
+                label="Spellcasting Modifier"
+                value={signed(castingMod)}
+              />
+              {maxCantrips !== undefined && (
+                <Stat
+                  label="Cantrips Known"
+                  value={`${cantripsPrepared ?? 0} / ${maxCantrips}`}
+                />
+              )}
+              {maxSpells !== undefined && (
+                <Stat
+                  label="Prepared Spells"
+                  value={`${spellsPrepared ?? 0} / ${maxSpells}`}
+                />
+              )}
+              {ritual && <Stat label="Ritual Casting" value="Yes" />}
+            </dl>
+
+            {Object.keys(slots).length > 0 && (
+              <div className="mt-4 rounded border border-primary/60 bg-primary/5 p-3">
+                <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-primary">
+                  Spell Slots
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {Object.entries(slots).map(([lvl, n]) => (
+                    <span
+                      key={lvl}
+                      className="rounded bg-primary px-2 py-0.5 text-xs font-semibold text-primary-foreground"
+                    >
+                      Level {lvl}: {String(n)} {Number(n) === 1 ? "slot" : "slots"}
+                    </span>
+                  ))}
+                </div>
+                <div className="mt-2 text-[11px] text-muted-foreground">
+                  You regain all expended slots when you finish a Long Rest.
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
+        {levels.length > 0 && (
+          <div className="mt-4 space-y-5 text-sm">
+            {levels.map((lvl) => {
+              const list = arr<Record<string, unknown>>(byLevel[lvl]);
+              return (
+                <div key={lvl}>
+                  <div className="mb-2 text-sm font-semibold uppercase tracking-wide text-primary">
+                    {lvl === "0" ? "Cantrips" : `Level ${lvl}`}
+                  </div>
+                  <ul className="space-y-3">
+                    {list.map((sp, i) => {
+                      const name = str(sp.name) ?? "Spell";
+                      const school = str(sp.school);
+                      const castingTime = str(sp.casting_time);
+                      const range = str(sp.range);
+                      const components = arr<string>(sp.components).join(", ");
+                      const duration = str(sp.duration);
+                      const description = str(sp.description);
+                      const source = str(sp.source);
+                      const showSource = source && source !== "Selected";
+                      const meta: Array<[string, string | undefined]> = [
+                        ["School", school],
+                        ["Casting Time", castingTime],
+                        ["Range", range],
+                        ["Components", components || undefined],
+                        ["Duration", duration],
+                      ];
+                      return (
+                        <li
+                          key={`${name}-${i}`}
+                          className="rounded border border-border bg-background/40 p-3"
+                        >
+                          <div className="font-semibold text-foreground">
+                            {name}
+                          </div>
+                          <div className="mt-1 text-xs text-muted-foreground">
+                            {meta
+                              .filter(([, v]) => v)
+                              .map(([k, v], j, all) => (
+                                <span key={k}>
+                                  <span className="font-semibold">{k}:</span>{" "}
+                                  {v}
+                                  {j < all.length - 1 ? " | " : ""}
+                                </span>
+                              ))}
+                          </div>
+                          {description && (
+                            <p className="mt-2 text-xs text-foreground/90">
+                              {description}
+                            </p>
+                          )}
+                          {showSource && (
+                            <p className="mt-1 text-[11px] italic text-muted-foreground">
+                              Source: {source}
+                            </p>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </Section>
+    </div>
+  );
+}
+
+function Features({ c }: { c: Char }) {
+  const features = rec(c.features);
+  const entries = Object.entries(features);
+  if (entries.length === 0) return null;
+  return (
+    <div className="mt-6">
+      <Section title="Features">
+        <div className="space-y-4 text-sm">
+          {entries.map(([category, list]) => {
+            const items = arr<Record<string, unknown>>(list);
+            if (items.length === 0) return null;
+            return (
+              <div key={category}>
+                <div className="text-xs uppercase text-muted-foreground mb-1">
+                  {category}
+                </div>
+                <ul className="space-y-2">
+                  {items.map((f, i) => (
+                    <li
+                      key={i}
+                      className="rounded border border-border bg-background/40 p-2"
+                    >
+                      <div className="font-medium text-primary">
+                        {str(f.name) ?? "Feature"}
+                      </div>
+                      {str(f.description) && (
+                        <div
+                          className="feature-description text-xs text-muted-foreground mt-1"
+                          dangerouslySetInnerHTML={{
+                            __html: str(f.description) as string,
+                          }}
+                        />
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            );
+          })}
+        </div>
+      </Section>
+    </div>
+  );
+}

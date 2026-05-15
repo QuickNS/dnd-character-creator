@@ -14,6 +14,13 @@ import json
 import logging
 import re
 from modules.data_loader import DataLoader
+from modules.derived_stats import (
+    ORDINAL_TO_INT as _ORDINAL_TO_INT_SHARED,
+    build_damage_cantrip_rows,
+    build_invocation_management_view,
+    build_mastery_management_view,
+    build_spell_management_view,
+)
 from utils.route_helpers import (
     get_builder_from_session,
     save_builder_to_session,
@@ -27,11 +34,8 @@ character_summary_bp = Blueprint("character_summary", __name__)
 data_loader = DataLoader()
 logger = logging.getLogger(__name__)
 
-# Maps spell slot ordinal names (as stored in spell_slots) to integer spell levels.
-_ORDINAL_TO_INT = {
-    "1st": 1, "2nd": 2, "3rd": 3, "4th": 4, "5th": 5,
-    "6th": 6, "7th": 7, "8th": 8, "9th": 9,
-}
+# Backward-compatible alias (kept so any external imports still resolve).
+_ORDINAL_TO_INT = _ORDINAL_TO_INT_SHARED
 
 # Base directory for spell definition JSON files.
 _SPELL_DEFINITIONS_DIR = Path(__file__).parent.parent / "data" / "spells" / "definitions"
@@ -40,80 +44,10 @@ _SPELL_DEFINITIONS_DIR = Path(__file__).parent.parent / "data" / "spells" / "def
 # underscores, ending in ".json" — no path separators or special characters.
 _SAFE_SPELL_FILENAME_RE = re.compile(r'^[a-z0-9_]+\.json$')
 
-# Regex patterns for extracting damage cantrip info from descriptions.
-_DAMAGE_DICE_RE = re.compile(r'(\d+d\d+)\s+(\w+)\s+damage', re.IGNORECASE)
-_SPELL_ATTACK_RE = re.compile(r'make\s+a\s+(melee|ranged)\s+spell\s+attack', re.IGNORECASE)
-_SAVING_THROW_RE = re.compile(r'succeed\s+on\s+an?\s+(\w+)\s+saving\s+throw', re.IGNORECASE)
 
-
-def _build_damage_cantrip_rows(character_data):
-    """Extract damage cantrips from character's known cantrips for sheet display.
-
-    Returns a list of dicts with keys: name, atk_display, damage, damage_type, notes.
-    """
-    cantrips = character_data.get("spells_by_level", {}).get(0, [])
-    spell_stats = character_data.get("spellcasting_stats", {})
-    level = character_data.get("level", 1)
-    rows = []
-    for cantrip in cantrips:
-        desc = cantrip.get("description", "")
-        # Only include cantrips that deal damage
-        dmg_match = _DAMAGE_DICE_RE.search(desc)
-        if not dmg_match:
-            continue
-
-        base_dice = dmg_match.group(1)
-        damage_type = dmg_match.group(2).capitalize()
-
-        # Scale cantrip damage by character level
-        damage = _scale_cantrip_damage(base_dice, level)
-
-        # Determine attack type
-        atk_match = _SPELL_ATTACK_RE.search(desc)
-        save_match = _SAVING_THROW_RE.search(desc)
-        if atk_match:
-            bonus = spell_stats.get("spell_attack_bonus", 0)
-            atk_display = f"+{bonus}" if bonus >= 0 else str(bonus)
-        elif save_match:
-            dc = spell_stats.get("spell_save_dc", 0)
-            atk_display = f"DC {dc}"
-        else:
-            atk_display = ""
-
-        rows.append({
-            "name": cantrip.get("name", ""),
-            "atk_display": atk_display,
-            "damage": damage,
-            "damage_type": damage_type,
-            "notes": cantrip.get("source", ""),
-        })
-    return rows
-
-
-def _scale_cantrip_damage(base_dice, level):
-    """Scale cantrip damage dice based on character level.
-
-    Cantrips scale at levels 5, 11, and 17.
-    """
-    # Parse base dice (e.g., "1d8")
-    match = re.match(r'(\d+)d(\d+)', base_dice)
-    if not match:
-        return base_dice
-    base_count = int(match.group(1))
-    die = match.group(2)
-
-    # Cantrip scaling tiers
-    if level >= 17:
-        multiplier = 4
-    elif level >= 11:
-        multiplier = 3
-    elif level >= 5:
-        multiplier = 2
-    else:
-        multiplier = 1
-
-    count = base_count * multiplier
-    return f"{count}d{die}"
+# Pure helpers moved to modules/derived_stats.py — re-exported here as the
+# legacy private name so any internal callers continue to work.
+_build_damage_cantrip_rows = build_damage_cantrip_rows
 
 
 # ==================== Route Handlers ====================
@@ -288,186 +222,13 @@ def api_spell_details(spell_name):
 @character_summary_bp.route("/api/spell-management-data")
 def api_spell_management_data():
     """Return spell management data for the modal."""
-    from pathlib import Path
-
     builder = get_builder_from_session()
     if not builder:
         return jsonify({"error": "No character in session"}), 400
-
     try:
-        # Get spellcasting stats
-        stats = builder.calculate_spellcasting_stats()
-
-        if not stats or not stats.get("has_spellcasting"):
-            return jsonify({"error": "Character is not a spellcaster"}), 400
-
-        # Get always-prepared spells
-        always_prepared = []
-        if (
-            "spells" in builder.character_data
-            and "always_prepared" in builder.character_data["spells"]
-        ):
-            for spell_name, spell_data in builder.character_data["spells"][
-                "always_prepared"
-            ].items():
-                always_prepared.append(
-                    {
-                        "name": spell_name,
-                        "level": spell_data.get("level", 0),
-                        "source": spell_data.get("source", "Unknown"),
-                        "counts_against_limit": spell_data.get(
-                            "counts_against_limit", True
-                        ),
-                    }
-                )
-
-        # Get available cantrips and spells from spellcasting stats
-        # (stats already resolves the correct spell list, e.g. Wizard for Eldritch Knight)
-        available_cantrips = [
-            builder._load_spell_definition(name)
-            for name in stats.get("available_cantrips", [])
-        ]
-
-        available_spells = {}
-        for level, spell_names in stats.get("available_spells", {}).items():
-            available_spells[str(level)] = [
-                builder._load_spell_definition(name)
-                for name in spell_names
-            ]
-
-        # Determine which spell levels the character can actually use based on
-        # available spell slots, and filter available_spells accordingly.
-        # Characters should only be able to prepare spells for levels they have slots.
-        character = builder.to_character()
-        spell_slots = character.get("spell_slots", {})
-        available_slot_levels = {
-            _ORDINAL_TO_INT[name]
-            for name in spell_slots
-            if name in _ORDINAL_TO_INT and spell_slots[name] > 0
-        }
-        if available_slot_levels:
-            available_spells = {
-                level: spells
-                for level, spells in available_spells.items()
-                if int(level) in available_slot_levels
-            }
-
-        # Get current selections from character
-        # Handle both old (list) and new (dict) spell storage formats
-        spells_data = builder.character_data.get("spells", {})
-        prepared = spells_data.get("prepared", {})
-
-        # Convert old list format to dict format if needed
-        if isinstance(prepared, list):
-            prepared = {"cantrips": {}, "spells": {}}
-
-        current_selections = {
-            "cantrips": list(prepared.get("cantrips", {}).keys())
-            if isinstance(prepared.get("cantrips", {}), dict)
-            else [],
-            "spells": list(prepared.get("spells", {}).keys())
-            if isinstance(prepared.get("spells", {}), dict)
-            else [],
-            "background_cantrips": [],
-            "background_spells": [],
-        }
-
-        # Handle background spell requirements
-        background_requirements = None
-        if stats.get("background_spell_requirements"):
-            bg_req = stats["background_spell_requirements"]
-            background_requirements = {}
-
-            # Background cantrips
-            if bg_req.get("cantrips_needed", 0) > 0:
-                bg_cantrips = []
-                bg_class = bg_req.get("cantrip_class", "")
-                if bg_class:
-                    bg_spell_list_file = (
-                        Path(__file__).parent.parent
-                        / "data"
-                        / "spells"
-                        / "class_lists"
-                        / f"{bg_class.lower()}.json"
-                    )
-                    if bg_spell_list_file.exists():
-                        with open(bg_spell_list_file, "r") as f:
-                            bg_spell_list_data = json.load(f)
-                            cantrip_names = bg_spell_list_data.get("cantrips", [])
-                            for spell_name in cantrip_names:
-                                bg_cantrips.append(
-                                    builder._load_spell_definition(spell_name)
-                                )
-
-                background_requirements["cantrips"] = {
-                    "count": bg_req["cantrips_needed"],
-                    "class_name": bg_class,
-                    "available": bg_cantrips,
-                }
-
-                # Get current background cantrip selections
-                background_spells = spells_data.get("background_spells", {})
-                if isinstance(background_spells, dict):
-                    current_selections["background_cantrips"] = [
-                        name
-                        for name, data in background_spells.items()
-                        if isinstance(data, dict) and data.get("level") == 0
-                    ]
-
-            # Background spells
-            if bg_req.get("spells_needed", 0) > 0:
-                bg_spells = []
-                bg_class = bg_req.get("spell_class", "")
-                if bg_class:
-                    bg_spell_list_file = (
-                        Path(__file__).parent.parent
-                        / "data"
-                        / "spells"
-                        / "class_lists"
-                        / f"{bg_class.lower()}.json"
-                    )
-                    if bg_spell_list_file.exists():
-                        with open(bg_spell_list_file, "r") as f:
-                            bg_spell_list_data = json.load(f)
-                            # Get level 1 spells only (typical for background features)
-                            spell_names = bg_spell_list_data.get(
-                                "spells_by_level", {}
-                            ).get("1", [])
-                            for spell_name in spell_names:
-                                bg_spells.append(
-                                    builder._load_spell_definition(spell_name)
-                                )
-
-                background_requirements["spells"] = {
-                    "count": bg_req["spells_needed"],
-                    "class_name": bg_class,
-                    "available": bg_spells,
-                }
-
-                # Get current background spell selections
-                background_spells = spells_data.get("background_spells", {})
-                if isinstance(background_spells, dict):
-                    current_selections["background_spells"] = [
-                        name
-                        for name, data in background_spells.items()
-                        if isinstance(data, dict) and data.get("level", 0) > 0
-                    ]
-
-        return jsonify(
-            {
-                "always_prepared": always_prepared,
-                "available_cantrips": available_cantrips,
-                "available_spells": available_spells,
-                "spell_slots": spell_slots,
-                "current_selections": current_selections,
-                "limits": {
-                    "cantrips": stats.get("max_cantrips_to_prepare", 0),
-                    "spells": stats.get("max_spells_to_prepare", 0),
-                },
-                "background_requirements": background_requirements,
-            }
-        )
-
+        return jsonify(build_spell_management_view(builder))
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
     except Exception as e:
         logger.error(f"Error loading spell management data: {e}")
         return jsonify({"error": str(e)}), 500
@@ -579,47 +340,13 @@ def api_save_spell_selections():
 @character_summary_bp.route("/api/mastery-management-data")
 def api_mastery_management_data():
     """Return weapon mastery management data for the modal."""
-    from pathlib import Path
-    import json
-
     builder = get_builder_from_session()
     if not builder:
         return jsonify({"error": "No character in session"}), 400
-
     try:
-        # Get weapon mastery stats
-        stats = builder.calculate_weapon_mastery_stats()
-
-        if not stats or not stats.get("has_mastery"):
-            return jsonify({"error": "Character does not have weapon mastery"}), 400
-
-        # Get current masteries
-        current_masteries = stats.get("current_masteries", [])
-
-        # Load weapon data to get mastery properties
-        weapons_file = (
-            Path(__file__).parent.parent / "data" / "equipment" / "weapons.json"
-        )
-        weapon_masteries = {}
-
-        if weapons_file.exists():
-            with open(weapons_file, "r") as f:
-                weapons_data = json.load(f)
-                for weapon_name in stats.get("available_weapons", []):
-                    if weapon_name in weapons_data:
-                        weapon_masteries[weapon_name] = weapons_data[weapon_name].get(
-                            "mastery", "Unknown"
-                        )
-
-        return jsonify(
-            {
-                "available_weapons": stats.get("available_weapons", []),
-                "max_masteries": stats.get("max_masteries", 0),
-                "current_masteries": current_masteries,
-                "weapon_masteries": weapon_masteries,
-            }
-        )
-
+        return jsonify(build_mastery_management_view(builder))
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
     except Exception as e:
         logger.error(f"Error loading mastery management data: {e}")
         return jsonify({"error": str(e)}), 500
@@ -704,21 +431,10 @@ def api_invocation_management_data():
     builder = get_builder_from_session()
     if not builder:
         return jsonify({"error": "No character in session"}), 400
-
     try:
-        stats = builder.calculate_eldritch_invocation_stats()
-
-        if not stats or not stats.get("has_invocations"):
-            return jsonify({"error": "Character does not have Eldritch Invocations"}), 400
-
-        return jsonify(
-            {
-                "available_invocations": stats.get("available_invocations", []),
-                "max_invocations": stats.get("max_invocations", 0),
-                "current_invocations": stats.get("current_invocations", []),
-            }
-        )
-
+        return jsonify(build_invocation_management_view(builder))
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
     except Exception as e:
         logger.error(f"Error loading invocation management data: {e}")
         return jsonify({"error": str(e)}), 500

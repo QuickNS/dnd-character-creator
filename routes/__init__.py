@@ -35,3 +35,7 @@ def register_blueprints(app: Flask):
     # Register test API endpoints (dev/testing helpers — always available)
     from routes.test_api import test_api_bp
     app.register_blueprint(test_api_bp)
+
+    # Register the v1 REST API used by the React SPA frontend
+    from routes.api import api_v1_bp
+    app.register_blueprint(api_v1_bp)

@@ -8,6 +8,7 @@ All routes are organized into blueprint modules in the routes/ directory.
 from flask import Flask, session
 from flask_session import Session
 import logging
+import os
 from datetime import timedelta
 from typing import Dict, Any, Optional
 from routes import register_blueprints
@@ -40,6 +41,17 @@ app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 
 # Initialize Flask-Session
 Session(app)
+
+# Enable CORS for the Vite dev server when running in development. In
+# production the Flask app serves the built React bundle from the same
+# origin, so CORS is not needed.
+if os.environ.get("FLASK_ENV") == "development" or app.debug:
+    try:
+        from flask_cors import CORS
+        CORS(app, resources={r"/api/*": {"origins": ["http://localhost:5173"]}})
+    except ImportError:
+        # flask-cors is optional; only required when running the SPA dev server.
+        pass
 
 # Initialize data loaders (available to all blueprints)
 app.data_loader = DataLoader()

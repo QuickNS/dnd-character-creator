@@ -1,0 +1,108 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --font-display: "Cinzel";
+    --font-body: "Inter";
+    --radius: 0.5rem;
+  }
+
+  /*
+   * Light shadcn theme with red accent. Values are HSL triplets (no
+   * hsl(...) wrapper) so Tailwind can compose opacity utilities on top.
+   *
+   * Brand palette:
+   *   primary = D&B red (#C8102E) used as the accent everywhere
+   */
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 4%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 4%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 4%;
+
+    --primary: 351 85% 41%;             /* D&D Beyond red */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 240 5% 96%;
+    --secondary-foreground: 240 6% 10%;
+
+    --muted: 240 5% 96%;
+    --muted-foreground: 240 4% 40%;
+
+    --accent: 351 85% 41%;              /* red accent */
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 72% 45%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 240 6% 90%;
+    --input: 240 6% 90%;
+    --ring: 351 85% 41%;
+  }
+
+  .dark {
+    --background: 240 9% 6%;
+    --foreground: 40 30% 92%;
+
+    --card: 240 8% 10%;
+    --card-foreground: 40 30% 92%;
+
+    --popover: 240 8% 10%;
+    --popover-foreground: 40 30% 92%;
+
+    --primary: 351 85% 41%;
+    --primary-foreground: 40 30% 96%;
+
+    --secondary: 240 6% 18%;
+    --secondary-foreground: 40 30% 92%;
+
+    --muted: 240 6% 14%;
+    --muted-foreground: 40 12% 65%;
+
+    --accent: 351 85% 41%;
+    --accent-foreground: 40 30% 96%;
+
+    --destructive: 0 72% 45%;
+    --destructive-foreground: 40 30% 96%;
+
+    --border: 240 6% 20%;
+    --input: 240 6% 20%;
+    --ring: 351 85% 41%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+
+@layer components {
+  .feature-description table {
+    @apply w-full mt-2 border-collapse text-xs;
+  }
+  .feature-description th,
+  .feature-description td {
+    @apply border border-border px-2 py-1 text-left;
+  }
+  .feature-description thead th {
+    @apply bg-muted text-foreground font-semibold;
+  }
+  .feature-description tr.table-success td {
+    @apply bg-primary/10 text-foreground;
+  }
+  .feature-description tr.table-secondary td {
+    @apply bg-muted/60 text-muted-foreground;
+  }
+}
