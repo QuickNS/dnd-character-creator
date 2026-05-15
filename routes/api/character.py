@@ -80,6 +80,21 @@ def _enrich_lineages(raw, variant_manager) -> List[Dict[str, Any]]:
     return out
 
 
+def _subclass_level_feature_names(
+    subclass_data: Dict[str, Any],
+    level: int = 3,
+    limit: int = 3,
+) -> List[str]:
+    """Return up to `limit` feature names from subclass level data."""
+    features_by_level = subclass_data.get("features_by_level")
+    if not isinstance(features_by_level, dict):
+        return []
+    level_data = features_by_level.get(str(level), {})
+    if not isinstance(level_data, dict):
+        return []
+    return [str(name) for name in list(level_data.keys())[:limit]]
+
+
 # ==================== Build ====================
 
 
@@ -256,7 +271,12 @@ def preview_step():
                 result["needs_subclass"] = level >= sub_level
                 if result["needs_subclass"]:
                     result["available_subclasses"] = [
-                        {"id": n, "name": d.get("name", n), "description": d.get("description", "")}
+                        {
+                            "id": n,
+                            "name": d.get("name", n),
+                            "description": d.get("description", ""),
+                            "level_3_feature_names": _subclass_level_feature_names(d),
+                        }
                         for n, d in sorted(dl.get_subclasses_for_class(class_name).items())
                     ]
                 feature_data = builder.get_class_features_and_choices()

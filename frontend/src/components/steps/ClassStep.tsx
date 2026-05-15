@@ -21,6 +21,7 @@ interface SubclassSummary {
   id: string;
   name: string;
   description?: string;
+  level_3_feature_names?: string[];
 }
 
 /** Generate the variants of a depends_on key the parent choice might be stored under. */
@@ -150,7 +151,7 @@ function ClassDetail({
       {needsSubclass && (
         <section>
           <h3 className="text-sm font-semibold mb-3">Choose a subclass</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-start">
             {availableSubclasses.map((sub) => {
               const isSelected = selectedSubclass === sub.id;
               return (
@@ -159,16 +160,28 @@ function ClassDetail({
                   type="button"
                   onClick={() => onSubclass(sub.id)}
                   className={
-                    "text-left rounded border px-3 py-2 transition-colors " +
+                    "text-left rounded-md border p-3 transition-colors " +
                     (isSelected
                       ? "border-primary bg-secondary"
                       : "border-border hover:bg-secondary/60")
                   }
                 >
-                  <div className="font-medium">{sub.name}</div>
+                  <div className="font-display text-lg text-primary">
+                    {sub.name}
+                  </div>
                   {sub.description && (
-                    <div className="text-xs text-muted-foreground line-clamp-2">
+                    <div className="mt-2 text-xs text-muted-foreground">
                       {sub.description}
+                    </div>
+                  )}
+                  {(sub.level_3_feature_names ?? []).length > 0 && (
+                    <div className="mt-3 border-t border-border pt-3">
+                      <div className="text-xs font-semibold">Level 3 features</div>
+                      <ul className="mt-1 space-y-0.5 text-xs text-muted-foreground">
+                        {sub.level_3_feature_names?.map((featureName) => (
+                          <li key={featureName}>• {featureName}</li>
+                        ))}
+                      </ul>
                     </div>
                   )}
                 </button>
