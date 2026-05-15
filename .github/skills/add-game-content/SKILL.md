@@ -40,7 +40,7 @@ See [data file templates](./references/data-file-templates.md).
 
 ### 3. Add Effects
 
-For each feature with mechanical benefits, add an `effects` array. Reference the effect type catalog in `.github/skills/implement-class-feature/references/effect-type-catalog.md`.
+For each feature with mechanical benefits, add an `effects` array. Reference the effect type catalog in `.github/skills/implement-feature/references/effect-type-catalog.md`.
 
 ### 4. Validate
 

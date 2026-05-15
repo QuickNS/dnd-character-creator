@@ -1,37 +1,6 @@
 import type { WizardStep } from "@/lib/api";
 import { useCharacterStore } from "@/store/characterStore";
 import { StepNav } from "./StepNav";
-// NOTE: The live character preview (`EffectsPanel` from "./EffectsPanel")
-// is intentionally hidden in the wizard for now. The component is kept
-// in the codebase — to restore the preview, import it here and render it
-// inside the <aside> below in place of the class image.
-
-const KNOWN_CLASS_IMAGES = new Set([
-  "artificer",
-  "barbarian",
-  "bard",
-  "cleric",
-  "druid",
-  "fighter",
-  "monk",
-  "paladin",
-  "ranger",
-  "rogue",
-  "sorcerer",
-  "warlock",
-  "wizard",
-]);
-
-function classImageSrc(choicesMade: Record<string, unknown>): string {
-  const raw = choicesMade["class"];
-  if (typeof raw === "string") {
-    const slug = raw.toLowerCase().trim();
-    if (KNOWN_CLASS_IMAGES.has(slug)) {
-      return `/images/classes/${slug}.png`;
-    }
-  }
-  return "/images/classes/bar-l.png";
-}
 import { BasicsStep } from "@/components/steps/BasicsStep";
 import { ClassStep } from "@/components/steps/ClassStep";
 import { SpeciesStep } from "@/components/steps/SpeciesStep";
@@ -41,6 +10,7 @@ import { AbilitiesStep } from "@/components/steps/AbilitiesStep";
 import { EquipmentStep } from "@/components/steps/EquipmentStep";
 import { SummaryStep } from "@/components/steps/SummaryStep";
 import { GenericStep } from "@/components/steps/GenericStep";
+import { EffectsPanel } from "./EffectsPanel";
 
 interface Props {
   step: WizardStep;
@@ -96,17 +66,8 @@ export function StepRenderer({ step, steps }: Props) {
         <StepNav steps={steps} currentStepId={step.id} />
       </div>
 
-      <aside className="hidden lg:block lg:sticky lg:top-0 self-start lg:h-dvh relative lg:-mr-10">
-        {/*
-          Live character preview is temporarily hidden. Restore by
-          replacing the <img> below with <EffectsPanel />.
-        */}
-        <img
-          src={classImageSrc(choicesMade)}
-          alt=""
-          aria-hidden="true"
-          className="absolute right-0 top-0 h-full w-[40rem] max-w-none object-cover object-right opacity-90 pointer-events-none select-none -scale-x-100"
-        />
+      <aside className="hidden lg:block lg:sticky lg:top-6 self-start">
+        <EffectsPanel />
       </aside>
     </article>
   );

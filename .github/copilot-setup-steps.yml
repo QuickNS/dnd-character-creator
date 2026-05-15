@@ -9,7 +9,15 @@ steps:
   - name: Install test dependencies
     run: pip install pytest
 
-  - name: Validate environment
+  - name: Install frontend dependencies
+    run: npm install
+    working-directory: frontend
+
+  - name: Validate Python environment
     run: |
       python validate_data.py
       pytest tests/ -x -q --tb=short
+
+  - name: Validate frontend build
+    run: npm run typecheck
+    working-directory: frontend

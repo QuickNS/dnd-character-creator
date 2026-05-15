@@ -1,449 +1,358 @@
-# HVE (Highly Valuable Experience) Implementation Analysis
+# HVE — Highly Valuable Experience
 
-This document analyzes the GitHub Copilot customization infrastructure ("HVE") in the D&D 2024 Character Creator project. It covers every entry point, artifact type, and their interconnections.
+This document is the **operating manual** for the GitHub Copilot customization system in the D&D 2024 Character Creator. It describes every artifact under `.github/`, how the pieces fit together, and — most importantly — **how to use the system day to day**.
+
+If you only read one section, read [How to Use This System](#how-to-use-this-system).
 
 ---
 
 ## Table of Contents
 
-1. [Architecture Overview](#architecture-overview)
-2. [Entry Points](#entry-points)
-3. [Instructions (`.instructions.md`)](#instructions)
-4. [Skills (`SKILL.md`)](#skills)
-5. [Agents (`.agent.md`)](#agents)
-6. [Prompts (`.prompt.md`)](#prompts)
-7. [Hooks (`.json`)](#hooks)
-8. [Setup Steps (`copilot-setup-steps.yml`)](#setup-steps)
-9. [Reference Files](#reference-files)
+1. [System Overview](#system-overview)
+2. [Repository Layout (`.github/`)](#repository-layout-github)
+3. [How to Use This System](#how-to-use-this-system)
+4. [Agents](#agents)
+5. [Skills](#skills)
+6. [Instructions](#instructions)
+7. [Prompts](#prompts)
+8. [Hooks](#hooks)
+9. [Setup Steps](#setup-steps)
 10. [Interaction Map](#interaction-map)
-11. [Prompts vs Skills — Overlap Analysis](#prompts-vs-skills--overlap-analysis)
-12. [Common Tasks](#common-tasks)
+11. [Common Tasks — Recipes](#common-tasks--recipes)
 
 ---
 
-## Architecture Overview
+## System Overview
 
-The project uses a layered Copilot customization system under `.github/` that directs AI assistants to follow domain-specific rules, use data-driven patterns, and maintain quality gates automatically. The system is designed around the principle that **all game content is data, not code**, and AI agents should respect strict separation of concerns.
+The Copilot configuration is built around three ideas:
 
-> **Stack note (2026):** The application has been refactored into a React +
-> Vite + TypeScript SPA (`frontend/`) on top of a stateless Flask REST API
-> (`/api/v1/*`, `routes/api/`). The original Jinja UI is mounted under
-> `/legacy/*` for side-by-side comparison and will be removed in a future
-> phase. The customization files below now treat the REST API + SPA as the
-> primary surface and the Jinja UI as quarantined.
+1. **A single gatekeeper.** The **Architect Agent** (Opus) plans and routes any non-trivial change. Specialist agents stay in their lane.
+2. **Hard architectural boundaries.** React SPA captures choices and renders results; Python `CharacterBuilder` is the single source of truth for every calculation. The frontend never derives D&D stats.
+3. **Data-driven content.** Mechanical effects live in JSON `effects` arrays, applied generically by `_apply_effect`. No hardcoded class/species/feature names anywhere in code.
+
+Everything in `.github/` exists to enforce those three ideas while keeping AI-assisted work fast.
+
+```
+┌──────────────┐  request  ┌──────────────┐  delegate  ┌─────────────────┐
+│     User     ├──────────►│  Architect   ├───────────►│  Specialist(s)  │
+└──────────────┘           │  (gatekeeper)│            │  frontend /     │
+                           │              │            │  backend /      │
+                           │  plans only  │            │  test / docs /  │
+                           │              │            │  data-complete  │
+                           └──────┬───────┘            │  / issue-tracker│
+                                  │                    └─────────────────┘
+                              instructions
+                              + skills
+                              + reference docs
+                              loaded automatically
+                              by topic / file path
+```
+
+Tier-2 stack reminder (also in `copilot-instructions.md`): React 18 + Vite + TS + shadcn/ui + Tailwind + Zustand 5 (UI state only) + react-query + react-router + vite-plugin-pwa over a stateless Flask `/api/v1/*` API backed by `CharacterBuilder` and JSON `data/`. Persistence is LocalStorage today and Flask + Postgres + auth in the future. The legacy Jinja UI under `routes/` (non-`api/`) and `templates/` is **quarantined** — do not modify.
+
+---
+
+## Repository Layout (`.github/`)
 
 ```
 .github/
-├── copilot-instructions.md              # Global entry point (always loaded)
-├── copilot-setup-steps.yml              # Environment bootstrap for coding agent
-├── instructions/                         # Scoped instructions (loaded contextually)
+├── copilot-instructions.md          # Always-loaded global rules
+├── copilot-setup-steps.yml          # Cloud coding-agent bootstrap
+├── dependabot.yml                   # Dependency PRs (stock)
+├── workflows/
+│   └── copilot-autofix.yml          # Auto-assign Copilot to issues with the "copilot" label
+├── hooks/
+│   ├── post-edit-data.json          # Auto-run validate_data.py after data edits
+│   └── post-edit-python.json        # Auto-run pytest after Python edits
+├── agents/                          # 7 role-based agents
+│   ├── architect.agent.md           #   Opus    — gatekeeper / planner
+│   ├── frontend.agent.md            #   Sonnet  — React SPA only
+│   ├── backend.agent.md             #   Sonnet  — Python + data + wiki tooling
+│   ├── data-completeness.agent.md   #   Opus    — data/ auditor
+│   ├── test.agent.md                #   Sonnet  — owns tests/
+│   ├── docs.agent.md                #   Sonnet  — owns docs/
+│   └── issue-tracker.agent.md       #   Sonnet  — GitHub issues / PRs
+├── instructions/                    # applyTo-scoped rules; auto-loaded by file path
 │   ├── character-builder-api.instructions.md
 │   ├── choice-reference.instructions.md
-│   ├── data-schemas.instructions.md
+│   ├── data-schemas.instructions.md          # applyTo: data/**/*.json
 │   ├── effects-system.instructions.md
-│   ├── flask-routes.instructions.md
-│   └── testing.instructions.md
-├── skills/                               # Complex multi-step workflows
-│   ├── add-game-content/SKILL.md
-│   ├── file-issue/SKILL.md
-│   ├── fix-issue/SKILL.md
-│   ├── implement-class-feature/SKILL.md
-│   └── validate-character/SKILL.md
-├── agents/                               # Specialized agent personas
-│   ├── data-author.agent.md
-│   ├── data-validator.agent.md
-│   ├── feature-implementer.agent.md
-│   ├── implement-class.agent.md
-│   ├── implement-species.agent.md
-│   ├── test-writer.agent.md
-│   └── wiki-fetcher.agent.md
-├── prompts/                              # Thin launcher templates
-│   ├── add-data-files.prompt.md
-│   ├── check-data-files.prompt.md
-│   ├── implement-class.prompt.md
-│   └── implement-species.prompt.md
-└── hooks/                                # Automated post-edit quality gates
-    ├── post-edit-data.json
-    └── post-edit-python.json
+│   ├── flask-routes.instructions.md          # applyTo: routes/**/*.py
+│   ├── frontend-architecture.instructions.md # applyTo: frontend/**
+│   └── testing.instructions.md               # applyTo: tests/**/*.py
+├── skills/                          # Reusable knowledge + procedures
+│   ├── api-contract-reference/      #   reference
+│   ├── codebase-navigator/          #   reference
+│   ├── dependency-map/              #   reference
+│   ├── design-system-reference/     #   reference
+│   ├── dnd-rules-reference/         #   reference
+│   ├── add-game-content/            #   workflow
+│   ├── implement-feature/           #   workflow (any entity, not just classes)
+│   ├── validate-character/          #   workflow
+│   ├── file-issue/                  #   workflow
+│   └── fix-issue/                   #   workflow
+└── prompts/
+    ├── add-data-files.prompt.md     # → backend agent
+    └── check-data-files.prompt.md   # → data-completeness agent
 ```
 
 ---
 
-## Entry Points
+## How to Use This System
 
-### 1. `copilot-instructions.md` — Global Instructions (Always Active)
+You almost never invoke a specific file directly. Instead, you state the goal and the gatekeeper routes it. Three tracks cover ~all daily work:
 
-**File:** `.github/copilot-instructions.md`
+### Track A — "I want to do something" (work)
 
-This is the root customization file, **loaded automatically into every Copilot conversation** within this workspace. It establishes:
+1. **Tell the user-facing chat what you want**, in a sentence (e.g. *"add the Bladesinger subclass"*, *"make the wizard preview update after subclass changes"*, *"audit the backgrounds folder"*).
+2. The conversation will route to the **Architect Agent** for anything multi-file or cross-layer. Architect will:
+   - Read the relevant code via the read-only `Explore` subagent.
+   - Produce a numbered plan with files, owning specialist per phase, and tests.
+   - **Stop and wait for your approval.**
+3. Approve. Architect dispatches each phase to the appropriate specialist (`frontend`, `backend`, `test`, `docs`).
+4. After each phase the specialist reports files changed and validation results. Architect summarises and moves on.
 
-- **5 Core Principles:**
-  1. **Effects System** — Never hardcode feature/species names; use generic `effects` arrays
-  2. **Single Source of Truth** — `CharacterBuilder` is the only place calculations happen
-  3. **D&D 2024 Compliance** — Always verify rules are from 2024, not 2014
-  4. **Data-Driven Design** — Never hardcode lists of game content
-  5. **Schema Compliance** — All data files must pass `validate_data.py`
-- **Data Source Priority:** `data/` → `wiki_data/` → live wiki
-- **Architecture Overview:** Module responsibilities and separation of concerns
-- **Development Checklist:** Steps every feature implementation must follow
-- **Issue Tracking:** Convention for GitHub Issues and linking to skills
+For a single-file edit clearly inside one lane (e.g. *"fix this typo in `frontend/src/pages/Home.tsx`"*), the lane's specialist agent can be addressed directly without going through Architect.
 
-**Purpose:** Sets the ground rules so that every AI interaction respects the project's architecture, regardless of which specific task is being performed.
+### Track B — "I found a bug / I want to track an idea" (issues)
 
-### 2. `copilot-setup-steps.yml` — Coding Agent Bootstrap
+1. Describe the bug or feature in chat (e.g. *"Stunning Strike DC seems wrong"*).
+2. The **`issue-tracker` agent** (or the `file-issue` skill) will:
+   - Search for duplicates.
+   - Gather code context (file paths, line numbers).
+   - File a structured GitHub Issue with the right labels and `[Category]` title prefix.
+3. Later, to fix it: *"fix issue #42"* → the **`fix-issue` skill** handles it (read issue → branch → fix via Architect → test → PR).
 
-**File:** `.github/copilot-setup-steps.yml`
+### Track C — "I just want to know something" (read-only)
 
-Runs automatically when the **GitHub Copilot Coding Agent** (the cloud-based agent that picks up GitHub Issues) starts working on an issue. Installs dependencies and validates the environment is healthy before making changes:
+For "where does X live", "what's the API shape", "what tokens are in the design system":
 
-```yaml
-steps:
-  - pip install -r requirements.txt
-  - pip install pytest
-  - python validate_data.py
-  - pytest tests/ -x -q --tb=short
-```
+- The reference skills (`codebase-navigator`, `api-contract-reference`, `dependency-map`, `design-system-reference`, `dnd-rules-reference`) auto-surface in context.
+- For deeper exploration, the **`Explore` subagent** can be invoked by any agent to do parallel reads without polluting the main thread.
+- The authoritative documents live under `docs/` (`Architecture.md`, `Stack.md`, `DesignSystem.md`, `WizardFlow.md`, `APIContract.md`, `DataFiles.md`, `FEATURE_EFFECTS.md`, `character_builder_guide.md`). The reference skills are abridged pointers to those.
 
-**Purpose:** Ensures the Copilot coding agent (which runs in cloud containers) has a working environment before attempting any fix.
+### Rules of Engagement
 
----
-
-## Instructions
-
-Instructions are **contextually-loaded** files that activate based on `applyTo` glob patterns — they only appear in the AI's context when relevant files are being discussed or edited.
-
-### `effects-system.instructions.md`
-- **Triggers on:** `data/**/*.json`, `modules/character_builder.py`, `modules/feature_manager.py`, `docs/FEATURE_EFFECTS.md`
-- **Purpose:** Documents the complete effects system — the cardinal rule of never hardcoding, the JSON shape for effects, a quick-reference table of all ~25 effect types, spell granting format, condition strings for bonuses, and the procedure for adding new effect types.
-- **Key content:** Effect type table (grant_cantrip, grant_spell, bonus_hp, bonus_ac, etc.), spell storage destinations, condition string mappings.
-
-### `data-schemas.instructions.md`
-- **Triggers on:** `data/**/*.json`
-- **Purpose:** Documents the exact schema for every data file type — classes, subclasses, species, backgrounds, and spells. Especially enforces that `features_by_level` must use **objects** (never arrays), which is a critical and easily violated constraint.
-- **Key content:** Required/optional fields per schema, the critical `features_by_level` format, ability_score_increase structure for backgrounds.
-
-### `choice-reference.instructions.md`
-- **Triggers on:** `data/**/*.json`, `modules/character_builder.py`
-- **Purpose:** Documents the declarative choice system — how player decisions (spell selection, feat picks, fighting styles, maneuver choices) are defined in JSON and resolved at runtime. Covers source types (`internal`, `external`, `external_dynamic`, `fixed_list`), level progression via `additional_choices_by_level`, and restrictions.
-- **Key content:** Choice object schema, source type table, worked examples for maneuvers/fighting styles/Magic Initiate.
-
-### `character-builder-api.instructions.md`
-- **Triggers on:** `modules/character_builder.py`, `tests/**/*.py`, `data/**/*.json`
-- **Purpose:** Reference for the `CharacterBuilder` API surface and the exact shape of `to_character()`. Documents builder methods, every output key (identity, features, proficiencies, spellcasting, spell slots, combat, AC options, attacks, skills, effects), internal quirks (feature dedup, "Choose" skip logic, subclass spellcasting), and standard test assertion patterns.
-- **Key content:** This is the canonical reference for what keys exist on the dict returned by `builder.to_character()` — the same dict the React SPA consumes via `POST /api/v1/character/build`.
-
-### `testing.instructions.md`
-- **Triggers on:** `tests/**/*.py`
-- **Purpose:** Establishes pytest conventions — test directory structure, how to build characters in tests (always via `CharacterBuilder`), the stateless API testing pattern using `POST /api/v1/character/build`, assertion patterns for effects/proficiencies/spells/combat stats, naming conventions, and common fixtures.
-- **Key content:** Character building pattern, assertion idioms, fixture templates, run commands.
-
-### `flask-routes.instructions.md`
-- **Triggers on:** `routes/**/*.py`
-- **Purpose:** Documents both Flask route surfaces. **REST API v1** under `routes/api/` is the primary, stateless, JSON-only surface consumed by the React SPA. The **legacy Jinja routes** under `routes/` (mounted at `/legacy/*`) are quarantined — kept for side-by-side comparison only, no new endpoints. Both follow the rule: no calculations in routes, no calculations in templates, all math goes through `CharacterBuilder`.
-- **Key content:** API v1 endpoint catalogue, the stateless `POST /api/v1/character/build` pattern, the legacy session helpers (`get_builder_from_session` / `save_builder_to_session`), blueprint registration.
-
----
-
-## Skills
-
-Skills are **complex, multi-step workflows** invoked when the user's request matches the skill description. The AI reads the `SKILL.md` file before executing, getting a detailed procedure to follow.
-
-### `implement-class-feature`
-- **When:** Adding a class/subclass feature with mechanical effects, or adding a new effect type.
-- **Procedure:** Verify wiki source → identify effect types from catalog → update data JSON → validate schema → implement effect handler if needed → write tests → run full suite.
-- **Reference files:** Includes `references/effect-type-catalog.md` (quick-reference for all effect types) for mapping game mechanics to effect JSON.
-
-### `fix-issue`
-- **When:** Resolving a GitHub Issue (bug, missing feature, inaccuracy).
-- **Procedure:** Find open issues via MCP → read issue → classify category → create feature branch → verify against wiki source of truth → apply fix → validate → write regression test → commit/push → create PR → wait for user confirmation → merge and close.
-- **Key feature:** Full git workflow with branch management and PR creation. Includes a category table mapping issue types to data files, wiki sources, and validation steps.
-
-### `file-issue`
-- **When:** User casually describes a bug or missing feature.
-- **Procedure:** Parse user description → gather codebase context → check for duplicate issues → determine labels → create structured GitHub Issue → assign Copilot coding agent.
-- **Key feature:** Converts informal bug reports into structured issues with severity, affected files, reproduction steps, and auto-assigns the Copilot coding agent for autonomous fixing.
-
-### `add-game-content`
-- **When:** Populating a batch of game content (e.g., all subclasses for a class, missing backgrounds).
-- **Procedure:** Check backlog → fetch wiki data → create data files from templates → add effects → validate → write tests → update backlog → run full suite.
-- **Reference files:** Includes `references/data-file-templates.md` with blank JSON templates for classes, subclasses, species, backgrounds, spells, and feats.
-
-### `validate-character`
-- **When:** Verifying a character build produces correct calculated values after changes.
-- **Procedure:** Choose/create character choices → build via `POST /api/v1/character/build` or `CharacterBuilder` → verify HP, proficiencies, effects, spells, skills → compare with reference builds → report pass/fail.
-- **Reference characters:** `test_characters/test_cleric_dwarf.json`, `test_characters/test_figher_wood_elf.json`.
+- **Never ask the AI to invent rules.** D&D content always traces back to `wiki_data/` or http://dnd2024.wikidot.com/.
+- **Never accept a calculation in TypeScript.** If the UI needs a number, the backend computes it and exposes it via `/api/v1/*`.
+- **Always validate.** Hooks fire `validate_data.py` and `pytest` automatically after edits — read their output.
+- **Cross-layer work goes through Architect.** Avoid tasking specialists with anything that crosses the React/Flask boundary directly.
 
 ---
 
 ## Agents
 
-Agents are **specialized personas** with constrained tool access and strict boundaries on what files they may modify. They are invoked via `runSubagent` and can be chained in pipelines.
+Each agent carries a `model` in its YAML frontmatter and a strict lane. The full table mirrors `copilot-instructions.md`.
 
-### `data-author`
-- **Scope:** Create/edit JSON files under `data/` only
-- **Cannot touch:** Python code, test files
-- **Tools:** read, edit, search, web
-- **Purpose:** Writes game data JSON following schemas and effects system. Verifies against wiki sources.
-- **Workflow:** Read schema → check wiki cache → create/update JSON → run `validate_data.py`
+| Agent              | Model  | Lane                                                                  |
+|--------------------|--------|-----------------------------------------------------------------------|
+| `architect`        | Opus   | Gatekeeper. Plans, analyses impact, sequences phases, delegates.      |
+| `frontend`         | Sonnet | `frontend/**` only. React, shadcn, Tailwind, Zustand, react-query.    |
+| `backend`          | Sonnet | `modules/`, `routes/api/`, `data/`, `models/`, `update_*.py`, `validate_data.py`. |
+| `data-completeness`| Opus   | Audits `data/` for schema, effects coverage, D&D 2024 accuracy.       |
+| `test`             | Sonnet | Owns `tests/`. Pytest now; frontend tests when introduced.            |
+| `docs`             | Sonnet | Owns `docs/`. Keeps Architecture/Stack/DesignSystem/etc. current.     |
+| `issue-tracker`    | Sonnet | GitHub Issues / PRs via the GitHub MCP tools.                         |
 
-### `feature-implementer`
-- **Scope:** Modify Python files in `modules/`, `utils/`, `routes/api/` (REST API v1), and the legacy `routes/` only
-- **Cannot touch:** JSON data files, test files, the React SPA in `frontend/`
-- **Tools:** read, edit, search, execute
-- **Purpose:** Implements effect handlers in `CharacterBuilder._apply_effect()`, calculation methods, application logic, and stateless REST endpoints. Follows the generic processing rule (never hardcode).
+Specialists report to Architect using the format documented in their `.agent.md`. They **never cross lanes**: `frontend` will refuse to edit Python; `backend` will refuse to edit `frontend/`. If a phase needs both, Architect splits it.
 
-### `test-writer`
-- **Scope:** Create/edit files in `tests/` only
-- **Cannot touch:** Production code, data files
-- **Tools:** read, edit, search, execute
-- **Purpose:** Writes pytest tests following project conventions. Uses `CharacterBuilder` directly and the stateless API endpoint.
+The read-only `Explore` subagent is available to every agent for parallel codebase Q&A.
 
-### `data-validator`
-- **Scope:** Read-only — produces reports but does NOT modify files
-- **Tools:** read, search, execute
-- **Purpose:** Audits data file integrity, schema compliance, D&D 2024 accuracy, and effects coverage. Produces structured pass/fail reports with completeness percentages.
+---
 
-### `wiki-fetcher`
-- **Scope:** Only update files in `wiki_data/` or run fetcher scripts
-- **Cannot touch:** `data/` files, Python source code
-- **Tools:** read, edit, search, web, execute
-- **Purpose:** Ensures the wiki data cache is up-to-date. Runs `update_classes.py` / `update_species.py` or fetches directly from `http://dnd2024.wikidot.com/`.
+## Skills
 
-### `implement-class` (orchestrator)
-- **Scope:** Coordinates the full class-implementation pipeline — does NOT write data, code, or tests directly
-- **Tools:** runSubagent, execute, read, search, todo
-- **Sub-agents used:** `wiki-fetcher`, `data-author`, `feature-implementer`, `data-validator`, `test-writer`
-- **Purpose:** End-to-end class delivery: branch creation, batched discovery via Explore, validate-fix loops with `data-author` and `data-validator`, test authoring, integration check, commit, and PR.
+Skills are split into **reference** (knowledge lookup; auto-surfaces by relevance) and **workflow** (multi-step procedures any agent can run).
 
-### `implement-species` (orchestrator)
-- **Scope:** Same orchestration model as `implement-class`, scoped to species
-- **Sub-agents used:** `wiki-fetcher`, `data-author`, `feature-implementer`, `data-validator`, `test-writer`
-- **Purpose:** End-to-end species delivery, including variant/lineage files in `data/species_variants/`. Enforces D&D 2024 species rules (no ability score increases on species).
+### Reference skills
 
-### Agent Chaining
+| Skill                       | What you get                                                            |
+|-----------------------------|-------------------------------------------------------------------------|
+| `dnd-rules-reference`       | D&D 2024 rule lookup; where each rule type lives in `data/`             |
+| `codebase-navigator`        | Repo map; "where does X live?"; quarantined surfaces                    |
+| `design-system-reference`   | Tailwind tokens, typography, shadcn customisations (abridged)           |
+| `api-contract-reference`    | `/api/v1/*` endpoint catalogue (abridged)                               |
+| `dependency-map`            | How layers depend on each other; blast-radius cheatsheet                |
 
-The agents are designed to be composed in pipelines. The standard chain is:
+The full versions of the design system and API contract live in `docs/DesignSystem.md` and `docs/APIContract.md` respectively; the skills are deliberately thin pointers so they stay in sync.
 
-```
-wiki-fetcher → data-author → data-validator → feature-implementer → test-writer
-```
+### Workflow skills
 
-Each agent handles one concern and passes the baton to the next.
+| Skill                       | When to invoke                                                                     |
+|-----------------------------|------------------------------------------------------------------------------------|
+| `add-game-content`          | Batch-add subclasses, backgrounds, feats, or spells.                               |
+| `implement-feature`         | Implement **any** feature-bearing entity end-to-end (class/subclass/species/lineage/background/feat/weapon mastery/fighting style/eldritch invocation/spell). |
+| `validate-character`        | Spot-check a built character end-to-end.                                           |
+| `file-issue`                | Turn a casual report into a structured GitHub Issue.                               |
+| `fix-issue`                 | Resolve a known GitHub Issue start-to-finish (branch → fix → test → PR).           |
+
+`implement-feature` is intentionally entity-agnostic — the procedure is the same whether you're adding a Monk subclass, a new feat, a weapon mastery, or an eldritch invocation. Only the data file changes. See its routing table.
+
+---
+
+## Instructions
+
+Instruction files apply automatically when the file paths in their `applyTo` glob (or topic in their description) match the current task.
+
+| File                                              | Triggers on                                       |
+|---------------------------------------------------|---------------------------------------------------|
+| `effects-system.instructions.md`                  | Effects work in any data or builder file          |
+| `data-schemas.instructions.md`                    | `data/**/*.json`                                  |
+| `choice-reference.instructions.md`                | Player-choice authoring                           |
+| `character-builder-api.instructions.md`           | `to_character()` shape & test assertion paths     |
+| `flask-routes.instructions.md`                    | `routes/**/*.py` (REST API v1)                    |
+| `frontend-architecture.instructions.md`           | `frontend/**` — enforces the no-calc boundary     |
+| `testing.instructions.md`                         | `tests/**/*.py`                                   |
+
+These are **rules, not procedures**. They tell the agent what to do at a fine-grained level when editing the matching files.
 
 ---
 
 ## Prompts
 
-Prompts are **thin launcher templates** (`.prompt.md` files) that can be invoked by name. They take template variables (e.g., `{{ class_name }}`) and target a specific agent. The actual workflow lives in the agent / skill they invoke.
+Prompts are explicit launchers (slash-commands) that take template variables and target a specific agent.
 
-### `implement-class.prompt.md`
-- **Variable:** `{{ class_name }}`
-- **Agent:** `implement-class`
-- **Purpose:** Launcher for end-to-end class implementation. Delegates the full agent chain (wiki-fetcher → data-author → data-validator → feature-implementer → test-writer) plus git/PR management to the `implement-class` orchestrator agent.
+| Prompt                          | Variable             | Target agent        | Purpose                                  |
+|---------------------------------|----------------------|---------------------|------------------------------------------|
+| `add-data-files.prompt.md`      | `{{ content_type }}` | `backend`           | Generate data files for a content type.  |
+| `check-data-files.prompt.md`    | (none)               | `data-completeness` | Read-only audit of `data/` against schemas. |
 
-### `implement-species.prompt.md`
-- **Variable:** `{{ species_name }}`
-- **Agent:** `implement-species`
-- **Purpose:** Launcher for end-to-end species implementation. Same orchestrator pattern as `implement-class`, scoped to species and their variants.
-
-### `add-data-files.prompt.md`
-- **Variable:** `{{ content_type }}`
-- **Agent:** `data-author`
-- **Purpose:** Launcher that delegates to the `data-author` agent for generating data files for a specific content type (e.g., a class, species, or background).
-
-### `check-data-files.prompt.md`
-- **Agent:** `data-validator`
-- **Purpose:** Read-only audit of all data files against their schemas. Reports compliance status; does not modify files.
+The legacy `implement-class` / `implement-species` prompts have been removed — the `implement-feature` skill (invoked by name or auto-detected) covers both, plus every other entity type.
 
 ---
 
 ## Hooks
 
-Hooks run **automatically after Copilot edits files**, providing continuous quality gates without manual intervention.
+Hooks execute automatically after Copilot tool use. Read their output; do not silence them.
 
-### `post-edit-python.json`
-- **Trigger:** After any Python file edit (PostToolUse)
-- **Action:** `python -m pytest tests/ -x -q --tb=line 2>&1 | tail -5`
-- **Timeout:** 60 seconds
-- **Purpose:** Catches test regressions immediately after any code change. Shows only the last 5 lines (pass/fail summary).
+| Hook                          | Fires after          | Command                                                                                |
+|-------------------------------|----------------------|----------------------------------------------------------------------------------------|
+| `hooks/post-edit-data.json`   | data file edits      | `python validate_data.py 2>&1 \| grep -c '❌' \| xargs -I{} test {} -eq 0` (15s)        |
+| `hooks/post-edit-python.json` | Python file edits    | `python -m pytest tests/ -x -q --tb=line 2>&1 \| tail -5` (60s)                        |
 
-### `post-edit-data.json`
-- **Trigger:** After any data file edit (PostToolUse)
-- **Action:** `python validate_data.py 2>&1 | grep -c '❌' | xargs -I{} test {} -eq 0`
-- **Timeout:** 15 seconds
-- **Purpose:** Validates JSON data files against their schemas immediately after editing. Fails silently (exit code) if any schema violations are detected, signaling the AI to fix them.
+Frontend has no hook today. The `frontend` agent runs `npm run typecheck` itself before reporting.
 
 ---
 
 ## Setup Steps
 
-### `copilot-setup-steps.yml`
+`.github/copilot-setup-steps.yml` runs when the **GitHub Copilot Coding Agent** (cloud sessions triggered by labelling an issue with `copilot`) bootstraps:
 
-Runs when the **Copilot Coding Agent** (the autonomous GitHub agent that picks up issues labeled `copilot`) starts a cloud session:
+```yaml
+- pip install -r requirements.txt
+- pip install pytest
+- npm install                 # frontend deps
+- python validate_data.py
+- pytest tests/ -x -q --tb=short
+- npm run typecheck           # frontend SPA
+```
 
-1. Install Python dependencies from `requirements.txt`
-2. Install pytest
-3. Run `validate_data.py` — confirms all data files are schema-compliant
-4. Run `pytest tests/` — confirms the test suite passes
-
-**Purpose:** Ensures the coding agent starts from a known-good state before making changes.
-
----
-
-## Reference Files
-
-Supporting documents that skills and instructions link to:
-
-| File | Used By | Content |
-|---|---|---|
-| `skills/add-game-content/references/data-file-templates.md` | add-game-content skill | Blank JSON templates for all data file types |
-| `skills/implement-class-feature/references/effect-type-catalog.md` | implement-class-feature skill | Quick-reference table of all effect types grouped by category |
-| `docs/FEATURE_EFFECTS.md` | effects-system instruction, multiple agents | Canonical documentation of all effect types with examples |
-| `models/class_schema.json`, `models/subclass_schema.json` | data-schemas instruction, data-validator agent | JSON Schema definitions for validation |
-| `frontend/src/lib/api.ts` | React SPA | Typed client for `/api/v1/*` — defines the request/response shapes the SPA consumes |
+This guarantees both backends and frontend are healthy before the agent edits anything.
 
 ---
 
 ## Interaction Map
 
-How the components connect and when they activate:
-
 ```
 User Request
-    │
-    ├──[always]──► copilot-instructions.md (core principles)
-    │
-    ├──[editing data/*.json]──► data-schemas.instructions.md
-    │                          effects-system.instructions.md
-    │                          choice-reference.instructions.md
-    │
-    ├──[editing modules/character_builder.py
-    │   or tests/**]──► character-builder-api.instructions.md
-    │
-    ├──[editing tests/**]──► testing.instructions.md
-    │
-    ├──[editing routes/**]──► flask-routes.instructions.md
-    │                         (REST API v1 primary, legacy /legacy/* quarantined)
-    │
-    ├──[reports a bug]──► file-issue skill
-    │                      └── creates GitHub Issue ──► Copilot coding agent
-    │                                                    └── copilot-setup-steps.yml
-    │
-    ├──["fix issue #N"]──► fix-issue skill
-    │                       └── agent chain: wiki-fetcher → data-author → feature-implementer → test-writer
-    │
-    ├──["implement Ranger"]──► implement-class.prompt.md → implement-class agent
-    │                           └── full agent chain + branch/PR management
-    │
-    ├──["implement Elf"]──► implement-species.prompt.md → implement-species agent
-    │                        └── full agent chain + branch/PR management
-    │
-    └──[after any edit]──► hooks
-                            ├── Python edit → run pytest
-                            └── Data edit → run validate_data.py
+   │
+   ├─[always]──► copilot-instructions.md (core rules + agent table)
+   │
+   ├─[editing data/*.json]──► data-schemas.instr.
+   │                          effects-system.instr.
+   │                          choice-reference.instr.
+   │
+   ├─[editing modules/character_builder.py
+   │   or tests/**]──────────► character-builder-api.instr.
+   │
+   ├─[editing tests/**]──────► testing.instr.
+   │
+   ├─[editing routes/api/**]─► flask-routes.instr.
+   │
+   ├─[editing frontend/**]───► frontend-architecture.instr.
+   │
+   ├─[multi-file / cross-layer]
+   │       └──► Architect Agent
+   │              ├─► Explore (read-only discovery)
+   │              ├─► frontend
+   │              ├─► backend
+   │              ├─► data-completeness
+   │              ├─► test
+   │              └─► docs
+   │
+   ├─[bug report / feature ask]
+   │       └──► issue-tracker / file-issue skill
+   │              └──► GitHub Issue ──► (later) fix-issue skill ──► Architect
+   │
+   ├─[implement any feature]
+   │       └──► implement-feature skill
+   │              └──► routing table picks data file ──► backend ──► test
+   │
+   ├─[batch content drop]
+   │       └──► add-game-content skill ──► backend
+   │
+   ├─[audit data/]
+   │       └──► data-completeness agent (or check-data-files prompt)
+   │
+   ├─[validate a build]
+   │       └──► validate-character skill
+   │
+   └─[after every tool edit]
+          ├─► post-edit-python.json  → pytest
+          └─► post-edit-data.json    → validate_data.py
 ```
 
 ---
 
-## Prompts vs Skills
+## Common Tasks — Recipes
 
-Prompts and skills serve different invocation models:
+### 1. "Implement the Bladesinger subclass"
 
-| | **Prompts** (`.prompt.md`) | **Skills** (`SKILL.md`) |
-|---|---|---|
-| **Invocation** | Explicit — user picks from a menu (slash command / `#` picker in VS Code) | Implicit — AI auto-detects from the user's natural language request matching the skill `description` |
-| **Content model** | A text template injected into the conversation as-is | A procedure document the AI reads first, then executes step-by-step |
-| **Variables** | Support `{{ template_vars }}` filled at invocation time | No template variables — context comes from the conversation |
-| **Typical shape** | "Do X for {{ thing }}" — a directive | "When you encounter Y, follow these steps" — a workflow |
+→ `implement-feature` skill (auto-detected). Architect approves a plan if it will touch tests + docs + API. Otherwise `backend` does it directly: routing table picks `data/subclasses/wizard/bladesinger.json` and `models/subclass_schema.json`; effects mapped from the catalog; `validate_data.py` and pytest run via hooks.
 
-In short: **prompts are buttons you press**, **skills are behaviors the AI learns**.
+### 2. "Add the Sailor background"
 
-The current prompts are intentionally **thin launchers**: they only carry
-template variables and target a specific orchestrator agent. The actual
-procedures live in the agents (`implement-class`, `implement-species`) and
-skills (`fix-issue`, `file-issue`, `validate-character`,
-`implement-class-feature`, `add-game-content`).
+→ `implement-feature` skill, entity `background`. Same flow, different data path: `data/backgrounds/sailor.json`. No wiki fetcher exists for backgrounds — author from the wiki text by hand.
+
+### 3. "Add Cleave weapon mastery"
+
+→ `implement-feature` skill, entity `weapon mastery`. Edits `data/equipment/weapon_masteries.json`; if the mechanic needs a new effect type, `backend` extends `_apply_effect` and `docs/FEATURE_EFFECTS.md`.
+
+### 4. "Fix issue #42"
+
+→ `fix-issue` skill. Reads the issue, classifies it, branches, hands the implementation to Architect, runs tests, opens a PR. You merge.
+
+### 5. "I think Stunning Strike DC is wrong" (casual)
+
+→ `issue-tracker` agent (or `file-issue` skill). Searches for duplicates, gathers code context, files a structured `[Monk]` issue with `bug` label.
+
+### 6. "Audit the backgrounds folder for completeness"
+
+→ `data-completeness` agent (or `check-data-files` prompt). Walks every file across the seven audit dimensions, writes `data/completeness/backgrounds-<date>.md`, hands findings to `backend`.
+
+### 7. "Make the wizard preview update after a subclass change"
+
+→ Cross-layer ⇒ Architect. Likely phases: confirm `/api/v1/wizard/dependencies` already lists `subclass`; verify `/character/preview-step` returns updated data; have `frontend` rewire the react-query invalidation in the relevant step component; `test` adds a regression assertion; `docs` updates `WizardFlow.md` if the cascade behaviour changed.
+
+### 8. "Add a new field `passive_perception` to the character response"
+
+→ Cross-layer ⇒ Architect. Phases: `backend` adds the field in `to_character()`; `docs` updates `APIContract.md`; `frontend` extends the `Character` type in `lib/api.ts` and surfaces it in the sheet; `test` covers the new path.
+
+### 9. "Validate that my Dwarf Cleric build is correct"
+
+→ `validate-character` skill. Builds via `POST /api/v1/character/build` (or `CharacterBuilder` directly), walks the output against the areas-to-check checklist, reports.
+
+### 10. "Where does X live?" / "What endpoints exist?" / "What tokens are in the theme?"
+
+→ Reference skills (`codebase-navigator`, `api-contract-reference`, `design-system-reference`) auto-surface. For full detail, follow their pointers into `docs/`.
 
 ---
 
-## Common Tasks
+## See also
 
-### 1. "Implement all features for class X"
-
-**Invoke:** `implement-class` prompt with `class_name = X` (delegates to the `implement-class` orchestrator agent)
-**What happens:**
-1. Creates a git branch `class/X`
-2. Single Explore call for combined discovery (current state, wiki, reference patterns, effect handlers, existing tests)
-3. wiki-fetcher fills any wiki cache gaps
-4. data-author writes/updates class and subclass JSON files with effects
-5. data-validator checks schema compliance and D&D 2024 accuracy (validate-fix loop with data-author)
-6. feature-implementer adds any new effect handlers to Python code
-7. test-writer creates integration tests
-8. Full pytest run, then commit and PR
-
-### 2. "This damage resistance is missing on Dwarves"
-
-**Invoke:** `file-issue` skill (automatic detection)
-**What happens:**
-1. Reads `data/species/dwarf.json` to understand current state
-2. Checks for duplicate issues
-3. Creates a structured GitHub Issue with severity, affected files, expected behavior
-4. Assigns the Copilot coding agent for autonomous fixing
-
-### 3. "Fix issue #42"
-
-**Invoke:** `fix-issue` skill
-**What happens:**
-1. Reads the issue from GitHub
-2. Classifies the category (class/species/feat/app — backend or SPA)
-3. Creates a feature branch
-4. Verifies correct behavior from wiki source of truth
-5. Makes the fix in the right surface: data JSON, `modules/`, `routes/api/`, `frontend/src/`, or (rarely) the legacy `routes/` and `templates/`
-6. Writes a regression test
-7. Creates a PR and waits for user confirmation before merging
-
-### 4. "Add all missing Ranger subclasses"
-
-**Invoke:** `add-game-content` skill (auto-detected) or `add-data-files` prompt (explicit)
-**What happens:**
-1. Identifies missing subclass files
-2. Fetches wiki data for each
-3. Creates JSON data files with effects
-4. Validates against schemas
-5. Writes tests per subclass
-
-### 5. "Validate that my Dwarf Cleric build is correct"
-
-**Invoke:** `validate-character` skill
-**What happens:**
-1. Builds the character via `POST /api/v1/character/build` or directly via `CharacterBuilder`
-2. Checks HP, AC, proficiencies, spells, effects, and skills against expected D&D 2024 values
-3. Compares against reference character files if available
-4. Reports pass/fail per category
-
-### 6. "Check all data files for schema issues"
-
-**Invoke:** `check-data-files` prompt (delegates to the `data-validator` agent)
-**What happens:**
-1. Runs `validate_data.py` across all data files
-2. Reports schema-violation counts per category
-3. Surfaces D&D 2024 accuracy and effect-coverage warnings
-4. Read-only — does not modify files
-
-### 7. Editing any Python or JSON file (automatic)
-
-**Triggered by:** Hooks (no manual invocation needed)
-**What happens:**
-- Python file edit → pytest runs automatically, catches regressions
-- JSON data file edit → schema validator runs automatically, catches violations
-
-### 8. "Implement Elf species features"
-
-**Invoke:** `implement-species` prompt with `species_name = Elf` (delegates to the `implement-species` orchestrator agent)
-**What happens:**
-1. wiki-fetcher ensures `wiki_data/species/elf.json` exists
-2. data-author updates species JSON and variant files (no ability score increases)
-3. data-validator confirms schema compliance and 2024 accuracy
-4. feature-implementer adds any needed effect handlers
-5. test-writer creates species trait tests with multiple class combinations
-6. Full pytest run, then commit and PR
+- `.github/copilot-instructions.md` — the always-loaded ground rules
+- `docs/Architecture.md` — React/Flask split and API boundary
+- `docs/Stack.md` — tech choices and rationale
+- `docs/APIContract.md` — endpoint and response shapes
+- `docs/DataFiles.md` — `data/` layout and the wiki pipeline
+- `docs/FEATURE_EFFECTS.md` — canonical effect catalogue
