@@ -85,7 +85,7 @@ If a new effect type was required:
 
 1. Add handler in `modules/character_builder.py` → `_apply_effect()`
 2. Wire into the relevant calculation method
-3. Update `FEATURE_EFFECTS.md` with the new type
+3. Update `docs/FEATURE_EFFECTS.md` with the new type
 
 ### 6. Write Tests
 
@@ -123,6 +123,6 @@ All tests must pass before the feature is considered complete.
 ## Reference Files
 
 - [Effect Type Catalog](./references/effect-type-catalog.md) — All supported effect types
-- `FEATURE_EFFECTS.md` — Canonical effect documentation
+- `docs/FEATURE_EFFECTS.md` — Canonical effect documentation
 - `models/class_schema.json` — Class data schema
 - `models/subclass_schema.json` — Subclass data schema

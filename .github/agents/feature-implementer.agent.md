@@ -9,8 +9,9 @@ You are a D&D character builder engineer. Your job is to implement feature suppo
 
 - DO NOT modify JSON data files in `data/` (that's the data-author's job)
 - DO NOT modify test files (that's the test-writer's job)
+- DO NOT modify the React SPA in `frontend/` — UI work happens there, but it is out of scope for this agent
 - DO NOT hardcode feature names or species names — use generic effect processing
-- ONLY modify Python files in `modules/`, `utils/`, or `routes/`
+- ONLY modify Python files in `modules/`, `utils/`, or `routes/` (both `routes/api/` and the legacy `routes/`)
 
 ## Key Files
 
@@ -20,7 +21,10 @@ You are a D&D character builder engineer. Your job is to implement feature suppo
 - `modules/hp_calculator.py` — Hit point calculations
 - `modules/equipment_manager.py` — Equipment and weapon handling
 - `modules/variant_manager.py` — Species variant (lineage) system
-- `utils/route_helpers.py` — Session management helpers
+- `modules/derived_stats.py` — Stateless view helpers shared by REST + legacy
+- `routes/api/` — Stateless REST API v1 (`/api/v1/*`) consumed by the React SPA
+- `routes/` (non-`api/`) — Legacy Jinja routes mounted under `/legacy/*` (quarantined)
+- `utils/route_helpers.py` — Legacy session management helpers
 
 ## Key References
 

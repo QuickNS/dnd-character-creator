@@ -52,7 +52,7 @@ assert 'Light' in character['spells']['prepared']['cantrips']
 
 ### Combat Stats
 ```python
-assert character['combat_stats']['hit_points']['maximum'] == expected
+assert character['combat']['hit_points']['maximum'] == expected
 ```
 
 ## Common Test Fixtures

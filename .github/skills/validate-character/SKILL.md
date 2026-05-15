@@ -42,13 +42,15 @@ Reference builds are in `test_characters/`:
 
 ### 2. Build via API
 
-Use the stateless API endpoint:
+Use the stateless API endpoint (the same one the React SPA uses):
 
 ```bash
-curl -X POST http://localhost:5000/api/choices-to-character \
+curl -X POST http://localhost:5000/api/v1/character/build \
   -H 'Content-Type: application/json' \
   -d '{"choices_made": {...}}'
 ```
+
+Response: `{"character": <to_character() output>}`.
 
 Or in Python:
 ```python
@@ -67,7 +69,7 @@ Check each category against expected values:
 ```python
 # HP = (hit_die at L1) + (avg at L2+) + (CON mod × level) + bonuses
 # Dwarf Cleric L3: 8 + 5 + 5 + (2×3) + (1×3) = 27
-assert character['combat_stats']['hit_points']['maximum'] == expected
+assert character['combat']['hit_points']['maximum'] == expected
 ```
 
 #### Proficiencies
@@ -109,7 +111,7 @@ with open('test_characters/test_cleric_dwarf.json') as f:
     reference = json.load(f)
 
 # Compare key sections
-assert character['combat_stats'] == reference['combat_stats']
+assert character['combat'] == reference['combat']
 assert character['proficiencies'] == reference['proficiencies']
 ```
 

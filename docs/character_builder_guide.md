@@ -198,49 +198,51 @@ python test_character_builder.py
 python -c "from test_character_builder import test_wood_elf_cantrip; test_wood_elf_cantrip()"
 ```
 
-## Integration with Flask
+## Integration with the REST API and the React SPA
 
-The CharacterBuilder can be easily integrated into Flask routes:
+The CharacterBuilder is the single source of truth for character calculations.
+It is exposed to the React SPA (and any other client) through the stateless
+REST API v1 under `/api/v1/*`. The SPA never recomputes anything — it sends
+the user's choices and renders the dict that comes back from
+`builder.to_character()`.
 
-### Example Flask Route
+### Primary endpoint: `POST /api/v1/character/build`
 
 ```python
-@app.route('/api/character/create', methods=['POST'])
-def api_create_character():
-    """Create character from JSON payload"""
-    data = request.json
-    
+# routes/api/character.py
+from flask import Blueprint, jsonify, request
+from modules.character_builder import CharacterBuilder
+
+character_bp = Blueprint("character", __name__, url_prefix="/character")
+# Mounted under /api/v1 by routes/api/__init__.py
+
+@character_bp.post("/build")
+def build_character():
+    body = request.get_json(silent=True) or {}
+    if "choices_made" not in body:
+        return jsonify({"error": "Body must be JSON with 'choices_made'"}), 400
+
     builder = CharacterBuilder()
-    builder.set_species(data['species'])
-    
-    if 'lineage' in data:
-        builder.set_lineage(data['lineage'], data.get('spellcasting_ability'))
-    
-    builder.set_class(data['class'], data.get('level', 1))
-    builder.set_background(data['background'])
-    builder.set_abilities(data['abilities'])
-    
-    return jsonify(builder.to_character())
+    builder.apply_choices(body["choices_made"])
+    return jsonify({"character": builder.to_character()})
 ```
 
-### Working with CharacterBuilder in Routes
+Other API v1 endpoints follow the same pattern:
 
-```python
-from utils.route_helpers import get_builder_from_session, save_builder_to_session
+- `POST /api/v1/character/validate` — per-step validation
+- `POST /api/v1/character/preview-step` — preview a single step
+- `POST /api/v1/character/derived` — stateless view projections (e.g. `view=damage_cantrips`)
+- `GET /api/v1/{classes,species,backgrounds,feats,spells,equipment,reference}` — read-only catalog
+- `GET /api/v1/wizard/{steps,dependencies}` — declarative wizard metadata
 
-@app.route('/my-route')
-def my_route():
-    """Example route using CharacterBuilder from session"""
-    builder = get_builder_from_session()
-    if not builder:
-        return redirect(url_for('index.index'))
-    
-    # Get complete character data with all calculations
-    character_data = builder.to_character()
-    
-    # Pass to template - no calculations needed
-    return render_template('my_template.html', character=character_data)
-```
+All of them are stateless — no Flask session, no cookies, no in-memory state.
+
+### Legacy Jinja routes (quarantined)
+
+The original session-based UI is still mounted under `/legacy/*` for
+side-by-side comparison. New work does not touch it. If you need to read it,
+see [.github/instructions/flask-routes.instructions.md](../.github/instructions/flask-routes.instructions.md)
+for the legacy `get_builder_from_session` / `save_builder_to_session` pattern.
 
 ## Character Data Structure
 
@@ -362,9 +364,9 @@ builder.set_lineage("Wood Elf")
 ## Next Steps
 
 1. **Add more tests** for other species, classes, and features
-2. **Create API endpoints** using CharacterBuilder
+2. **Extend the REST API v1** with new stateless endpoints under `routes/api/`
 3. **Add CLI tool** for command-line character creation
-4. **Integrate with existing Flask routes** to use CharacterBuilder internally
+4. **Build new UI features in the React SPA** (`frontend/src/`) on top of `/api/v1`
 5. **Add CI/CD tests** to run automatically on commits
 
 ## Resources
@@ -372,7 +374,7 @@ builder.set_lineage("Wood Elf")
 - **Test Script**: `test_character_builder.py`
 - **Module**: `modules/character_builder.py`
 - **Data Files**: `data/species/`, `data/classes/`, `data/backgrounds/`, etc.
-- **Effects Documentation**: `FEATURE_EFFECTS.md`
+- **Effects Documentation**: `docs/FEATURE_EFFECTS.md`
 
 ---
 

@@ -51,11 +51,14 @@ export const useRosterStore = create<RosterState>((set, get) => ({
 
   saveCurrent: async (choices, name, existingId) => {
     const trimmed = name.trim() || "Unnamed character";
+    const now = new Date().toISOString();
     const entry: RosterEntry = {
       id: existingId ?? newEntryId(),
       name: trimmed,
       summary: summarizeChoices(choices),
       savedAt: Date.now(),
+      created: now,
+      modified: now,
       choices,
     };
     await getPersistence().saveSnapshot(entry);

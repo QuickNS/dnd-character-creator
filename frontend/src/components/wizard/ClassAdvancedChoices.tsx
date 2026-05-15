@@ -69,8 +69,8 @@ function useDerived(choicesMade: Loose, view: string) {
 }
 
 /** True when query succeeded — 400 means feature isn't applicable. */
-function isApplicable(q: { data?: Loose; error: unknown }): boolean {
-  if (q.data) return true;
+function isApplicable(q: { data?: unknown; error: unknown }): q is { data: Loose; error: unknown } {
+  if (q.data && typeof q.data === "object") return true;
   if (q.error instanceof ApiError && q.error.status === 400) return false;
   return false;
 }

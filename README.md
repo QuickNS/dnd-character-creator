@@ -102,11 +102,9 @@ frontend/              # React + Vite + TypeScript SPA
   src/                 # SPA source
   dist/                # Built bundle (created by `npm run build`)
 tests/                 # pytest suite
-.copilot-tracking/     # Migration plan, phase logs, RESUME pointer
 ```
 
 ## More documentation
 
 - [docs/character_builder_guide.md](docs/character_builder_guide.md) — How `CharacterBuilder` works.
-- [FEATURE_EFFECTS.md](FEATURE_EFFECTS.md) — The data-driven effects system catalog.
-- [.copilot-tracking/RESUME.md](.copilot-tracking/RESUME.md) — Status of the React SPA migration.
+- [docs/FEATURE_EFFECTS.md](docs/FEATURE_EFFECTS.md) — The data-driven effects system catalog.

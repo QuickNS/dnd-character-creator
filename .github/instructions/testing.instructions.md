@@ -54,12 +54,12 @@ def test_dwarf_cleric_hp():
     character = builder.to_character()
     
     # Assert on calculated values
-    assert character['combat_stats']['hit_points']['maximum'] == 27
+    assert character['combat']['hit_points']['maximum'] == 27
 ```
 
 ## Stateless API Testing
 
-Use `/api/choices-to-character` for integration tests (no session needed):
+Use `POST /api/v1/character/build` for integration tests (no session needed). It is the same endpoint the React SPA consumes:
 
 ```python
 import pytest
@@ -73,7 +73,7 @@ def client():
         yield client
 
 def test_rebuild_character_api(client):
-    response = client.post('/api/choices-to-character', 
+    response = client.post('/api/v1/character/build',
         json={"choices_made": {
             "character_name": "Test",
             "level": 3,
@@ -86,8 +86,11 @@ def test_rebuild_character_api(client):
         }})
     assert response.status_code == 200
     data = response.get_json()
-    assert data['success'] is True
+    character = data['character']
+    assert character['combat']['hit_points']['maximum'] == 27
 ```
+
+See `tests/test_api_v1.py` for further examples (catalog, validate, derived views).
 
 ## Assertion Patterns
 
@@ -112,8 +115,8 @@ assert 'Light' in cantrips
 
 ### Combat Stats
 ```python
-assert character['combat_stats']['hit_points']['maximum'] == expected_hp
-assert character['combat_stats']['armor_class'] >= 10
+assert character['combat']['hit_points']['maximum'] == expected_hp
+assert character['combat']['armor_class'] >= 10
 ```
 
 ## Test Naming

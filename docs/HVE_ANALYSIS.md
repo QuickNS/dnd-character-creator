@@ -25,11 +25,19 @@ This document analyzes the GitHub Copilot customization infrastructure ("HVE") i
 
 The project uses a layered Copilot customization system under `.github/` that directs AI assistants to follow domain-specific rules, use data-driven patterns, and maintain quality gates automatically. The system is designed around the principle that **all game content is data, not code**, and AI agents should respect strict separation of concerns.
 
+> **Stack note (2026):** The application has been refactored into a React +
+> Vite + TypeScript SPA (`frontend/`) on top of a stateless Flask REST API
+> (`/api/v1/*`, `routes/api/`). The original Jinja UI is mounted under
+> `/legacy/*` for side-by-side comparison and will be removed in a future
+> phase. The customization files below now treat the REST API + SPA as the
+> primary surface and the Jinja UI as quarantined.
+
 ```
 .github/
 ├── copilot-instructions.md              # Global entry point (always loaded)
 ├── copilot-setup-steps.yml              # Environment bootstrap for coding agent
 ├── instructions/                         # Scoped instructions (loaded contextually)
+│   ├── character-builder-api.instructions.md
 │   ├── choice-reference.instructions.md
 │   ├── data-schemas.instructions.md
 │   ├── effects-system.instructions.md
@@ -40,22 +48,20 @@ The project uses a layered Copilot customization system under `.github/` that di
 │   ├── file-issue/SKILL.md
 │   ├── fix-issue/SKILL.md
 │   ├── implement-class-feature/SKILL.md
-│   ├── update-backlog/SKILL.md
 │   └── validate-character/SKILL.md
 ├── agents/                               # Specialized agent personas
 │   ├── data-author.agent.md
 │   ├── data-validator.agent.md
 │   ├── feature-implementer.agent.md
+│   ├── implement-class.agent.md
+│   ├── implement-species.agent.md
 │   ├── test-writer.agent.md
 │   └── wiki-fetcher.agent.md
-├── prompts/                              # Reusable prompt templates
+├── prompts/                              # Thin launcher templates
 │   ├── add-data-files.prompt.md
-│   ├── batch-implement.prompt.md
 │   ├── check-data-files.prompt.md
-│   ├── cleanup-project.prompt.md
 │   ├── implement-class.prompt.md
-│   ├── implement-species.prompt.md
-│   └── next-task.prompt.md
+│   └── implement-species.prompt.md
 └── hooks/                                # Automated post-edit quality gates
     ├── post-edit-data.json
     └── post-edit-python.json
@@ -107,7 +113,7 @@ steps:
 Instructions are **contextually-loaded** files that activate based on `applyTo` glob patterns — they only appear in the AI's context when relevant files are being discussed or edited.
 
 ### `effects-system.instructions.md`
-- **Triggers on:** `data/**/*.json`, `modules/character_builder.py`, `modules/feature_manager.py`, `FEATURE_EFFECTS.md`
+- **Triggers on:** `data/**/*.json`, `modules/character_builder.py`, `modules/feature_manager.py`, `docs/FEATURE_EFFECTS.md`
 - **Purpose:** Documents the complete effects system — the cardinal rule of never hardcoding, the JSON shape for effects, a quick-reference table of all ~25 effect types, spell granting format, condition strings for bonuses, and the procedure for adding new effect types.
 - **Key content:** Effect type table (grant_cantrip, grant_spell, bonus_hp, bonus_ac, etc.), spell storage destinations, condition string mappings.
 
@@ -121,15 +127,20 @@ Instructions are **contextually-loaded** files that activate based on `applyTo` 
 - **Purpose:** Documents the declarative choice system — how player decisions (spell selection, feat picks, fighting styles, maneuver choices) are defined in JSON and resolved at runtime. Covers source types (`internal`, `external`, `external_dynamic`, `fixed_list`), level progression via `additional_choices_by_level`, and restrictions.
 - **Key content:** Choice object schema, source type table, worked examples for maneuvers/fighting styles/Magic Initiate.
 
+### `character-builder-api.instructions.md`
+- **Triggers on:** `modules/character_builder.py`, `tests/**/*.py`, `data/**/*.json`
+- **Purpose:** Reference for the `CharacterBuilder` API surface and the exact shape of `to_character()`. Documents builder methods, every output key (identity, features, proficiencies, spellcasting, spell slots, combat, AC options, attacks, skills, effects), internal quirks (feature dedup, "Choose" skip logic, subclass spellcasting), and standard test assertion patterns.
+- **Key content:** This is the canonical reference for what keys exist on the dict returned by `builder.to_character()` — the same dict the React SPA consumes via `POST /api/v1/character/build`.
+
 ### `testing.instructions.md`
 - **Triggers on:** `tests/**/*.py`
-- **Purpose:** Establishes pytest conventions — test directory structure, how to build characters in tests (always via `CharacterBuilder`), the stateless API testing pattern, assertion patterns for effects/proficiencies/spells/combat stats, naming conventions, and common fixtures.
+- **Purpose:** Establishes pytest conventions — test directory structure, how to build characters in tests (always via `CharacterBuilder`), the stateless API testing pattern using `POST /api/v1/character/build`, assertion patterns for effects/proficiencies/spells/combat stats, naming conventions, and common fixtures.
 - **Key content:** Character building pattern, assertion idioms, fixture templates, run commands.
 
 ### `flask-routes.instructions.md`
 - **Triggers on:** `routes/**/*.py`
-- **Purpose:** Documents the Flask route pattern — every route follows get-builder → apply-choice → calculate → render. Critical rules: no calculations in routes or templates, always use session helpers, always save after mutation.
-- **Key content:** Route handler template, session helper imports, API endpoint pattern, blueprint registration.
+- **Purpose:** Documents both Flask route surfaces. **REST API v1** under `routes/api/` is the primary, stateless, JSON-only surface consumed by the React SPA. The **legacy Jinja routes** under `routes/` (mounted at `/legacy/*`) are quarantined — kept for side-by-side comparison only, no new endpoints. Both follow the rule: no calculations in routes, no calculations in templates, all math goes through `CharacterBuilder`.
+- **Key content:** API v1 endpoint catalogue, the stateless `POST /api/v1/character/build` pattern, the legacy session helpers (`get_builder_from_session` / `save_builder_to_session`), blueprint registration.
 
 ---
 
@@ -159,12 +170,8 @@ Skills are **complex, multi-step workflows** invoked when the user's request mat
 
 ### `validate-character`
 - **When:** Verifying a character build produces correct calculated values after changes.
-- **Procedure:** Choose/create character choices → build via API or CharacterBuilder → verify HP, proficiencies, effects, spells, skills → compare with reference builds → report pass/fail.
+- **Procedure:** Choose/create character choices → build via `POST /api/v1/character/build` or `CharacterBuilder` → verify HP, proficiencies, effects, spells, skills → compare with reference builds → report pass/fail.
 - **Reference characters:** `test_characters/test_cleric_dwarf.json`, `test_characters/test_figher_wood_elf.json`.
-
-### `update-backlog`
-- **When:** Checking project completeness or after adding new content.
-- **Procedure:** Scan `data/` directory → check against expected D&D 2024 content list (12 classes, 48 subclasses, 10 species, 16 backgrounds, 54 feats) → verify feature completeness → update `data/completeness/backlog.json` → generate human-readable summary.
 
 ---
 
@@ -180,10 +187,10 @@ Agents are **specialized personas** with constrained tool access and strict boun
 - **Workflow:** Read schema → check wiki cache → create/update JSON → run `validate_data.py`
 
 ### `feature-implementer`
-- **Scope:** Modify Python files in `modules/`, `utils/`, `routes/` only
-- **Cannot touch:** JSON data files, test files
+- **Scope:** Modify Python files in `modules/`, `utils/`, `routes/api/` (REST API v1), and the legacy `routes/` only
+- **Cannot touch:** JSON data files, test files, the React SPA in `frontend/`
 - **Tools:** read, edit, search, execute
-- **Purpose:** Implements effect handlers in `CharacterBuilder._apply_effect()`, calculation methods, and application logic. Follows the generic processing rule (never hardcode).
+- **Purpose:** Implements effect handlers in `CharacterBuilder._apply_effect()`, calculation methods, application logic, and stateless REST endpoints. Follows the generic processing rule (never hardcode).
 
 ### `test-writer`
 - **Scope:** Create/edit files in `tests/` only
@@ -202,6 +209,17 @@ Agents are **specialized personas** with constrained tool access and strict boun
 - **Tools:** read, edit, search, web, execute
 - **Purpose:** Ensures the wiki data cache is up-to-date. Runs `update_classes.py` / `update_species.py` or fetches directly from `http://dnd2024.wikidot.com/`.
 
+### `implement-class` (orchestrator)
+- **Scope:** Coordinates the full class-implementation pipeline — does NOT write data, code, or tests directly
+- **Tools:** runSubagent, execute, read, search, todo
+- **Sub-agents used:** `wiki-fetcher`, `data-author`, `feature-implementer`, `data-validator`, `test-writer`
+- **Purpose:** End-to-end class delivery: branch creation, batched discovery via Explore, validate-fix loops with `data-author` and `data-validator`, test authoring, integration check, commit, and PR.
+
+### `implement-species` (orchestrator)
+- **Scope:** Same orchestration model as `implement-class`, scoped to species
+- **Sub-agents used:** `wiki-fetcher`, `data-author`, `feature-implementer`, `data-validator`, `test-writer`
+- **Purpose:** End-to-end species delivery, including variant/lineage files in `data/species_variants/`. Enforces D&D 2024 species rules (no ability score increases on species).
+
 ### Agent Chaining
 
 The agents are designed to be composed in pipelines. The standard chain is:
@@ -216,35 +234,26 @@ Each agent handles one concern and passes the baton to the next.
 
 ## Prompts
 
-Prompts are **reusable prompt templates** (`.prompt.md` files) that can be invoked by name. Some use template variables (e.g., `{{ class_name }}`) that get filled at invocation time.
+Prompts are **thin launcher templates** (`.prompt.md` files) that can be invoked by name. They take template variables (e.g., `{{ class_name }}`) and target a specific agent. The actual workflow lives in the agent / skill they invoke.
 
 ### `implement-class.prompt.md`
 - **Variable:** `{{ class_name }}`
-- **Purpose:** Thin launcher for end-to-end class implementation. Delegates the core workflow to the `implement-class-feature` and `add-game-content` skills, and adds git branch management + PR creation/merge on top.
+- **Agent:** `implement-class`
+- **Purpose:** Launcher for end-to-end class implementation. Delegates the full agent chain (wiki-fetcher → data-author → data-validator → feature-implementer → test-writer) plus git/PR management to the `implement-class` orchestrator agent.
 
 ### `implement-species.prompt.md`
 - **Variable:** `{{ species_name }}`
-- **Purpose:** Thin launcher for species implementation. Delegates to the `implement-class-feature` skill (adapted for species) and reminds about D&D 2024 species rules.
+- **Agent:** `implement-species`
+- **Purpose:** Launcher for end-to-end species implementation. Same orchestrator pattern as `implement-class`, scoped to species and their variants.
 
 ### `add-data-files.prompt.md`
-- **Variable:** `{{ class_name }}`
-- **Agent:** `agent` (general agent mode)
-- **Purpose:** Thin launcher that delegates to the `add-game-content` skill for generating class and subclass data files.
-
-### `batch-implement.prompt.md`
-- **Variables:** `{{ content_category }}`, `{{ scope }}`
-- **Purpose:** Thin launcher for parallel content implementation. Delegates each item to the `add-game-content` skill after resolving shared dependencies via `implement-class-feature`.
-
-### `next-task.prompt.md`
-- **Purpose:** Thin launcher that delegates backlog scanning to the `update-backlog` skill, then applies a priority ordering to select the next task. Outputs a work plan referencing which skills to use.
+- **Variable:** `{{ content_type }}`
+- **Agent:** `data-author`
+- **Purpose:** Launcher that delegates to the `data-author` agent for generating data files for a specific content type (e.g., a class, species, or background).
 
 ### `check-data-files.prompt.md`
-- **Agent:** `agent` (general agent mode)
-- **Purpose:** Audits all data files against their schemas. Fixes simple issues automatically; describes complex ones. Generates a `data-file-report.md` with findings.
-
-### `cleanup-project.prompt.md`
-- **Agent:** `agent` (general agent mode)
-- **Purpose:** Removes legacy code from the old character state management approach. Finds and removes direct `session['character']` access, manual character dicts, dual-save compatibility code. Ensures clean `CharacterBuilder`-based architecture.
+- **Agent:** `data-validator`
+- **Purpose:** Read-only audit of all data files against their schemas. Reports compliance status; does not modify files.
 
 ---
 
@@ -289,9 +298,9 @@ Supporting documents that skills and instructions link to:
 |---|---|---|
 | `skills/add-game-content/references/data-file-templates.md` | add-game-content skill | Blank JSON templates for all data file types |
 | `skills/implement-class-feature/references/effect-type-catalog.md` | implement-class-feature skill | Quick-reference table of all effect types grouped by category |
-| `FEATURE_EFFECTS.md` (repo root) | effects-system instruction, multiple agents | Canonical documentation of all effect types with examples |
-| `data/completeness/backlog.json` | update-backlog skill, next-task prompt | Machine-readable tracking of implementation completeness |
+| `docs/FEATURE_EFFECTS.md` | effects-system instruction, multiple agents | Canonical documentation of all effect types with examples |
 | `models/class_schema.json`, `models/subclass_schema.json` | data-schemas instruction, data-validator agent | JSON Schema definitions for validation |
+| `frontend/src/lib/api.ts` | React SPA | Typed client for `/api/v1/*` — defines the request/response shapes the SPA consumes |
 
 ---
 
@@ -308,9 +317,13 @@ User Request
     │                          effects-system.instructions.md
     │                          choice-reference.instructions.md
     │
+    ├──[editing modules/character_builder.py
+    │   or tests/**]──► character-builder-api.instructions.md
+    │
     ├──[editing tests/**]──► testing.instructions.md
     │
     ├──[editing routes/**]──► flask-routes.instructions.md
+    │                         (REST API v1 primary, legacy /legacy/* quarantined)
     │
     ├──[reports a bug]──► file-issue skill
     │                      └── creates GitHub Issue ──► Copilot coding agent
@@ -319,11 +332,11 @@ User Request
     ├──["fix issue #N"]──► fix-issue skill
     │                       └── agent chain: wiki-fetcher → data-author → feature-implementer → test-writer
     │
-    ├──["implement Ranger"]──► implement-class.prompt.md
+    ├──["implement Ranger"]──► implement-class.prompt.md → implement-class agent
     │                           └── full agent chain + branch/PR management
     │
-    ├──["what's next?"]──► next-task.prompt.md
-    │                       └── reads backlog.json → generates work plan
+    ├──["implement Elf"]──► implement-species.prompt.md → implement-species agent
+    │                        └── full agent chain + branch/PR management
     │
     └──[after any edit]──► hooks
                             ├── Python edit → run pytest
@@ -332,11 +345,9 @@ User Request
 
 ---
 
-## Prompts vs Skills — Overlap Analysis
+## Prompts vs Skills
 
-Prompts and skills serve different invocation models but in this project have significant content duplication.
-
-### How They Differ
+Prompts and skills serve different invocation models:
 
 | | **Prompts** (`.prompt.md`) | **Skills** (`SKILL.md`) |
 |---|---|---|
@@ -347,42 +358,11 @@ Prompts and skills serve different invocation models but in this project have si
 
 In short: **prompts are buttons you press**, **skills are behaviors the AI learns**.
 
-### Identified Redundancy
-
-| Prompt | Overlapping Skill | Nature of Overlap |
-|---|---|---|
-| `implement-class.prompt.md` | `implement-class-feature` + `add-game-content` | Both describe the wiki→data→validate→implement→test pipeline. The prompt adds git branching/PR on top. |
-| `implement-species.prompt.md` | `implement-class-feature` (adapted) | Same agent chain, just for species instead of classes. |
-| `batch-implement.prompt.md` | `add-game-content` | Nearly identical scope — both describe adding batches of content with the same agent chain. |
-| `add-data-files.prompt.md` | `add-game-content` | The prompt is a simpler version of what the skill already describes. |
-| `next-task.prompt.md` | `update-backlog` | Both read `backlog.json`; the prompt picks the next task, the skill updates completeness — complementary but the backlog-reading logic is duplicated. |
-
-### Non-Redundant Components
-
-These skills have **no prompt equivalent** and are triggered purely by conversational context:
-
-- **`file-issue`** — Converts casual bug reports into structured GitHub Issues
-- **`fix-issue`** — End-to-end issue resolution with git workflow
-- **`validate-character`** — Character build verification
-
-These prompts have **no skill equivalent** and serve unique purposes:
-
-- **`check-data-files`** — Schema audit with auto-fix (uses general `agent` mode)
-- **`cleanup-project`** — Legacy code removal (one-time architectural task)
-
-### Root Cause
-
-The prompts were written as **explicit orchestration recipes** ("run these agents in this order for class X"), while the skills evolved as **implicit behavioral guides** ("when the user needs game content added, follow this procedure"). Over time they converged on describing the same wiki→data→validate→test workflow from different angles. The prompts also embed git/PR management that the skills don't, creating a slightly different scope but mostly overlapping core procedures.
-
-### Applied Resolution
-
-The 5 redundant prompts have been slimmed down to **thin launchers** that delegate to the canonical skill workflows:
-
-1. **Skills are the canonical workflows** — they contain the full procedures and are auto-detected
-2. **Prompts are now thin launchers** that reference skills rather than duplicating procedures
-3. **Prompts only retain what skills can't do**: template variables (`{{ class_name }}`), explicit agent targeting (`agent: 'agent'`), and git workflow orchestration (branch/PR/merge steps)
-
-This eliminates the duplicated wiki→data→validate→test pipelines that previously lived in both places, while keeping prompts useful as quick-launch shortcuts with pre-filled parameters.
+The current prompts are intentionally **thin launchers**: they only carry
+template variables and target a specific orchestrator agent. The actual
+procedures live in the agents (`implement-class`, `implement-species`) and
+skills (`fix-issue`, `file-issue`, `validate-character`,
+`implement-class-feature`, `add-game-content`).
 
 ---
 
@@ -390,19 +370,20 @@ This eliminates the duplicated wiki→data→validate→test pipelines that prev
 
 ### 1. "Implement all features for class X"
 
-**Invoke:** `implement-class` prompt with `class_name = X`  
+**Invoke:** `implement-class` prompt with `class_name = X` (delegates to the `implement-class` orchestrator agent)
 **What happens:**
 1. Creates a git branch `class/X`
-2. wiki-fetcher ensures wiki cache exists
-3. data-author writes/updates class and subclass JSON files with effects
-4. data-validator checks schema compliance
-5. feature-implementer adds any new effect handlers to Python code
-6. test-writer creates integration tests
-7. Backlog is updated, PR is created and merged
+2. Single Explore call for combined discovery (current state, wiki, reference patterns, effect handlers, existing tests)
+3. wiki-fetcher fills any wiki cache gaps
+4. data-author writes/updates class and subclass JSON files with effects
+5. data-validator checks schema compliance and D&D 2024 accuracy (validate-fix loop with data-author)
+6. feature-implementer adds any new effect handlers to Python code
+7. test-writer creates integration tests
+8. Full pytest run, then commit and PR
 
 ### 2. "This damage resistance is missing on Dwarves"
 
-**Invoke:** `file-issue` skill (automatic detection)  
+**Invoke:** `file-issue` skill (automatic detection)
 **What happens:**
 1. Reads `data/species/dwarf.json` to understand current state
 2. Checks for duplicate issues
@@ -411,76 +392,58 @@ This eliminates the duplicated wiki→data→validate→test pipelines that prev
 
 ### 3. "Fix issue #42"
 
-**Invoke:** `fix-issue` skill  
+**Invoke:** `fix-issue` skill
 **What happens:**
 1. Reads the issue from GitHub
-2. Classifies the category (class/species/feat/app)
+2. Classifies the category (class/species/feat/app — backend or SPA)
 3. Creates a feature branch
 4. Verifies correct behavior from wiki source of truth
-5. Makes the fix (data JSON and/or Python code)
+5. Makes the fix in the right surface: data JSON, `modules/`, `routes/api/`, `frontend/src/`, or (rarely) the legacy `routes/` and `templates/`
 6. Writes a regression test
 7. Creates a PR and waits for user confirmation before merging
 
 ### 4. "Add all missing Ranger subclasses"
 
-**Invoke:** `add-game-content` skill or `batch-implement` prompt  
+**Invoke:** `add-game-content` skill (auto-detected) or `add-data-files` prompt (explicit)
 **What happens:**
-1. Reads backlog to identify missing subclass files
+1. Identifies missing subclass files
 2. Fetches wiki data for each
 3. Creates JSON data files with effects
 4. Validates against schemas
 5. Writes tests per subclass
-6. Updates backlog
 
-### 5. "What should I work on next?"
+### 5. "Validate that my Dwarf Cleric build is correct"
 
-**Invoke:** `next-task` prompt  
+**Invoke:** `validate-character` skill
 **What happens:**
-1. Reads `data/completeness/backlog.json`
-2. Applies priority ordering (classes near completion → backgrounds → feats → spells → subclasses)
-3. Outputs a work plan specifying which agent chain to use, files to create/update, expected complexity
-
-### 6. "Validate that my Dwarf Cleric build is correct"
-
-**Invoke:** `validate-character` skill  
-**What happens:**
-1. Builds the character via `CharacterBuilder`
+1. Builds the character via `POST /api/v1/character/build` or directly via `CharacterBuilder`
 2. Checks HP, AC, proficiencies, spells, effects, and skills against expected D&D 2024 values
 3. Compares against reference character files if available
 4. Reports pass/fail per category
 
-### 7. "Check all data files for schema issues"
+### 6. "Check all data files for schema issues"
 
-**Invoke:** `check-data-files` prompt  
+**Invoke:** `check-data-files` prompt (delegates to the `data-validator` agent)
 **What happens:**
 1. Runs `validate_data.py` across all data files
-2. Fixes simple issues automatically (wrong property names, missing fields)
-3. Reports complex issues that need manual intervention
-4. Generates a `data-file-report.md` summary
+2. Reports schema-violation counts per category
+3. Surfaces D&D 2024 accuracy and effect-coverage warnings
+4. Read-only — does not modify files
 
-### 8. Editing any Python or JSON file (automatic)
+### 7. Editing any Python or JSON file (automatic)
 
-**Triggered by:** Hooks (no manual invocation needed)  
+**Triggered by:** Hooks (no manual invocation needed)
 **What happens:**
 - Python file edit → pytest runs automatically, catches regressions
 - JSON data file edit → schema validator runs automatically, catches violations
 
-### 9. "Implement Elf species features"
+### 8. "Implement Elf species features"
 
-**Invoke:** `implement-species` prompt with `species_name = Elf`  
+**Invoke:** `implement-species` prompt with `species_name = Elf` (delegates to the `implement-species` orchestrator agent)
 **What happens:**
 1. wiki-fetcher ensures `wiki_data/species/elf.json` exists
 2. data-author updates species JSON and variant files (no ability score increases)
-3. data-validator confirms schema compliance
+3. data-validator confirms schema compliance and 2024 accuracy
 4. feature-implementer adds any needed effect handlers
 5. test-writer creates species trait tests with multiple class combinations
-6. Backlog updated
-
-### 10. "Clean up legacy code"
-
-**Invoke:** `cleanup-project` prompt  
-**What happens:**
-1. Scans for references to old `session['character']` approach
-2. Removes dead code, old helpers, outdated documentation
-3. Ensures all routes use `CharacterBuilder` + session helpers
-4. Applies DRY principles to eliminate duplicated logic
+6. Full pytest run, then commit and PR

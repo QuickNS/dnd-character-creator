@@ -67,7 +67,8 @@ Classify the issue to know which files and validation steps apply:
 | **Background** | `data/backgrounds/{name}.json` | `wiki_data/backgrounds/{name}.json` | `validate_data.py` + `pytest` |
 | **Feat** | `data/general_feats.json` or `data/origin_feats.json` | `wiki_data/feats/{name}.json` | `validate_data.py` + `pytest` |
 | **Spell** | `data/spells/{level}/` | `wiki_data/spells/{name}.json` | `validate_data.py` + `pytest` |
-| **Application** | `modules/`, `routes/`, `templates/` | N/A | `pytest` |
+| **Application (backend)** | `modules/`, `routes/api/`, `routes/` (legacy), `templates/` (legacy) | N/A | `pytest` |
+| **Application (SPA)** | `frontend/src/` (React + TypeScript) | N/A | `cd frontend && npm run typecheck && npm run build` |
 | **Equipment** | `data/equipment/` | N/A | `validate_data.py` + `pytest` |
 
 ### 4. Create a Feature Branch
@@ -113,9 +114,13 @@ Depending on issue type and category:
 
 **Game content — `bug`**: Fix the incorrect data or effect in the JSON. May also require fixing effect handlers in `modules/character_builder.py` → `_apply_effect()`.
 
-**Application — `bug`**: Fix the logic in `modules/`, `routes/`, or `templates/` as needed. Follow the architecture rule: calculations in `CharacterBuilder`, display in templates, no logic in routes.
+**Application — `bug`**: Fix the logic where it lives:
+- Calculation/data bugs → `modules/character_builder.py` (and friends). All math must stay here.
+- REST API shape bugs → `routes/api/`. Keep these stateless and JSON-only.
+- New SPA UI is the primary surface — fix it under `frontend/src/`. Remember the SPA only consumes `/api/v1/*`; it never recalculates.
+- Legacy Jinja UI under `/legacy/*` is quarantined; only patch `routes/` (non-`api/`) or `templates/` if the bug is exclusive to that surface.
 
-**Application — `enhancement`**: Implement the feature following existing patterns. If a new effect type is needed, add a handler in `_apply_effect()` and document it in `FEATURE_EFFECTS.md`.
+**Application — `enhancement`**: Implement the feature following existing patterns. If a new effect type is needed, add a handler in `_apply_effect()` and document it in `docs/FEATURE_EFFECTS.md`. New UI features go into `frontend/src/`, not the legacy templates.
 
 ### 7. Validate
 
@@ -212,7 +217,7 @@ git checkout main && git pull
 
 - Fix one issue at a time. Run tests between each fix.
 - For missing feature issues, use the implement-class-feature skill's effect mapping table to choose the right effect types.
-- When an issue requires a new effect type, also update `FEATURE_EFFECTS.md` and `_apply_effect()`.
+- When an issue requires a new effect type, also update `docs/FEATURE_EFFECTS.md` and `_apply_effect()`.
 - Subclass issues will have titles like `[Monk/Warrior of Shadow] ...`.
 - For species issues, check `data/species_variants/` if the species has lineage variants.
 - For feat issues, determine whether it's a general feat or origin feat before editing.

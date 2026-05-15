@@ -1,6 +1,6 @@
 ---
 description: "Use when working with D&D feature effects, grant_spell, grant_cantrip, grant_proficiency, bonus_hp, bonus_ac, bonus_damage, damage resistance, save advantage, or any mechanical benefit in JSON data files or CharacterBuilder effect processing code."
-applyTo: ["data/**/*.json", "modules/character_builder.py", "modules/feature_manager.py", "FEATURE_EFFECTS.md"]
+applyTo: ["data/**/*.json", "modules/character_builder.py", "modules/feature_manager.py", "docs/FEATURE_EFFECTS.md"]
 ---
 
 # Effects System
@@ -108,5 +108,5 @@ Every effect is an object inside a feature's `effects` array:
 1. Define the JSON shape and add to this table
 2. Add handler in `CharacterBuilder._apply_effect()`
 3. Wire into the relevant calculation method (`calculate_weapon_attacks()`, `calculate_ac_options()`, etc.)
-4. Add to `FEATURE_EFFECTS.md`
+4. Add to `docs/FEATURE_EFFECTS.md`
 5. Write tests covering at least 2 different sources using the same effect type

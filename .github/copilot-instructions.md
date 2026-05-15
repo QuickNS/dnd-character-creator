@@ -5,13 +5,14 @@
 ### 1. Effects System — NEVER Hardcode
 **NEVER hardcode specific feature names or species names in application logic.**
 All mechanical benefits are defined as structured `effects` arrays in JSON data files and applied generically through `CharacterBuilder._apply_effect()`. Check `effect['type']`, never `feature_name == '...'`.
-See `.github/instructions/effects-system.instructions.md` and `FEATURE_EFFECTS.md` for the full catalog.
+See `.github/instructions/effects-system.instructions.md` and `docs/FEATURE_EFFECTS.md` for the full catalog.
 
 ### 2. Single Source of Truth — CharacterBuilder
 `CharacterBuilder` is the ONLY place where character calculations happen.
-- Routes call `builder.to_character()` and pass the result to templates
-- Templates only display — no calculations in Jinja2 or routes
-- JSON export, HTML sheets, and API responses all use the same calculated dict
+- The REST API (`/api/v1/character/build`) calls `builder.to_character()` and returns the result as JSON
+- The React SPA (`frontend/`) is a pure consumer of that calculated dict — no calculations in TypeScript components
+- The legacy Jinja UI (under `/legacy/*`) also only displays — no calculations in templates or legacy routes
+- JSON export, HTML/PDF sheets, SPA views, and API responses all use the same calculated dict
 
 ### 3. D&D 2024 Edition Compliance
 - **ALWAYS** verify rules come from D&D 2024 (One D&D), not 2014
@@ -50,11 +51,23 @@ modules/hp_calculator.py      # Hit point calculations
 modules/variant_manager.py    # Species variant (lineage) system
 modules/data_loader.py        # JSON data file loading
 modules/equipment_manager.py  # Equipment tracking
-routes/                       # Flask routes — pure consumers of builder.to_character()
-templates/                    # Jinja2 — display only, no calculations
+modules/derived_stats.py      # Stateless view helpers reused by REST + legacy
+
+routes/api/                   # REST API v1 (/api/v1/*) — stateless, JSON, primary surface
+routes/                       # Legacy Jinja routes — mounted under /legacy/* for comparison
+templates/                    # Legacy Jinja templates — display only, no calculations
+frontend/                     # React + Vite + TypeScript SPA (the new UI)
+  src/lib/api.ts              # Typed client for /api/v1
+  src/store/                  # Zustand stores (character + roster)
+  src/features/               # Wizard step components, sheet, PDF view
 data/                         # Game content JSON files
 models/                       # JSON Schema definitions
 ```
+
+In production Flask serves the built SPA from `frontend/dist/` at `/`,
+the REST API at `/api/v1/*`, and the legacy UI at `/legacy/*`. The
+legacy UI is kept as a side-by-side comparison surface and will be
+removed in a future phase.
 
 ## Scoped Instructions
 
