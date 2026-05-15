@@ -1,0 +1,247 @@
+/**
+ * API client for the D&D Character Creator REST API.
+ * 
+ * All endpoints are stateless — the frontend holds `choices_made`,
+ * the backend calculates character stats.
+ */
+
+// ========== Types ==========
+
+export interface ChoicesMade {
+  character_name?: string;
+  level?: number;
+  class?: string;
+  subclass?: string;
+  background?: string;
+  species?: string;
+  lineage?: string;
+  ability_scores?: Record<string, number>;
+  background_bonuses?: Record<string, number>;
+  skill_choices?: string[];
+  tool_choices?: string[];
+  spells?: string[];
+  cantrips?: string[];
+  fighting_style?: string;
+  maneuvers?: string[];
+  equipment_selections?: Record<string, string>;
+  languages_chosen?: string[];
+  background_skill_replacement?: string[];
+  species_skill_replacement?: string[];
+  species_trait_choices?: Record<string, string>;
+  species_feat_choices?: Record<string, string>;
+  origin_feat?: string;
+  [key: string]: unknown;
+}
+
+export interface WizardStep {
+  id: string;
+  label: string;
+  description: string;
+  required_keys: string[];
+  nested_choices?: string[];
+}
+
+export interface WizardDependencies {
+  [key: string]: string[];
+}
+
+export interface Character {
+  name: string;
+  level: number;
+  class: string;
+  subclass?: string;
+  background: string;
+  species: string;
+  lineage?: string;
+  ability_scores: Record<string, number>;
+  ability_modifiers: Record<string, number>;
+  saving_throws: Record<string, { modifier: number; proficient: boolean }>;
+  skills: Record<string, { modifier: number; proficient: boolean }>;
+  hp: { max: number; current: number };
+  ac: number;
+  proficiency_bonus: number;
+  speed: number;
+  features: string[];
+  proficiencies: {
+    armor: string[];
+    weapons: string[];
+    tools: string[];
+    languages: string[];
+    saving_throws: string[];
+    skills: string[];
+  };
+  spells?: {
+    cantrips: string[];
+    known: string[];
+    prepared?: string[];
+    slots?: Record<string, number>;
+  };
+  equipment?: unknown[];
+  choices_made: ChoicesMade;
+  [key: string]: unknown;
+}
+
+export interface ValidationStatus {
+  step: string;
+  complete: boolean;
+  missing: string[];
+}
+
+export interface ValidationResponse {
+  valid: boolean;
+  steps: ValidationStatus[];
+  missing_top_level: string[];
+}
+
+export interface PreviewStepResponse {
+  choices_made: ChoicesMade;
+  [key: string]: unknown;
+}
+
+export interface ClassSummary {
+  id: string;
+  name: string;
+  description?: string;
+  hit_die: number;
+  primary_ability: string;
+  subclass_selection_level: number;
+}
+
+export interface BackgroundSummary {
+  id: string;
+  name: string;
+  description?: string;
+  feat?: string;
+}
+
+export interface SpeciesSummary {
+  id: string;
+  name: string;
+  description?: string;
+  creature_type: string;
+  size: string;
+  speed: number;
+  darkvision?: number;
+  has_lineages: boolean;
+  has_trait_choices: boolean;
+}
+
+export class ApiError extends Error {
+  constructor(
+    public status: number,
+    public statusText: string,
+    public data?: unknown,
+  ) {
+    super(`API Error ${status}: ${statusText}`);
+    this.name = "ApiError";
+  }
+}
+
+// ========== Configuration ==========
+
+const API_BASE_URL = import.meta.env.DEV
+  ? "http://localhost:5000/api/v1"
+  : "/api/v1";
+
+// ========== Fetch wrapper ==========
+
+async function apiFetch<T>(
+  endpoint: string,
+  options?: RequestInit,
+): Promise<T> {
+  const url = `${API_BASE_URL}${endpoint}`;
+  const response = await fetch(url, {
+    headers: {
+      "Content-Type": "application/json",
+      ...options?.headers,
+    },
+    ...options,
+  });
+
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new ApiError(response.status, response.statusText, data);
+  }
+
+  return response.json();
+}
+
+// ========== API Client ==========
+
+export const api = {
+  // Wizard metadata
+  wizard: {
+    steps: (): Promise<WizardStep[]> =>
+      apiFetch<{ steps: WizardStep[] }>("/wizard/steps").then((r) => r.steps),
+
+    dependencies: (): Promise<WizardDependencies> =>
+      apiFetch<{ dependencies: WizardDependencies }>("/wizard/dependencies").then(
+        (r) => r.dependencies,
+      ),
+  },
+
+  // Catalog (read-only game data)
+  catalog: {
+    classes: (): Promise<ClassSummary[]> =>
+      apiFetch<{ classes: ClassSummary[] }>("/catalog/classes").then(
+        (r) => r.classes,
+      ),
+
+    getClass: (className: string) =>
+      apiFetch(`/catalog/classes/${encodeURIComponent(className)}`),
+
+    subclasses: (className: string) =>
+      apiFetch(`/catalog/classes/${encodeURIComponent(className)}/subclasses`),
+
+    getSubclass: (className: string, subclassName: string) =>
+      apiFetch(
+        `/catalog/classes/${encodeURIComponent(className)}/subclasses/${encodeURIComponent(subclassName)}`,
+      ),
+
+    species: (): Promise<SpeciesSummary[]> =>
+      apiFetch<{ species: SpeciesSummary[] }>("/catalog/species").then(
+        (r) => r.species,
+      ),
+
+    getSpecies: (speciesName: string) =>
+      apiFetch(`/catalog/species/${encodeURIComponent(speciesName)}`),
+
+    backgrounds: (): Promise<BackgroundSummary[]> =>
+      apiFetch<{ backgrounds: BackgroundSummary[] }>("/catalog/backgrounds").then(
+        (r) => r.backgrounds,
+      ),
+
+    getBackground: (backgroundName: string) =>
+      apiFetch(`/catalog/backgrounds/${encodeURIComponent(backgroundName)}`),
+  },
+
+  // Character building
+  character: {
+    build: (choices: ChoicesMade): Promise<Character> =>
+      apiFetch<{ character: Character }>("/character/build", {
+        method: "POST",
+        body: JSON.stringify({ choices_made: choices }),
+      }).then((r) => r.character),
+
+    validate: (choices: ChoicesMade): Promise<ValidationResponse> =>
+      apiFetch<ValidationResponse>("/character/validate", {
+        method: "POST",
+        body: JSON.stringify({ choices_made: choices }),
+      }),
+
+    previewStep: (
+      choices: ChoicesMade,
+      step: string,
+    ): Promise<PreviewStepResponse> =>
+      apiFetch<PreviewStepResponse>("/character/preview-step", {
+        method: "POST",
+        body: JSON.stringify({ choices_made: choices, step }),
+      }),
+
+    derived: (choices: ChoicesMade, view: string): Promise<{ view: string; data: unknown }> =>
+      apiFetch<{ view: string; data: unknown }>("/character/derived", {
+        method: "POST",
+        body: JSON.stringify({ choices_made: choices, view }),
+      }),
+  },
+};
