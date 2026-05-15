@@ -2,7 +2,7 @@
 name: issue-tracker
 description: "GitHub Issues and PRs specialist. Files structured issues from casual reports, triages, links related issues, and manages PR lifecycle via the GitHub MCP tools."
 model: claude-sonnet-4
-tools: [read, search, github]
+tools: [read, search, github/*]
 ---
 
 # Issue Tracker Agent
