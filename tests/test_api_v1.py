@@ -195,6 +195,13 @@ class TestCharacterBuild:
         assert data["needs_subclass"] is True
         assert isinstance(data["available_subclasses"], list)
         assert len(data["available_subclasses"]) > 0
+        first = data["available_subclasses"][0]
+        assert isinstance(first["id"], str)
+        assert isinstance(first["name"], str)
+        assert isinstance(first["level_3_feature_names"], list)
+        champion = next((s for s in data["available_subclasses"] if s["name"] == "Champion"), None)
+        assert champion is not None
+        assert "Improved Critical" in champion["level_3_feature_names"]
 
     def test_preview_class_no_subclass_at_low_level(self, client):
         r = client.post(

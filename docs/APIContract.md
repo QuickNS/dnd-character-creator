@@ -160,7 +160,12 @@ Response (200) — **always includes `step`**, plus a step-specific payload. Exa
 {
   "step": "class",
   "needs_subclass": true,
-  "available_subclasses": [{ "id": "...", "name": "...", "description": "..." }],
+  "available_subclasses": [{
+    "id": "...",
+    "name": "...",
+    "description": "...",
+    "level_3_feature_names": ["Feature A", "Feature B", "Feature C"]
+  }],
   "features_by_level": { "1": { "Feature": "Description" } },
   "nested_choices": [ /* choice descriptors */ ]
 }
