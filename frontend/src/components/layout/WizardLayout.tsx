@@ -81,7 +81,7 @@ export function WizardLayout() {
       <div className="grid grid-cols-1 md:grid-cols-[16rem_1fr] gap-0 min-h-dvh">
         <aside className="border-r border-border bg-card/50">
           <div className="px-5 py-6 border-b border-border flex items-center justify-between gap-2">
-            <h2 className="text-2xl font-semibold text-primary">Wizard</h2>
+            <h2 className="text-2xl font-semibold text-primary">D&D Character Creator</h2>
             <div className="flex items-center gap-2">
               <button
                 type="button"
@@ -89,7 +89,7 @@ export function WizardLayout() {
                 title="Discard all choices and restart the wizard"
                 className="inline-flex h-9 items-center rounded-md border border-border bg-background px-3 text-xs text-foreground hover:bg-secondary transition-colors"
               >
-                Start over
+                Reset
               </button>
               <ThemeToggle />
             </div>

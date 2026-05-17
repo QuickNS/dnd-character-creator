@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    --font-display: "Cinzel";
+    --font-display: "Cinzel", serif;
     --font-body: "Inter";
     --radius: 0.5rem;
   }
@@ -89,8 +89,33 @@
 
 
 @layer components {
+
+  .info-panel {
+    @apply rounded-xl border border-primary/25 bg-muted/30 shadow-inner;
+  }
+
+  .info-panel-header {
+    @apply border-b border-border/70 px-4 py-3 sm:px-5;
+  }
+
+  .info-panel-kicker {
+    @apply text-[11px] uppercase tracking-[0.24em] text-muted-foreground;
+  }
+
+  .info-panel-title {
+    @apply mt-1 font-display text-lg text-primary;
+  }
+
+  .info-panel-body {
+    @apply px-4 py-4 sm:px-5;
+  }
+
+  .info-panel-block {
+    @apply rounded-lg border border-border/70 bg-background/80 p-3;
+  }
+
   .feature-description table {
-    @apply w-full mt-2 border-collapse text-xs;
+    @apply w-full mt-2 border-collapse text-lg;
   }
   .feature-description th,
   .feature-description td {

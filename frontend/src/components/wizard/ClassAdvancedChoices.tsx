@@ -1,5 +1,7 @@
+import { Check, Sparkles, Wand2 } from "lucide-react";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { ApiError, api } from "@/lib/api";
+import { cn } from "@/lib/utils";
 import { useCharacterStore } from "@/store/characterStore";
 
 type Loose = Record<string, unknown>;
@@ -43,8 +45,23 @@ export function ClassAdvancedChoices() {
   if (!anyVisible) return null;
 
   return (
-    <section className="space-y-6">
-      <h3 className="text-sm font-semibold">Class loadout</h3>
+    <section className="rounded-xl border border-border/70 bg-card/50 p-5 shadow-sm sm:p-6">
+      <div className="mb-5 flex items-start gap-3">
+        <div className="rounded-full bg-primary/10 p-2 text-primary">
+          <Sparkles className="h-4 w-4" />
+        </div>
+        <div>
+          <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">
+            Class refinement
+          </p>
+          <h3 className="mt-1 font-display text-xl text-primary">Class loadout</h3>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Finish the class-specific picks that shape how this character plays.
+          </p>
+        </div>
+      </div>
+
+      <div className="space-y-4">
       {isApplicable(spellsQ) && spellsQ.data && (
         <SpellPicker data={spellsQ.data} />
       )}
@@ -54,6 +71,7 @@ export function ClassAdvancedChoices() {
       {isApplicable(invocationsQ) && invocationsQ.data && (
         <InvocationPicker data={invocationsQ.data} />
       )}
+      </div>
     </section>
   );
 }
@@ -117,7 +135,7 @@ function SpellPicker({ data }: { data: Loose }) {
   }
 
   return (
-    <div className="rounded-md border border-border bg-card/40 p-4 space-y-4">
+    <div className="rounded-xl border border-border/70 bg-background/70 p-4 shadow-sm space-y-4 sm:p-5">
       <header>
         <h4 className="font-display text-base text-primary">Spells</h4>
         <p className="text-xs text-muted-foreground">
@@ -208,19 +226,33 @@ function SpellGroup({
               key={`${name}-${i}`}
               type="button"
               onClick={() => onToggle(name)}
-              className={
-                "text-left rounded border px-2 py-1 text-sm transition-colors " +
-                (isSelected
-                  ? "border-primary bg-secondary"
-                  : "border-border hover:bg-secondary/60")
-              }
-            >
-              <span>{name}</span>
-              {school && (
-                <span className="ml-2 text-xs text-muted-foreground">
-                  {school}
-                </span>
+              aria-pressed={isSelected}
+              className={cn(
+                "flex items-center justify-between gap-3 rounded-lg border px-3 py-2 text-left text-sm transition-all duration-200",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                isSelected
+                  ? "border-primary bg-muted/60 shadow-sm ring-1 ring-primary/20"
+                  : "border-border bg-background/70 hover:border-primary/30 hover:bg-secondary/60",
               )}
+            >
+              <span className="min-w-0">
+                <span>{name}</span>
+                {school && (
+                  <span className="ml-2 text-xs text-muted-foreground">
+                    {school}
+                  </span>
+                )}
+              </span>
+              <span
+                className={cn(
+                  "inline-flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full border",
+                  isSelected
+                    ? "border-primary bg-background text-primary"
+                    : "border-border bg-background text-transparent",
+                )}
+              >
+                <Check className="h-3 w-3" />
+              </span>
             </button>
           );
         })}
@@ -322,7 +354,7 @@ function MasteryPicker({ data }: { data: Loose }) {
 
   if (max === 0) return null;
   return (
-    <div className="rounded-md border border-border bg-card/40 p-4">
+    <div className="rounded-xl border border-border/70 bg-background/70 p-4 shadow-sm sm:p-5">
       <header className="mb-3">
         <h4 className="font-display text-base text-primary">Weapon Masteries</h4>
         <p className="text-xs text-muted-foreground">
@@ -338,19 +370,33 @@ function MasteryPicker({ data }: { data: Loose }) {
               key={weapon}
               type="button"
               onClick={() => toggle(weapon)}
-              className={
-                "text-left rounded border px-2 py-1 text-sm transition-colors " +
-                (isSelected
-                  ? "border-primary bg-secondary"
-                  : "border-border hover:bg-secondary/60")
-              }
-            >
-              <span>{weapon}</span>
-              {mastery && (
-                <span className="ml-2 text-xs text-muted-foreground">
-                  {mastery}
-                </span>
+              aria-pressed={isSelected}
+              className={cn(
+                "flex items-center justify-between gap-3 rounded-lg border px-3 py-2 text-left text-sm transition-all duration-200",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                isSelected
+                  ? "border-primary bg-muted/60 shadow-sm ring-1 ring-primary/20"
+                  : "border-border bg-background/70 hover:border-primary/30 hover:bg-secondary/60",
               )}
+            >
+              <span className="min-w-0">
+                <span>{weapon}</span>
+                {mastery && (
+                  <span className="ml-2 text-xs text-muted-foreground">
+                    {mastery}
+                  </span>
+                )}
+              </span>
+              <span
+                className={cn(
+                  "inline-flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full border",
+                  isSelected
+                    ? "border-primary bg-background text-primary"
+                    : "border-border bg-background text-transparent",
+                )}
+              >
+                <Check className="h-3 w-3" />
+              </span>
             </button>
           );
         })}
@@ -384,9 +430,10 @@ function InvocationPicker({ data }: { data: Loose }) {
 
   if (max === 0) return null;
   return (
-    <div className="rounded-md border border-border bg-card/40 p-4">
+    <div className="rounded-xl border border-border/70 bg-background/70 p-4 shadow-sm sm:p-5">
       <header className="mb-3">
-        <h4 className="font-display text-base text-primary">
+        <h4 className="flex items-center gap-2 font-display text-base text-primary">
+          <Wand2 className="h-4 w-4" />
           Eldritch Invocations
         </h4>
         <p className="text-xs text-muted-foreground">
@@ -403,14 +450,28 @@ function InvocationPicker({ data }: { data: Loose }) {
               key={`${name}-${i}`}
               type="button"
               onClick={() => toggle(name)}
-              className={
-                "text-left rounded border p-2 transition-colors " +
-                (isSelected
-                  ? "border-primary bg-secondary"
-                  : "border-border hover:bg-secondary/60")
-              }
+              aria-pressed={isSelected}
+              className={cn(
+                "rounded-lg border p-3 text-left transition-all duration-200",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                isSelected
+                  ? "border-primary bg-muted/60 shadow-sm ring-1 ring-primary/20"
+                  : "border-border bg-background/70 hover:border-primary/30 hover:bg-secondary/60",
+              )}
             >
-              <div className="text-sm font-medium">{name}</div>
+              <div className="flex items-start justify-between gap-3">
+                <div className="text-sm font-medium">{name}</div>
+                <span
+                  className={cn(
+                    "inline-flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full border",
+                    isSelected
+                      ? "border-primary bg-background text-primary"
+                      : "border-border bg-background text-transparent",
+                  )}
+                >
+                  <Check className="h-3 w-3" />
+                </span>
+              </div>
               {description && (
                 <div className="text-xs text-muted-foreground line-clamp-3 mt-1">
                   {description}

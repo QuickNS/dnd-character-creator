@@ -58,7 +58,7 @@ export function Sheet() {
     );
   }
 
-  const c = (buildQuery.data?.character ?? {}) as Char;
+  const c = (buildQuery.data ?? {}) as Char;
   return (
     <Shell>
       <Header c={c} />

@@ -148,6 +148,51 @@ class TestCharacterBuild:
         assert char["name"] == "Thorin"
         assert char["class"] == "Cleric"
 
+    def test_build_response_structure_wrapped(self, client, dwarf_cleric_choices):
+        """
+        REGRESSION TEST: Validate that /character/build returns { "character": {...} }
+        
+        The Flask endpoint must return a wrapped response structure. The frontend
+        API client (frontend/src/lib/api.ts) unwraps this to return the character
+        object directly to React components.
+        
+        This test prevents regression of the double-unwrapping bug where components
+        were attempting to access response.character.character instead of response.character.
+        
+        Contract:
+        - Flask returns: { "character": {...} }
+        - API client unwraps and returns: {...}
+        - Components receive: {...}
+        """
+        r = client.post(
+            "/api/v1/character/build",
+            json={"choices_made": dwarf_cleric_choices},
+        )
+        assert r.status_code == 200
+        
+        # Response must be wrapped in { "character": {...} }
+        data = r.get_json()
+        assert isinstance(data, dict), "Response must be a dict"
+        assert "character" in data, "Response must have 'character' key"
+        
+        # The character value must be a dict, not double-wrapped
+        character = data["character"]
+        assert isinstance(character, dict), "character must be a dict, not further nested"
+        
+        # Validate expected top-level keys exist in the character object
+        # (proves it's the actual character, not another wrapper)
+        expected_keys = [
+            "name", "level", "class", "species", "background",
+            "proficiencies", "combat", "features", "spellcasting_stats"
+        ]
+        for key in expected_keys:
+            assert key in character, f"character must have '{key}' key"
+        
+        # Sanity check: verify it's the actual character data
+        assert character["name"] == "Thorin"
+        assert character["level"] == 7
+        assert character["class"] == "Cleric"
+
     def test_build_missing_body(self, client):
         r = client.post("/api/v1/character/build", json={})
         assert r.status_code == 400
