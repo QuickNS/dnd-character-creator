@@ -1,10 +1,12 @@
-import { useEffect } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Outlet, useNavigate, useParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { RotateCcw } from "lucide-react";
 import { api } from "@/lib/api";
 import { useCharacterStore } from "@/store/characterStore";
 import { StepSidebar } from "@/components/wizard/StepSidebar";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 export function WizardLayout() {
   const navigate = useNavigate();
@@ -13,6 +15,8 @@ export function WizardLayout() {
   const setDependencies = useCharacterStore((s) => s.setDependencies);
   const setCurrentStep = useCharacterStore((s) => s.setCurrentStep);
   const reset = useCharacterStore((s) => s.reset);
+  const [sidebarPanel, setSidebarPanel] = useState<ReactNode | null>(null);
+  const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
 
   const stepsQuery = useQuery({
     queryKey: ["wizard", "steps"],
@@ -58,14 +62,7 @@ export function WizardLayout() {
 
   const steps = stepsQuery.data ?? [];
 
-  function handleStartOver() {
-    if (
-      !window.confirm(
-        "Start over? This will discard all your current choices.",
-      )
-    ) {
-      return;
-    }
+  function handleConfirmStartOver() {
     reset();
     // Drop any cached /character/* and /wizard/* responses so the new
     // wizard session doesn't render stale build/preview data.
@@ -74,11 +71,22 @@ export function WizardLayout() {
     if (steps.length > 0) {
       navigate(`/wizard/${steps[0].id}`, { replace: true });
     }
+    setIsResetDialogOpen(false);
+  }
+
+  function handleStartOver() {
+    setIsResetDialogOpen(true);
+  }
+
+  function handleSetSidebarPanel(panel: ReactNode | null) {
+    setSidebarPanel(panel);
   }
 
   return (
     <div className="min-h-dvh bg-background text-foreground font-sans">
-      <div className="grid grid-cols-1 md:grid-cols-[16rem_1fr] gap-0 min-h-dvh">
+      <div
+        className={`grid grid-cols-1 md:grid-cols-[16rem_minmax(0,1fr)_24rem] gap-0 min-h-dvh relative z-10`}
+      >
         <aside className="border-r border-border bg-card/50">
           <div className="px-5 py-6 border-b border-border flex items-center justify-between gap-2">
             <h2 className="text-2xl font-semibold text-primary">D&D Character Creator</h2>
@@ -86,10 +94,12 @@ export function WizardLayout() {
               <button
                 type="button"
                 onClick={handleStartOver}
+                aria-label="Reset wizard"
                 title="Discard all choices and restart the wizard"
-                className="inline-flex h-9 items-center rounded-md border border-border bg-background px-3 text-xs text-foreground hover:bg-secondary transition-colors"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border bg-background text-foreground hover:bg-secondary transition-colors"
               >
-                Reset
+                <RotateCcw className="h-4 w-4" aria-hidden="true" />
+                <span className="sr-only">Reset</span>
               </button>
               <ThemeToggle />
             </div>
@@ -97,9 +107,23 @@ export function WizardLayout() {
           <StepSidebar steps={steps} currentStepId={stepId ?? null} />
         </aside>
         <main className="px-6 md:px-10 py-8 w-full min-w-0">
-          <Outlet />
+          <Outlet context={{ setSidebarPanel: handleSetSidebarPanel }} />
         </main>
+        <aside className="hidden lg:block border-l border-border bg-card/30">
+          <div className="sticky top-0 p-6 min-h-[100dvh]">
+            {sidebarPanel}
+          </div>
+        </aside>
       </div>
+
+      <ConfirmDialog
+        open={isResetDialogOpen}
+        title="Start over?"
+        description="This will discard all your current choices and return you to the first wizard step."
+        confirmLabel="Reset"
+        onConfirm={handleConfirmStartOver}
+        onCancel={() => setIsResetDialogOpen(false)}
+      />
     </div>
   );
 }

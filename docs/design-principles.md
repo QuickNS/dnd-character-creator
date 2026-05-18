@@ -166,7 +166,7 @@ For more complex choices such as classes, subclasses, species, and backgrounds, 
   {isSelected && (
     <Check className="absolute top-4 right-4 h-5 w-5 text-primary" />
   )}
-  <h3 className="font-display text-xl mb-2">{title}</h3>
+  <h3 className="font-display text-xl mb-2 font-semibold">{title}</h3>
   <p className="text-sm text-muted-foreground mb-3">{summary}</p>
   <ul className="text-xs space-y-1">
     {keyFeatures.map((feature) => (

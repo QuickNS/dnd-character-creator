@@ -153,7 +153,7 @@ export function ChoiceList({
                   "cursor-not-allowed border-border/60 bg-muted/20 opacity-45",
               )}
             >
-              <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center justify-between gap-3">
                 <div>
                   <div className="font-medium">{opt.label}</div>
                   {opt.description && (

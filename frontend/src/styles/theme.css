@@ -91,7 +91,7 @@
 @layer components {
 
   .info-panel {
-    @apply rounded-xl border border-primary/25 bg-muted/30 shadow-inner;
+    @apply rounded-xl border border-primary/25 bg-muted/60 shadow-inner;
   }
 
   .info-panel-header {
@@ -103,7 +103,7 @@
   }
 
   .info-panel-title {
-    @apply mt-1 font-display text-lg text-primary;
+    @apply mt-1 font-display text-lg text-primary font-semibold;
   }
 
   .info-panel-body {

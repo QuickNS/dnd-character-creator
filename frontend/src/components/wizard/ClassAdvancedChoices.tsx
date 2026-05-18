@@ -1,6 +1,6 @@
 import { Check, Sparkles, Wand2 } from "lucide-react";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
-import { ApiError, api } from "@/lib/api";
+import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { useCharacterStore } from "@/store/characterStore";
 
@@ -29,14 +29,19 @@ interface CurrentSpellSelections {
 /**
  * Renders the spell, weapon-mastery, and eldritch-invocation pickers
  * inside the class step. Each picker silently hides itself when the
- * underlying derived view returns 400 ("not applicable to this build").
+ * underlying derived view reports `applicable: false`.
  */
-export function ClassAdvancedChoices() {
+export function ClassAdvancedChoices({
+  choicesForDerived,
+}: {
+  choicesForDerived?: Loose;
+} = {}) {
   const choicesMade = useCharacterStore((s) => s.choicesMade);
+  const sourceChoices = choicesForDerived ?? choicesMade;
 
-  const spellsQ = useDerived(choicesMade, "spell_management");
-  const masteryQ = useDerived(choicesMade, "mastery_management");
-  const invocationsQ = useDerived(choicesMade, "invocation_management");
+  const spellsQ = useDerived(sourceChoices, "spell_management");
+  const masteryQ = useDerived(sourceChoices, "mastery_management");
+  const invocationsQ = useDerived(sourceChoices, "invocation_management");
 
   const anyVisible =
     isApplicable(spellsQ) ||
@@ -62,14 +67,14 @@ export function ClassAdvancedChoices() {
       </div>
 
       <div className="space-y-4">
-      {isApplicable(spellsQ) && spellsQ.data && (
-        <SpellPicker data={spellsQ.data} />
+      {isApplicable(spellsQ) && getApplicableData(spellsQ) && (
+        <SpellPicker data={getApplicableData(spellsQ)!} />
       )}
-      {isApplicable(masteryQ) && masteryQ.data && (
-        <MasteryPicker data={masteryQ.data} />
+      {isApplicable(masteryQ) && getApplicableData(masteryQ) && (
+        <MasteryPicker data={getApplicableData(masteryQ)!} />
       )}
-      {isApplicable(invocationsQ) && invocationsQ.data && (
-        <InvocationPicker data={invocationsQ.data} />
+      {isApplicable(invocationsQ) && getApplicableData(invocationsQ) && (
+        <InvocationPicker data={getApplicableData(invocationsQ)!} />
       )}
       </div>
     </section>
@@ -86,11 +91,22 @@ function useDerived(choicesMade: Loose, view: string) {
   });
 }
 
-/** True when query succeeded — 400 means feature isn't applicable. */
-function isApplicable(q: { data?: unknown; error: unknown }): q is { data: Loose; error: unknown } {
-  if (q.data && typeof q.data === "object") return true;
-  if (q.error instanceof ApiError && q.error.status === 400) return false;
-  return false;
+/** True when the backend says this derived view applies to the current build. */
+function isApplicable(q: { data?: unknown }): q is { data: Loose; error: unknown } {
+  if (!q.data || typeof q.data !== "object") return false;
+  const payload = q.data as Loose;
+  return payload.applicable === true;
+}
+
+function getApplicableData(q: { data?: unknown }): Loose | null {
+  if (!q.data || typeof q.data !== "object") return null;
+  const payload = q.data as Loose;
+  if (payload.applicable !== true) return null;
+  const data = payload.data;
+  if (data && typeof data === "object" && !Array.isArray(data)) {
+    return data as Loose;
+  }
+  return null;
 }
 
 // ---------- Spells ----------

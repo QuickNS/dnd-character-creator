@@ -1,6 +1,9 @@
-import { ChevronLeft, ChevronRight, Compass } from "lucide-react";
+import { ChevronLeft, ChevronRight, Compass, AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
+import { api } from "@/lib/api";
+import { useCharacterStore } from "@/store/characterStore";
 import type { WizardStep } from "@/lib/api";
 
 interface Props {
@@ -10,11 +13,28 @@ interface Props {
 
 export function StepNav({ steps, currentStepId }: Props) {
   const navigate = useNavigate();
+  const choicesMade = useCharacterStore((s) => s.choicesMade);
   const idx = steps.findIndex((s) => s.id === currentStepId);
   const prev = idx > 0 ? steps[idx - 1] : null;
   const next = idx >= 0 && idx < steps.length - 1 ? steps[idx + 1] : null;
   const currentStepNumber = idx + 1;
   const progressPercent = idx >= 0 ? ((idx + 1) / steps.length) * 100 : 0;
+
+  // Fetch validation status for current step
+  const validationQuery = useQuery({
+    queryKey: ["character", "validate", choicesMade],
+    queryFn: () => api.character.validate(choicesMade),
+    staleTime: 500,
+  });
+
+  // True while a fresh fetch is in-flight (initial load or after a choice changes)
+  const isValidating = validationQuery.isFetching;
+
+  // Get the current step's validation status
+  const currentStepStatus = validationQuery.data?.steps?.find(
+    (s) => s.step === currentStepId
+  );
+  const hasIncompleteChoices = isValidating || (currentStepStatus?.missing?.length ?? 0) > 0;
 
   return (
     <div className="mt-10 h-28 sm:h-32">
@@ -43,8 +63,29 @@ export function StepNav({ steps, currentStepId }: Props) {
                   </span>
                 </div>
               </div>
-              <div className="text-sm text-muted-foreground">
-                {next ? "Continue when this step looks right." : "Final review ahead."}
+
+              {/* Dynamic status message based on step validation */}
+              <div className="flex items-center gap-2 text-sm">
+                {isValidating ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                    <span className="text-muted-foreground">Validating choices…</span>
+                  </>
+                ) : hasIncompleteChoices ? (
+                  <>
+                    <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-500" />
+                    <span className="font-medium text-amber-600 dark:text-amber-500">
+                      Choices still pending
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-500" />
+                    <span className="font-medium text-green-600 dark:text-green-500">
+                      All choices made
+                    </span>
+                  </>
+                )}
               </div>
             </div>
 

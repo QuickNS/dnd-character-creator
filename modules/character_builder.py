@@ -24,7 +24,7 @@ Usage:
 
 import json
 from pathlib import Path
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any, Optional, Tuple
 from copy import deepcopy
 
 from .character import Character
@@ -81,6 +81,7 @@ class CharacterBuilder:
         "equipment",        # Equipment selection
         "complete",         # Character summary
     ]
+    SPELL_LEVEL_NAMES = ["1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "9th"]
 
     def __init__(self, data_dir: str = None):
         """
@@ -2739,6 +2740,441 @@ class CharacterBuilder:
                         self._apply_effect(effect, choice_value, "class_choice")
                     return
 
+    def _normalize_multiclass_rows(self, rows: Any) -> List[Dict[str, Any]]:
+        """Normalize classes rows into a validated internal list."""
+        if not isinstance(rows, list):
+            return []
+
+        normalized_rows: List[Dict[str, Any]] = []
+        for row in rows:
+            if not isinstance(row, dict):
+                continue
+            class_name = row.get("class_name")
+            if not isinstance(class_name, str) or not class_name.strip():
+                continue
+            try:
+                level = int(row.get("level", 1))
+            except (TypeError, ValueError):
+                continue
+            if level < 1:
+                continue
+
+            normalized_row: Dict[str, Any] = {
+                "class_name": class_name.strip(),
+                "level": level,
+            }
+            subclass = row.get("subclass")
+            if isinstance(subclass, str) and subclass.strip():
+                normalized_row["subclass"] = subclass.strip()
+            normalized_rows.append(normalized_row)
+
+        return normalized_rows
+
+    def _apply_class_features_only(self, class_data: Dict[str, Any], level: int):
+        """Apply only level-based class features (no base proficiencies)."""
+        features_by_level = class_data.get("features_by_level", {})
+        if not isinstance(features_by_level, dict):
+            return
+
+        for feat_level in range(1, level + 1):
+            level_features = features_by_level.get(str(feat_level), {})
+            if not isinstance(level_features, dict):
+                continue
+            for feature_name, feature_data in level_features.items():
+                self._apply_trait_effects(feature_name, feature_data, "class", feat_level)
+
+    def _apply_additional_multiclass_tracks(self, class_rows: List[Dict[str, Any]]) -> None:
+        """Apply class/subclass features for non-primary multiclass rows."""
+        if len(class_rows) <= 1:
+            return
+
+        original_level = self.character_data.get("level", 1)
+        original_class = self.character_data.get("class")
+        original_subclass = self.character_data.get("subclass")
+
+        try:
+            for row in class_rows[1:]:
+                class_name = row["class_name"]
+                class_level = row["level"]
+                class_data = self._load_class_data(class_name)
+                if not class_data:
+                    continue
+
+                # Apply each additional class at its own level threshold.
+                self.character_data["level"] = class_level
+                self.character_data["class"] = class_name
+                self._apply_class_features_only(class_data, class_level)
+
+                subclass_name = row.get("subclass")
+                subclass_level = class_data.get("subclass_selection_level", 3)
+                if subclass_name and class_level >= subclass_level:
+                    subclass_data = self._load_subclass_data(class_name, subclass_name)
+                    if subclass_data:
+                        self.character_data["subclass"] = subclass_name
+                        self._apply_subclass_features(subclass_data, class_level)
+        finally:
+            self.character_data["level"] = original_level
+            self.character_data["class"] = original_class
+            self.character_data["subclass"] = original_subclass
+
+    def _get_primary_class_row(self) -> Optional[Dict[str, Any]]:
+        rows = self.character_data.get("class_breakdown")
+        if isinstance(rows, list) and rows and isinstance(rows[0], dict):
+            return rows[0]
+        return None
+
+    def _get_primary_class_level(self) -> int:
+        primary = self._get_primary_class_row()
+        if primary:
+            try:
+                return max(1, int(primary.get("level", 1)))
+            except (TypeError, ValueError):
+                return 1
+        return max(1, int(self.character_data.get("level", 1)))
+
+    def _get_spellcasting_rows(self) -> List[Dict[str, Any]]:
+        """Return normalized class rows used for spellcasting calculations."""
+        class_rows = self.character_data.get("class_breakdown")
+        if isinstance(class_rows, list) and class_rows:
+            return self._normalize_multiclass_rows(class_rows)
+
+        class_name = self.character_data.get("class")
+        if not isinstance(class_name, str) or not class_name:
+            return []
+
+        row: Dict[str, Any] = {
+            "class_name": class_name,
+            "level": self._get_primary_class_level(),
+        }
+        subclass_name = self.character_data.get("subclass")
+        if isinstance(subclass_name, str) and subclass_name:
+            row["subclass"] = subclass_name
+        return [row]
+
+    def _resolve_row_spellcasting_source(
+        self,
+        row: Dict[str, Any],
+    ) -> Tuple[Optional[Dict[str, Any]], Optional[Dict[str, Any]], Optional[Dict[str, Any]]]:
+        """Resolve class/subclass spellcasting metadata source for a row."""
+        class_name = row.get("class_name", "")
+        class_level = max(1, int(row.get("level", 1)))
+        subclass_name = row.get("subclass")
+
+        class_data = self._load_class_data(class_name) or {}
+        subclass_data = None
+        if isinstance(subclass_name, str) and subclass_name:
+            subclass_unlock = class_data.get("subclass_selection_level", 3)
+            if class_level >= subclass_unlock:
+                subclass_data = self._load_subclass_data(class_name, subclass_name)
+
+        class_has_spellcasting = any(
+            key in class_data
+            for key in ("spellcasting_ability", "spell_slots_by_level", "pact_magic_slots_by_level")
+        )
+        if class_has_spellcasting:
+            return class_data, class_data, subclass_data
+
+        if isinstance(subclass_data, dict):
+            subclass_has_spellcasting = any(
+                key in subclass_data
+                for key in ("spellcasting_ability", "spell_slots_by_level", "pact_magic_slots_by_level")
+            )
+            if subclass_has_spellcasting:
+                return subclass_data, class_data, subclass_data
+
+        return None, class_data, subclass_data
+
+    def _highest_spell_slot_level(self, level_slots: Any) -> int:
+        """Return highest slot level with non-zero slots from a row payload."""
+        if isinstance(level_slots, list):
+            highest = 0
+            for idx, count in enumerate(level_slots):
+                try:
+                    if int(count) > 0:
+                        highest = idx + 1
+                except (TypeError, ValueError):
+                    continue
+            return highest
+
+        if isinstance(level_slots, dict):
+            highest = 0
+            for key, count in level_slots.items():
+                try:
+                    if int(count) > 0:
+                        if isinstance(key, str) and key.endswith(("st", "nd", "rd", "th")):
+                            slot_level = self.SPELL_LEVEL_NAMES.index(key) + 1 if key in self.SPELL_LEVEL_NAMES else 0
+                        else:
+                            slot_level = int(key)
+                        highest = max(highest, slot_level)
+                except (TypeError, ValueError):
+                    continue
+            return highest
+
+        return 0
+
+    def _infer_spellcasting_progression(self, spellcasting_source: Optional[Dict[str, Any]]) -> str:
+        """Infer progression type from data metadata without class-name checks."""
+        if not isinstance(spellcasting_source, dict):
+            return "none"
+
+        spellcasting_type = str(spellcasting_source.get("spellcasting_type", "")).strip().lower()
+        if "pact" in spellcasting_type:
+            return "pact"
+        if "third" in spellcasting_type:
+            return "third"
+        if "half" in spellcasting_type:
+            return "half"
+        if "full" in spellcasting_type:
+            return "full"
+
+        has_pact_table = isinstance(spellcasting_source.get("pact_magic_slots_by_level"), dict)
+        has_standard_table = isinstance(spellcasting_source.get("spell_slots_by_level"), dict)
+        if has_pact_table and not has_standard_table:
+            return "pact"
+
+        standard_table = spellcasting_source.get("spell_slots_by_level")
+        if isinstance(standard_table, dict) and standard_table:
+            table_key: Optional[str] = None
+            if "20" in standard_table:
+                table_key = "20"
+            else:
+                numeric_keys = []
+                for key in standard_table.keys():
+                    try:
+                        numeric_keys.append(int(key))
+                    except (TypeError, ValueError):
+                        continue
+                if numeric_keys:
+                    table_key = str(max(numeric_keys))
+
+            if table_key is not None:
+                highest_slot = self._highest_spell_slot_level(standard_table.get(table_key))
+                if highest_slot >= 9:
+                    return "full"
+                if highest_slot >= 5:
+                    return "half"
+                if highest_slot >= 4:
+                    return "third"
+
+        if spellcasting_source.get("spellcasting_ability") and has_standard_table:
+            return "full"
+        return "none"
+
+    def _slots_payload_to_dict(self, level_slots: Any) -> Dict[str, int]:
+        """Normalize class/subclass slot payload into the API spell_slots shape."""
+        if isinstance(level_slots, list):
+            return {
+                self.SPELL_LEVEL_NAMES[i]: int(count)
+                for i, count in enumerate(level_slots)
+                if i < len(self.SPELL_LEVEL_NAMES) and int(count) > 0
+            }
+
+        if isinstance(level_slots, dict):
+            normalized: Dict[str, int] = {}
+            for key, count in level_slots.items():
+                try:
+                    parsed_count = int(count)
+                except (TypeError, ValueError):
+                    continue
+                if parsed_count <= 0:
+                    continue
+
+                if isinstance(key, str) and key in self.SPELL_LEVEL_NAMES:
+                    normalized[key] = parsed_count
+                else:
+                    try:
+                        index = int(key) - 1
+                    except (TypeError, ValueError):
+                        continue
+                    if 0 <= index < len(self.SPELL_LEVEL_NAMES):
+                        normalized[self.SPELL_LEVEL_NAMES[index]] = parsed_count
+            return normalized
+
+        return {}
+
+    def _get_canonical_full_caster_slots_table(self) -> Dict[str, Any]:
+        """Return a deterministic canonical full-caster spell-slot table from data files."""
+        cache_key = "_cached_full_caster_slots_table"
+        cached = getattr(self, cache_key, None)
+        if isinstance(cached, dict) and cached:
+            return cached
+
+        classes_dir = self.data_dir / "classes"
+        if not classes_dir.exists():
+            setattr(self, cache_key, {})
+            return {}
+
+        for file_path in sorted(classes_dir.glob("*.json")):
+            class_data = self._load_json_file(file_path)
+            if not isinstance(class_data, dict):
+                continue
+            if self._infer_spellcasting_progression(class_data) != "full":
+                continue
+            slots_table = class_data.get("spell_slots_by_level")
+            if isinstance(slots_table, dict) and slots_table:
+                setattr(self, cache_key, slots_table)
+                return slots_table
+
+        setattr(self, cache_key, {})
+        return {}
+
+    def _calculate_multiclass_spell_slot_progression(self) -> Dict[str, Any]:
+        """Calculate multiclass standard slots + pact tracks from class rows."""
+        rows = self._get_spellcasting_rows()
+        is_multiclass = len(rows) > 1
+        result: Dict[str, Any] = {
+            "is_multiclass": is_multiclass,
+            "effective_caster_level": 0,
+            "spell_slots": {},
+            "pact_magic_slots": [],
+            "notes": [],
+        }
+        if not is_multiclass:
+            return result
+
+        effective_caster_level = 0
+        has_standard_contributor = False
+
+        for row in rows:
+            class_name = row.get("class_name", "")
+            class_level = max(1, int(row.get("level", 1)))
+            subclass_name = row.get("subclass")
+            spellcasting_source, _, _ = self._resolve_row_spellcasting_source(row)
+            progression = self._infer_spellcasting_progression(spellcasting_source)
+
+            if progression == "full":
+                effective_caster_level += class_level
+                has_standard_contributor = True
+            elif progression == "half":
+                effective_caster_level += class_level // 2
+                has_standard_contributor = True
+            elif progression == "third":
+                effective_caster_level += class_level // 3
+                has_standard_contributor = True
+            elif progression == "pact":
+                pact_table = {}
+                if isinstance(spellcasting_source, dict):
+                    pact_table = spellcasting_source.get("pact_magic_slots_by_level") or {}
+                pact_row = pact_table.get(str(class_level), []) if isinstance(pact_table, dict) else []
+                pact_entry: Dict[str, Any] = {
+                    "class_name": class_name,
+                    "class_level": class_level,
+                    "subclass": subclass_name,
+                }
+                if isinstance(pact_row, list) and len(pact_row) >= 2:
+                    try:
+                        pact_entry["slots"] = int(pact_row[0])
+                        pact_entry["slot_level"] = int(pact_row[1])
+                    except (TypeError, ValueError):
+                        pact_entry["slots"] = 0
+                        pact_entry["slot_level"] = 0
+                elif isinstance(pact_row, dict):
+                    try:
+                        pact_entry["slots"] = int(pact_row.get("slots", 0))
+                    except (TypeError, ValueError):
+                        pact_entry["slots"] = 0
+                    try:
+                        pact_entry["slot_level"] = int(pact_row.get("slot_level", 0))
+                    except (TypeError, ValueError):
+                        pact_entry["slot_level"] = 0
+                else:
+                    pact_entry["slots"] = 0
+                    pact_entry["slot_level"] = 0
+                result["pact_magic_slots"].append(pact_entry)
+
+        result["effective_caster_level"] = effective_caster_level
+
+        if has_standard_contributor and effective_caster_level > 0:
+            canonical_table = self._get_canonical_full_caster_slots_table()
+            level_slots = canonical_table.get(str(effective_caster_level), []) if isinstance(canonical_table, dict) else []
+            result["spell_slots"] = self._slots_payload_to_dict(level_slots)
+
+        if result["pact_magic_slots"]:
+            result["notes"].append(
+                "Pact Magic slots are tracked separately from standard multiclass spell slots."
+            )
+
+        return result
+
+    def _get_multiclass_hp_breakdown(
+        self,
+        class_rows: List[Dict[str, Any]],
+        constitution_score: int,
+        feature_bonuses: List[Dict[str, Any]],
+    ) -> Dict[str, Any]:
+        """Compute deterministic HP for multiclass builds.
+
+        Rule for this phase:
+        - first class gets max hit die at level 1,
+        - all remaining levels use average hit die for each class row,
+        - Constitution modifier and per-level hp bonuses use total level.
+        """
+        if not class_rows:
+            return self.hp_calculator.get_hp_breakdown(
+                self.character_data.get("class", ""),
+                constitution_score,
+                feature_bonuses,
+                self.character_data.get("level", 1),
+            )
+
+        con_modifier = (constitution_score - 10) // 2
+        total_level = sum(max(1, int(row.get("level", 1))) for row in class_rows)
+
+        primary_row = class_rows[0]
+        primary_hit_die = self.hp_calculator.CLASS_HIT_DICE.get(primary_row["class_name"], 6)
+        base_hp = primary_hit_die
+        breakdown_parts = [
+            f"Level 1 ({primary_row['class_name']}): {primary_hit_die} (max d{primary_hit_die})"
+        ]
+
+        for idx, row in enumerate(class_rows):
+            class_name = row["class_name"]
+            class_level = max(1, int(row.get("level", 1)))
+            hit_die = self.hp_calculator.CLASS_HIT_DICE.get(class_name, 6)
+            avg_hit_die = (hit_die // 2) + 1
+
+            extra_levels = class_level - 1 if idx == 0 else class_level
+            if extra_levels > 0:
+                extra_hp = avg_hit_die * extra_levels
+                base_hp += extra_hp
+                if idx == 0:
+                    breakdown_parts.append(
+                        f"{class_name} levels 2-{class_level}: {extra_hp} (avg d{hit_die})"
+                    )
+                else:
+                    breakdown_parts.append(
+                        f"{class_name} levels 1-{class_level}: {extra_hp} (avg d{hit_die})"
+                    )
+
+        constitution_bonus = con_modifier * total_level
+        feature_bonus = self.hp_calculator.calculate_feature_bonuses(feature_bonuses, total_level)
+        total_hp = base_hp + constitution_bonus + feature_bonus
+
+        feature_breakdown = []
+        for hp_bonus in feature_bonuses:
+            source = hp_bonus.get("source", "Unknown")
+            value = hp_bonus.get("value", 0)
+            scaling = hp_bonus.get("scaling")
+            if scaling == "per_level":
+                total_bonus = value * total_level
+                feature_breakdown.append(f"{source}: +{value} per level (+{total_bonus} total)")
+            else:
+                feature_breakdown.append(f"{source}: +{value}")
+
+        return {
+            "base_hp": base_hp,
+            "base_hp_breakdown": " + ".join(breakdown_parts),
+            "class_name": primary_row["class_name"],
+            "hit_die": primary_hit_die,
+            "level": total_level,
+            "constitution_score": constitution_score,
+            "constitution_modifier": con_modifier,
+            "constitution_bonus": constitution_bonus,
+            "feature_bonus": feature_bonus,
+            "feature_breakdown": feature_breakdown,
+            "total_hp": total_hp,
+        }
+
     def _clear_species_choice_effects_for_trait(self, trait_name: str) -> None:
         """Remove effects previously applied for a species/lineage trait choice.
 
@@ -2869,6 +3305,16 @@ class CharacterBuilder:
             print(f"Choices value: {choices}")
             return False
 
+        working_choices = dict(choices)
+        class_rows = self._normalize_multiclass_rows(working_choices.get("classes"))
+        if class_rows:
+            primary = class_rows[0]
+            # Keep legacy keys available so existing logic remains compatible.
+            working_choices["class"] = primary["class_name"]
+            working_choices["level"] = primary["level"]
+            if primary.get("subclass"):
+                working_choices["subclass"] = primary["subclass"]
+
         # Apply choices in a specific order for dependencies
         order = [
             "character_name",
@@ -2905,24 +3351,38 @@ class CharacterBuilder:
         # Special handling: if both ability_scores and ability_scores_method exist,
         # skip ability_scores_method since ability_scores is the final value
         apply_method = (
-            "ability_scores_method" in choices
-            and "ability_scores" not in choices
-            and "abilities" not in choices
+            "ability_scores_method" in working_choices
+            and "ability_scores" not in working_choices
+            and "abilities" not in working_choices
         )
 
         # First pass: apply ordered choices
         for key in order:
-            if key in choices:
+            if key in working_choices:
                 # Skip ability_scores_method if we have explicit ability_scores
                 if key == "ability_scores_method" and not apply_method:
                     continue
-                self.apply_choice(key, choices[key])
+                self.apply_choice(key, working_choices[key])
 
         # Second pass: apply remaining choices (class-specific features, etc.)
         # Skip species_skill_replacements — it needs a late pass after trait effects.
-        for key, value in choices.items():
-            if key not in order and key != "species_skill_replacements":
+        for key, value in working_choices.items():
+            if key not in order and key not in ("species_skill_replacements", "classes"):
                 self.apply_choice(key, value)
+
+        # Apply explicit classes payload after single-class setup so we can
+        # include additional class tracks without breaking existing flows.
+        if class_rows:
+            self.character_data["class_breakdown"] = deepcopy(class_rows)
+            self.character_data["choices_made"]["classes"] = deepcopy(class_rows)
+            self._apply_additional_multiclass_tracks(class_rows)
+
+            total_level = sum(row["level"] for row in class_rows)
+            self.character_data["level"] = total_level
+            self.character_data["choices_made"]["class"] = class_rows[0]["class_name"]
+            self.character_data["choices_made"]["level"] = total_level
+            if class_rows[0].get("subclass"):
+                self.character_data["choices_made"]["subclass"] = class_rows[0]["subclass"]
 
         # Third pass: apply species skill replacements AFTER all trait choices
         # are processed (trait effects trigger the overlap detection).
@@ -2988,6 +3448,9 @@ class CharacterBuilder:
             "spellcasting_type": None,
             "preparation_formula": None,
             "ritual_casting": False,
+            "effective_caster_level": 0,
+            "pact_magic_slots": [],
+            "multiclass_notes": [],
             # Cantrip tracking
             "cantrips_always_prepared": 0,
             "cantrips_to_prepare": 0,
@@ -3019,6 +3482,11 @@ class CharacterBuilder:
             if not class_data:
                 return stats
 
+        multiclass_spellcasting = self._calculate_multiclass_spell_slot_progression()
+        stats["effective_caster_level"] = multiclass_spellcasting.get("effective_caster_level", 0)
+        stats["pact_magic_slots"] = multiclass_spellcasting.get("pact_magic_slots", [])
+        stats["multiclass_notes"] = multiclass_spellcasting.get("notes", [])
+
         # Check if class has spellcasting
         spellcasting_ability = class_data.get("spellcasting_ability")
         subclass_data = None
@@ -3030,6 +3498,11 @@ class CharacterBuilder:
                 spellcasting_ability = subclass_data.get("spellcasting_ability")
                 if spellcasting_ability:
                     spellcasting_source = subclass_data
+            if not spellcasting_ability and isinstance(multiclass_spellcasting.get("pact_magic_slots"), list):
+                if multiclass_spellcasting["pact_magic_slots"]:
+                    # Keep deterministic output for pact-only or mixed builds.
+                    stats["has_spellcasting"] = True
+                    return stats
             if not spellcasting_ability:
                 return stats
 
@@ -3047,8 +3520,10 @@ class CharacterBuilder:
         stats["spellcasting_modifier"] = spellcasting_modifier
 
         # Calculate spell save DC and attack bonus
-        level = self.character_data.get("level", 1)
-        proficiency_bonus = self.calculate_proficiency_bonus(level)
+        # Proficiency bonus is always based on total character level.
+        level = self._get_primary_class_level()
+        total_level = max(1, int(self.character_data.get("level", level)))
+        proficiency_bonus = self.calculate_proficiency_bonus(total_level)
         stats["spell_save_dc"] = 8 + proficiency_bonus + spellcasting_modifier
         stats["spell_attack_bonus"] = proficiency_bonus + spellcasting_modifier
 
@@ -3248,7 +3723,7 @@ class CharacterBuilder:
 
         # Get max masteries from masteries_by_level (like cantrips_by_level)
         masteries_by_level = class_data.get("masteries_by_level", {})
-        level = self.character_data.get("level", 1)
+        level = self._get_primary_class_level()
         max_masteries = masteries_by_level.get(str(level), 0)
 
         stats["max_masteries"] = max_masteries
@@ -3286,7 +3761,7 @@ class CharacterBuilder:
                 return stats
 
         invocations_by_level = class_data.get("invocations_by_level", {})
-        level = self.character_data.get("level", 1)
+        level = self._get_primary_class_level()
         max_invocations = invocations_by_level.get(str(level), 0)
 
         stats["has_invocations"] = True
@@ -4151,9 +4626,17 @@ class CharacterBuilder:
         class_name = self.character_data.get("class", "")
         class_data = self.character_data.get("class_data", {})
         hp_bonuses = self._extract_hp_bonuses()
-        hp_breakdown = self.hp_calculator.get_hp_breakdown(
-            class_name, constitution_score, hp_bonuses, level
-        )
+        class_rows = self.character_data.get("class_breakdown")
+        if isinstance(class_rows, list) and len(class_rows) > 1:
+            hp_breakdown = self._get_multiclass_hp_breakdown(
+                class_rows,
+                constitution_score,
+                hp_bonuses,
+            )
+        else:
+            hp_breakdown = self.hp_calculator.get_hp_breakdown(
+                class_name, constitution_score, hp_bonuses, level
+            )
         max_hp = hp_breakdown["total_hp"]
 
         # Calculate AC (basic calculation - can be enhanced)
@@ -4168,7 +4651,17 @@ class CharacterBuilder:
 
         # Hit dice
         hit_die = class_data.get("hit_die", 8) if class_data else 8
-        hit_dice_total = f"{level}d{hit_die}"
+        if isinstance(class_rows, list) and len(class_rows) > 1:
+            hit_dice_parts = []
+            for row in class_rows:
+                row_class = row.get("class_name", "")
+                row_level = row.get("level", 1)
+                row_class_data = self._load_class_data(row_class) or {}
+                row_hit_die = row_class_data.get("hit_die", self.hp_calculator.CLASS_HIT_DICE.get(row_class, 8))
+                hit_dice_parts.append(f"{row_level}d{row_hit_die}")
+            hit_dice_total = " + ".join(hit_dice_parts)
+        else:
+            hit_dice_total = f"{level}d{hit_die}"
 
         # Proficiency bonus
         proficiency_bonus = self.calculate_proficiency_bonus(level)
@@ -4345,28 +4838,29 @@ class CharacterBuilder:
 
         character_data["spells_by_level"] = spells_by_level
 
-        # If spell_slots not in session data, compute from class or subclass data
+        multiclass_spellcasting = self._calculate_multiclass_spell_slot_progression()
+
+        # If spell_slots not in session data, compute from class/subclass data.
         if not spell_slots:
-            class_data = character_data.get("class_data") or {}
-            subclass_data = character_data.get("subclass_data")
-            level = character_data.get("level", 1)
-            slots_source = class_data.get("spell_slots_by_level", {})
-            if not slots_source and subclass_data:
-                slots_source = subclass_data.get("spell_slots_by_level", {})
-            level_slots = slots_source.get(str(level), [])
-            if isinstance(level_slots, list):
-                spell_level_names = ["1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "9th"]
-                spell_slots = {
-                    spell_level_names[i]: count
-                    for i, count in enumerate(level_slots)
-                    if i < len(spell_level_names) and count > 0
-                }
-            elif isinstance(level_slots, dict):
-                spell_slots = level_slots
+            if multiclass_spellcasting.get("is_multiclass"):
+                spell_slots = multiclass_spellcasting.get("spell_slots", {})
+            else:
+                class_data = character_data.get("class_data") or {}
+                subclass_data = character_data.get("subclass_data")
+                level = self._get_primary_class_level()
+                slots_source = class_data.get("spell_slots_by_level", {})
+                if not slots_source and subclass_data:
+                    slots_source = subclass_data.get("spell_slots_by_level", {})
+                level_slots = slots_source.get(str(level), [])
+                spell_slots = self._slots_payload_to_dict(level_slots)
 
         character_data["spell_slots"] = spell_slots
+        if multiclass_spellcasting.get("pact_magic_slots"):
+            character_data["pact_magic_slots"] = multiclass_spellcasting["pact_magic_slots"]
+        if multiclass_spellcasting.get("notes"):
+            character_data["spell_slot_notes"] = multiclass_spellcasting["notes"]
 
-        # Add proficiency bonus
+        # Add proficiency bonus (total character level for multiclass).
         character_data["proficiency_bonus"] = self.calculate_proficiency_bonus(
             character_data.get("level", 1)
         )

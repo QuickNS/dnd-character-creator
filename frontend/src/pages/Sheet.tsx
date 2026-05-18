@@ -760,6 +760,15 @@ function Spells({ c }: { c: Char }) {
   const slots = rec(c.spell_slots);
   const stats = rec(c.spellcasting_stats);
   const hasSpellcasting = stats.has_spellcasting === true;
+  const effectiveCasterLevel = num(stats.effective_caster_level);
+  const statsPactMagicSlots = arr<Record<string, unknown>>(stats.pact_magic_slots);
+  const topLevelPactMagicSlots = arr<Record<string, unknown>>(c.pact_magic_slots);
+  const pactMagicSlots =
+    statsPactMagicSlots.length > 0 ? statsPactMagicSlots : topLevelPactMagicSlots;
+  const statsMulticlassNotes = arr<string>(stats.multiclass_notes);
+  const topLevelSpellSlotNotes = arr<string>(c.spell_slot_notes);
+  const multiclassNotes =
+    statsMulticlassNotes.length > 0 ? statsMulticlassNotes : topLevelSpellSlotNotes;
   const levels = Object.keys(byLevel).sort((a, b) => Number(a) - Number(b));
 
   if (!hasSpellcasting && levels.length === 0 && Object.keys(slots).length === 0) {
@@ -797,6 +806,12 @@ function Spells({ c }: { c: Char }) {
                 label="Spellcasting Modifier"
                 value={signed(castingMod)}
               />
+              {effectiveCasterLevel !== undefined && (
+                <Stat
+                  label="Effective Caster Level"
+                  value={effectiveCasterLevel}
+                />
+              )}
               {maxCantrips !== undefined && (
                 <Stat
                   label="Cantrips Known"
@@ -830,6 +845,42 @@ function Spells({ c }: { c: Char }) {
                 <div className="mt-2 text-[11px] text-muted-foreground">
                   You regain all expended slots when you finish a Long Rest.
                 </div>
+              </div>
+            )}
+
+            {pactMagicSlots.length > 0 && (
+              <div className="mt-3 rounded border border-border bg-background/40 p-3">
+                <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Pact Magic Slots
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {pactMagicSlots.map((entry, i) => {
+                    const className = str(entry.class_name) ?? "Pact";
+                    const slotLevel = num(entry.slot_level);
+                    const slotCount = num(entry.slots);
+                    return (
+                      <span
+                        key={`${className}-${slotLevel ?? "x"}-${i}`}
+                        className="rounded border border-border bg-secondary/60 px-2 py-0.5 text-xs font-medium text-foreground"
+                      >
+                        {className}: {slotCount ?? "—"} at level {slotLevel ?? "—"}
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {multiclassNotes.length > 0 && (
+              <div className="mt-3 rounded border border-border/70 bg-background/30 p-3">
+                <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Multiclass Notes
+                </div>
+                <ul className="space-y-1 text-xs text-muted-foreground">
+                  {multiclassNotes.map((note, i) => (
+                    <li key={`${note}-${i}`}>• {note}</li>
+                  ))}
+                </ul>
               </div>
             )}
           </>

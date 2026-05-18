@@ -1,8 +1,13 @@
+import { useEffect } from "react";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
+import { Check, ChevronRight, Leaf } from "lucide-react";
 import { api } from "@/lib/api";
+import type { SpeciesSummary } from "@/lib/api";
+import { cn } from "@/lib/utils";
 import { useCharacterStore } from "@/store/characterStore";
 import { ChoiceList } from "@/components/wizard/ChoiceList";
 import { FeatChoicesPicker } from "@/components/wizard/FeatChoicesPicker";
+import { useWizardSidebarPanel } from "@/components/layout/useWizardSidebarPanel";
 
 interface TraitChoice {
   description?: string;
@@ -81,6 +86,7 @@ export function SpeciesStep() {
   const choicesMade = useCharacterStore((s) => s.choicesMade);
   const setChoice = useCharacterStore((s) => s.setChoice);
   const selectedSpecies = (choicesMade["species"] as string | undefined) ?? "";
+  const { setSidebarPanel } = useWizardSidebarPanel();
 
   const speciesQuery = useQuery({
     queryKey: ["catalog", "species"],
@@ -94,61 +100,137 @@ export function SpeciesStep() {
     placeholderData: keepPreviousData,
   });
 
+  const selectedSpeciesSummary = (speciesQuery.data ?? []).find(
+    (sp) => sp.id === selectedSpecies,
+  );
+
+  useEffect(() => {
+    setSidebarPanel(
+      selectedSpeciesSummary
+        ? <SpeciesInfoPanel selectedSpeciesSummary={selectedSpeciesSummary} />
+        : null,
+    );
+    return () => setSidebarPanel(null);
+  }, [selectedSpeciesSummary, setSidebarPanel]);
+
   return (
-    <div className="space-y-6">
-      <section>
-        <h3 className="text-sm font-semibold mb-3">Choose a species</h3>
-        {speciesQuery.isLoading && (
-          <p className="text-xs text-muted-foreground">Loading species…</p>
-        )}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {(speciesQuery.data ?? []).map((sp) => {
-            const isSelected = selectedSpecies === sp.id;
-            return (
-              <button
-                key={sp.id}
-                type="button"
-                onClick={() => setChoice("species", sp.id)}
-                className={
-                  "text-left rounded-md border p-3 transition-colors " +
-                  (isSelected
-                    ? "border-primary bg-secondary"
-                    : "border-border hover:bg-secondary/60")
-                }
-              >
-                <div className="font-display text-lg text-primary">{sp.name}</div>
-                <dl className="mt-1 text-xs text-muted-foreground/80 space-y-0.5">
-                  {sp.size !== undefined && (
-                    <div>
-                      <span className="font-semibold">Size:</span>{" "}
-                      {String(sp.size)}
+    <div className="space-y-8">
+      <section className="overflow-hidden rounded-2xl border border-border/80 bg-gradient-to-br from-card via-card to-secondary/40 shadow-sm">
+        <div className="border-b border-border/70 px-5 py-5 sm:px-6">
+          <div className="flex items-start gap-3">
+            <div className="rounded-full bg-primary/10 p-2 text-primary">
+              <Leaf className="h-4 w-4" />
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">
+                Primary choice
+              </p>
+              <h3 className="mt-1 font-display text-2xl text-primary font-bold">
+                Choose your species
+              </h3>
+              <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
+                Your species determines what lineage and species-specific follow-up
+                options appear below.
+              </p>
+              <p className="mt-2 text-xs text-muted-foreground">
+                You can continue without selecting one, but species details and
+                related choices will remain hidden for now.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div
+          className={cn(
+            "grid grid-cols-1 gap-6 lg:items-start",
+            "px-5 py-5 sm:px-6",
+          )}
+        >
+          <div>
+            {speciesQuery.isLoading && (
+              <p className="text-xs text-muted-foreground">Loading species…</p>
+            )}
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 items-start">
+              {(speciesQuery.data ?? []).map((sp) => {
+                const isSelected = selectedSpecies === sp.id;
+                return (
+                  <button
+                    key={sp.id}
+                    type="button"
+                    onClick={() => setChoice("species", sp.id)}
+                    aria-pressed={isSelected}
+                    className={cn(
+                      "group rounded-xl border p-4 text-left transition-all duration-200",
+                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                      isSelected
+                        ? "border-primary bg-muted/60 shadow-md ring-1 ring-primary/20"
+                        : "border-border/80 bg-background/75 hover:-translate-y-1 hover:border-primary/40 hover:bg-secondary/50 hover:shadow-md",
+                    )}
+                  >
+                    <div className="mb-3 flex items-start justify-between gap-3">
+                      <div>
+                        <div className="font-display text-xl text-primary font-semibold">
+                          {sp.name}
+                        </div>
+                      </div>
+                      <span
+                        className={cn(
+                          "inline-flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border transition-colors",
+                          isSelected
+                            ? "border-primary bg-background text-primary"
+                            : "border-border bg-background text-transparent group-hover:border-primary/40",
+                        )}
+                      >
+                        <Check className="h-4 w-4" />
+                      </span>
                     </div>
-                  )}
-                  {sp.speed !== undefined && (
-                    <div>
-                      <span className="font-semibold">Speed:</span>{" "}
-                      {typeof sp.speed === "number"
-                        ? `${sp.speed} ft`
-                        : Object.entries(sp.speed)
-                            .map(([k, v]) => `${k} ${v} ft`)
-                            .join(" · ")}
+
+                    <dl className="text-xs text-muted-foreground/80 space-y-1">
+                      {sp.size !== undefined && (
+                        <div>
+                          <span className="font-semibold">Size:</span>{" "}
+                          {String(sp.size)}
+                        </div>
+                      )}
+                      {sp.speed !== undefined && (
+                        <div>
+                          <span className="font-semibold">Speed:</span>{" "}
+                          {typeof sp.speed === "number"
+                            ? `${sp.speed} ft`
+                            : Object.entries(sp.speed)
+                                .map(([k, v]) => `${k} ${v} ft`)
+                                .join(" · ")}
+                        </div>
+                      )}
+                      {sp.darkvision !== undefined && sp.darkvision > 0 && (
+                        <div>
+                          <span className="font-semibold">Darkvision:</span>{" "}
+                          {sp.darkvision} ft
+                        </div>
+                      )}
+                    </dl>
+
+                    {sp.description && (
+                      <div className="mt-2 text-sm text-muted-foreground line-clamp-3">
+                        {sp.description}
+                      </div>
+                    )}
+
+                    <div className="mt-4 flex items-center justify-between text-xs font-medium text-muted-foreground">
+                      <span>
+                        {isSelected ? "Selected species" : "Click to select"}
+                      </span>
+                      <span className="inline-flex items-center gap-1 text-primary/80">
+                        {isSelected ? "Details on panel" : "Select to view details"}
+                        <ChevronRight className="h-3.5 w-3.5" />
+                      </span>
                     </div>
-                  )}
-                  {sp.darkvision !== undefined && sp.darkvision > 0 && (
-                    <div>
-                      <span className="font-semibold">Darkvision:</span>{" "}
-                      {sp.darkvision} ft
-                    </div>
-                  )}
-                </dl>
-                {sp.description && (
-                  <div className="text-xs text-muted-foreground mt-2 line-clamp-3">
-                    {sp.description}
-                  </div>
-                )}
-              </button>
-            );
-          })}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
         </div>
       </section>
 
@@ -156,6 +238,75 @@ export function SpeciesStep() {
         <SpeciesDetail previewData={previewQuery.data} />
       )}
     </div>
+  );
+}
+
+function SpeciesInfoPanel({
+  selectedSpeciesSummary,
+}: {
+  selectedSpeciesSummary?: SpeciesSummary;
+}) {
+  return (
+    <aside className="info-panel" aria-label="Species details panel">
+      <div className="info-panel-header">
+        <p className="info-panel-kicker">Informational panel</p>
+        <h4 className="info-panel-title">
+          {selectedSpeciesSummary?.name ?? "Select a species"}
+        </h4>
+      </div>
+      <div className="info-panel-body">
+        {!selectedSpeciesSummary && (
+          <p className="mt-2 text-xs text-muted-foreground">
+            Previewing species details. Select a species card to view full
+            information.
+          </p>
+        )}
+        {selectedSpeciesSummary?.description && (
+          <p className="mt-3 text-sm text-muted-foreground">
+            {selectedSpeciesSummary.description}
+          </p>
+        )}
+        {selectedSpeciesSummary && (
+          <div className="mt-4 grid grid-cols-1 gap-2">
+            {selectedSpeciesSummary.size !== undefined && (
+              <div className="rounded-lg border border-border/70 bg-background/80 px-3 py-2">
+                <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                  Size
+                </div>
+                <div className="mt-1 font-medium text-foreground">
+                  {String(selectedSpeciesSummary.size)}
+                </div>
+              </div>
+            )}
+            {selectedSpeciesSummary.speed !== undefined && (
+              <div className="rounded-lg border border-border/70 bg-background/80 px-3 py-2">
+                <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                  Speed
+                </div>
+                <div className="mt-1 font-medium text-foreground">
+                  {typeof selectedSpeciesSummary.speed === "number"
+                    ? `${selectedSpeciesSummary.speed} ft`
+                    : Object.entries(selectedSpeciesSummary.speed)
+                        .map(([k, v]) => `${k} ${v} ft`)
+                        .join(" · ")}
+                </div>
+              </div>
+            )}
+            {selectedSpeciesSummary.darkvision !== undefined &&
+              selectedSpeciesSummary.darkvision > 0 && (
+                <div className="rounded-lg border border-border/70 bg-background/80 px-3 py-2">
+                  <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                    Darkvision
+                  </div>
+                  <div className="mt-1 font-medium text-foreground">
+                    {selectedSpeciesSummary.darkvision} ft
+                  </div>
+                </div>
+              )}
+          </div>
+        )}
+      </div>
+    </aside>
   );
 }
 
@@ -193,18 +344,31 @@ function SpeciesDetail({
                   type="button"
                   onClick={() => setChoice("lineage", entry.id)}
                   aria-pressed={isSelected}
-                  className={
-                    "flex h-full w-full flex-col items-stretch text-left rounded-md border p-3 transition-colors " +
-                    (isSelected
-                      ? "border-primary bg-secondary"
-                      : "border-border hover:bg-secondary/60")
-                  }
+                  className={cn(
+                    "group flex h-full w-full flex-col items-stretch rounded-xl border p-4 text-left transition-all duration-200",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                    isSelected
+                      ? "border-primary bg-muted/60 shadow-md ring-1 ring-primary/20"
+                      : "border-border/80 bg-background/75 hover:-translate-y-1 hover:border-primary/40 hover:bg-secondary/50 hover:shadow-md",
+                  )}
                 >
-                  <div className="font-display text-lg text-primary">
-                    {entry.name}
+                  <div className="mb-3 flex items-start justify-between gap-3">
+                    <div className="font-display text-lg text-primary">
+                      {entry.name}
+                    </div>
+                    <span
+                      className={cn(
+                        "inline-flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border transition-colors",
+                        isSelected
+                          ? "border-primary bg-background text-primary"
+                          : "border-border bg-background text-transparent group-hover:border-primary/40",
+                      )}
+                    >
+                      <Check className="h-3.5 w-3.5" />
+                    </span>
                   </div>
                   {entry.description && (
-                    <p className="mt-2 text-xs text-muted-foreground">
+                    <p className="text-xs text-muted-foreground">
                       {entry.description}
                     </p>
                   )}
@@ -229,6 +393,17 @@ function SpeciesDetail({
                       </dl>
                     </div>
                   )}
+                  <div className="mt-4 flex items-center justify-between text-xs font-medium text-muted-foreground">
+                    <span>
+                      {isSelected
+                        ? "Selected lineage"
+                        : "Click to select lineage"}
+                    </span>
+                    <span className="inline-flex items-center gap-1 text-primary/80">
+                      {isSelected ? "Lineage selected" : "Select lineage"}
+                      <ChevronRight className="h-3.5 w-3.5" />
+                    </span>
+                  </div>
                 </button>
               );
             })}
