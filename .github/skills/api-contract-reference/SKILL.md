@@ -50,6 +50,15 @@ All endpoints are **stateless JSON**. The frontend holds `choices_made`; the bac
 | POST   | `/character/preview-step`     | Step-specific dynamic option payload                    |
 | POST   | `/character/derived`          | Derived view-models (see allowed `view` values below)   |
 
+`/character/build` and `/character/validate` accept both legacy single-class keys (`class`, `level`, optional `subclass`) and multiclass rows via `choices_made.classes`.
+
+Multiclass behavior snapshot:
+- total character level = sum of `classes[].level`
+- proficiency bonus follows total level
+- additional class-row features are applied
+- validation requires `classes[i].subclass` when that row meets subclass threshold
+- spellcasting progression is currently conservative/primary-row based
+
 ### `POST /character/derived` — allowed `view` values
 
 | `view`                  | Prerequisite (else 400)        |
@@ -68,6 +77,11 @@ interface ChoicesMade {
   character_name?: string;
   level?: number;
   class?: string;
+  classes?: Array<{
+    class_name: string;
+    level: number;
+    subclass?: string;
+  }>;
   subclass?: string;
   background?: string;
   species?: string;

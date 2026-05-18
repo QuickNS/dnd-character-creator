@@ -10,7 +10,7 @@ import { AbilitiesStep } from "@/components/steps/AbilitiesStep";
 import { EquipmentStep } from "@/components/steps/EquipmentStep";
 import { SummaryStep } from "@/components/steps/SummaryStep";
 import { GenericStep } from "@/components/steps/GenericStep";
-import { EffectsPanel } from "./EffectsPanel";
+import { ClassImageBackground } from "./ClassImageBackground";
 
 interface Props {
   step: WizardStep;
@@ -44,12 +44,14 @@ function renderStepBody(
   }
 }
 
+
 export function StepRenderer({ step, steps }: Props) {
   const choicesMade = useCharacterStore((s) => s.choicesMade);
 
   return (
-    <article className="grid grid-cols-1 lg:grid-cols-[1fr_20rem] gap-8">
-      <div className="relative z-10">
+    <>
+      <ClassImageBackground />
+      <article className="relative z-10">
         <header className="mb-6">
           <p className="text-xs uppercase tracking-widest text-muted-foreground">
             Step {steps.findIndex((s) => s.id === step.id) + 1} of{" "}
@@ -64,11 +66,7 @@ export function StepRenderer({ step, steps }: Props) {
         <section>{renderStepBody(step, steps, choicesMade)}</section>
 
         <StepNav steps={steps} currentStepId={step.id} />
-      </div>
-
-      <aside className="hidden lg:block lg:sticky lg:top-6 self-start">
-        <EffectsPanel />
-      </aside>
-    </article>
+      </article>
+    </>
   );
 }

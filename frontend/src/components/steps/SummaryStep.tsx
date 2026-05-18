@@ -73,7 +73,7 @@ export function SummaryStep({ steps }: Props) {
   const incomplete = statuses.filter((s) => !s.complete);
   const allComplete = statuses.length > 0 && incomplete.length === 0;
 
-  const character = (buildQuery.data?.character ?? {}) as Char;
+  const character = (buildQuery.data ?? {}) as Char;
   const buildError = buildQuery.error ? String(buildQuery.error) : null;
 
   const name = str(character.name) ?? str(character.character_name) ?? "Unnamed";
@@ -130,7 +130,7 @@ export function SummaryStep({ steps }: Props) {
   function handleExportFull() {
     if (!buildQuery.data) return;
     const baseName = safeFilename(name);
-    downloadJson(`${baseName}-character.json`, buildQuery.data.character);
+    downloadJson(`${baseName}-character.json`, buildQuery.data);
   }
 
   return (

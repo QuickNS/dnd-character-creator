@@ -11,6 +11,8 @@ interface Props {
 
 export function StepSidebar({ steps, currentStepId: _ }: Props) {
   const choicesMade = useCharacterStore((s) => s.choicesMade);
+  const setChoice = useCharacterStore((s) => s.setChoice);
+  const name = (choicesMade.character_name as string | undefined) ?? "";
 
   const validateQuery = useQuery({
     queryKey: ["character", "validate", choicesMade],
@@ -24,6 +26,22 @@ export function StepSidebar({ steps, currentStepId: _ }: Props) {
 
   return (
     <nav className="py-3">
+      <div className="px-5 pb-4 border-b border-border/70">
+        <label
+          htmlFor="sidebar_character_name"
+          className="block text-[11px] uppercase tracking-[0.2em] text-muted-foreground"
+        >
+          Character name
+        </label>
+        <input
+          id="sidebar_character_name"
+          type="text"
+          value={name}
+          onChange={(e) => setChoice("character_name", e.target.value)}
+          className="mt-2 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+          placeholder="Enter a name"
+        />
+      </div>
       <ol className="flex flex-col">
         {steps.map((step, idx) => {
           const status = statusByStep.get(step.id);

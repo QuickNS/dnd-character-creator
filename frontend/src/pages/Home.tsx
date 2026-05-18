@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { useCharacterStore } from "@/store/characterStore";
 import { useRosterStore } from "@/store/rosterStore";
 import { summarizeChoices } from "@/lib/persistence";
@@ -23,6 +24,10 @@ export function Home() {
   const [saveName, setSaveName] = useState("");
   const [saveError, setSaveError] = useState<string | null>(null);
   const [savedFlash, setSavedFlash] = useState<string | null>(null);
+  const [deleteDialogEntry, setDeleteDialogEntry] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
 
   useEffect(() => {
     if (!rosterLoaded) {
@@ -138,10 +143,13 @@ export function Home() {
   }
 
   function handleDeleteEntry(id: string, name: string) {
-    if (!window.confirm(`Delete "${name}" from your roster? This cannot be undone.`)) {
-      return;
-    }
-    void deleteEntry(id);
+    setDeleteDialogEntry({ id, name });
+  }
+
+  function handleConfirmDeleteEntry() {
+    if (!deleteDialogEntry) return;
+    void deleteEntry(deleteDialogEntry.id);
+    setDeleteDialogEntry(null);
   }
 
   function handleStartFresh(e: React.MouseEvent) {
@@ -386,6 +394,19 @@ export function Home() {
           )}
         </section>
       </div>
+
+      <ConfirmDialog
+        open={Boolean(deleteDialogEntry)}
+        title="Delete saved character?"
+        description={
+          deleteDialogEntry
+            ? `Delete "${deleteDialogEntry.name}" from your roster? This cannot be undone.`
+            : ""
+        }
+        confirmLabel="Delete"
+        onConfirm={handleConfirmDeleteEntry}
+        onCancel={() => setDeleteDialogEntry(null)}
+      />
     </main>
   );
 }

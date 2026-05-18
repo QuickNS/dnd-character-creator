@@ -7,11 +7,18 @@
 
 // ========== Types ==========
 
+export interface ClassAllocation {
+  class_name: string;
+  level: number;
+  subclass?: string;
+}
+
 export interface ChoicesMade {
   character_name?: string;
   level?: number;
   class?: string;
   subclass?: string;
+  classes?: ClassAllocation[];
   background?: string;
   species?: string;
   lineage?: string;
@@ -127,6 +134,13 @@ export interface SpeciesSummary {
   has_trait_choices: boolean;
 }
 
+export interface DerivedResponse {
+  view: string;
+  applicable: boolean;
+  reason?: string;
+  data: unknown | null;
+}
+
 export class ApiError extends Error {
   constructor(
     public status: number,
@@ -239,8 +253,8 @@ export const api = {
         body: JSON.stringify({ choices_made: choices, step }),
       }),
 
-    derived: (choices: ChoicesMade, view: string): Promise<{ view: string; data: unknown }> =>
-      apiFetch<{ view: string; data: unknown }>("/character/derived", {
+    derived: (choices: ChoicesMade, view: string): Promise<DerivedResponse> =>
+      apiFetch<DerivedResponse>("/character/derived", {
         method: "POST",
         body: JSON.stringify({ choices_made: choices, view }),
       }),
