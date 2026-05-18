@@ -23,6 +23,7 @@ Usage:
 """
 
 import json
+import random
 from pathlib import Path
 from typing import Dict, List, Any, Optional, Tuple
 from copy import deepcopy
@@ -82,6 +83,20 @@ class CharacterBuilder:
         "complete",         # Character summary
     ]
     SPELL_LEVEL_NAMES = ["1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "9th"]
+
+    BASE_LANGUAGE = "Common"
+    STANDARD_LANGUAGE_OPTIONS = [
+        "Common Sign Language",
+        "Draconic",
+        "Dwarvish",
+        "Elvish",
+        "Giant",
+        "Gnomish",
+        "Goblin",
+        "Halfling",
+        "Orc",
+    ]
+    REQUIRED_LANGUAGE_SELECTION_COUNT = 2
 
     def __init__(self, data_dir: str = None):
         """
@@ -184,7 +199,7 @@ class CharacterBuilder:
                 "weapons": [],
                 "tools": [],
                 "skills": [],
-                "languages": [],
+                "languages": [self.BASE_LANGUAGE],
                 "saving_throws": [],
             },
             "proficiency_sources": {
@@ -192,7 +207,7 @@ class CharacterBuilder:
                 "weapons": {},
                 "tools": {},
                 "skills": {},
-                "languages": {},
+                "languages": {self.BASE_LANGUAGE: "base"},
                 "saving_throws": {},
             },
             "speed": 30,
@@ -208,6 +223,14 @@ class CharacterBuilder:
 
         # Track applied effects
         self.applied_effects = []
+        self._ensure_base_language()
+
+    def _ensure_base_language(self):
+        """Ensure Common is always present and tracked as a baseline language."""
+        languages = self.character_data["proficiencies"]["languages"]
+        if self.BASE_LANGUAGE not in languages:
+            languages.insert(0, self.BASE_LANGUAGE)
+        self.character_data["proficiency_sources"]["languages"][self.BASE_LANGUAGE] = "base"
 
     # ==================== Data Loading Methods ====================
 
@@ -318,24 +341,21 @@ class CharacterBuilder:
         self.character_data["darkvision"] = 0  # No darkvision
         self.character_data["speed_bonuses"] = {}  # Clear tracked speed bonuses
 
-        # Clear species and lineage data
-        old_languages = []
-        if self.character_data.get("species_data"):
-            old_languages.extend(self.character_data["species_data"].get("languages", []))
-        if self.character_data.get("lineage_data"):
-            old_languages.extend(self.character_data["lineage_data"].get("languages", []))
-        
-        # Remove old species/lineage languages
+        # Clear species/lineage language grants while preserving baseline/user/other sources
+        old_species_name = self.character_data.get("species")
+        old_lineage_name = self.character_data.get("lineage")
+        blocked_sources = {"species", "lineage", old_species_name, old_lineage_name}
+        lang_sources = self.character_data["proficiency_sources"]["languages"]
         current_languages = self.character_data["proficiencies"]["languages"]
         self.character_data["proficiencies"]["languages"] = [
-            lang for lang in current_languages if lang not in old_languages
+            lang
+            for lang in current_languages
+            if lang == self.BASE_LANGUAGE or lang_sources.get(lang) not in blocked_sources
         ]
-        
-        # Clear species/lineage from language sources
-        lang_sources = self.character_data["proficiency_sources"]["languages"]
         self.character_data["proficiency_sources"]["languages"] = {
-            lang: source for lang, source in lang_sources.items() 
-            if source not in ["species", "lineage"]
+            lang: source
+            for lang, source in lang_sources.items()
+            if lang in self.character_data["proficiencies"]["languages"]
         }
 
         # Clear applied effects from species and lineage source
@@ -391,22 +411,20 @@ class CharacterBuilder:
             if "darkvision" in species_data:
                 self.character_data["darkvision"] = species_data.get("darkvision", 0)
 
-        # Clear old lineage languages
-        old_lineage_languages = []
-        if self.character_data.get("lineage_data"):
-            old_lineage_languages.extend(self.character_data["lineage_data"].get("languages", []))
-        
-        # Remove old lineage languages
+        # Clear lineage language grants while preserving baseline/user/other sources
+        old_lineage_name = self.character_data.get("lineage")
+        lang_sources = self.character_data["proficiency_sources"]["languages"]
         current_languages = self.character_data["proficiencies"]["languages"]
         self.character_data["proficiencies"]["languages"] = [
-            lang for lang in current_languages if lang not in old_lineage_languages
+            lang
+            for lang in current_languages
+            if lang == self.BASE_LANGUAGE
+            or lang_sources.get(lang) not in {"lineage", old_lineage_name}
         ]
-        
-        # Clear lineage from language sources
-        lang_sources = self.character_data["proficiency_sources"]["languages"]
         self.character_data["proficiency_sources"]["languages"] = {
-            lang: source for lang, source in lang_sources.items() 
-            if source != "lineage"
+            lang: source
+            for lang, source in lang_sources.items()
+            if lang in self.character_data["proficiencies"]["languages"]
         }
 
         # Clear applied effects from lineage source
@@ -513,12 +531,6 @@ class CharacterBuilder:
         # Darkvision
         if "darkvision" in species_data:
             self.character_data["darkvision"] = species_data["darkvision"]
-
-        # Languages
-        if "languages" in species_data:
-            self.character_data["proficiencies"]["languages"].extend(
-                species_data["languages"]
-            )
 
         # Traits with effects
         traits = species_data.get("traits", {})
@@ -1165,8 +1177,10 @@ class CharacterBuilder:
             for lang in languages:
                 if lang not in self.character_data["proficiencies"]["languages"]:
                     self.character_data["proficiencies"]["languages"].append(lang)
-                    if source_type in ["species", "lineage"]:
-                        source_display = self.character_data.get("species", source_name)
+                    if source_type == "species":
+                        source_display = "species"
+                    elif source_type == "lineage":
+                        source_display = "lineage"
                     else:
                         source_display = source_name
                     self.character_data["proficiency_sources"]["languages"][lang] = source_display
@@ -1663,8 +1677,8 @@ class CharacterBuilder:
                     # Track source so it can be cleared on background change
                     self.character_data["proficiency_sources"]["languages"][lang] = background_name
         elif isinstance(languages, int):
-            # Store that they need to choose N languages
-            self.character_data["choices_made"]["language_choices_needed"] = languages
+            # Language selection is now a universal rule, not background-specific
+            self.character_data["choices_made"].pop("language_choices_needed", None)
 
         # Background features
         features = background_data.get("features", {})
@@ -2318,11 +2332,27 @@ class CharacterBuilder:
                     ]
                     lang_sources.pop(lang, None)
 
-                # Add new language selections
+                language_options = self.get_language_options()
+                available_languages = set(language_options["available_languages"])
+                selection_count = language_options["selection_count"]
+                normalized_choices = []
                 for lang in choice_value:
+                    if (
+                        isinstance(lang, str)
+                        and lang in available_languages
+                        and lang not in normalized_choices
+                    ):
+                        normalized_choices.append(lang)
+                    # Enforce exactly N selected languages by truncating extras.
+                    if len(normalized_choices) >= selection_count:
+                        break
+
+                # Add new language selections
+                for lang in normalized_choices:
                     if lang not in self.character_data["proficiencies"]["languages"]:
                         self.character_data["proficiencies"]["languages"].append(lang)
                         self.character_data["proficiency_sources"]["languages"][lang] = "user_choice"
+                self.character_data["choices_made"][choice_key] = normalized_choices
             return True
 
         # Skills
@@ -5071,6 +5101,7 @@ class CharacterBuilder:
                         "source_type": effect.get("source_type", "Unknown"),
                     }
                     self.applied_effects.append(applied_effect)
+        self._ensure_base_language()
 
     @classmethod
     def quick_create(
@@ -5595,60 +5626,49 @@ class CharacterBuilder:
 
     def get_language_options(self) -> Dict[str, Any]:
         """
-        Get language choices: base languages (already known) and available languages for selection.
+        Get language choices for the 2024 baseline flow.
 
         Returns:
             dict with keys:
-                - base_languages: set of languages already known from species/class
-                - available_languages: list of languages available to choose from
+                - base_languages: languages already known excluding user-picked standard selections
+                - available_languages: languages available for the 2-language standard selection
+                - selection_count: required number of selected languages
+                - selected_languages: current user-selected standard languages
         """
-        species_name = self.character_data.get("species")
-        class_name = self.character_data.get("class")
+        self._ensure_base_language()
+        language_sources = self.character_data["proficiency_sources"]["languages"]
+        known_languages = self.character_data["proficiencies"]["languages"]
+        selected_languages = self.character_data["choices_made"].get("languages", [])
+        if not isinstance(selected_languages, list):
+            selected_languages = []
 
-        # Start with Common
-        base_languages = set(["Common"])
+        base_languages = {self.BASE_LANGUAGE}
+        for lang in known_languages:
+            if language_sources.get(lang) != "user_choice":
+                base_languages.add(lang)
 
-        # Add species languages
-        if species_name:
-            species_data = self._load_species_data(species_name)
-            if species_data and "languages" in species_data:
-                base_languages.update(species_data["languages"])
-
-        # Add class languages (if any)
-        if class_name:
-            class_data = self._load_class_data(class_name)
-            if class_data and "languages" in class_data:
-                base_languages.update(class_data["languages"])
-
-        # All available languages in D&D 2024
-        all_languages = [
-            "Abyssal",
-            "Celestial",
-            "Common",
-            "Deep Speech",
-            "Draconic",
-            "Dwarvish",
-            "Elvish",
-            "Giant",
-            "Gnomish",
-            "Goblin",
-            "Halfling",
-            "Infernal",
-            "Orc",
-            "Primordial",
-            "Sylvan",
-            "Undercommon",
-        ]
-
-        # Languages available for selection (not already known)
         available_languages = [
-            lang for lang in all_languages if lang not in base_languages
+            lang for lang in self.STANDARD_LANGUAGE_OPTIONS if lang not in base_languages
         ]
 
         return {
             "base_languages": sorted(base_languages),
             "available_languages": available_languages,
+            "selection_count": self.REQUIRED_LANGUAGE_SELECTION_COUNT,
+            "selected_languages": [
+                lang for lang in selected_languages if lang in self.STANDARD_LANGUAGE_OPTIONS
+            ],
         }
+
+    def roll_languages(self) -> List[str]:
+        """Randomly choose the required number of standard languages."""
+        options = self.get_language_options()
+        available_languages = options["available_languages"]
+        selection_count = options["selection_count"]
+
+        if len(available_languages) <= selection_count:
+            return list(available_languages)
+        return random.sample(available_languages, selection_count)
 
     def get_background_asi_options(self) -> Dict[str, Any]:
         """

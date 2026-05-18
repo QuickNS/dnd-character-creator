@@ -30,6 +30,7 @@ export interface ChoicesMade {
   tool_choices?: string[];
   spells?: string[];
   cantrips?: string[];
+  languages?: string[];
   fighting_style?: string;
   maneuvers?: string[];
   equipment_selections?: Record<string, string>;
@@ -103,7 +104,7 @@ export interface ValidationResponse {
 }
 
 export interface PreviewStepResponse {
-  choices_made: ChoicesMade;
+  step: string;
   [key: string]: unknown;
 }
 
@@ -259,5 +260,11 @@ export const api = {
         method: "POST",
         body: JSON.stringify({ choices_made: choices, view }),
       }),
+
+    randomLanguages: (choices: ChoicesMade): Promise<string[]> =>
+      apiFetch<{ languages: string[] }>("/character/random-languages", {
+        method: "POST",
+        body: JSON.stringify({ choices_made: choices }),
+      }).then((r) => r.languages),
   },
 };

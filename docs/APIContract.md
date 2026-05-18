@@ -269,7 +269,25 @@ Response (200) — **always includes `step`**, plus a step-specific payload. Exa
 }
 
 // step: "languages"
-{ "step": "languages", "language_options": [/* */] }
+{
+  "step": "languages",
+  "language_options": {
+    "base_languages": ["Common"],
+    "available_languages": [
+      "Common Sign Language",
+      "Draconic",
+      "Dwarvish",
+      "Elvish",
+      "Giant",
+      "Gnomish",
+      "Goblin",
+      "Halfling",
+      "Orc"
+    ],
+    "selection_count": 2,
+    "selected_languages": ["Elvish", "Dwarvish"]
+  }
+}
 
 // step: "abilities"
 {
@@ -323,6 +341,24 @@ Response (200, valid view but not applicable):
 Errors:
 - `400` `{ "error": "Body must be JSON with 'choices_made' and 'view'" }`
 - `400` `{ "error": "Unknown view '<x>'", "allowed": ["damage_cantrips", "invocation_management", "mastery_management", "spell_management"] }`
+- `500` `{ "error": "<message>", "traceback": "<python traceback>" }`
+
+### `POST /character/random-languages`
+
+Return a backend-validated random selection for the language step.
+
+Request:
+```json
+{ "choices_made": { /* ChoicesMade */ } }
+```
+
+Response (200):
+```json
+{ "languages": ["Elvish", "Gnomish"] }
+```
+
+Errors:
+- `400` `{ "error": "Body must be JSON with 'choices_made'" }`
 - `500` `{ "error": "<message>", "traceback": "<python traceback>" }`
 
 ## Canonical Request — `ChoicesMade`

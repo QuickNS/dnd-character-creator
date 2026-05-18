@@ -199,49 +199,59 @@ class TestLanguageSelectionCleanup:
         assert "Dwarvish" in langs
 
         # Re-select different languages
-        builder.apply_choice("languages", ["Draconic", "Infernal"])
+        builder.apply_choice("languages", ["Draconic", "Goblin"])
 
         langs = builder.character_data["proficiencies"]["languages"]
         assert "Draconic" in langs
-        assert "Infernal" in langs
+        assert "Goblin" in langs
         assert "Elvish" not in langs
         assert "Dwarvish" not in langs
+        assert "Common" in langs
 
-    def test_language_reselection_preserves_species_languages(self, builder):
-        """Species-granted languages should NOT be removed by re-selection."""
-        builder.set_species("Elf")  # Grants Common, Elvish
+    def test_species_no_longer_grants_default_languages(self, builder):
+        """Species should not implicitly grant spoken languages in 2024 flow."""
+        builder.set_species("Elf")
         builder.set_class("Fighter", 1)
 
         species_langs = builder.character_data["proficiencies"]["languages"]
         assert "Common" in species_langs
-        assert "Elvish" in species_langs
+        assert "Elvish" not in species_langs
 
-        builder.apply_choice("languages", ["Dwarvish"])
+        builder.apply_choice("languages", ["Dwarvish", "Elvish"])
 
         langs = builder.character_data["proficiencies"]["languages"]
-        # Species languages still there
         assert "Common" in langs
         assert "Elvish" in langs
-        # User choice added
         assert "Dwarvish" in langs
 
         # Re-select
-        builder.apply_choice("languages", ["Draconic"])
+        builder.apply_choice("languages", ["Draconic", "Goblin"])
 
         langs = builder.character_data["proficiencies"]["languages"]
         assert "Common" in langs
-        assert "Elvish" in langs
         assert "Draconic" in langs
+        assert "Goblin" in langs
         assert "Dwarvish" not in langs
+        assert "Elvish" not in langs
 
     def test_language_sources_tracked(self, builder):
         builder.set_species("Human")
         builder.set_class("Fighter", 1)
 
-        builder.apply_choice("languages", ["Elvish"])
+        builder.apply_choice("languages", ["Elvish", "Dwarvish"])
 
         sources = builder.character_data["proficiency_sources"]["languages"]
         assert sources.get("Elvish") == "user_choice"
+        assert sources.get("Common") == "base"
+
+    def test_language_selection_ignores_invalid_or_duplicate_choices(self, builder):
+        builder.set_species("Human")
+        builder.set_class("Fighter", 1)
+
+        builder.apply_choice("languages", ["Elvish", "Elvish", "Infernal", "Dwarvish"])
+
+        selected = builder.character_data["choices_made"]["languages"]
+        assert selected == ["Elvish", "Dwarvish"]
 
 
 # ── Bug 5: Feat choices accumulate on re-submission ──────────────────
@@ -478,5 +488,6 @@ class TestWizardBackAndForth:
 
         langs = builder.character_data["proficiencies"]["languages"]
         assert "Draconic" in langs
+        assert "Common" in langs
         assert "Elvish" not in langs
         assert "Dwarvish" not in langs

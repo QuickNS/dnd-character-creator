@@ -31,7 +31,7 @@ class TestDwarfSpecies:
         # Check languages
         languages = char_data["proficiencies"]["languages"]
         assert "Common" in languages
-        assert "Dwarvish" in languages
+        assert "Dwarvish" not in languages
 
         # Check resistances from Dwarven Resilience
         resistances = char_data["resistances"]

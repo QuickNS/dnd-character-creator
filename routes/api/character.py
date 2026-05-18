@@ -218,7 +218,7 @@ _STEP_REQUIRED_KEYS: Dict[str, List[str]] = {
     "class": ["character_name", "class"],
     "background": ["background"],
     "species": ["species"],
-    "languages": [],  # languages chosen list may be empty if none granted
+    "languages": [],
     "abilities": ["ability_scores"],
     "equipment": [],  # equipment_selections optional
     "complete": [],
@@ -385,6 +385,27 @@ def _step_status(builder: CharacterBuilder, step: str) -> Dict[str, Any]:
                 missing.append("background_bonuses")
         except Exception:
             pass
+    elif step == "languages":
+        try:
+            language_options = builder.get_language_options()
+            required_count = language_options.get("selection_count", 2)
+            available_languages = set(language_options.get("available_languages", []))
+            selected = choices.get("languages", [])
+            if not isinstance(selected, list):
+                selected = []
+
+            normalized = []
+            for lang in selected:
+                if (
+                    isinstance(lang, str)
+                    and lang in available_languages
+                    and lang not in normalized
+                ):
+                    normalized.append(lang)
+            if len(normalized) != required_count:
+                missing.append("languages")
+        except Exception:
+            missing.append("languages")
 
     return {"step": step, "complete": len(missing) == 0, "missing": missing}
 
@@ -514,6 +535,19 @@ def preview_step():
         return jsonify(result)
     except Exception as exc:
         return jsonify({"error": str(exc), "traceback": traceback.format_exc()}), 500
+
+
+@character_bp.post("/random-languages")
+def random_languages():
+    """Return a random valid language selection for the language step."""
+    body = _require_json()
+    if body is None or "choices_made" not in body:
+        return jsonify({"error": "Body must be JSON with 'choices_made'"}), 400
+    try:
+        builder = _build(body["choices_made"])
+        return jsonify({"languages": builder.roll_languages()})
+    except Exception:
+        return jsonify({"error": "Failed to generate random languages"}), 500
 
 
 # ==================== Derived views ====================

@@ -47,12 +47,12 @@ class TestHalflingLanguages:
         char_data = halfling_builder.character_data
         languages = char_data["proficiencies"]["languages"]
         assert "Common" in languages
-        assert "Halfling" in languages
+        assert "Halfling" not in languages
 
     def test_halfling_language_count(self, halfling_builder):
         char_data = halfling_builder.character_data
         languages = char_data["proficiencies"]["languages"]
-        assert len(languages) == 2
+        assert len(languages) == 1
 
 
 class TestHalflingFeatures:
@@ -201,7 +201,7 @@ class TestHalflingClassIntegration:
         # Languages preserved
         languages = char_data["proficiencies"]["languages"]
         assert "Common" in languages
-        assert "Halfling" in languages
+        assert "Halfling" not in languages
 
         # Features preserved
         species_features = char_data["features"]["species"]

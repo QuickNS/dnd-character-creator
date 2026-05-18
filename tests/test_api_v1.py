@@ -1,6 +1,7 @@
 """Tests for the v1 REST API used by the React SPA frontend."""
 
 import pytest
+from modules.character_builder import CharacterBuilder
 
 
 # ==================== Health ====================
@@ -723,6 +724,52 @@ class TestCharacterBuild:
         data = r.get_json()
         assert "traits" in data
         assert "trait_choices" in data
+
+    def test_preview_languages_step_shape(self, client):
+        r = client.post(
+            "/api/v1/character/preview-step",
+            json={
+                "step": "languages",
+                "choices_made": {
+                    "character_name": "Test",
+                    "level": 1,
+                    "class": "Fighter",
+                    "background": "Acolyte",
+                    "species": "Human",
+                    "languages": ["Elvish", "Dwarvish"],
+                },
+            },
+        )
+        assert r.status_code == 200
+        data = r.get_json()
+        options = data["language_options"]
+        assert data["step"] == "languages"
+        assert options["selection_count"] == 2
+        assert options["base_languages"] == ["Common"]
+        assert "Common Sign Language" in options["available_languages"]
+        assert "Common" not in options["available_languages"]
+        assert options["selected_languages"] == ["Elvish", "Dwarvish"]
+
+    def test_random_languages_endpoint(self, client):
+        r = client.post(
+            "/api/v1/character/random-languages",
+            json={
+                "choices_made": {
+                    "character_name": "Test",
+                    "level": 1,
+                    "class": "Fighter",
+                    "background": "Acolyte",
+                    "species": "Human",
+                }
+            },
+        )
+        assert r.status_code == 200
+        data = r.get_json()
+        languages = data["languages"]
+        assert len(languages) == 2
+        assert len(set(languages)) == 2
+        for language in languages:
+            assert language in set(CharacterBuilder.STANDARD_LANGUAGE_OPTIONS)
 
 
 # ==================== Character derived views (Phase 2) ====================

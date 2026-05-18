@@ -29,7 +29,7 @@ class TestAasimarSpecies:
 
         languages = char_data["proficiencies"]["languages"]
         assert "Common" in languages
-        assert "Celestial" in languages
+        assert "Celestial" not in languages
 
     def test_aasimar_resistances(self, aasimar_builder):
         """Test Celestial Resistance grants both Necrotic and Radiant"""
@@ -178,7 +178,7 @@ class TestAasimarSpecies:
         # Languages preserved
         languages = char_data["proficiencies"]["languages"]
         assert "Common" in languages
-        assert "Celestial" in languages
+        assert "Celestial" not in languages
 
     def test_aasimar_applied_effects_summary(self, aasimar_builder):
         """Test applied_effects contains the right types from the right sources"""

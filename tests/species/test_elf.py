@@ -38,7 +38,7 @@ class TestElfSpecies:
         # Check languages
         languages = char_data["proficiencies"]["languages"]
         assert "Common" in languages
-        assert "Elvish" in languages
+        assert "Elvish" not in languages
 
     def test_elf_features_present(self, elf_builder):
         """Test that all elf features are present"""

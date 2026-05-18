@@ -41,7 +41,7 @@ class TestGnomeSpecies:
         # Languages
         languages = char_data["proficiencies"]["languages"]
         assert "Common" in languages
-        assert "Gnomish" in languages
+        assert "Gnomish" not in languages
 
     def test_gnome_features_present(self, gnome_builder):
         """Test that all gnome features are present"""
@@ -376,7 +376,7 @@ class TestGnomeIntegration:
 
         # Gnome languages preserved
         assert "Common" in character["proficiencies"]["languages"]
-        assert "Gnomish" in character["proficiencies"]["languages"]
+        assert "Gnomish" not in character["proficiencies"]["languages"]
 
         # Gnomish Cunning save advantages preserved
         save_advantages = character.get("save_advantages", [])

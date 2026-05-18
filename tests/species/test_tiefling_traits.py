@@ -36,12 +36,12 @@ class TestTieflingBasicTraits:
         assert char_data["darkvision"] == 60
 
     def test_tiefling_languages(self, tiefling_builder):
-        """Test that Tiefling gets Common and Infernal languages."""
+        """Test that Tiefling starts with Common before language choices."""
         char_data = tiefling_builder.character_data
         languages = char_data["proficiencies"]["languages"]
 
         assert "Common" in languages
-        assert "Infernal" in languages
+        assert "Infernal" not in languages
 
     def test_tiefling_features_present(self, tiefling_builder):
         """Test that all base Tiefling features are present."""
@@ -467,7 +467,7 @@ class TestTieflingIntegration:
         # Languages should persist
         languages = char_data["proficiencies"]["languages"]
         assert "Common" in languages
-        assert "Infernal" in languages
+        assert "Infernal" not in languages
 
         # Lineage resistance should persist
         assert "Fire" in char_data["resistances"]
