@@ -362,8 +362,8 @@ def random_languages():
     try:
         builder = _build(body["choices_made"])
         return jsonify({"languages": builder.roll_languages()})
-    except Exception as exc:
-        return jsonify({"error": str(exc)}), 500
+    except Exception:
+        return jsonify({"error": "Failed to generate random languages"}), 500
 
 
 # ==================== Derived views ====================

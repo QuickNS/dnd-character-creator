@@ -2333,6 +2333,7 @@ class CharacterBuilder:
                         and lang not in normalized_choices
                     ):
                         normalized_choices.append(lang)
+                    # Enforce exactly N selected languages by truncating extras.
                     if len(normalized_choices) >= selection_count:
                         break
 

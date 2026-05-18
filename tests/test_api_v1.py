@@ -1,6 +1,7 @@
 """Tests for the v1 REST API used by the React SPA frontend."""
 
 import pytest
+from modules.character_builder import CharacterBuilder
 
 
 # ==================== Health ====================
@@ -308,17 +309,7 @@ class TestCharacterBuild:
         assert len(languages) == 2
         assert len(set(languages)) == 2
         for language in languages:
-            assert language in {
-                "Common Sign Language",
-                "Draconic",
-                "Dwarvish",
-                "Elvish",
-                "Giant",
-                "Gnomish",
-                "Goblin",
-                "Halfling",
-                "Orc",
-            }
+            assert language in set(CharacterBuilder.STANDARD_LANGUAGE_OPTIONS)
 
 
 # ==================== Character derived views (Phase 2) ====================
