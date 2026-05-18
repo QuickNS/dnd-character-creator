@@ -1234,10 +1234,10 @@ class CharacterBuilder:
                     for feat_effect in feat_data.get("effects", []):
                         self._apply_effect(feat_effect, feat_name, "feat")
 
-                # If granted via a species/lineage choice and the feat has
-                # choices (e.g., Skilled needs 3 skill/tool picks), record the
-                # feat name so the species route can present a choices step.
-                if source_type in ("species_choice", "lineage_choice") and feat_data and feat_data.get("choices"):
+                # If granted via a species/lineage choice, record the feat
+                # name so the species route can present the description and any
+                # additional choices (e.g., Skilled needs 3 skill/tool picks).
+                if source_type in ("species_choice", "lineage_choice") and feat_data:
                     self.character_data["pending_species_feat"] = feat_name
 
         # Track applied effect
@@ -1922,7 +1922,7 @@ class CharacterBuilder:
             return self._spell_definitions_cache[spell_name]
 
         # Convert spell name to filename format (lowercase with underscores)
-        filename = spell_name.lower().replace(" ", "_").replace("'", "")
+        filename = spell_name.lower().replace(" ", "_").replace("'", "").replace("/", "_")
         spell_file = self.data_dir / "spells" / "definitions" / f"{filename}.json"
 
         try:

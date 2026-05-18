@@ -8,6 +8,8 @@ import { ChoiceList } from "./ChoiceList";
 interface FeatChoice {
   title?: string;
   description?: string;
+  /** Structured type from the backend: "skills" | "tools" | "languages" | etc. */
+  type?: string;
   options?: Array<unknown>;
   count?: number;
   choices_made_key?: string;
@@ -24,9 +26,24 @@ interface FeatChoicesData {
 interface Props {
   data: FeatChoicesData | undefined;
   heading: string;
+  /**
+   * Skill and tool proficiencies already granted by other sources (class,
+   * background direct grants, etc.). For skill/tool-type choices these are
+   * shown grayed out and disabled so the player can see duplicates at a glance.
+   */
+  grantedProficiencies?: string[];
 }
 
-export function FeatChoicesPicker({ data, heading }: Props) {
+/** Returns true for choice types that deal in skill or tool proficiencies. */
+function isProficiencyChoice(choice: FeatChoice): boolean {
+  const t = (choice.type ?? "").toLowerCase();
+  if (t === "skills" || t === "tools") return true;
+  // Fallback: keyword scan on title/feature_name for choices that lack a type.
+  const keywords = `${choice.title ?? ""} ${choice.feature_name ?? ""}`.toLowerCase();
+  return keywords.includes("skill") || keywords.includes("tool");
+}
+
+export function FeatChoicesPicker({ data, heading, grantedProficiencies }: Props) {
   if (!data || !data.feat_name) return null;
   const choices = data.choices ?? [];
 
@@ -56,6 +73,10 @@ export function FeatChoicesPicker({ data, heading }: Props) {
           `feat_${data.feat_name}_${choice.feature_name ?? idx}`;
         const opts = (choice.options ?? []) as Array<unknown>;
         if (opts.length === 0) return null;
+        const disabledOptions =
+          grantedProficiencies && isProficiencyChoice(choice)
+            ? grantedProficiencies
+            : undefined;
         return (
           <ChoiceList
             key={key}
@@ -64,6 +85,8 @@ export function FeatChoicesPicker({ data, heading }: Props) {
             description={choice.description}
             options={opts as Array<string | { name?: string }>}
             count={choice.count ?? 1}
+            disabledOptions={disabledOptions}
+            disabledReason="Already granted"
           />
         );
       })}

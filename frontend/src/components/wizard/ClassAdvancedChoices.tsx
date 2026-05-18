@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from "react";
-import { Check, Sparkles, Wand2 } from "lucide-react";
+import { Check, Info, Sparkles, Wand2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -38,6 +38,8 @@ export interface SpellReference {
   duration?: string;
   components?: string[];
   counts_against_limit?: boolean;
+  is_always_prepared?: boolean;
+  ritual?: boolean;
 }
 
 function normalizeSpellReference(raw: Loose): SpellReference | null {
@@ -67,6 +69,7 @@ function normalizeSpellReference(raw: Loose): SpellReference | null {
       typeof raw.counts_against_limit === "boolean"
         ? raw.counts_against_limit
         : undefined,
+    ritual: typeof raw.ritual === "boolean" ? raw.ritual : undefined,
   };
 }
 
@@ -243,7 +246,8 @@ function SpellPicker({
     () =>
       arr<Loose>(data.always_prepared)
         .map(normalizeSpellReference)
-        .filter((spell): spell is SpellReference => Boolean(spell)),
+        .filter((spell): spell is SpellReference => Boolean(spell))
+        .map((spell) => ({ ...spell, is_always_prepared: true as const })),
     [data.always_prepared],
   );
   const alwaysPreparedNames = useMemo(
@@ -351,7 +355,7 @@ function SpellPicker({
                   >
                     <div className="flex flex-wrap items-center gap-2 text-sm">
                       <span className="font-medium text-foreground">{spell.name}</span>
-                      <span className="rounded-full border border-primary/20 bg-primary/10 px-2 py-0.5 text-[11px] uppercase tracking-wide text-primary">
+                      <span className="rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2 py-0.5 text-[11px] uppercase tracking-wide text-emerald-700 dark:text-emerald-300">
                         Always prepared
                       </span>
                       <span className="rounded-full border border-border/70 bg-background px-2 py-0.5 text-[11px] uppercase tracking-wide text-muted-foreground">
@@ -362,11 +366,7 @@ function SpellPicker({
                           {spell.source}
                         </span>
                       )}
-                      {spell.counts_against_limit === false && (
-                        <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[11px] uppercase tracking-wide text-emerald-700 dark:text-emerald-300">
-                          Doesn’t count against limit
-                        </span>
-                      )}
+
                     </div>
                     {(spell.school || spell.description) && (
                       <div className="mt-2 text-xs text-muted-foreground">
@@ -388,9 +388,11 @@ function SpellPicker({
       {availableCantrips.length > 0 && maxCantrips > 0 && (
         <SpellGroup
           title="Cantrips"
-          spells={availableCantrips}
+          spells={normalizeSpellList(availableCantrips)}
           selected={current.cantrips}
           disabledNames={alwaysPreparedNames}
+          inspectedSpellName={inspectedSpellName}
+          onInspect={onInspectSpell}
           onToggle={(name) => {
             const next = toggle(current.cantrips, name, maxCantrips);
             if (next) update({ cantrips: next });
@@ -408,9 +410,11 @@ function SpellPicker({
             <SpellGroup
               key={lvl}
               title={`Level ${lvl}`}
-              spells={list}
+              spells={normalizeSpellList(list)}
               selected={current.spells}
               disabledNames={alwaysPreparedNames}
+              inspectedSpellName={inspectedSpellName}
+              onInspect={onInspectSpell}
               onToggle={(name) => {
                 const next = toggle(current.spells, name, maxSpells);
                 if (next) update({ spells: next });
@@ -424,9 +428,17 @@ function SpellPicker({
         current={current}
         update={update}
         disabledNames={alwaysPreparedNames}
+        inspectedSpellName={inspectedSpellName}
+        onInspect={onInspectSpell}
       />
     </div>
   );
+}
+
+function normalizeSpellList(raw: Loose[]): SpellReference[] {
+  return raw
+    .map(normalizeSpellReference)
+    .filter((spell): spell is SpellReference => Boolean(spell));
 }
 
 function SpellGroup({
@@ -435,12 +447,16 @@ function SpellGroup({
   selected,
   disabledNames,
   onToggle,
+  onInspect,
+  inspectedSpellName,
 }: {
   title: string;
-  spells: Loose[];
+  spells: SpellReference[];
   selected: string[];
   disabledNames?: Set<string>;
   onToggle: (name: string) => void;
+  onInspect?: (spell: SpellReference) => void;
+  inspectedSpellName?: string;
 }) {
   return (
     <div>
@@ -448,57 +464,86 @@ function SpellGroup({
         {title}
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
-        {spells.map((sp, i) => {
-          const name = str(sp.name) ?? `Spell ${i}`;
-          const school = str(sp.school);
+        {spells.map((spell, i) => {
+          const name = spell.name;
+          const school = spell.school;
           const isSelected = selected.includes(name);
           const isDisabled = disabledNames?.has(name) ?? false;
+          const isInspected = inspectedSpellName === name;
           return (
-            <button
+            <div
               key={`${name}-${i}`}
-              type="button"
-              onClick={() => {
-                if (!isDisabled) onToggle(name);
-              }}
-              aria-pressed={isSelected}
-              aria-disabled={isDisabled}
-              disabled={isDisabled}
               className={cn(
-                "flex items-center justify-between gap-3 rounded-lg border px-3 py-2 text-left text-sm transition-all duration-200",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                "flex items-stretch gap-1 rounded-lg border text-left text-sm transition-all duration-200",
                 isDisabled
-                  ? "cursor-not-allowed border-border/70 bg-muted/30 text-muted-foreground opacity-80"
+                  ? "border-border/70 bg-muted/30 text-muted-foreground opacity-80"
                   : isSelected
                   ? "border-primary bg-muted/60 shadow-sm ring-1 ring-primary/20"
+                  : isInspected
+                  ? "border-muted-foreground/40 bg-secondary/60 ring-1 ring-muted-foreground/20"
                   : "border-border bg-background/70 hover:border-primary/30 hover:bg-secondary/60",
               )}
             >
-              <span className="min-w-0">
-                <span>{name}</span>
-                {(school || isDisabled) && (
-                  <span className="mt-1 flex flex-wrap gap-2 text-xs text-muted-foreground">
-                    {school && <span>{school}</span>}
-                    {isDisabled && (
-                      <span className="rounded-full border border-border/70 bg-background px-2 py-0.5 uppercase tracking-wide">
-                        Always prepared
-                      </span>
-                    )}
-                  </span>
-                )}
-              </span>
-              <span
+              <button
+                type="button"
+                onClick={() => {
+                  if (!isDisabled) onToggle(name);
+                }}
+                aria-pressed={isSelected}
+                aria-disabled={isDisabled}
+                disabled={isDisabled}
                 className={cn(
-                  "inline-flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full border",
-                  isDisabled
-                    ? "border-border/70 bg-background text-muted-foreground"
-                    : isSelected
-                    ? "border-primary bg-background text-primary"
-                    : "border-border bg-background text-transparent",
+                  "flex flex-1 items-center justify-between gap-3 rounded-l-lg px-3 py-2 text-left",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                  isDisabled ? "cursor-not-allowed" : "cursor-pointer",
                 )}
               >
-                <Check className="h-3 w-3" />
-              </span>
-            </button>
+                <span className="min-w-0">
+                  <span>{name}</span>
+                  {(school || isDisabled) && (
+                    <span className="mt-1 flex flex-wrap gap-2 text-xs text-muted-foreground">
+                      {school && <span>{school}</span>}
+                      {isDisabled && (
+                        <span className="rounded-full border border-border/70 bg-background px-2 py-0.5 uppercase tracking-wide">
+                          Always prepared
+                        </span>
+                      )}
+                    </span>
+                  )}
+                </span>
+                <span
+                  className={cn(
+                    "inline-flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full border",
+                    isDisabled
+                      ? "border-border/70 bg-background text-muted-foreground"
+                      : isSelected
+                      ? "border-primary bg-background text-primary"
+                      : "border-border bg-background text-transparent",
+                  )}
+                >
+                  <Check className="h-3 w-3" />
+                </span>
+              </button>
+              {onInspect && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onInspect(spell);
+                  }}
+                  aria-label="View spell details"
+                  aria-pressed={isInspected}
+                  className={cn(
+                    "flex flex-shrink-0 items-center justify-center rounded-r-lg p-1 px-2 text-muted-foreground transition-colors",
+                    "hover:bg-muted hover:text-foreground",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                    isInspected && "text-primary",
+                  )}
+                >
+                  <Info className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
           );
         })}
       </div>
@@ -511,11 +556,15 @@ function BackgroundSpells({
   current,
   update,
   disabledNames,
+  inspectedSpellName,
+  onInspect,
 }: {
   requirements: Loose;
   current: CurrentSpellSelections;
   update: (patch: Partial<CurrentSpellSelections>) => void;
   disabledNames?: Set<string>;
+  inspectedSpellName?: string;
+  onInspect?: (spell: SpellReference) => void;
 }) {
   const cantripReq = rec(requirements.cantrips);
   const spellReq = rec(requirements.spells);
@@ -531,9 +580,11 @@ function BackgroundSpells({
       {cantripsNeeded ? (
         <SpellGroup
           title={`Background cantrips (${current.background_cantrips.length}/${cantripsNeeded})`}
-          spells={arr<Loose>(cantripReq.available)}
+          spells={normalizeSpellList(arr<Loose>(cantripReq.available))}
           selected={current.background_cantrips}
           disabledNames={disabledNames}
+          inspectedSpellName={inspectedSpellName}
+          onInspect={onInspect}
           onToggle={(name) => {
             const list = current.background_cantrips;
             if (list.includes(name)) {
@@ -549,9 +600,11 @@ function BackgroundSpells({
       {spellsNeeded ? (
         <SpellGroup
           title={`Background spells (${current.background_spells.length}/${spellsNeeded})`}
-          spells={arr<Loose>(spellReq.available)}
+          spells={normalizeSpellList(arr<Loose>(spellReq.available))}
           selected={current.background_spells}
           disabledNames={disabledNames}
+          inspectedSpellName={inspectedSpellName}
+          onInspect={onInspect}
           onToggle={(name) => {
             const list = current.background_spells;
             if (list.includes(name)) {

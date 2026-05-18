@@ -4,9 +4,14 @@
   "school": "Transmutation",
   "casting_time": "1 action",
   "range": "Self",
-  "components": ["V"],
+  "components": [
+    "V"
+  ],
   "duration": "1 hour",
   "description": "Until the spell ends, when you make a Charisma check, you can replace the number you roll with a 15. Additionally, no matter what you say, magic that would determine if you are telling the truth indicates that you are being truthful if you so choose, and you're immune to any effect that would sense your emotions or determine whether you are lying.",
-  "classes": ["Bard", "Warlock"],
-  "source": "Player's Handbook 2024"
+  "classes": [
+    "Bard",
+    "Warlock"
+  ],
+  "ritual": false
 }

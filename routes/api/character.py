@@ -256,6 +256,11 @@ def _normalize_choices_for_builder(
         raise ChoicesValidationError("'choices_made' must be a JSON object")
 
     normalized = dict(choices_made)
+
+    # Normalise singular API key → plural internal key expected by CharacterBuilder.
+    if "background_skill_replacement" in normalized and "background_skill_replacements" not in normalized:
+        normalized["background_skill_replacements"] = normalized.pop("background_skill_replacement")
+
     classes = normalized.get("classes")
     if classes is None:
         # Legacy compatibility: class/level(/subclass) remains supported.
@@ -653,7 +658,11 @@ def preview_step():
 
     try:
         result: Dict[str, Any] = {"step": step, "choices_made": body["choices_made"]}
-        character = builder.to_character()
+        # Only call to_character() for steps that actually use its result.
+        # The "languages" step only needs builder.get_language_options() and must
+        # not fail when choices_made is empty (no class/species set yet).
+        _STEPS_NEEDING_CHARACTER = {"class", "species", "background", "abilities", "equipment"}
+        character = builder.to_character() if step in _STEPS_NEEDING_CHARACTER else {}
 
         if step == "class":
             request_choices = body.get("choices_made") or {}
@@ -734,12 +743,33 @@ def preview_step():
                 result["trait_choices"] = builder.get_species_trait_choices()
                 result["species_feat_choices"] = builder.get_species_feat_choices()
                 result["skill_replacement"] = builder.get_species_skill_replacement_info()
+                # Surface the background's granted feat so the UI can grey it
+                # out in the species feat picker (e.g. Human "Versatile").
+                try:
+                    bg_feat_info = builder.get_feat_choices()
+                    if bg_feat_info.get("feat_name"):
+                        result["background_feat"] = bg_feat_info["feat_name"]
+                except Exception:
+                    pass
+                # Include currently-granted proficiencies so feat skill pickers
+                # can grey out already-covered options.
+                result["granted_proficiencies"] = {
+                    "skills": character.get("proficiencies", {}).get("skills", []),
+                    "tools": character.get("proficiencies", {}).get("tools", []),
+                }
 
         elif step == "background":
             background = character.get("background")
             if background:
                 result["skill_replacement"] = builder.get_background_skill_replacement_info()
                 result["origin_feat_choices"] = builder.get_feat_choices()
+            # Include currently-granted skill and tool proficiencies so the UI
+            # can grey out already-covered options in feat skill pickers (e.g.
+            # the Skilled origin feat).
+            result["granted_proficiencies"] = {
+                "skills": character.get("proficiencies", {}).get("skills", []),
+                "tools": character.get("proficiencies", {}).get("tools", []),
+            }
 
         elif step == "languages":
             result["language_options"] = builder.get_language_options()

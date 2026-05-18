@@ -955,6 +955,21 @@ class TestCharacterBuild:
         assert "Common" not in options["available_languages"]
         assert options["selected_languages"] == ["Elvish", "Dwarvish"]
 
+    def test_preview_languages_empty_choices(self, client):
+        """Languages step must return the standard language pool even with empty choices."""
+        r = client.post(
+            "/api/v1/character/preview-step",
+            json={"step": "languages", "choices_made": {}},
+        )
+        assert r.status_code == 200
+        data = r.get_json()
+        opts = data["language_options"]
+        assert opts["base_languages"] == ["Common"]
+        assert len(opts["available_languages"]) == 9
+        assert "Elvish" in opts["available_languages"]
+        assert "Common" not in opts["available_languages"]
+        assert opts["selection_count"] == 2
+
     def test_random_languages_endpoint(self, client):
         r = client.post(
             "/api/v1/character/random-languages",

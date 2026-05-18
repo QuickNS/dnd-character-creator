@@ -26,6 +26,12 @@ interface Props {
   /** Optional map of option value → description, merged with per-option `description`. */
   optionDescriptions?: Record<string, string>;
   count?: number;
+  /** Option values that are already granted by another source (class, background, etc.).
+   * Items that are currently selected in this choice are automatically excluded
+   * so a player's own picks here are never incorrectly marked as "already granted". */
+  disabledOptions?: string[];
+  /** Short label shown beneath disabled options. Defaults to "Already granted". */
+  disabledReason?: string;
 }
 
 function counterTone(selectedCount: number, requiredCount: number) {
@@ -54,6 +60,8 @@ export function ChoiceList({
   options,
   optionDescriptions,
   count = 1,
+  disabledOptions,
+  disabledReason = "Already granted",
 }: Props) {
   const value = useCharacterStore((s) => s.choicesMade[choiceKey]);
   const setChoice = useCharacterStore((s) => s.setChoice);
@@ -77,6 +85,13 @@ export function ChoiceList({
       : typeof value === "string" && value
         ? [value]
         : [],
+  );
+
+  // Items the user has already selected in THIS choice are excluded from the
+  // disabled set — they shouldn't be marked "already granted" when they were
+  // chosen here, not from another source.
+  const alreadyGranted = new Set<string>(
+    (disabledOptions ?? []).filter((opt) => !selected.has(opt)),
   );
 
   function toggle(v: string) {
@@ -133,30 +148,44 @@ export function ChoiceList({
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         {normalized.map((opt) => {
           const isSelected = selected.has(opt.value);
+          const isAlreadyGranted = alreadyGranted.has(opt.value);
           const disabled =
-            isMulti && !isSelected && selected.size >= count;
+            isAlreadyGranted ||
+            (isMulti && !isSelected && selected.size >= count);
           return (
             <button
               key={opt.value}
               type="button"
-              onClick={() => toggle(opt.value)}
+              onClick={() => !isAlreadyGranted && toggle(opt.value)}
               disabled={disabled}
               aria-pressed={isSelected}
+              aria-label={
+                isAlreadyGranted
+                  ? `${opt.label} — ${disabledReason.toLowerCase()}`
+                  : opt.label
+              }
               className={cn(
                 "group relative overflow-hidden rounded-lg border px-4 py-3 text-left text-sm transition-all duration-200",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-                isSelected &&
+                isSelected && !isAlreadyGranted &&
                   "border-primary bg-muted/60 text-foreground shadow-sm ring-1 ring-primary/20",
                 !isSelected && !disabled &&
                   "border-border bg-background/70 hover:-translate-y-0.5 hover:border-primary/40 hover:bg-secondary/60 hover:shadow-sm",
-                disabled &&
+                isAlreadyGranted &&
+                  "cursor-not-allowed border-border/40 bg-muted/10 opacity-50",
+                !isAlreadyGranted && disabled &&
                   "cursor-not-allowed border-border/60 bg-muted/20 opacity-45",
               )}
             >
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <div className="font-medium">{opt.label}</div>
-                  {opt.description && (
+                  {isAlreadyGranted && (
+                    <div className="mt-1 text-xs text-amber-600 dark:text-amber-400">
+                      {disabledReason}
+                    </div>
+                  )}
+                  {!isAlreadyGranted && opt.description && (
                     <div className="mt-1 text-xs text-muted-foreground">
                       {opt.description}
                     </div>

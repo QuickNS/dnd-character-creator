@@ -4,9 +4,14 @@
   "school": "Necromancy",
   "casting_time": "1 action",
   "range": "Touch",
-  "components": ["V", "S"],
+  "components": [
+    "V",
+    "S"
+  ],
   "duration": "Instantaneous",
   "description": "You touch a living creature that has 0 hit points. The creature becomes stable. This spell has no effect on undead or constructs.",
-  "classes": ["Cleric"],
-  "source": "Player's Handbook 2024"
+  "classes": [
+    "Cleric"
+  ],
+  "ritual": false
 }

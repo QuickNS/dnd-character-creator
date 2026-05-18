@@ -5,9 +5,16 @@
   "casting_time": "1 action",
   "ritual": true,
   "range": "Self",
-  "components": ["V", "S"],
+  "components": [
+    "V",
+    "S"
+  ],
   "duration": "10 minutes",
   "description": "For the duration, you can comprehend and verbally communicate with Beasts, and you can use any of the Influence action's skill options with them. Most Beasts have little to say about topics that don't pertain to survival or companionship, but at minimum, a Beast can give you information about nearby locations and monsters, including whatever it has perceived within the past day.",
-  "classes": ["Bard", "Druid", "Ranger", "Warlock"],
-  "source": "Player's Handbook 2024"
+  "classes": [
+    "Bard",
+    "Druid",
+    "Ranger",
+    "Warlock"
+  ]
 }

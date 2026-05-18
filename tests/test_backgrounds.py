@@ -454,3 +454,79 @@ class TestBackgroundSkillReplacement:
         )
         assert len(set(skills)) == len(skills), "No duplicate proficiencies"
 
+
+class TestBackgroundSkillReplacementKeyNormalization:
+    """Regression tests for singular/plural key mismatch bug.
+
+    The frontend sends 'background_skill_replacement' (singular);
+    CharacterBuilder expects 'background_skill_replacements' (plural).
+    The API layer normalises the key before calling apply_choices().
+    """
+
+    def _barbarian_farmer_choices(self):
+        """Barbarian picking Animal Handling + Intimidation, background Farmer."""
+        return {
+            "character_name": "Test Barbarian",
+            "level": 1,
+            "species": "Human",
+            "class": "Barbarian",
+            "background": "Farmer",
+            "skill_choices": ["Animal Handling", "Intimidation"],
+            "ability_scores": {
+                "Strength": 16, "Dexterity": 13, "Constitution": 15,
+                "Intelligence": 8, "Wisdom": 12, "Charisma": 10,
+            },
+            "background_bonuses": {"Strength": 2, "Constitution": 1},
+        }
+
+    def test_normalization_renames_singular_to_plural(self):
+        """_normalize_choices_for_builder maps background_skill_replacement → plural."""
+        from routes.api.character import _normalize_choices_for_builder
+
+        choices = {
+            "class": "Barbarian",
+            "level": 1,
+            "background_skill_replacement": ["Survival"],
+        }
+        normalized = _normalize_choices_for_builder(choices)
+        assert "background_skill_replacements" in normalized
+        assert normalized["background_skill_replacements"] == ["Survival"]
+        assert "background_skill_replacement" not in normalized
+
+    def test_substitution_applied_via_plural_key(self):
+        """Barbarian + Farmer: substitution via plural key yields 4 distinct skills."""
+        builder = CharacterBuilder()
+        builder.apply_choices({
+            **self._barbarian_farmer_choices(),
+            "background_skill_replacements": ["Survival"],
+        })
+        skills = builder.character_data["proficiencies"]["skills"]
+        # Animal Handling (class) + Intimidation (class) + Nature (bg) + Survival (sub)
+        assert "Animal Handling" in skills
+        assert "Intimidation" in skills
+        assert "Nature" in skills
+        assert "Survival" in skills
+        assert len(set(skills)) == len(skills), "No duplicate proficiencies"
+
+    def test_substitution_applied_via_normalized_singular_key(self):
+        """Repro: singular key from frontend, normalised through API layer, applied correctly."""
+        from routes.api.character import _normalize_choices_for_builder
+
+        raw_choices = {
+            **self._barbarian_farmer_choices(),
+            "background_skill_replacement": ["Survival"],   # singular — as sent by frontend
+        }
+        normalized = _normalize_choices_for_builder(raw_choices)
+
+        builder = CharacterBuilder()
+        builder.apply_choices(normalized)
+        skills = builder.character_data["proficiencies"]["skills"]
+        # Animal Handling (class) + Intimidation (class) + Nature (bg) + Survival (sub)
+        assert "Animal Handling" in skills
+        assert "Intimidation" in skills
+        assert "Nature" in skills
+        assert "Survival" in skills, (
+            "Survival substitution was lost — singular→plural normalization likely missing"
+        )
+        assert len(set(skills)) == len(skills), "No duplicate proficiencies"
+

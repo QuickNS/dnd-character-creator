@@ -4,9 +4,15 @@
   "school": "Conjuration",
   "casting_time": "1 bonus action",
   "range": "Self",
-  "components": ["V"],
+  "components": [
+    "V"
+  ],
   "duration": "Instantaneous",
   "description": "You teleport a short distance to an unoccupied space you can see.",
-  "classes": ["Sorcerer", "Warlock", "Wizard"],
-  "source": "Player's Handbook 2024"
+  "classes": [
+    "Sorcerer",
+    "Warlock",
+    "Wizard"
+  ],
+  "ritual": false
 }

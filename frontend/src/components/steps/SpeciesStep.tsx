@@ -416,6 +416,20 @@ function SpeciesDetail({
     | Parameters<typeof FeatChoicesPicker>[0]["data"]
     | undefined;
 
+  // The background grants one origin feat; disable that option in the species
+  // feat picker so the player can't double-pick it (e.g. Human "Versatile").
+  const backgroundFeat = (previewData["background_feat"] as string | undefined) ?? undefined;
+
+  const grantedProficiencies = (() => {
+    const gp = previewData["granted_proficiencies"] as
+      | { skills?: string[]; tools?: string[] }
+      | undefined;
+    return [
+      ...(gp?.skills ?? []),
+      ...(gp?.tools ?? []),
+    ];
+  })();
+
   return (
     <div className="space-y-6">
       {lineageEntries.length > 0 && (
@@ -532,13 +546,18 @@ function SpeciesDetail({
               options={choice.options ?? []}
               optionDescriptions={choice.option_descriptions}
               count={choice.count ?? 1}
+              disabledOptions={backgroundFeat ? [backgroundFeat] : undefined}
             />
           ))}
         </section>
       )}
 
       {speciesFeat && speciesFeat.feat_name && (
-        <FeatChoicesPicker data={speciesFeat} heading="Species feat" />
+        <FeatChoicesPicker
+          data={speciesFeat}
+          heading="Species feat"
+          grantedProficiencies={grantedProficiencies}
+        />
       )}
     </div>
   );

@@ -4,9 +4,16 @@
   "school": "Transmutation",
   "casting_time": "1 action or ritual",
   "range": "10 feet",
-  "components": ["V", "S"],
+  "components": [
+    "V",
+    "S"
+  ],
   "duration": "Instantaneous",
   "description": "You render all nonmagical food and drink within a 5-foot-radius Sphere centered on a point of your choice within range free from poison and disease.",
-  "classes": ["Cleric", "Druid", "Paladin"],
-  "source": "Player's Handbook 2024"
+  "classes": [
+    "Cleric",
+    "Druid",
+    "Paladin"
+  ],
+  "ritual": true
 }

@@ -4,9 +4,17 @@
   "school": "Divination",
   "casting_time": "1 action",
   "range": "Self",
-  "components": ["V", "S", "M (a pinch of talc)"],
+  "components": [
+    "V",
+    "S",
+    "M (a pinch of talc)"
+  ],
   "duration": "1 hour",
   "description": "For the duration, you see invisible creatures and objects as if they were visible, and you can see into the Ethereal Plane. Ethereal creatures and objects appear ghostly and translucent.",
-  "classes": ["Bard", "Sorcerer", "Wizard"],
-  "source": "Player's Handbook 2024"
+  "classes": [
+    "Bard",
+    "Sorcerer",
+    "Wizard"
+  ],
+  "ritual": false
 }

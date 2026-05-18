@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import {
   BookOpen,
   Check,
@@ -161,7 +161,6 @@ function matchesPreviewContext(
   previewData: Record<string, unknown> | undefined,
   selectedClass: string,
   level: number,
-  selectedSubclass: string,
 ): boolean {
   if (!previewData) return false;
   const previewChoices = previewData["choices_made"];
@@ -172,13 +171,13 @@ function matchesPreviewContext(
   const choices = previewChoices as Record<string, unknown>;
   const previewClass = typeof choices.class === "string" ? choices.class : "";
   const previewLevel = clampLevel(choices.level);
-  const previewSubclass =
-    typeof choices.subclass === "string" ? choices.subclass : "";
 
+  // Only validate class + level. Subclass changes within the same class
+  // use keepPreviousData so the UI stays mounted during the refetch;
+  // the subclass-specific choices update smoothly when the new response arrives.
   return (
     previewClass === selectedClass &&
-    previewLevel === clampLevel(level) &&
-    previewSubclass === selectedSubclass
+    previewLevel === clampLevel(level)
   );
 }
 
@@ -451,6 +450,7 @@ export function ClassStep() {
     queryKey: ["character", "preview-step", "class", selectedClass, clampLevel(activeRow.level), selectedSubclass],
     queryFn: () => api.character.previewStep(previewChoices, "class"),
     enabled: !!selectedClass,
+    placeholderData: keepPreviousData,
   });
 
   // For detail panel: use full class data (which has the complete features_by_level from JSON).
@@ -475,7 +475,6 @@ export function ClassStep() {
     previewDataRaw,
     selectedClass,
     activeRow.level,
-    selectedSubclass,
   )
     ? previewDataRaw
     : undefined;
@@ -949,15 +948,12 @@ function SpellInfoPanel({
       </div>
       <div className="info-panel-body">
         <div className="flex flex-wrap gap-2">
-          <span className="rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-[11px] uppercase tracking-wide text-primary">
-            Always prepared
-          </span>
           <span className="rounded-full border border-border/70 bg-background px-2.5 py-1 text-[11px] uppercase tracking-wide text-muted-foreground">
             {spell.level === 0 ? "Cantrip" : `Level ${spell.level ?? "—"}`}
           </span>
-          {spell.counts_against_limit === false && (
-            <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-[11px] uppercase tracking-wide text-emerald-700 dark:text-emerald-300">
-              Doesn’t count against limit
+          {spell.ritual === true && (
+            <span className="rounded-full border border-blue-500/40 bg-blue-500/10 px-2.5 py-1 text-[11px] uppercase tracking-wide text-blue-700 dark:text-blue-300">
+              Ritual
             </span>
           )}
         </div>

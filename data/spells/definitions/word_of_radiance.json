@@ -4,10 +4,15 @@
   "school": "Evocation",
   "casting_time": "1 action",
   "range": "5 feet",
-  "components": ["V", "M"],
+  "components": [
+    "V",
+    "M"
+  ],
   "material": "a holy symbol",
   "duration": "Instantaneous",
   "description": "You utter a divine word, and burning radiance erupts from you. Each creature of your choice that you can see within range must succeed on a Constitution saving throw or take 1d6 radiant damage.",
-  "classes": ["Cleric"],
-  "source": "Player's Handbook 2024"
+  "classes": [
+    "Cleric"
+  ],
+  "ritual": false
 }

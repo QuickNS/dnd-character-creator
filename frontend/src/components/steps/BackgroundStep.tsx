@@ -84,6 +84,16 @@ export function BackgroundStep() {
     | Parameters<typeof FeatChoicesPicker>[0]["data"]
     | undefined;
 
+  const grantedProficiencies = (() => {
+    const gp = previewQuery.data?.granted_proficiencies as
+      | { skills?: string[]; tools?: string[] }
+      | undefined;
+    return [
+      ...(gp?.skills ?? []),
+      ...(gp?.tools ?? []),
+    ];
+  })();
+
   const hasDependentChoices =
     (skillReplacement && (skillReplacement.needed ?? 0) > 0 && (skillReplacement.options?.length ?? 0) > 0) ||
     (featData && featData.feat_name);
@@ -200,7 +210,11 @@ export function BackgroundStep() {
               )}
 
             {featData && featData.feat_name && (
-              <FeatChoicesPicker data={featData} heading="Origin feat" />
+              <FeatChoicesPicker
+                data={featData}
+                heading="Origin feat"
+                grantedProficiencies={grantedProficiencies}
+              />
             )}
           </div>
         </section>

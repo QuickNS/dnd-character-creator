@@ -100,8 +100,13 @@ export const useCharacterStore = create<CharacterState>()(
 
       setChoice: (key, value) =>
         set((state) => {
+          const prevValue = state.choicesMade[key];
+          const valueChanged =
+            JSON.stringify(prevValue) !== JSON.stringify(value);
           let nextChoices: ChoicesMade = { ...state.choicesMade, [key]: value };
-          nextChoices = cascade(nextChoices, state.dependencies, key);
+          if (valueChanged) {
+            nextChoices = cascade(nextChoices, state.dependencies, key);
+          }
           // Re-set the changed key in case cascade dropped it (it
           // shouldn't, but guard against accidental self-reference).
           nextChoices[key] = value;
