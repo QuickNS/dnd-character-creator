@@ -1055,11 +1055,24 @@ class CharacterBuilder:
                     ] = needed + 1
 
         elif effect_type == "grant_skill_expertise":
-            skills = effect.get("skills", [])
+            # Resolve skills from a choice key if specified, otherwise use direct list
+            if "from_choice" in effect:
+                choice_key = effect["from_choice"]
+                chosen = self.character_data.get("choices_made", {}).get(choice_key)
+                if isinstance(chosen, list):
+                    skills = chosen
+                elif isinstance(chosen, str) and chosen:
+                    skills = [chosen]
+                else:
+                    skills = []
+            else:
+                skills = effect.get("skills", [])
             if "skill_expertise" not in self.character_data:
                 self.character_data["skill_expertise"] = []
             for skill in skills:
-                # Skip choice placeholders like "__expertise_skills__"
+                # Skip unresolved choice placeholders (e.g. Ranger still uses
+                # "__deft_explorer_expertise__" / "__expertise_skills__" until
+                # those classes are migrated to the from_choice pattern).
                 if skill.startswith("__"):
                     continue
                 if skill not in self.character_data["skill_expertise"]:
@@ -3456,6 +3469,27 @@ class CharacterBuilder:
                 for effect in trait_data.get("effects", []):
                     if "damage_type_from_choice" in effect:
                         self._apply_effect(effect, trait_name, data_key.replace("_data", ""))
+
+        # Also scan class features for grant_skill_expertise effects that use from_choice.
+        # These must be re-applied after all choices are made because the expertise
+        # selection arrives in the second pass of apply_choices (after set_class runs).
+        class_data = self.character_data.get("class_data")
+        if isinstance(class_data, dict):
+            level = self.character_data.get("level", 1)
+            for level_str, level_features in class_data.get("features_by_level", {}).items():
+                if not isinstance(level_features, dict):
+                    continue
+                if int(level_str) > level:
+                    continue
+                for feature_name, feature_data in level_features.items():
+                    if not isinstance(feature_data, dict):
+                        continue
+                    for effect in feature_data.get("effects", []):
+                        if (
+                            effect.get("type") == "grant_skill_expertise"
+                            and "from_choice" in effect
+                        ):
+                            self._apply_effect(effect, feature_name, "class")
 
     # ==================== Calculation Methods ====================
 
@@ -6007,6 +6041,7 @@ class CharacterBuilder:
                             "required": not choice_item.get("optional", False),
                             "level": level,
                             "feature_name": feature_key,
+                            "choice_key": choice_item.get("name", feature_key),
                             "option_descriptions": get_option_descriptions(
                                 feature_data, choice_item, class_data, subclass_data
                             ),
@@ -6037,6 +6072,7 @@ class CharacterBuilder:
                         "required": not choices_data.get("optional", False),
                         "level": level,
                         "feature_name": feature_key,
+                        "choice_key": choices_data.get("name", feature_key),
                         "option_descriptions": get_option_descriptions(
                             feature_data, choices_data, class_data, subclass_data
                         ),

@@ -133,8 +133,14 @@
     "1": {
       "Expertise": {
         "description": "Gain Expertise in two skills of your choice. Sleight of Hand and Stealth are recommended if you have proficiency in them.",
+        "choices": {
+          "type": "select_multiple",
+          "count": 2,
+          "name": "rogue_expertise_skills_1",
+          "source": {"type": "proficient_skills"}
+        },
         "effects": [
-          {"type": "grant_skill_expertise", "skills": ["__expertise_skills__"]}
+          {"type": "grant_skill_expertise", "from_choice": "rogue_expertise_skills_1"}
         ]
       },
       "Sneak Attack": "Once per turn, deal extra 1d6 damage with Finesse/Ranged weapon if you have Advantage or ally within 5 feet of target. The extra damage's type is the same as the weapon's type.",
@@ -163,8 +169,14 @@
     "6": {
       "Expertise": {
         "description": "Gain Expertise in two more skills of your choice.",
+        "choices": {
+          "type": "select_multiple",
+          "count": 2,
+          "name": "rogue_expertise_skills_6",
+          "source": {"type": "proficient_skills"}
+        },
         "effects": [
-          {"type": "grant_skill_expertise", "skills": ["__expertise_skills__"]}
+          {"type": "grant_skill_expertise", "from_choice": "rogue_expertise_skills_6"}
         ]
       }
     },
