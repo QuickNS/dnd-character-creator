@@ -4,7 +4,15 @@ from pathlib import Path
 import pytest
 
 
-CLASSES_DIR = Path(__file__).resolve().parents[2] / "data" / "classes"
+def _repo_root() -> Path:
+    current = Path(__file__).resolve()
+    for parent in current.parents:
+        if (parent / "pyproject.toml").exists():
+            return parent
+    raise FileNotFoundError("Could not locate repository root from test path")
+
+
+CLASSES_DIR = _repo_root() / "data" / "classes"
 
 
 def _load_class_data(class_name: str) -> dict:
@@ -13,20 +21,49 @@ def _load_class_data(class_name: str) -> dict:
 
 
 @pytest.mark.parametrize(
-    "class_name,spellcasting_type,formula,ritual_casting,feature_name",
+    "class_name,spellcasting_type,formula,cantrip_progression,ritual_casting,feature_name",
     [
-        ("bard", "prepared", "level + charisma_modifier", True, "Spellcasting"),
-        ("druid", "prepared", "level + wisdom_modifier", True, "Spellcasting"),
-        ("paladin", "prepared", "level + charisma_modifier", False, "Spellcasting"),
-        ("ranger", "prepared", "level + wisdom_modifier", False, "Spellcasting"),
-        ("sorcerer", "known", "class_table", False, "Spellcasting"),
-        ("warlock", "pact_magic", "class_table", False, "Pact Magic"),
+        (
+            "bard",
+            "prepared",
+            "level + charisma_modifier",
+            "class_table",
+            True,
+            "Spellcasting",
+        ),
+        (
+            "druid",
+            "prepared",
+            "level + wisdom_modifier",
+            "class_table",
+            True,
+            "Spellcasting",
+        ),
+        (
+            "paladin",
+            "prepared",
+            "level + charisma_modifier",
+            "class_table",
+            False,
+            "Spellcasting",
+        ),
+        (
+            "ranger",
+            "prepared",
+            "level + wisdom_modifier",
+            "class_table",
+            False,
+            "Spellcasting",
+        ),
+        ("sorcerer", "known", "class_table", "class_table", False, "Spellcasting"),
+        ("warlock", "pact_magic", "class_table", "class_table", False, "Pact Magic"),
     ],
 )
 def test_spellcasting_metadata_is_complete(
     class_name: str,
     spellcasting_type: str,
     formula: str,
+    cantrip_progression: str,
     ritual_casting: bool,
     feature_name: str,
 ):
@@ -34,7 +71,7 @@ def test_spellcasting_metadata_is_complete(
 
     assert class_data["spellcasting_type"] == spellcasting_type
     assert class_data["spell_preparation_formula"] == formula
-    assert class_data["cantrip_progression"] == "class_table"
+    assert class_data["cantrip_progression"] == cantrip_progression
     assert class_data["spell_list_restrictions"] is None
     assert class_data["ritual_casting"] is ritual_casting
     assert "cantrips_by_level" in class_data
