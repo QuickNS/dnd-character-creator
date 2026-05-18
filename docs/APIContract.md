@@ -341,7 +341,9 @@ interface ChoicesMade {
   background?: string;
   species?: string;
   lineage?: string;
+  ability_scores_method?: "standard_array" | "point_buy" | "manual" | "roll" | "recommended";
   ability_scores?: Record<string, number>;
+  additional_ability_modifiers?: Record<string, number>;
   background_bonuses?: Record<string, number>;
   skill_choices?: string[];
   tool_choices?: string[];
