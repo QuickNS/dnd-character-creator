@@ -176,6 +176,35 @@ class TestCharacterBuild:
         assert class_step["complete"] is False
         assert "class" in class_step["missing"]
 
+    def test_validate_rejects_invalid_standard_array_state(self, client):
+        r = client.post(
+            "/api/v1/character/validate",
+            json={
+                "choices_made": {
+                    "character_name": "Array Test",
+                    "level": 1,
+                    "class": "Wizard",
+                    "species": "Human",
+                    "background": "Sage",
+                    "ability_scores_method": "standard_array",
+                    "ability_scores": {
+                        "Strength": 15,
+                        "Dexterity": 15,
+                        "Constitution": 13,
+                        "Intelligence": 12,
+                        "Wisdom": 10,
+                        "Charisma": 8,
+                    },
+                    "background_bonuses": {"Intelligence": 2, "Wisdom": 1},
+                }
+            },
+        )
+        assert r.status_code == 200
+        data = r.get_json()
+        abilities_step = next(s for s in data["steps"] if s["step"] == "abilities")
+        assert abilities_step["complete"] is False
+        assert "ability_scores" in abilities_step["missing"]
+
     def test_preview_class_step(self, client):
         # Fighter at level 3 needs subclass
         r = client.post(
