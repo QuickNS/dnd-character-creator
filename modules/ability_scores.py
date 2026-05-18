@@ -78,6 +78,9 @@ class AbilityScores:
         self.background_bonuses: Dict[str, int] = {
             ability: 0 for ability in self.ABILITIES
         }
+        self.additional_modifiers: Dict[str, int] = {
+            ability: 0 for ability in self.ABILITIES
+        }
         self.final_scores: Dict[str, int] = {ability: 10 for ability in self.ABILITIES}
 
         # Legacy compatibility
@@ -104,6 +107,13 @@ class AbilityScores:
                 self.background_bonuses[ability] = bonuses[ability]
         self._compute_final_scores()
 
+    def apply_additional_modifiers(self, modifiers: Dict[str, int]):
+        """Apply additional user ability score modifiers"""
+        for ability in self.ABILITIES:
+            if ability in modifiers:
+                self.additional_modifiers[ability] = modifiers[ability]
+        self._compute_final_scores()
+
     def _compute_final_scores(self):
         """Compute final ability scores from all sources"""
         for ability in self.ABILITIES:
@@ -111,6 +121,7 @@ class AbilityScores:
                 self.base_scores[ability]
                 + self.species_bonuses[ability]
                 + self.background_bonuses[ability]
+                + self.additional_modifiers[ability]
             )
 
         # Update legacy field for compatibility
@@ -281,6 +292,7 @@ class AbilityScores:
             "base_ability_scores": self.base_scores.copy(),
             "species_ability_bonuses": self.species_bonuses.copy(),
             "background_ability_bonuses": self.background_bonuses.copy(),
+            "additional_ability_modifiers": self.additional_modifiers.copy(),
             "final_ability_scores": self.final_scores.copy(),
             "ability_scores": self.legacy_scores.copy(),  # For compatibility
         }
@@ -293,6 +305,8 @@ class AbilityScores:
             self.species_bonuses.update(data["species_ability_bonuses"])
         if "background_ability_bonuses" in data:
             self.background_bonuses.update(data["background_ability_bonuses"])
+        if "additional_ability_modifiers" in data:
+            self.additional_modifiers.update(data["additional_ability_modifiers"])
         if "final_ability_scores" in data:
             self.final_scores.update(data["final_ability_scores"])
         if "ability_scores" in data:

@@ -5,7 +5,7 @@ description: "Reference skill. Tailwind tokens, typography, shadcn/ui customisat
 
 # Design System Reference
 
-> Authoritative source: [docs/DesignSystem.md](../../../docs/DesignSystem.md). This skill is a quick lookup — the doc is the source of truth for token values (HSL triplets), typography rationale, and conventions.
+> Authoritative sources: [docs/DesignSystem.md](../../../docs/DesignSystem.md) for tokens and reusable component conventions, and [docs/design-principles.md](../../../docs/design-principles.md) for wizard-specific layout and interaction rules. This skill is a quick lookup, not the source of truth.
 
 The visual aesthetic is inspired by **D&D Beyond**: dense, content-first, dark-friendly, with parchment-like warmth in light mode and a warm-red brand accent.
 
@@ -69,6 +69,12 @@ Recommended scale (Tailwind defaults are fine; lean on `tracking-tight` for disp
 - Wizard: left rail (steps) + main panel + right preview (sheet snapshot from `/api/v1/character/build`).
 - Cards stack vertically on mobile; switch to two-column at `md`, three-column at `lg`.
 - Always provide both compact and roomy variants for data-dense screens (character sheet).
+
+For wizard step redesigns, also consult `docs/design-principles.md` for:
+- sticky footer navigation
+- selection-state clarity
+- progressive disclosure for complex choices
+- section hierarchy and validation messaging
 
 ## Dark Mode
 

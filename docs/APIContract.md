@@ -89,6 +89,52 @@ interface WizardStep {
 }
 ```
 
+Current step order (as returned by `/wizard/steps`):
+
+```json
+[
+  "class",
+  "background",
+  "species",
+  "languages",
+  "abilities",
+  "equipment",
+  "complete"
+]
+```
+
+Current required keys for the class step (as returned by `/wizard/steps`):
+
+```json
+{
+  "id": "class",
+  "required_keys": ["character_name", "class"]
+}
+```
+
+Dependency excerpt (from `/wizard/dependencies`):
+
+```json
+{
+  "classes": [
+    "subclass",
+    "fighting_style",
+    "maneuvers",
+    "spells",
+    "cantrips",
+    "class_features"
+  ],
+  "class": [
+    "subclass",
+    "fighting_style",
+    "maneuvers",
+    "spells",
+    "cantrips",
+    "class_features"
+  ]
+}
+```
+
 See [docs/WizardFlow.md](WizardFlow.md) for the full step list, dependency map, and cascade semantics.
 
 ## Character
@@ -103,6 +149,35 @@ Request:
 ```json
 { "choices_made": { /* ChoicesMade */ } }
 ```
+
+Request notes:
+- Supports legacy single-class inputs (`class`, `level`, optional `subclass`).
+- Also supports `choices_made.classes` in this shape:
+
+```json
+{
+  "choices_made": {
+    "classes": [
+      {
+        "class_name": "Wizard",
+        "level": 3,
+        "subclass": "Evoker"
+      }
+    ]
+  }
+}
+```
+
+- `classes` may contain multiple rows. The builder applies each row's class/subclass features and computes total character level as the sum of row levels.
+- `proficiency_bonus` is computed from total character level.
+- Multiclass spellcasting progression now uses effective caster level aggregation for standard slots:
+  - Full caster row contributes `class_level`.
+  - Half caster row contributes `floor(class_level / 2)`.
+  - Third caster row contributes `floor(class_level / 3)`.
+  - Non-caster row contributes `0`.
+- Standard spell slots use the canonical full-caster slot table keyed by `effective_caster_level`.
+- Pact Magic slots are tracked separately and are not merged into standard multiclass slots in this phase.
+- Single-class spell slot behavior remains compatible with previous responses.
 
 Response (200):
 ```json
@@ -122,12 +197,18 @@ Request:
 { "choices_made": { /* ChoicesMade */ } }
 ```
 
+Request notes are identical to `/character/build` for `choices_made.classes` and legacy `class`/`level` compatibility.
+
+Validation behavior for class rows:
+- For `choices_made.classes`, validation checks each row independently.
+- If a row's level meets that class's `subclass_selection_level`, `classes[i].subclass` is required.
+- Legacy `class`/`level` payloads still use `subclass` for this check.
+
 Response (200):
 ```json
 {
   "complete": true,
   "steps": [
-    { "step": "basics",     "complete": true,  "missing": [] },
     { "step": "class",      "complete": false, "missing": ["subclass"] },
     { "step": "background", "complete": true,  "missing": [] },
     { "step": "species",    "complete": true,  "missing": [] },
@@ -222,22 +303,26 @@ Request:
 
 Allowed `view` values:
 
-| `view`                  | Built by                                    | Prerequisite (else 400)                |
-|-------------------------|---------------------------------------------|----------------------------------------|
-| `damage_cantrips`       | `derived_stats.build_damage_cantrip_rows`   | None                                   |
-| `spell_management`      | `derived_stats.build_spell_management_view` | Character has spellcasting             |
-| `mastery_management`    | `derived_stats.build_mastery_management_view` | Character has weapon mastery         |
-| `invocation_management` | `derived_stats.build_invocation_management_view` | Character is a Warlock            |
+| `view`                  | Built by                                    | Prerequisite (else `applicable:false`) |
+|-------------------------|---------------------------------------------|-----------------------------------------|
+| `damage_cantrips`       | `derived_stats.build_damage_cantrip_rows`   | None                                    |
+| `spell_management`      | `derived_stats.build_spell_management_view` | Character has spellcasting              |
+| `mastery_management`    | `derived_stats.build_mastery_management_view` | Character has weapon mastery          |
+| `invocation_management` | `derived_stats.build_invocation_management_view` | Character is a Warlock             |
 
 Response (200):
 ```json
-{ "view": "<name>", "data": { /* view-specific shape */ } }
+{ "view": "<name>", "applicable": true, "data": { /* view-specific shape */ } }
+```
+
+Response (200, valid view but not applicable):
+```json
+{ "view": "<name>", "applicable": false, "reason": "<message>", "data": null }
 ```
 
 Errors:
 - `400` `{ "error": "Body must be JSON with 'choices_made' and 'view'" }`
 - `400` `{ "error": "Unknown view '<x>'", "allowed": ["damage_cantrips", "invocation_management", "mastery_management", "spell_management"] }`
-- `400` `{ "error": "<prerequisite message>" }` (raised as `ValueError` by the view builder)
 - `500` `{ "error": "<message>", "traceback": "<python traceback>" }`
 
 ## Canonical Request — `ChoicesMade`
@@ -247,11 +332,18 @@ interface ChoicesMade {
   character_name?: string;
   level?: number;
   class?: string;
+  classes?: Array<{
+    class_name: string;
+    level: number;
+    subclass?: string;
+  }>;
   subclass?: string;
   background?: string;
   species?: string;
   lineage?: string;
+  ability_scores_method?: "standard_array" | "point_buy" | "manual" | "roll" | "recommended";
   ability_scores?: Record<string, number>;
+  additional_ability_modifiers?: Record<string, number>;
   background_bonuses?: Record<string, number>;
   skill_choices?: string[];
   tool_choices?: string[];
@@ -299,12 +391,22 @@ The `Character` object is the literal output of `CharacterBuilder.to_character()
 | `attack_combinations`       | `calculate_weapon_attacks().combinations`           | List of multi-weapon combinations.                                    |
 | `ac_options`                | `calculate_ac_options()`                            | List of AC formulas with their components.                            |
 | `spells_by_level`           | Computed inline                                     | `{ [level: number]: SpellDefinition[] }` — flattens `always_prepared`, `prepared`, `known`, `background_spells` and merges with definitions from `data/spells/definitions/`. |
-| `spell_slots`               | Inline (session > class > subclass > level)         | `{ "1st": n, "2nd": n, ... }` (English ordinals).                     |
-| `proficiency_bonus`         | `calculate_proficiency_bonus(level)`                |                                                                       |
-| `spellcasting_stats`        | `calculate_spellcasting_stats()`                    | Save DC, attack bonus, ability, prepared count.                       |
+| `spell_slots`               | Inline (session override; otherwise computed)        | `{ "1st": n, "2nd": n, ... }` (English ordinals). For multiclass rows, standard slots come from the canonical full-caster table keyed by `effective_caster_level`; single-class fallback remains class/subclass-by-level. |
+| `pact_magic_slots`          | Inline (multiclass spellcasting calc)               | Optional list of Pact Magic slot tracks, one entry per pact-contributing row. |
+| `spell_slot_notes`          | Inline (multiclass spellcasting calc)               | Optional explanatory notes for slot handling (for example, pact slots tracked separately). |
+| `proficiency_bonus`         | `calculate_proficiency_bonus(level)`                | Uses total character level (`sum(classes[].level)` when `classes` is present). |
+| `spellcasting_stats`        | `calculate_spellcasting_stats()`                    | Save DC, attack bonus, ability, prepared count, plus multiclass metadata: `effective_caster_level`, `pact_magic_slots`, `multiclass_notes`. |
 | `weapon_mastery_stats`      | `calculate_weapon_mastery_stats()`                  | Mastery slots, selected weapons, available masteries.                 |
 | `eldritch_invocation_stats` | `calculate_eldritch_invocation_stats()`             | Warlock only; populated otherwise as an empty/zero shape.             |
 | `effects`                   | `self.applied_effects` (copied)                     | Each entry is the original effect dict augmented with `source` and `source_type`. |
+
+Multiclass spellcasting additive fields now available in build responses:
+
+- `character.pact_magic_slots`
+- `character.spell_slot_notes`
+- `character.spellcasting_stats.effective_caster_level`
+- `character.spellcasting_stats.pact_magic_slots`
+- `character.spellcasting_stats.multiclass_notes`
 
 ### Flattened proficiencies
 

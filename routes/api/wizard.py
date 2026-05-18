@@ -17,16 +17,10 @@ wizard_bp = Blueprint("wizard", __name__, url_prefix="/wizard")
 # breadcrumb in the SPA renders one entry per step in this list.
 _STEPS = [
     {
-        "id": "basics",
-        "label": "Basics",
-        "description": "Character name, level, alignment.",
-        "required_keys": ["character_name", "level"],
-    },
-    {
         "id": "class",
         "label": "Class",
-        "description": "Class, subclass (when level qualifies), and class feature choices.",
-        "required_keys": ["class"],
+        "description": "Class selection(s), per-class levels, subclass (when level qualifies), and class feature choices.",
+        "required_keys": ["character_name", "class"],
         "nested_choices": ["subclass", "fighting_style", "maneuvers", "spells", "cantrips"],
     },
     {
@@ -81,6 +75,18 @@ _STEPS = [
 # before submitting a rebuild — preventing stale subclass / spell picks
 # when the class changes, etc.
 _DEPENDENCIES = {
+    "classes": [
+        "subclass",
+        "fighting_style",
+        "maneuvers",
+        "spells",
+        "cantrips",
+        "class_features",
+        "skill_choices",
+        "tool_choices",
+        "background_skill_replacement",
+        "equipment_selections",
+    ],
     "level": ["subclass", "spells", "cantrips", "fighting_style", "maneuvers", "class_features"],
     "class": [
         "subclass",

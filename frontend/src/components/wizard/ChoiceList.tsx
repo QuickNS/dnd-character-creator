@@ -1,3 +1,5 @@
+import { Check, CircleDashed, ListChecks } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { useCharacterStore } from "@/store/characterStore";
 
 /**
@@ -24,6 +26,18 @@ interface Props {
   /** Optional map of option value → description, merged with per-option `description`. */
   optionDescriptions?: Record<string, string>;
   count?: number;
+}
+
+function counterTone(selectedCount: number, requiredCount: number) {
+  if (selectedCount === requiredCount) {
+    return "border-primary/40 bg-muted/60 text-primary";
+  }
+
+  if (selectedCount > 0) {
+    return "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300";
+  }
+
+  return "border-border bg-muted/40 text-muted-foreground";
 }
 
 function normalize(opt: string | Option): { value: string; label: string; description?: string } {
@@ -80,18 +94,41 @@ export function ChoiceList({
     setChoice(choiceKey, Array.from(next));
   }
 
+  const selectedCount = selected.size;
+  const remainingCount = Math.max(count - selectedCount, 0);
+
   return (
-    <fieldset className="rounded-md border border-border bg-card/40 p-4">
-      <legend className="px-2 text-sm font-semibold">
-        {title ?? choiceKey}{" "}
-        {isMulti && (
-          <span className="text-xs text-muted-foreground font-normal">
-            (choose {count} — {selected.size}/{count} selected)
-          </span>
+    <fieldset className="rounded-xl border border-border/70 bg-card/70 p-4 shadow-sm sm:p-5">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <legend className="px-0 text-base font-semibold text-foreground">
+          {title ?? choiceKey}
+        </legend>
+        {isMulti ? (
+          <div
+            className={cn(
+              "inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold",
+              counterTone(selectedCount, count),
+            )}
+          >
+            <ListChecks className="h-3.5 w-3.5" />
+            <span>
+              {selectedCount} of {count} selected
+            </span>
+            <span className="text-current/80">
+              {remainingCount === 0
+                ? "Complete"
+                : `${remainingCount} remaining`}
+            </span>
+          </div>
+        ) : (
+          <div className="inline-flex items-center gap-2 rounded-full border border-border bg-muted/40 px-3 py-1 text-xs font-medium text-muted-foreground">
+            <CircleDashed className="h-3.5 w-3.5" />
+            Choose 1 option
+          </div>
         )}
-      </legend>
+      </div>
       {description && (
-        <p className="text-xs text-muted-foreground mb-3">{description}</p>
+        <p className="mb-4 max-w-3xl text-sm text-muted-foreground">{description}</p>
       )}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         {normalized.map((opt) => {
@@ -104,21 +141,38 @@ export function ChoiceList({
               type="button"
               onClick={() => toggle(opt.value)}
               disabled={disabled}
-              className={
-                "text-left rounded border px-3 py-2 text-sm transition-colors " +
-                (isSelected
-                  ? "border-primary bg-secondary text-foreground"
-                  : disabled
-                    ? "border-border opacity-40 cursor-not-allowed"
-                    : "border-border hover:bg-secondary/60")
-              }
-            >
-              <div className="font-medium">{opt.label}</div>
-              {opt.description && (
-                <div className="text-xs text-muted-foreground mt-0.5">
-                  {opt.description}
-                </div>
+              aria-pressed={isSelected}
+              className={cn(
+                "group relative overflow-hidden rounded-lg border px-4 py-3 text-left text-sm transition-all duration-200",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                isSelected &&
+                  "border-primary bg-muted/60 text-foreground shadow-sm ring-1 ring-primary/20",
+                !isSelected && !disabled &&
+                  "border-border bg-background/70 hover:-translate-y-0.5 hover:border-primary/40 hover:bg-secondary/60 hover:shadow-sm",
+                disabled &&
+                  "cursor-not-allowed border-border/60 bg-muted/20 opacity-45",
               )}
+            >
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <div className="font-medium">{opt.label}</div>
+                  {opt.description && (
+                    <div className="mt-1 text-xs text-muted-foreground">
+                      {opt.description}
+                    </div>
+                  )}
+                </div>
+                <span
+                  className={cn(
+                    "mt-0.5 inline-flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full border transition-colors",
+                    isSelected
+                      ? "border-primary bg-background text-primary"
+                      : "border-border bg-background text-transparent group-hover:border-primary/40",
+                  )}
+                >
+                  <Check className="h-3.5 w-3.5" />
+                </span>
+              </div>
             </button>
           );
         })}

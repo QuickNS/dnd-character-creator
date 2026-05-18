@@ -13,6 +13,7 @@ from typing import Any, Dict, List
 
 from flask import Blueprint, jsonify, request
 
+from modules.ability_scores import validate_point_buy
 from modules.character_builder import CharacterBuilder
 from modules.derived_stats import (
     build_damage_cantrip_rows,
@@ -31,15 +32,105 @@ _DERIVED_VIEWS = {
 }
 
 
+class ChoicesValidationError(ValueError):
+    """Raised when API request choices are structurally invalid."""
+
+
 def _require_json() -> Dict[str, Any] | None:
     if not request.is_json:
         return None
     return request.get_json(silent=True)
 
 
+def _coerce_level(value: Any, field_name: str) -> int:
+    if isinstance(value, bool):
+        raise ChoicesValidationError(f"'{field_name}' must be an integer")
+    try:
+        level = int(value)
+    except (TypeError, ValueError) as exc:
+        raise ChoicesValidationError(f"'{field_name}' must be an integer") from exc
+    if level < 1:
+        raise ChoicesValidationError(f"'{field_name}' must be at least 1")
+    return level
+
+
+def _normalize_class_entries(classes: Any, field_name: str = "choices_made.classes") -> List[Dict[str, Any]]:
+    """Validate and normalize classes payload entries."""
+    if not isinstance(classes, list):
+        raise ChoicesValidationError(f"'{field_name}' must be an array")
+    if len(classes) == 0:
+        raise ChoicesValidationError(f"'{field_name}' must contain at least one class entry")
+
+    normalized_entries: List[Dict[str, Any]] = []
+    for idx, class_entry in enumerate(classes):
+        entry_path = f"{field_name}[{idx}]"
+        if not isinstance(class_entry, dict):
+            raise ChoicesValidationError(f"'{entry_path}' must be an object")
+
+        class_name = class_entry.get("class_name")
+        if not isinstance(class_name, str) or not class_name.strip():
+            raise ChoicesValidationError(f"'{entry_path}.class_name' must be a non-empty string")
+
+        level = _coerce_level(class_entry.get("level"), f"{entry_path}.level")
+        normalized_entry: Dict[str, Any] = {
+            "class_name": class_name.strip(),
+            "level": level,
+        }
+
+        subclass = class_entry.get("subclass")
+        if subclass is not None:
+            if not isinstance(subclass, str):
+                raise ChoicesValidationError(f"'{entry_path}.subclass' must be a string when provided")
+            if subclass.strip():
+                normalized_entry["subclass"] = subclass.strip()
+
+        normalized_entries.append(normalized_entry)
+
+    return normalized_entries
+
+
+def _normalize_choices_for_builder(choices_made: Dict[str, Any]) -> Dict[str, Any]:
+    """Normalize legacy/new class payload shapes into canonical class structures."""
+    if not isinstance(choices_made, dict):
+        raise ChoicesValidationError("'choices_made' must be a JSON object")
+
+    normalized = dict(choices_made)
+    classes = normalized.get("classes")
+    if classes is None:
+        # Legacy compatibility: class/level(/subclass) remains supported.
+        class_name = normalized.get("class")
+        if isinstance(class_name, str) and class_name.strip():
+            level = _coerce_level(normalized.get("level", 1), "choices_made.level")
+            class_entry: Dict[str, Any] = {
+                "class_name": class_name.strip(),
+                "level": level,
+            }
+            subclass = normalized.get("subclass")
+            if isinstance(subclass, str) and subclass.strip():
+                class_entry["subclass"] = subclass.strip()
+            normalized["classes"] = [class_entry]
+            normalized["class"] = class_entry["class_name"]
+            normalized["level"] = level
+        return normalized
+
+    class_entries = _normalize_class_entries(classes)
+    normalized["classes"] = class_entries
+
+    primary = class_entries[0]
+    normalized["class"] = primary["class_name"]
+    normalized["level"] = sum(entry["level"] for entry in class_entries)
+    if primary.get("subclass"):
+        normalized["subclass"] = primary["subclass"]
+    else:
+        normalized.pop("subclass", None)
+
+    return normalized
+
+
 def _build(choices_made: Dict[str, Any]) -> CharacterBuilder:
     builder = CharacterBuilder()
-    builder.apply_choices(choices_made)
+    normalized_choices = _normalize_choices_for_builder(choices_made)
+    builder.apply_choices(normalized_choices)
     return builder
 
 
@@ -111,6 +202,8 @@ def build_character():
     try:
         builder = _build(body["choices_made"])
         return jsonify({"character": builder.to_character()})
+    except ChoicesValidationError as exc:
+        return jsonify({"error": str(exc)}), 400
     except Exception as exc:
         return jsonify({"error": str(exc), "traceback": traceback.format_exc()}), 500
 
@@ -122,13 +215,13 @@ def build_character():
 # report per-step completion. Optional/conditional keys (subclass, lineage,
 # trait choices) are evaluated dynamically against the current build.
 _STEP_REQUIRED_KEYS: Dict[str, List[str]] = {
-    "basics": ["character_name", "level"],
-    "class": ["class"],
+    "class": ["character_name", "class"],
     "background": ["background"],
     "species": ["species"],
     "languages": [],  # languages chosen list may be empty if none granted
     "abilities": ["ability_scores"],
     "equipment": [],  # equipment_selections optional
+    "complete": [],
 }
 
 
@@ -138,29 +231,84 @@ def _step_status(builder: CharacterBuilder, step: str) -> Dict[str, Any]:
     missing: List[str] = []
 
     for key in _STEP_REQUIRED_KEYS.get(step, []):
+        if key == "class":
+            has_legacy_class = bool(choices.get("class"))
+            classes = choices.get("classes")
+            has_classes = isinstance(classes, list) and len(classes) > 0
+            if not has_legacy_class and not has_classes:
+                missing.append("class")
+            continue
+
         if key not in choices or choices[key] in (None, "", [], {}):
             missing.append(key)
 
     # Conditional / dynamic checks per step
     if step == "class":
-        class_name = choices.get("class")
-        level = choices.get("level", 1)
-        if class_name:
-            class_data = builder.feature_manager.character_data.get("class_data") if hasattr(builder.feature_manager, "character_data") else None
-            # Use data_loader directly: subclass required if level >= subclass_selection_level
-            from modules.data_loader import DataLoader
-            from pathlib import Path
-            dl = DataLoader(data_dir=str(Path(__file__).resolve().parent.parent.parent / "data"))
-            cdata = dl.classes.get(class_name, {})
-            sub_level = cdata.get("subclass_selection_level", 3)
-            if level >= sub_level and not choices.get("subclass"):
-                missing.append("subclass")
+        from modules.data_loader import DataLoader
+        from pathlib import Path
+
+        dl = DataLoader(data_dir=str(Path(__file__).resolve().parent.parent.parent / "data"))
+
+        class_rows = choices.get("classes")
+        if isinstance(class_rows, list) and class_rows:
+            for idx, row in enumerate(class_rows):
+                if not isinstance(row, dict):
+                    continue
+                class_name = row.get("class_name")
+                if not class_name:
+                    continue
+                try:
+                    class_level = int(row.get("level", 1))
+                except (TypeError, ValueError):
+                    class_level = 1
+                cdata = dl.classes.get(class_name, {})
+                sub_level = cdata.get("subclass_selection_level", 3)
+                if class_level >= sub_level and not row.get("subclass"):
+                    missing.append(f"classes[{idx}].subclass")
+        else:
+            class_name = choices.get("class")
+            level = choices.get("level", 1)
+            if class_name:
+                cdata = dl.classes.get(class_name, {})
+                sub_level = cdata.get("subclass_selection_level", 3)
+                if level >= sub_level and not choices.get("subclass"):
+                    missing.append("subclass")
         # Class feature choices
         try:
             choice_data = builder.get_class_features_and_choices()
             for choice in choice_data.get("choices", []) or []:
-                key = choice.get("choice_key") or choice.get("name")
-                if key and key not in choices:
+                # Mirror the key resolution the frontend uses:
+                # choice.choice_key ?? choice.feature_name ?? choice.name
+                key = choice.get("choice_key") or choice.get("feature_name") or choice.get("name")
+                if not key:
+                    continue
+                # Skip conditional choices whose parent condition isn't met yet.
+                # Try multiple key variants (snake_case, Title Case) to match how
+                # the frontend stores parent choices, mirroring parentKeyVariants().
+                depends_on = choice.get("depends_on")
+                if depends_on:
+                    snake = depends_on.lower().replace(" ", "_").replace("-", "_")
+                    title = " ".join(w.capitalize() for w in snake.split("_"))
+                    parent_val = next(
+                        (choices[k] for k in (depends_on, snake, title) if k in choices),
+                        None,
+                    )
+                    depends_on_value = choice.get("depends_on_value")
+                    if depends_on_value is not None:
+                        matches = (
+                            depends_on_value in parent_val
+                            if isinstance(parent_val, list)
+                            else parent_val == depends_on_value
+                        )
+                    else:
+                        matches = bool(parent_val)
+                    if not matches:
+                        continue
+                val = choices.get(key)
+                required_count = choice.get("count", 1)
+                if val is None:
+                    missing.append(key)
+                elif isinstance(val, list) and len(val) < required_count:
                     missing.append(key)
         except Exception:
             pass
@@ -200,6 +348,36 @@ def _step_status(builder: CharacterBuilder, step: str) -> Dict[str, Any]:
                 pass
 
     elif step == "abilities":
+        method = choices.get("ability_scores_method")
+        scores = choices.get("ability_scores")
+        abilities = [
+            "Strength",
+            "Dexterity",
+            "Constitution",
+            "Intelligence",
+            "Wisdom",
+            "Charisma",
+        ]
+
+        if method == "standard_array":
+            standard_array = [15, 14, 13, 12, 10, 8]
+            valid_standard_array = False
+            if isinstance(scores, dict) and all(a in scores for a in abilities):
+                try:
+                    selected = [int(scores.get(a, 0)) for a in abilities]
+                    valid_standard_array = sorted(selected) == sorted(standard_array)
+                except (TypeError, ValueError):
+                    valid_standard_array = False
+            if not valid_standard_array:
+                missing.append("ability_scores")
+        elif method == "point_buy":
+            if not isinstance(scores, dict):
+                missing.append("ability_scores")
+            else:
+                is_valid, _ = validate_point_buy(scores)
+                if not is_valid:
+                    missing.append("ability_scores")
+
         # Background ASI bonuses required if applicable
         try:
             asi = builder.get_background_asi_options()
@@ -225,6 +403,8 @@ def validate_character():
             "complete": all(s["complete"] for s in statuses),
             "steps": statuses,
         })
+    except ChoicesValidationError as exc:
+        return jsonify({"error": str(exc)}), 400
     except Exception as exc:
         return jsonify({"error": str(exc), "traceback": traceback.format_exc()}), 500
 
@@ -262,6 +442,10 @@ def preview_step():
         if step == "class":
             class_name = character.get("class")
             level = character.get("level", 1)
+            class_rows = (character.get("choices_made") or {}).get("classes")
+            if isinstance(class_rows, list) and class_rows and isinstance(class_rows[0], dict):
+                class_name = class_rows[0].get("class_name", class_name)
+                level = class_rows[0].get("level", level)
             if class_name:
                 from modules.data_loader import DataLoader
                 from pathlib import Path
@@ -341,10 +525,11 @@ def derived_view():
 
     Request: `{ "choices_made": {...}, "view": "damage_cantrips" | "spell_management" |
                 "mastery_management" | "invocation_management" }`
-    Response: `{ "view": "<name>", "data": {...} }`
+    Response: `{ "view": "<name>", "applicable": true|false, "data": {...}|null }`
 
-    Returns 400 on missing/invalid body, unknown view, or when the character
-    does not satisfy the view's prerequisite (e.g. invocations on a non-Warlock).
+    Returns 400 on missing/invalid body or unknown view. If a view is valid but
+    not applicable to the current character (e.g. invocations on a non-Warlock),
+    returns 200 with `applicable: false` and a human-readable `reason`.
     """
     body = _require_json()
     if body is None or "choices_made" not in body or "view" not in body:
@@ -370,8 +555,13 @@ def derived_view():
             data = build_mastery_management_view(builder)
         else:  # invocation_management
             data = build_invocation_management_view(builder)
-        return jsonify({"view": view, "data": data})
+        return jsonify({"view": view, "applicable": True, "data": data})
     except ValueError as exc:
-        return jsonify({"error": str(exc)}), 400
+        return jsonify({
+            "view": view,
+            "applicable": False,
+            "reason": str(exc),
+            "data": None,
+        })
     except Exception as exc:
         return jsonify({"error": str(exc), "traceback": traceback.format_exc()}), 500
