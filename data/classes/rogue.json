@@ -142,16 +142,7 @@
           "source": {"type": "proficient_skills"}
         },
         "effects": [
-<<<<<<< HEAD
-          {
-            "type": "grant_skill_expertise",
-            "skills": [
-              "__expertise_skills__"
-            ]
-          }
-=======
           {"type": "grant_skill_expertise", "from_choice": "rogue_expertise_skills_1"}
->>>>>>> refs/remotes/origin/main
         ]
       },
       "Sneak Attack": "Once per turn, deal extra 1d6 damage with Finesse/Ranged weapon if you have Advantage or ally within 5 feet of target. The extra damage's type is the same as the weapon's type.",
@@ -192,16 +183,7 @@
           "source": {"type": "proficient_skills"}
         },
         "effects": [
-<<<<<<< HEAD
-          {
-            "type": "grant_skill_expertise",
-            "skills": [
-              "__expertise_skills__"
-            ]
-          }
-=======
           {"type": "grant_skill_expertise", "from_choice": "rogue_expertise_skills_6"}
->>>>>>> refs/remotes/origin/main
         ]
       }
     },
