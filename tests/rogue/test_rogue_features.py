@@ -440,3 +440,175 @@ class TestRogueEffects:
         character = build_rogue(3, "Arcane Trickster")
         stats = character["spellcasting_stats"]
         assert stats["max_spells_prepared"] == 3
+
+
+def build_rogue_with_choices(level, expertise_1=None, expertise_6=None, subclass=None):
+    """Build a Rogue using apply_choices so expertise selections are honoured."""
+    builder = CharacterBuilder()
+    choices = {
+        "character_name": "Test Rogue",
+        "level": level,
+        "class": "Rogue",
+        "species": "Human",
+        "background": "Criminal",
+        "skill_choices": ["Stealth", "Perception", "Deception", "Athletics"],
+        "ability_scores": {
+            "Strength": 10,
+            "Dexterity": 15,
+            "Constitution": 14,
+            "Intelligence": 12,
+            "Wisdom": 10,
+            "Charisma": 8,
+        },
+        "background_bonuses": {"Dexterity": 2, "Intelligence": 1},
+    }
+    if subclass and level >= 3:
+        choices["subclass"] = subclass
+    if expertise_1:
+        choices["rogue_expertise_skills_1"] = expertise_1
+    if expertise_6:
+        choices["rogue_expertise_skills_6"] = expertise_6
+    builder.apply_choices(choices)
+    return builder.to_character()
+
+
+class TestRogueExpertise:
+    """Regression tests for GitHub Issue: Rogue level 1 Expertise choice not offered."""
+
+    def test_level_1_expertise_applied_from_choice(self):
+        """Level-1 Expertise choice fills skill_expertise when submitted."""
+        character = build_rogue_with_choices(1, expertise_1=["Stealth", "Perception"])
+        assert "Stealth" in character["skill_expertise"]
+        assert "Perception" in character["skill_expertise"]
+
+    def test_level_1_expertise_doubles_proficiency_bonus(self):
+        """Stealth with Expertise should show expertise=True in skills dict."""
+        character = build_rogue_with_choices(1, expertise_1=["Stealth", "Perception"])
+        assert character["skills"]["stealth"]["expertise"] is True
+        assert character["skills"]["perception"]["expertise"] is True
+
+    def test_level_1_no_expertise_without_choice(self):
+        """Without a choice, skill_expertise should remain empty."""
+        character = build_rogue_with_choices(1)
+        assert character.get("skill_expertise", []) == []
+
+    def test_level_6_both_expertise_tiers_applied(self):
+        """Level-6 Rogue with both choices should have all four skills marked as Expertise."""
+        character = build_rogue_with_choices(
+            6,
+            expertise_1=["Stealth", "Perception"],
+            expertise_6=["Deception", "Athletics"],
+            subclass="Thief",
+        )
+        expertise = character.get("skill_expertise", [])
+        assert "Stealth" in expertise
+        assert "Perception" in expertise
+        assert "Deception" in expertise
+        assert "Athletics" in expertise
+
+    def test_level_6_only_level1_choice_applied(self):
+        """If only the level-1 choice is submitted at level 6, only those two are added."""
+        character = build_rogue_with_choices(
+            6,
+            expertise_1=["Stealth", "Perception"],
+            subclass="Thief",
+        )
+        expertise = character.get("skill_expertise", [])
+        assert "Stealth" in expertise
+        assert "Perception" in expertise
+        # Level-6 choice not submitted yet → zero extras
+        assert "Deception" not in expertise
+        assert "Athletics" not in expertise
+
+    def test_expertise_choice_picker_in_nested_choices_level_1(self):
+        """preview-step API should include an Expertise picker at level 1."""
+        builder = CharacterBuilder()
+        builder.apply_choices({
+            "character_name": "Test",
+            "level": 1,
+            "class": "Rogue",
+            "species": "Human",
+            "background": "Criminal",
+            "skill_choices": ["Stealth", "Perception", "Deception", "Athletics"],
+            "ability_scores": {
+                "Strength": 10, "Dexterity": 15, "Constitution": 14,
+                "Intelligence": 12, "Wisdom": 10, "Charisma": 8,
+            },
+            "background_bonuses": {"Dexterity": 2, "Intelligence": 1},
+        })
+        features = builder.get_class_features_and_choices()
+        choice_keys = [c.get("choice_key") for c in features["choices"]]
+        assert "rogue_expertise_skills_1" in choice_keys
+
+    def test_expertise_picker_options_limited_to_proficient_skills(self):
+        """The Expertise picker's options must be exactly the character's skill proficiencies."""
+        builder = CharacterBuilder()
+        builder.apply_choices({
+            "character_name": "Test",
+            "level": 1,
+            "class": "Rogue",
+            "species": "Human",
+            "background": "Criminal",
+            "skill_choices": ["Stealth", "Perception", "Deception", "Athletics"],
+            "ability_scores": {
+                "Strength": 10, "Dexterity": 15, "Constitution": 14,
+                "Intelligence": 12, "Wisdom": 10, "Charisma": 8,
+            },
+            "background_bonuses": {"Dexterity": 2, "Intelligence": 1},
+        })
+        features = builder.get_class_features_and_choices()
+        expertise_choice = next(
+            (c for c in features["choices"] if c.get("choice_key") == "rogue_expertise_skills_1"),
+            None,
+        )
+        assert expertise_choice is not None, "Expertise picker not found in nested_choices"
+        # Options must be a subset of the character's skill proficiencies
+        char = builder.to_character()
+        proficient_skills = set(char["proficiencies"]["skills"])
+        assert set(expertise_choice["options"]) == proficient_skills
+
+    def test_expertise_choice_picker_in_nested_choices_level_6(self):
+        """preview-step API should include an Expertise picker for level 6 too."""
+        builder = CharacterBuilder()
+        builder.apply_choices({
+            "character_name": "Test",
+            "level": 6,
+            "class": "Rogue",
+            "subclass": "Thief",
+            "species": "Human",
+            "background": "Criminal",
+            "skill_choices": ["Stealth", "Perception", "Deception", "Athletics"],
+            "ability_scores": {
+                "Strength": 10, "Dexterity": 15, "Constitution": 14,
+                "Intelligence": 12, "Wisdom": 10, "Charisma": 8,
+            },
+            "background_bonuses": {"Dexterity": 2, "Intelligence": 1},
+        })
+        features = builder.get_class_features_and_choices()
+        choice_keys = [c.get("choice_key") for c in features["choices"]]
+        assert "rogue_expertise_skills_1" in choice_keys
+        assert "rogue_expertise_skills_6" in choice_keys
+
+    def test_expertise_count_is_two(self):
+        """Each Expertise picker must require exactly 2 selections."""
+        builder = CharacterBuilder()
+        builder.apply_choices({
+            "character_name": "Test",
+            "level": 6,
+            "class": "Rogue",
+            "subclass": "Thief",
+            "species": "Human",
+            "background": "Criminal",
+            "skill_choices": ["Stealth", "Perception", "Deception", "Athletics"],
+            "ability_scores": {
+                "Strength": 10, "Dexterity": 15, "Constitution": 14,
+                "Intelligence": 12, "Wisdom": 10, "Charisma": 8,
+            },
+            "background_bonuses": {"Dexterity": 2, "Intelligence": 1},
+        })
+        features = builder.get_class_features_and_choices()
+        for choice in features["choices"]:
+            if choice.get("choice_key") in (
+                "rogue_expertise_skills_1", "rogue_expertise_skills_6"
+            ):
+                assert choice["count"] == 2
