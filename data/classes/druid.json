@@ -57,6 +57,11 @@
   "spellcasting_focus": [
     "Druidic Focus"
   ],
+  "spellcasting_type": "prepared",
+  "spell_preparation_formula": "level + wisdom_modifier",
+  "cantrip_progression": "class_table",
+  "spell_list_restrictions": null,
+  "ritual_casting": true,
   "proficiency_bonus_by_level": {
     "1": 2,
     "2": 2,

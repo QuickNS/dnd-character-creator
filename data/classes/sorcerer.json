@@ -47,6 +47,11 @@
   "spellcasting_focus": [
     "Arcane Focus"
   ],
+  "spellcasting_type": "known",
+  "spell_preparation_formula": "class_table",
+  "cantrip_progression": "class_table",
+  "spell_list_restrictions": null,
+  "ritual_casting": false,
   "cantrips_by_level": {
     "1": 4,
     "2": 4,
@@ -359,7 +364,9 @@
   },
   "features_by_level": {
     "1": {
-      "Spellcasting": "An event in your past left an indelible mark on you, infusing you with simmering magic. You are a Sorcerer, and you can cast Sorcerer spells using Charisma as your spellcasting ability. You know four cantrips from the Sorcerer spell list and have two 1st-level Sorcerer spells prepared.",
+      "Spellcasting": {
+        "description": "An event in your past left an indelible mark on you, infusing you with simmering magic. You are a Sorcerer, and you can cast Sorcerer spells using Charisma as your spellcasting ability. You know four cantrips from the Sorcerer spell list and have two 1st-level Sorcerer spells prepared."
+      },
       "Innate Sorcery": "An event in your past left an indelible mark on you, infusing you with simmering magic. As a Bonus Action, you can unleash that magic for 1 minute, during which you gain the following benefits:\n\nThe spell save DC of your Sorcerer spells increases by 1.\nYou have Advantage on the attack rolls of Sorcerer spells you cast.\n\nYou can use this feature twice, and you regain all expended uses of it when you finish a Long Rest."
     },
     "2": {
