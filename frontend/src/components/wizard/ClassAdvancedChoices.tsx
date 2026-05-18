@@ -1,5 +1,6 @@
+import { useEffect, useMemo } from "react";
 import { Check, Sparkles, Wand2 } from "lucide-react";
-import { useQuery, keepPreviousData } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { useCharacterStore } from "@/store/characterStore";
@@ -26,6 +27,80 @@ interface CurrentSpellSelections {
   background_spells: string[];
 }
 
+export interface SpellReference {
+  name: string;
+  level?: number;
+  source?: string;
+  school?: string;
+  description?: string;
+  casting_time?: string;
+  range?: string;
+  duration?: string;
+  components?: string[];
+  counts_against_limit?: boolean;
+}
+
+function normalizeSpellReference(raw: Loose): SpellReference | null {
+  const name = str(raw.name);
+  if (!name) return null;
+
+  const rawComponents = raw.components;
+  const components =
+    typeof rawComponents === "string"
+      ? [rawComponents]
+      : arr<string>(rawComponents).filter(
+          (entry): entry is string =>
+            typeof entry === "string" && entry.length > 0,
+        );
+
+  return {
+    name,
+    level: num(raw.level),
+    source: str(raw.source),
+    school: str(raw.school),
+    description: str(raw.description),
+    casting_time: str(raw.casting_time),
+    range: str(raw.range),
+    duration: str(raw.duration),
+    components: components.length > 0 ? components : undefined,
+    counts_against_limit:
+      typeof raw.counts_against_limit === "boolean"
+        ? raw.counts_against_limit
+        : undefined,
+  };
+}
+
+function spellLevelLabel(level?: number): string {
+  if (level === 0) return "Cantrip";
+  if (typeof level === "number" && Number.isFinite(level)) {
+    return `Level ${level}`;
+  }
+  return "Spell";
+}
+
+function matchesChoiceContext(
+  responseChoices: unknown,
+  sourceChoices: Loose,
+): boolean {
+  if (!responseChoices || typeof responseChoices !== "object" || Array.isArray(responseChoices)) {
+    return false;
+  }
+
+  const response = responseChoices as Loose;
+  const responseClass = str(response.class) ?? "";
+  const responseSubclass = str(response.subclass) ?? "";
+  const responseLevel = num(response.level) ?? 1;
+  const sourceClass = str(sourceChoices.class) ?? "";
+  const sourceSubclass = str(sourceChoices.subclass) ?? "";
+  const sourceLevel = num(sourceChoices.level) ?? 1;
+
+  return (
+    responseClass === sourceClass &&
+    responseSubclass === sourceSubclass &&
+    responseLevel === sourceLevel
+  );
+}
+
 /**
  * Renders the spell, weapon-mastery, and eldritch-invocation pickers
  * inside the class step. Each picker silently hides itself when the
@@ -33,8 +108,12 @@ interface CurrentSpellSelections {
  */
 export function ClassAdvancedChoices({
   choicesForDerived,
+  inspectedSpellName,
+  onInspectSpell,
 }: {
   choicesForDerived?: Loose;
+  inspectedSpellName?: string;
+  onInspectSpell?: (spell: SpellReference) => void;
 } = {}) {
   const choicesMade = useCharacterStore((s) => s.choicesMade);
   const sourceChoices = choicesForDerived ?? choicesMade;
@@ -42,12 +121,22 @@ export function ClassAdvancedChoices({
   const spellsQ = useDerived(sourceChoices, "spell_management");
   const masteryQ = useDerived(sourceChoices, "mastery_management");
   const invocationsQ = useDerived(sourceChoices, "invocation_management");
+  const spellsData = getApplicableData(spellsQ, sourceChoices);
+  const masteryData = getApplicableData(masteryQ, sourceChoices);
+  const invocationsData = getApplicableData(invocationsQ, sourceChoices);
 
-  const anyVisible =
-    isApplicable(spellsQ) ||
-    isApplicable(masteryQ) ||
-    isApplicable(invocationsQ);
-  if (!anyVisible) return null;
+  const anyVisible = Boolean(spellsData || masteryData || invocationsData);
+  const isLoading =
+    (!spellsQ.error &&
+      !spellsData &&
+      (spellsQ.fetchStatus === "fetching" || Boolean(spellsQ.data))) ||
+    (!masteryQ.error &&
+      !masteryData &&
+      (masteryQ.fetchStatus === "fetching" || Boolean(masteryQ.data))) ||
+    (!invocationsQ.error &&
+      !invocationsData &&
+      (invocationsQ.fetchStatus === "fetching" || Boolean(invocationsQ.data)));
+  if (!anyVisible && !isLoading) return null;
 
   return (
     <section className="rounded-xl border border-border/70 bg-card/50 p-5 shadow-sm sm:p-6">
@@ -67,15 +156,27 @@ export function ClassAdvancedChoices({
       </div>
 
       <div className="space-y-4">
-      {isApplicable(spellsQ) && getApplicableData(spellsQ) && (
-        <SpellPicker data={getApplicableData(spellsQ)!} />
-      )}
-      {isApplicable(masteryQ) && getApplicableData(masteryQ) && (
-        <MasteryPicker data={getApplicableData(masteryQ)!} />
-      )}
-      {isApplicable(invocationsQ) && getApplicableData(invocationsQ) && (
-        <InvocationPicker data={getApplicableData(invocationsQ)!} />
-      )}
+        {!anyVisible && isLoading ? (
+          <div className="rounded-xl border border-dashed border-border/70 bg-background/60 px-4 py-5 text-sm text-muted-foreground">
+            Loading class loadout…
+          </div>
+        ) : (
+          <>
+            {spellsData && (
+              <SpellPicker
+                data={spellsData}
+                inspectedSpellName={inspectedSpellName}
+                onInspectSpell={onInspectSpell}
+              />
+            )}
+            {masteryData && (
+              <MasteryPicker data={masteryData} />
+            )}
+            {invocationsData && (
+              <InvocationPicker data={invocationsData} />
+            )}
+          </>
+        )}
       </div>
     </section>
   );
@@ -87,20 +188,18 @@ function useDerived(choicesMade: Loose, view: string) {
     queryFn: () => api.character.derived(choicesMade, view),
     enabled: !!choicesMade["class"],
     retry: false,
-    placeholderData: keepPreviousData,
   });
 }
 
-/** True when the backend says this derived view applies to the current build. */
-function isApplicable(q: { data?: unknown }): q is { data: Loose; error: unknown } {
-  if (!q.data || typeof q.data !== "object") return false;
-  const payload = q.data as Loose;
-  return payload.applicable === true;
-}
-
-function getApplicableData(q: { data?: unknown }): Loose | null {
+function getApplicableData(
+  q: { data?: unknown },
+  sourceChoices: Loose,
+): Loose | null {
   if (!q.data || typeof q.data !== "object") return null;
   const payload = q.data as Loose;
+  if (!matchesChoiceContext(payload.choices_made, sourceChoices)) {
+    return null;
+  }
   if (payload.applicable !== true) return null;
   const data = payload.data;
   if (data && typeof data === "object" && !Array.isArray(data)) {
@@ -111,7 +210,15 @@ function getApplicableData(q: { data?: unknown }): Loose | null {
 
 // ---------- Spells ----------
 
-function SpellPicker({ data }: { data: Loose }) {
+function SpellPicker({
+  data,
+  inspectedSpellName,
+  onInspectSpell,
+}: {
+  data: Loose;
+  inspectedSpellName?: string;
+  onInspectSpell?: (spell: SpellReference) => void;
+}) {
   const setChoice = useCharacterStore((s) => s.setChoice);
   const choicesMade = useCharacterStore((s) => s.choicesMade);
 
@@ -121,7 +228,17 @@ function SpellPicker({ data }: { data: Loose }) {
 
   const availableCantrips = arr<Loose>(data.available_cantrips);
   const availableSpellsByLevel = rec(data.available_spells);
-  const alwaysPrepared = arr<Loose>(data.always_prepared);
+  const alwaysPrepared = useMemo(
+    () =>
+      arr<Loose>(data.always_prepared)
+        .map(normalizeSpellReference)
+        .filter((spell): spell is SpellReference => Boolean(spell)),
+    [data.always_prepared],
+  );
+  const alwaysPreparedNames = useMemo(
+    () => new Set(alwaysPrepared.map((spell) => spell.name)),
+    [alwaysPrepared],
+  );
 
   const current =
     (choicesMade["spell_selections"] as CurrentSpellSelections | undefined) ??
@@ -150,6 +267,45 @@ function SpellPicker({ data }: { data: Loose }) {
     return [...list, name];
   }
 
+  useEffect(() => {
+    if (alwaysPreparedNames.size === 0) return;
+
+    const nextCantrips = current.cantrips.filter(
+      (name) => !alwaysPreparedNames.has(name),
+    );
+    const nextSpells = current.spells.filter(
+      (name) => !alwaysPreparedNames.has(name),
+    );
+    const nextBackgroundCantrips = current.background_cantrips.filter(
+      (name) => !alwaysPreparedNames.has(name),
+    );
+    const nextBackgroundSpells = current.background_spells.filter(
+      (name) => !alwaysPreparedNames.has(name),
+    );
+
+    const changed =
+      nextCantrips.length !== current.cantrips.length ||
+      nextSpells.length !== current.spells.length ||
+      nextBackgroundCantrips.length !== current.background_cantrips.length ||
+      nextBackgroundSpells.length !== current.background_spells.length;
+
+    if (!changed) return;
+
+    setChoice("spell_selections", {
+      cantrips: nextCantrips,
+      spells: nextSpells,
+      background_cantrips: nextBackgroundCantrips,
+      background_spells: nextBackgroundSpells,
+    });
+  }, [
+    alwaysPreparedNames,
+    current.background_cantrips,
+    current.background_spells,
+    current.cantrips,
+    current.spells,
+    setChoice,
+  ]);
+
   return (
     <div className="rounded-xl border border-border/70 bg-background/70 p-4 shadow-sm space-y-4 sm:p-5">
       <header>
@@ -161,16 +317,59 @@ function SpellPicker({ data }: { data: Loose }) {
       </header>
 
       {alwaysPrepared.length > 0 && (
-        <div>
-          <div className="text-xs uppercase text-muted-foreground mb-1">
+        <div className="space-y-2">
+          <div className="text-xs uppercase text-muted-foreground">
             Always prepared
           </div>
-          <ul className="text-xs text-muted-foreground space-x-2">
-            {alwaysPrepared.map((sp, i) => (
-              <li key={i} className="inline-block">
-                {str(sp.name) ?? "Spell"}
-              </li>
-            ))}
+          <ul className="space-y-2">
+            {alwaysPrepared.map((spell) => {
+              const isInspected = inspectedSpellName === spell.name;
+              return (
+                <li key={`${spell.name}-${spell.source ?? "always-prepared"}`}>
+                  <button
+                    type="button"
+                    onClick={() => onInspectSpell?.(spell)}
+                    aria-pressed={isInspected}
+                    className={cn(
+                      "w-full rounded-lg border px-3 py-3 text-left transition-all duration-200",
+                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                      isInspected
+                        ? "border-primary bg-muted/60 shadow-sm ring-1 ring-primary/20"
+                        : "border-border/80 bg-background/80 hover:border-primary/30 hover:bg-secondary/60",
+                    )}
+                  >
+                    <div className="flex flex-wrap items-center gap-2 text-sm">
+                      <span className="font-medium text-foreground">{spell.name}</span>
+                      <span className="rounded-full border border-primary/20 bg-primary/10 px-2 py-0.5 text-[11px] uppercase tracking-wide text-primary">
+                        Always prepared
+                      </span>
+                      <span className="rounded-full border border-border/70 bg-background px-2 py-0.5 text-[11px] uppercase tracking-wide text-muted-foreground">
+                        {spellLevelLabel(spell.level)}
+                      </span>
+                      {spell.source && (
+                        <span className="rounded-full border border-border/70 bg-background px-2 py-0.5 text-[11px] uppercase tracking-wide text-muted-foreground">
+                          {spell.source}
+                        </span>
+                      )}
+                      {spell.counts_against_limit === false && (
+                        <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[11px] uppercase tracking-wide text-emerald-700 dark:text-emerald-300">
+                          Doesn’t count against limit
+                        </span>
+                      )}
+                    </div>
+                    {(spell.school || spell.description) && (
+                      <div className="mt-2 text-xs text-muted-foreground">
+                        {spell.school && <span>{spell.school}</span>}
+                        {spell.school && spell.description && <span> · </span>}
+                        {spell.description && (
+                          <span className="line-clamp-2">{spell.description}</span>
+                        )}
+                      </div>
+                    )}
+                  </button>
+                </li>
+              );
+            })}
           </ul>
         </div>
       )}
@@ -180,6 +379,7 @@ function SpellPicker({ data }: { data: Loose }) {
           title="Cantrips"
           spells={availableCantrips}
           selected={current.cantrips}
+          disabledNames={alwaysPreparedNames}
           onToggle={(name) => {
             const next = toggle(current.cantrips, name, maxCantrips);
             if (next) update({ cantrips: next });
@@ -199,6 +399,7 @@ function SpellPicker({ data }: { data: Loose }) {
               title={`Level ${lvl}`}
               spells={list}
               selected={current.spells}
+              disabledNames={alwaysPreparedNames}
               onToggle={(name) => {
                 const next = toggle(current.spells, name, maxSpells);
                 if (next) update({ spells: next });
@@ -211,6 +412,7 @@ function SpellPicker({ data }: { data: Loose }) {
         requirements={rec(data.background_requirements)}
         current={current}
         update={update}
+        disabledNames={alwaysPreparedNames}
       />
     </div>
   );
@@ -220,11 +422,13 @@ function SpellGroup({
   title,
   spells,
   selected,
+  disabledNames,
   onToggle,
 }: {
   title: string;
   spells: Loose[];
   selected: string[];
+  disabledNames?: Set<string>;
   onToggle: (name: string) => void;
 }) {
   return (
@@ -237,32 +441,46 @@ function SpellGroup({
           const name = str(sp.name) ?? `Spell ${i}`;
           const school = str(sp.school);
           const isSelected = selected.includes(name);
+          const isDisabled = disabledNames?.has(name) ?? false;
           return (
             <button
               key={`${name}-${i}`}
               type="button"
-              onClick={() => onToggle(name)}
+              onClick={() => {
+                if (!isDisabled) onToggle(name);
+              }}
               aria-pressed={isSelected}
+              aria-disabled={isDisabled}
+              disabled={isDisabled}
               className={cn(
                 "flex items-center justify-between gap-3 rounded-lg border px-3 py-2 text-left text-sm transition-all duration-200",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-                isSelected
+                isDisabled
+                  ? "cursor-not-allowed border-border/70 bg-muted/30 text-muted-foreground opacity-80"
+                  : isSelected
                   ? "border-primary bg-muted/60 shadow-sm ring-1 ring-primary/20"
                   : "border-border bg-background/70 hover:border-primary/30 hover:bg-secondary/60",
               )}
             >
               <span className="min-w-0">
                 <span>{name}</span>
-                {school && (
-                  <span className="ml-2 text-xs text-muted-foreground">
-                    {school}
+                {(school || isDisabled) && (
+                  <span className="mt-1 flex flex-wrap gap-2 text-xs text-muted-foreground">
+                    {school && <span>{school}</span>}
+                    {isDisabled && (
+                      <span className="rounded-full border border-border/70 bg-background px-2 py-0.5 uppercase tracking-wide">
+                        Always prepared
+                      </span>
+                    )}
                   </span>
                 )}
               </span>
               <span
                 className={cn(
                   "inline-flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full border",
-                  isSelected
+                  isDisabled
+                    ? "border-border/70 bg-background text-muted-foreground"
+                    : isSelected
                     ? "border-primary bg-background text-primary"
                     : "border-border bg-background text-transparent",
                 )}
@@ -281,10 +499,12 @@ function BackgroundSpells({
   requirements,
   current,
   update,
+  disabledNames,
 }: {
   requirements: Loose;
   current: CurrentSpellSelections;
   update: (patch: Partial<CurrentSpellSelections>) => void;
+  disabledNames?: Set<string>;
 }) {
   const cantripReq = rec(requirements.cantrips);
   const spellReq = rec(requirements.spells);
@@ -302,6 +522,7 @@ function BackgroundSpells({
           title={`Background cantrips (${current.background_cantrips.length}/${cantripsNeeded})`}
           spells={arr<Loose>(cantripReq.available)}
           selected={current.background_cantrips}
+          disabledNames={disabledNames}
           onToggle={(name) => {
             const list = current.background_cantrips;
             if (list.includes(name)) {
@@ -319,6 +540,7 @@ function BackgroundSpells({
           title={`Background spells (${current.background_spells.length}/${spellsNeeded})`}
           spells={arr<Loose>(spellReq.available)}
           selected={current.background_spells}
+          disabledNames={disabledNames}
           onToggle={(name) => {
             const list = current.background_spells;
             if (list.includes(name)) {

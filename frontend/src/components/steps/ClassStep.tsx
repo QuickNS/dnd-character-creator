@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useQuery, keepPreviousData } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import {
   BookOpen,
   Check,
@@ -15,7 +15,10 @@ import { api, type ChoicesMade, type ClassAllocation } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { useCharacterStore } from "@/store/characterStore";
 import { ChoiceList } from "@/components/wizard/ChoiceList";
-import { ClassAdvancedChoices } from "@/components/wizard/ClassAdvancedChoices";
+import {
+  ClassAdvancedChoices,
+  type SpellReference,
+} from "@/components/wizard/ClassAdvancedChoices";
 import { useWizardSidebarPanel } from "@/components/layout/useWizardSidebarPanel";
 
 interface PreviewChoice {
@@ -154,6 +157,31 @@ function featureLevelEntries(
     .sort((a, b) => Number(a.level) - Number(b.level));
 }
 
+function matchesPreviewContext(
+  previewData: Record<string, unknown> | undefined,
+  selectedClass: string,
+  level: number,
+  selectedSubclass: string,
+): boolean {
+  if (!previewData) return false;
+  const previewChoices = previewData["choices_made"];
+  if (!previewChoices || typeof previewChoices !== "object" || Array.isArray(previewChoices)) {
+    return false;
+  }
+
+  const choices = previewChoices as Record<string, unknown>;
+  const previewClass = typeof choices.class === "string" ? choices.class : "";
+  const previewLevel = clampLevel(choices.level);
+  const previewSubclass =
+    typeof choices.subclass === "string" ? choices.subclass : "";
+
+  return (
+    previewClass === selectedClass &&
+    previewLevel === clampLevel(level) &&
+    previewSubclass === selectedSubclass
+  );
+}
+
 
 export function ClassStep() {
   const choicesMade = useCharacterStore((s) => s.choicesMade);
@@ -190,6 +218,7 @@ export function ClassStep() {
 
   const { setSidebarPanel } = useWizardSidebarPanel();
   const [infoTarget, setInfoTarget] = useState<ClassInfoTarget>({ kind: "class" });
+  const [inspectedSpell, setInspectedSpell] = useState<SpellReference | null>(null);
 
   function writeAllocations(nextRows: ClassAllocation[]) {
     const normalized =
@@ -272,14 +301,12 @@ export function ClassStep() {
     queryKey: ["catalog", "classes", selectedClass],
     queryFn: () => api.catalog.getClass(selectedClass),
     enabled: !!selectedClass,
-    placeholderData: keepPreviousData,
   });
 
   const previewQuery = useQuery({
     queryKey: ["character", "preview-step", "class", previewChoices],
     queryFn: () => api.character.previewStep(previewChoices, "class"),
     enabled: !!selectedClass,
-    placeholderData: keepPreviousData,
   });
 
   // For detail panel: use full class data (which has the complete features_by_level from JSON).
@@ -299,7 +326,15 @@ export function ClassStep() {
     features_by_level: (fullClassData?.features_by_level as Record<string, Record<string, unknown> | string[]> | undefined) ?? {}
   } as any) : undefined;
 
-  const previewData = previewQuery.data as Record<string, unknown> | undefined;
+  const previewDataRaw = previewQuery.data as Record<string, unknown> | undefined;
+  const previewData = matchesPreviewContext(
+    previewDataRaw,
+    selectedClass,
+    activeRow.level,
+    selectedSubclass,
+  )
+    ? previewDataRaw
+    : undefined;
   const needsSubclass = previewData?.["needs_subclass"] === true;
   const availableSubclasses =
     (previewData?.["available_subclasses"] as SubclassSummary[] | undefined) ?? [];
@@ -311,7 +346,6 @@ export function ClassStep() {
     queryKey: ["catalog", "subclass", selectedClass, activeSubclassId],
     queryFn: () => api.catalog.getSubclass(selectedClass, activeSubclassId),
     enabled: !!selectedClass && needsSubclass && !!activeSubclassId,
-    placeholderData: keepPreviousData,
   });
   const activeSubclassDetail = subclassDetailQuery.isPlaceholderData
     ? undefined
@@ -325,12 +359,20 @@ export function ClassStep() {
       : Boolean(detailClass);
 
   useEffect(() => {
+    setInspectedSpell(null);
     setInfoTarget({ kind: "class" });
-  }, [selectedClass]);
+  }, [activeRowIndex, selectedClass]);
 
   useEffect(() => {
     setSidebarPanel(
-      shouldRenderInfoPanel
+      inspectedSpell
+        ? (
+            <SpellInfoPanel
+              spell={inspectedSpell}
+              onBack={() => setInspectedSpell(null)}
+            />
+          )
+        : shouldRenderInfoPanel
         ? (
             <ClassInfoPanel
               infoTarget={infoTarget}
@@ -365,6 +407,7 @@ export function ClassStep() {
     fullClassData,
     fullClassQuery.isLoading,
     fullClassQuery.isPlaceholderData,
+    inspectedSpell,
     infoTarget,
     needsSubclass,
     selectedClass,
@@ -475,6 +518,7 @@ export function ClassStep() {
                           );
                           writeAllocations(next);
                           setActiveClassRowIndex(idx);
+                          setInspectedSpell(null);
                           setInfoTarget({ kind: "class" });
                         }}
                         className="mt-2 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
@@ -524,6 +568,7 @@ export function ClassStep() {
                         type="button"
                         onClick={() => {
                           setActiveClassRowIndex(idx);
+                          setInspectedSpell(null);
                           setInfoTarget({ kind: "class" });
                         }}
                         className={cn(
@@ -547,6 +592,7 @@ export function ClassStep() {
                           } else if (current === idx) {
                             setActiveClassRowIndex(Math.max(0, current - 1));
                           }
+                          setInspectedSpell(null);
                           setInfoTarget({ kind: "class" });
                         }}
                         disabled={classAllocations.length <= 1}
@@ -597,20 +643,23 @@ export function ClassStep() {
         </div>
       </section>
 
-      {selectedClass && previewQuery.isLoading && !previewQuery.data && (
+      {selectedClass && (previewQuery.isLoading || !previewData) && (
         <p className="text-xs text-muted-foreground">Loading class details…</p>
       )}
 
-      {selectedClass && previewQuery.data && (
+      {selectedClass && previewData && (
         <ClassDetail
-          previewData={previewQuery.data}
+          previewData={previewData}
           choicesMade={choicesMade}
           selectedClassSummary={detailClass}
           selectedSubclass={selectedSubclass}
           activeRowLabel={activeRowLabel}
           needsSubclass={needsSubclass}
           availableSubclasses={availableSubclasses}
-          onSelectSubclassInfo={(id) => setInfoTarget({ kind: "subclass", id })}
+          onSelectSubclassInfo={(id) => {
+            setInspectedSpell(null);
+            setInfoTarget({ kind: "subclass", id });
+          }}
           onSubclass={(v) => {
             if (classAllocations.length === 0) return;
             const next = classAllocations.map((row, idx) =>
@@ -625,13 +674,99 @@ export function ClassStep() {
                 };
               }
             }
+            setInspectedSpell(null);
             writeAllocations(next);
           }}
         />
       )}
 
-      {selectedClass && <ClassAdvancedChoices choicesForDerived={previewChoices} />}
+      {selectedClass && (
+        <ClassAdvancedChoices
+          choicesForDerived={previewChoices}
+          inspectedSpellName={inspectedSpell?.name}
+          onInspectSpell={setInspectedSpell}
+        />
+      )}
     </div>
+  );
+}
+
+function SpellInfoPanel({
+  spell,
+  onBack,
+}: {
+  spell: SpellReference;
+  onBack: () => void;
+}) {
+  const meta: Array<[string, string | undefined]> = [
+    ["School", spell.school],
+    ["Casting Time", spell.casting_time],
+    ["Range", spell.range],
+    [
+      "Components",
+      Array.isArray(spell.components) && spell.components.length > 0
+        ? spell.components.join(", ")
+        : undefined,
+    ],
+    ["Duration", spell.duration],
+    ["Source", spell.source],
+  ];
+
+  return (
+    <aside className="info-panel" aria-label="Spell details panel">
+      <div className="info-panel-header">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="info-panel-kicker">Spell details</p>
+            <h4 className="info-panel-title">{spell.name}</h4>
+          </div>
+          <button
+            type="button"
+            onClick={onBack}
+            className="inline-flex items-center rounded-md border border-border/70 bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+          >
+            Back
+          </button>
+        </div>
+      </div>
+      <div className="info-panel-body">
+        <div className="flex flex-wrap gap-2">
+          <span className="rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-[11px] uppercase tracking-wide text-primary">
+            Always prepared
+          </span>
+          <span className="rounded-full border border-border/70 bg-background px-2.5 py-1 text-[11px] uppercase tracking-wide text-muted-foreground">
+            {spell.level === 0 ? "Cantrip" : `Level ${spell.level ?? "—"}`}
+          </span>
+          {spell.counts_against_limit === false && (
+            <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-[11px] uppercase tracking-wide text-emerald-700 dark:text-emerald-300">
+              Doesn’t count against limit
+            </span>
+          )}
+        </div>
+
+        {spell.description && (
+          <p className="mt-4 text-sm text-muted-foreground">{spell.description}</p>
+        )}
+
+        <dl className="mt-4 space-y-3">
+          {meta
+            .filter(([, value]) => Boolean(value))
+            .map(([label, value]) => (
+              <div
+                key={label}
+                className="rounded-lg border border-border/70 bg-background/80 px-3 py-2"
+              >
+                <dt className="text-xs uppercase tracking-wide text-muted-foreground">
+                  {label}
+                </dt>
+                <dd className="mt-1 text-sm font-medium text-foreground">
+                  {value}
+                </dd>
+              </div>
+            ))}
+        </dl>
+      </div>
+    </aside>
   );
 }
 

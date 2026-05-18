@@ -34,7 +34,7 @@ export function StepNav({ steps, currentStepId }: Props) {
   const currentStepStatus = validationQuery.data?.steps?.find(
     (s) => s.step === currentStepId
   );
-  const hasIncompleteChoices = isValidating || (currentStepStatus?.missing?.length ?? 0) > 0;
+  const hasIncompleteChoices = currentStepStatus?.complete === false;
 
   return (
     <div className="mt-10 h-28 sm:h-32">

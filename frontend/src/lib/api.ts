@@ -138,6 +138,7 @@ export interface SpeciesSummary {
 export interface DerivedResponse {
   view: string;
   applicable: boolean;
+  choices_made?: ChoicesMade;
   reason?: string;
   data: unknown | null;
 }
