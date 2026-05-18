@@ -55,6 +55,9 @@ def resolve_choice_options(
     elif source_type == "fixed_list":
         # Direct option list
         return source.get("options", [])
+    elif source_type == "proficient_skills":
+        # Skills the character is currently proficient in
+        return list(character.get("proficiencies", {}).get("skills", []))
 
     return []
 
