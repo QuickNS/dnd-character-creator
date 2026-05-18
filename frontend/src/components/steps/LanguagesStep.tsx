@@ -1,5 +1,7 @@
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
+import { Check } from "lucide-react";
 import { api } from "@/lib/api";
+import { cn } from "@/lib/utils";
 import { useCharacterStore } from "@/store/characterStore";
 
 interface LanguageOptions {
@@ -68,14 +70,29 @@ export function LanguagesStep() {
                 key={lang}
                 type="button"
                 onClick={() => toggle(lang)}
-                className={
-                  "rounded border px-3 py-2 text-sm transition-colors " +
-                  (isSelected
+                aria-pressed={isSelected}
+                className={cn(
+                  "rounded border px-3 py-2 text-sm transition-colors",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                  isSelected
                     ? "border-primary bg-secondary text-foreground"
-                    : "border-border hover:bg-secondary/60")
-                }
+                    : "border-border hover:bg-secondary/60",
+                )}
               >
-                {lang}
+                <span className="flex items-center justify-between gap-2">
+                  <span>{lang}</span>
+                  <span
+                    className={cn(
+                      "inline-flex h-4 w-4 items-center justify-center rounded-full border",
+                      isSelected
+                        ? "border-primary bg-background text-primary"
+                        : "border-border text-transparent",
+                    )}
+                    aria-hidden="true"
+                  >
+                    <Check className="h-3 w-3" />
+                  </span>
+                </span>
               </button>
             );
           })}

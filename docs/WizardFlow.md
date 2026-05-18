@@ -8,16 +8,27 @@ The canonical step list is served by `GET /api/v1/wizard/steps` (source: [routes
 
 | # | `id`         | Label           | Required keys                | Nested choices (conditional)                                                  |
 |---|--------------|-----------------|------------------------------|-------------------------------------------------------------------------------|
-| 1 | `basics`     | Basics          | `character_name`, `level`    | —                                                                             |
-| 2 | `class`      | Class           | `class`                      | `subclass`, `fighting_style`, `maneuvers`, `spells`, `cantrips`               |
-| 3 | `background` | Background      | `background`                 | `background_skill_replacement`, `origin_feat`                                 |
-| 4 | `species`    | Species         | `species`                    | `lineage`, `species_trait_choices`, `species_feat_choices`, `species_skill_replacement` |
-| 5 | `languages`  | Languages       | —                            | —                                                                             |
-| 6 | `abilities`  | Ability Scores  | `ability_scores`             | `background_bonuses`                                                          |
-| 7 | `equipment`  | Equipment       | —                            | —                                                                             |
-| 8 | `complete`   | Summary         | —                            | —                                                                             |
+| 1 | `class`      | Class           | `character_name`, `class`    | `subclass`, `fighting_style`, `maneuvers`, `spells`, `cantrips`               |
+| 2 | `background` | Background      | `background`                 | `background_skill_replacement`, `origin_feat`                                 |
+| 3 | `species`    | Species         | `species`                    | `lineage`, `species_trait_choices`, `species_feat_choices`, `species_skill_replacement` |
+| 4 | `languages`  | Languages       | —                            | —                                                                             |
+| 5 | `abilities`  | Ability Scores  | `ability_scores`             | `background_bonuses`                                                          |
+| 6 | `equipment`  | Equipment       | —                            | —                                                                             |
+| 7 | `complete`   | Summary         | —                            | —                                                                             |
 
 The breadcrumb in the SPA renders one entry per step in this order. The current step is held in the Zustand store as `currentStepId`.
+
+The wizard now starts at Class. The old Basics step is no longer in the active flow. Character name is captured globally in the sidebar and validated as part of class-step completeness, rather than through a dedicated step.
+
+The Class step accepts per-class allocations via `choices_made.classes` rows (`class_name`, `level`, optional `subclass`). Multiple rows are accepted and built: total character level is the sum of row levels, and additional rows apply their class/subclass features.
+
+Class-step row interaction is active-row driven in the SPA:
+- The user can mark any class row as active.
+- Class details, subclass picker, and class advanced-choice sections target the active row.
+- Subclass validation remains per row at build/validate time (`classes[i].subclass` when that row qualifies).
+- Multiclass standard spell slots now use effective caster level aggregation (full = 1x level, half = floor(level / 2), third = floor(level / 3), non-caster = 0) and the canonical full-caster slot table.
+- Pact Magic slots are tracked separately from standard slots in this phase (not merged).
+- Single-class spellcasting behavior remains compatible.
 
 ## Nesting Rules
 
@@ -39,6 +50,7 @@ Source: `_DEPENDENCIES` in `routes/api/wizard.py`, served by `GET /api/v1/wizard
 
 | Changed key  | Invalidates                                                                                     |
 |--------------|-------------------------------------------------------------------------------------------------|
+| `classes`    | `subclass`, `fighting_style`, `maneuvers`, `spells`, `cantrips`, `class_features`, `skill_choices`, `tool_choices`, `background_skill_replacement`, `equipment_selections` |
 | `level`      | `subclass`, `spells`, `cantrips`, `fighting_style`, `maneuvers`, `class_features`               |
 | `class`      | `subclass`, `fighting_style`, `maneuvers`, `spells`, `cantrips`, `class_features`, `skill_choices`, `tool_choices`, `background_skill_replacement`, `equipment_selections` |
 | `subclass`   | `subclass_features`, `spells`, `cantrips`                                                       |
@@ -58,7 +70,7 @@ WizardLayout (frontend/src/components/layout/WizardLayout.tsx)
                   ├── <article>
                   │     header (step number, label, description)
                   │     section → renderStepBody(step)
-                  │       ├── BasicsStep / ClassStep / SpeciesStep / …
+                  │       ├── ClassStep / SpeciesStep / …
                   │       └── GenericStep (fallback, data-driven)
                   │     StepNav (Prev / Next)
                   └── <aside>  class portrait  (placeholder for EffectsPanel)
@@ -70,7 +82,7 @@ Per-step components in `frontend/src/components/steps/` own the rendering of cho
 
 | Concern                  | Storage        | Key                          | Owner                                          |
 |--------------------------|----------------|------------------------------|------------------------------------------------|
-| In-progress wizard draft | `localStorage` | `dnd-creator-character-v1`   | Zustand `persist` in `characterStore.ts` (`version: 1`, `migrate` shim) |
+| In-progress wizard draft | `localStorage` | `dnd-creator-character-v1`   | Zustand `persist` in `characterStore.ts` (`version: 2`, `migrate` shim) |
 | Saved character roster   | `localStorage` | `dnd-character-roster`       | `LocalStoragePersistence` in `lib/persistence.ts` |
 
 The Zustand `partialize` config persists `choicesMade` and `currentStepId` only; the dependency map and other transient state are not written to disk.

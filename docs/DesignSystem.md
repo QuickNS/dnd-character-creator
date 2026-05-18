@@ -2,6 +2,23 @@
 
 The visual language is **D&D Beyond–inspired**: dense, content-first, dark-friendly, with a serif display face for character identity and a single warm-red brand accent. Everything is driven by CSS variables in `frontend/src/styles/theme.css` and surfaced as Tailwind tokens in `frontend/tailwind.config.ts`.
 
+## Scope
+
+This document is the cross-app source of truth for:
+
+- design tokens
+- typography
+- spacing and radius
+- component primitives and theming conventions
+- global layout conventions shared across multiple surfaces
+
+Wizard-specific page composition, interaction flow, progressive disclosure, validation messaging, and selection behavior live in [docs/design-principles.md](design-principles.md).
+
+Keep these documents separate:
+
+- Use this file when changing tokens, theme variables, typography, or reusable component conventions.
+- Use [docs/design-principles.md](design-principles.md) when redesigning or reviewing wizard step layouts and interactions.
+
 ## Token Source
 
 - CSS variables live in [frontend/src/styles/theme.css](../frontend/src/styles/theme.css).
@@ -133,3 +150,4 @@ The `feature-description` class scope in `theme.css` styles HTML tables embedded
 - [docs/Architecture.md](Architecture.md)
 - [docs/Stack.md](Stack.md)
 - [docs/WizardFlow.md](WizardFlow.md)
+- [docs/design-principles.md](design-principles.md)

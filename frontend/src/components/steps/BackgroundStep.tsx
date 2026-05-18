@@ -1,5 +1,7 @@
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
+import { Check, ChevronRight } from "lucide-react";
 import { api } from "@/lib/api";
+import { cn } from "@/lib/utils";
 import { useCharacterStore } from "@/store/characterStore";
 import { ChoiceList } from "@/components/wizard/ChoiceList";
 import { FeatChoicesPicker } from "@/components/wizard/FeatChoicesPicker";
@@ -44,7 +46,7 @@ export function BackgroundStep() {
         {bgQuery.isLoading && (
           <p className="text-xs text-muted-foreground">Loading backgrounds…</p>
         )}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 items-start">
           {(bgQuery.data ?? []).map((bg) => {
             const isSelected = selectedBg === bg.id;
             return (
@@ -52,26 +54,47 @@ export function BackgroundStep() {
                 key={bg.id}
                 type="button"
                 onClick={() => setChoice("background", bg.id)}
-                className={
-                  "text-left rounded-md border p-3 transition-colors " +
-                  (isSelected
-                    ? "border-primary bg-secondary"
-                    : "border-border hover:bg-secondary/60")
-                }
+                aria-pressed={isSelected}
+                className={cn(
+                  "group rounded-xl border p-4 text-left transition-all duration-200",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                  isSelected
+                    ? "border-primary bg-muted/60 shadow-md ring-1 ring-primary/20"
+                    : "border-border/80 bg-background/75 hover:-translate-y-1 hover:border-primary/40 hover:bg-secondary/50 hover:shadow-md",
+                )}
               >
-                <div className="font-display text-lg text-primary">{bg.name}</div>
+                <div className="mb-3 flex items-start justify-between gap-3">
+                  <div className="font-display text-xl text-primary font-semibold">{bg.name}</div>
+                  <span
+                    className={cn(
+                      "inline-flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border transition-colors",
+                      isSelected
+                        ? "border-primary bg-background text-primary"
+                        : "border-border bg-background text-transparent group-hover:border-primary/40",
+                    )}
+                  >
+                    <Check className="h-4 w-4" />
+                  </span>
+                </div>
                 {bg.feat && (
-                  <dl className="mt-1 text-xs text-muted-foreground/80 space-y-0.5">
+                  <dl className="text-xs text-muted-foreground/80 space-y-1">
                     <div>
                       <span className="font-semibold">Feat:</span> {bg.feat}
                     </div>
                   </dl>
                 )}
                 {bg.description && (
-                  <div className="text-xs text-muted-foreground mt-1 line-clamp-3">
+                  <div className="mt-2 text-sm text-muted-foreground line-clamp-3">
                     {bg.description}
                   </div>
                 )}
+                <div className="mt-4 flex items-center justify-between text-xs font-medium text-muted-foreground">
+                  <span>{isSelected ? "Selected background" : "Click to select"}</span>
+                  <span className="inline-flex items-center gap-1 text-primary/80">
+                    {isSelected ? "Details below" : "Select for details"}
+                    <ChevronRight className="h-3.5 w-3.5" />
+                  </span>
+                </div>
               </button>
             );
           })}
