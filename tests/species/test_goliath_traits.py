@@ -54,14 +54,14 @@ class TestGoliathLanguages:
         assert "Common" in languages
 
     def test_goliath_knows_giant(self, goliath_builder):
-        """Test Goliath knows Giant"""
+        """Test Goliath no longer gets Giant automatically."""
         languages = goliath_builder.character_data["proficiencies"]["languages"]
-        assert "Giant" in languages
+        assert "Giant" not in languages
 
     def test_goliath_language_count(self, goliath_builder):
-        """Test Goliath has exactly 2 languages"""
+        """Test baseline starts with Common only before language choices."""
         languages = goliath_builder.character_data["proficiencies"]["languages"]
-        assert len(languages) == 2
+        assert len(languages) == 1
 
 
 class TestGoliathFeaturesPresent:
@@ -242,7 +242,7 @@ class TestGoliathClassIntegration:
         # Languages still present
         languages = char_data["proficiencies"]["languages"]
         assert "Common" in languages
-        assert "Giant" in languages
+        assert "Giant" not in languages
 
     def test_goliath_with_class_features_intact(self):
         """Test Goliath species features remain after setting a class"""

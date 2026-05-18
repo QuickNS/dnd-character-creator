@@ -9,7 +9,7 @@
   "feat": "Alert",
   "skill_proficiencies": ["Deception", "Stealth"],
   "tool_proficiencies": ["Thieves' Tools"],
-  "languages": 1,
+  "languages": 2,
   "starting_equipment": {
     "option_a": {
       "items": [

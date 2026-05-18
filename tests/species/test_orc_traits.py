@@ -32,12 +32,12 @@ class TestOrcSpecies:
         assert species_data["creature_type"] == "Humanoid"
 
     def test_orc_languages(self, orc_builder):
-        """Test Orc languages: Common and Orc"""
+        """Test Orc baseline language is Common before language choices."""
         char_data = orc_builder.character_data
         languages = char_data["proficiencies"]["languages"]
 
         assert "Common" in languages
-        assert "Orc" in languages
+        assert "Orc" not in languages
 
     def test_orc_all_features_present(self, orc_builder):
         """Test that all 3 orc features are present"""
@@ -130,4 +130,4 @@ class TestOrcSpecies:
 
         languages = char_data["proficiencies"]["languages"]
         assert "Common" in languages
-        assert "Orc" in languages
+        assert "Orc" not in languages

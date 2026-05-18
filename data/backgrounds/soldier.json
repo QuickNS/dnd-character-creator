@@ -9,7 +9,7 @@
   "feat": "Savage Attacker",
   "skill_proficiencies": ["Athletics", "Intimidation"],
   "tool_proficiencies": ["Gaming Set", "Vehicles (Land)"],
-  "languages": 1,
+  "languages": 2,
   "starting_equipment": {
     "option_a": {
       "items": [

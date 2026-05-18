@@ -33,7 +33,7 @@ class TestDragonbornSpecies:
 
         languages = char_data["proficiencies"]["languages"]
         assert "Common" in languages
-        assert "Draconic" in languages
+        assert "Draconic" not in languages
 
     def test_dragonborn_features_present(self, dragonborn_builder):
         """Test that all dragonborn features are present."""
@@ -281,7 +281,7 @@ class TestDragonbornSpecies:
         assert char_data["darkvision"] == 60
         languages = char_data["proficiencies"]["languages"]
         assert "Common" in languages
-        assert "Draconic" in languages
+        assert "Draconic" not in languages
 
         feature_names = [f["name"] for f in char_data["features"]["species"]]
         assert "Draconic Ancestry" in feature_names

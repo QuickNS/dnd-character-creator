@@ -65,6 +65,7 @@ def dwarf_cleric_choices():
         "class": "Cleric",
         "subclass": "Light Domain",
         "background": "Acolyte",
+        "languages": ["Draconic", "Dwarvish"],
         "ability_scores": {
             "Strength": 14, "Dexterity": 8, "Constitution": 15,
             "Intelligence": 10, "Wisdom": 16, "Charisma": 12
@@ -84,6 +85,7 @@ def elf_fighter_choices():
         "class": "Fighter",
         "subclass": "Champion",
         "background": "Soldier",
+        "languages": ["Goblin", "Halfling"],
         "ability_scores": {
             "Strength": 14, "Dexterity": 15, "Constitution": 13,
             "Intelligence": 8, "Wisdom": 12, "Charisma": 10
@@ -106,6 +108,7 @@ def human_wizard_choices():
         "class": "Wizard",
         "subclass": "Evoker",
         "background": "Sage",
+        "languages": ["Gnomish", "Orc"],
         "ability_scores": {
             "Strength": 8, "Dexterity": 14, "Constitution": 13,
             "Intelligence": 16, "Wisdom": 12, "Charisma": 10

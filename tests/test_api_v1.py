@@ -176,6 +176,35 @@ class TestCharacterBuild:
         assert class_step["complete"] is False
         assert "class" in class_step["missing"]
 
+    def test_validate_languages_requires_exactly_two(self, client):
+        r = client.post(
+            "/api/v1/character/validate",
+            json={
+                "choices_made": {
+                    "character_name": "Test",
+                    "level": 1,
+                    "class": "Fighter",
+                    "background": "Acolyte",
+                    "species": "Human",
+                    "ability_scores": {
+                        "Strength": 15,
+                        "Dexterity": 14,
+                        "Constitution": 13,
+                        "Intelligence": 10,
+                        "Wisdom": 12,
+                        "Charisma": 8,
+                    },
+                    "background_bonuses": {"Wisdom": 2, "Intelligence": 1},
+                    "languages": ["Elvish"],
+                }
+            },
+        )
+        assert r.status_code == 200
+        data = r.get_json()
+        language_step = next(s for s in data["steps"] if s["step"] == "languages")
+        assert language_step["complete"] is False
+        assert "languages" in language_step["missing"]
+
     def test_preview_class_step(self, client):
         # Fighter at level 3 needs subclass
         r = client.post(
@@ -234,6 +263,62 @@ class TestCharacterBuild:
         data = r.get_json()
         assert "traits" in data
         assert "trait_choices" in data
+
+    def test_preview_languages_step_shape(self, client):
+        r = client.post(
+            "/api/v1/character/preview-step",
+            json={
+                "step": "languages",
+                "choices_made": {
+                    "character_name": "Test",
+                    "level": 1,
+                    "class": "Fighter",
+                    "background": "Acolyte",
+                    "species": "Human",
+                    "languages": ["Elvish", "Dwarvish"],
+                },
+            },
+        )
+        assert r.status_code == 200
+        data = r.get_json()
+        options = data["language_options"]
+        assert data["step"] == "languages"
+        assert options["selection_count"] == 2
+        assert options["base_languages"] == ["Common"]
+        assert "Common Sign Language" in options["available_languages"]
+        assert "Common" not in options["available_languages"]
+        assert options["selected_languages"] == ["Elvish", "Dwarvish"]
+
+    def test_random_languages_endpoint(self, client):
+        r = client.post(
+            "/api/v1/character/random-languages",
+            json={
+                "choices_made": {
+                    "character_name": "Test",
+                    "level": 1,
+                    "class": "Fighter",
+                    "background": "Acolyte",
+                    "species": "Human",
+                }
+            },
+        )
+        assert r.status_code == 200
+        data = r.get_json()
+        languages = data["languages"]
+        assert len(languages) == 2
+        assert len(set(languages)) == 2
+        for language in languages:
+            assert language in {
+                "Common Sign Language",
+                "Draconic",
+                "Dwarvish",
+                "Elvish",
+                "Giant",
+                "Gnomish",
+                "Goblin",
+                "Halfling",
+                "Orc",
+            }
 
 
 # ==================== Character derived views (Phase 2) ====================

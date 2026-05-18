@@ -51,7 +51,7 @@ _STEPS = [
     {
         "id": "languages",
         "label": "Languages",
-        "description": "Choose granted bonus languages.",
+        "description": "Choose exactly two additional languages or roll randomly.",
         "required_keys": [],
     },
     {
