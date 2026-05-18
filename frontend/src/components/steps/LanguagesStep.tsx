@@ -14,7 +14,7 @@ const LANGUAGES_KEY = "languages";
 export function LanguagesStep() {
   const choicesMade = useCharacterStore((s) => s.choicesMade);
   const setChoice = useCharacterStore((s) => s.setChoice);
-  const selectedFromStore = Array.isArray(choicesMade[LANGUAGES_KEY])
+  const rawSelectedLanguages = Array.isArray(choicesMade[LANGUAGES_KEY])
     ? (choicesMade[LANGUAGES_KEY] as string[])
     : [];
 
@@ -30,7 +30,7 @@ export function LanguagesStep() {
   const available = data.available_languages ?? [];
   const selectionCount = data.selection_count ?? 2;
   const selected = Array.from(
-    new Set(selectedFromStore.filter((lang) => available.includes(lang))),
+    new Set(rawSelectedLanguages.filter((lang) => available.includes(lang))),
   ).slice(0, selectionCount);
 
   const randomLanguages = useMutation({

@@ -5127,9 +5127,6 @@ class CharacterBuilder:
 
         base_languages = {self.BASE_LANGUAGE}
         for lang in known_languages:
-            if lang == self.BASE_LANGUAGE:
-                base_languages.add(lang)
-                continue
             if language_sources.get(lang) != "user_choice":
                 base_languages.add(lang)
 

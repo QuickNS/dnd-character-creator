@@ -363,7 +363,7 @@ def random_languages():
         builder = _build(body["choices_made"])
         return jsonify({"languages": builder.roll_languages()})
     except Exception as exc:
-        return jsonify({"error": str(exc), "traceback": traceback.format_exc()}), 500
+        return jsonify({"error": str(exc)}), 500
 
 
 # ==================== Derived views ====================
