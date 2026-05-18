@@ -338,6 +338,7 @@ def test_rebuild_character_with_ability_scores_and_bonuses():
     assert result["ability_scores"] == expected_scores, (
         f"Expected {expected_scores}, got {result['ability_scores']}"
     )
+    assert result["choices_made"]["ability_scores_method"] == "recommended"
 
 
 def test_ability_scores_method_only():
@@ -467,6 +468,58 @@ def test_manual_ability_scores_method_tracking():
     assert result_rebuilt["ability_scores"] == expected, (
         f"Rebuild failed. Expected {expected}, got {result_rebuilt['ability_scores']}"
     )
+
+
+def test_roll_ability_scores_method_tracking():
+    """Roll helper method should be tracked and keep explicit scores."""
+    builder = CharacterBuilder()
+    builder.apply_choice("class", "Wizard")
+
+    rolled_scores = {
+        "Strength": 12,
+        "Dexterity": 14,
+        "Constitution": 13,
+        "Intelligence": 15,
+        "Wisdom": 10,
+        "Charisma": 8,
+    }
+    builder.apply_choice("ability_scores", rolled_scores)
+    builder.apply_choice("ability_scores_method", "roll")
+
+    result = builder.to_json()
+    assert result["choices_made"]["ability_scores_method"] == "roll"
+    assert result["ability_scores"] == rolled_scores
+
+
+def test_additional_ability_modifiers_stack_with_background_bonuses():
+    """Additional modifiers should stack with background bonuses on final scores."""
+    builder = CharacterBuilder()
+    builder.apply_choices(
+        {
+            "character_name": "Stack Tester",
+            "level": 1,
+            "class": "Wizard",
+            "species": "Human",
+            "background": "Sage",
+            "ability_scores": {
+                "Strength": 8,
+                "Dexterity": 10,
+                "Constitution": 12,
+                "Intelligence": 15,
+                "Wisdom": 13,
+                "Charisma": 14,
+            },
+            "background_bonuses": {"Intelligence": 2, "Wisdom": 1},
+            "additional_ability_modifiers": {"Intelligence": 1, "Strength": -1},
+        }
+    )
+
+    result = builder.to_character()
+    assert result["ability_scores"]["Intelligence"] == 18
+    assert result["ability_scores"]["Wisdom"] == 14
+    assert result["ability_scores"]["Strength"] == 7
+    assert result["abilities"]["intelligence"]["additional_modifier"] == 1
+    assert result["abilities"]["strength"]["additional_modifier"] == -1
 
 
 def test_hp_breakdown_in_combat_stats_no_feature_bonus():

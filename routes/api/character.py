@@ -13,6 +13,7 @@ from typing import Any, Dict, List
 
 from flask import Blueprint, jsonify, request
 
+from modules.ability_scores import validate_point_buy
 from modules.character_builder import CharacterBuilder
 from modules.derived_stats import (
     build_damage_cantrip_rows,
@@ -347,6 +348,36 @@ def _step_status(builder: CharacterBuilder, step: str) -> Dict[str, Any]:
                 pass
 
     elif step == "abilities":
+        method = choices.get("ability_scores_method")
+        scores = choices.get("ability_scores")
+        abilities = [
+            "Strength",
+            "Dexterity",
+            "Constitution",
+            "Intelligence",
+            "Wisdom",
+            "Charisma",
+        ]
+
+        if method == "standard_array":
+            standard_array = [15, 14, 13, 12, 10, 8]
+            valid_standard_array = False
+            if isinstance(scores, dict) and all(a in scores for a in abilities):
+                try:
+                    selected = [int(scores.get(a, 0)) for a in abilities]
+                    valid_standard_array = sorted(selected) == sorted(standard_array)
+                except (TypeError, ValueError):
+                    valid_standard_array = False
+            if not valid_standard_array:
+                missing.append("ability_scores")
+        elif method == "point_buy":
+            if not isinstance(scores, dict):
+                missing.append("ability_scores")
+            else:
+                is_valid, _ = validate_point_buy(scores)
+                if not is_valid:
+                    missing.append("ability_scores")
+
         # Background ASI bonuses required if applicable
         try:
             asi = builder.get_background_asi_options()

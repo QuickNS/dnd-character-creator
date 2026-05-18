@@ -580,35 +580,35 @@ class TestCharacterBuild:
         assert class_step["complete"] is False
         assert "class" in class_step["missing"]
 
-    def test_validate_languages_requires_exactly_two(self, client):
+    def test_validate_standard_array_duplicate_values(self, client):
         r = client.post(
             "/api/v1/character/validate",
             json={
                 "choices_made": {
-                    "character_name": "Test",
+                    "character_name": "Array Test",
                     "level": 1,
-                    "class": "Fighter",
-                    "background": "Acolyte",
+                    "class": "Wizard",
                     "species": "Human",
+                    "background": "Sage",
+                    "ability_scores_method": "standard_array",
                     "ability_scores": {
                         "Strength": 15,
-                        "Dexterity": 14,
+                        "Dexterity": 15,
                         "Constitution": 13,
-                        "Intelligence": 10,
-                        "Wisdom": 12,
+                        "Intelligence": 12,
+                        "Wisdom": 10,
                         "Charisma": 8,
                     },
-                    "background_bonuses": {"Wisdom": 2, "Intelligence": 1},
-                    "languages": ["Elvish"],
+                    "background_bonuses": {"Intelligence": 2, "Wisdom": 1},
                 }
             },
         )
         assert r.status_code == 200
         data = r.get_json()
-        language_step = next(s for s in data["steps"] if s["step"] == "languages")
-        assert language_step["complete"] is False
-        assert "languages" in language_step["missing"]
-
+        abilities_step = next(s for s in data["steps"] if s["step"] == "abilities")
+        assert abilities_step["complete"] is False
+        assert "ability_scores" in abilities_step["missing"]
+        
     def test_validate_step_list_excludes_basics(self, client):
         choices = {
             "character_name": "Phase3",

@@ -2265,7 +2265,7 @@ class CharacterBuilder:
                     return self.set_abilities(standard_array)
             return True
         elif choice_key_lower == "ability_scores_method":
-            # Handle "recommended", "manual", or "point_buy" ability score method
+            # Handle "recommended", "manual", "roll", "standard_array", or "point_buy" methods
             if choice_value == "recommended":
                 # Use the predefined standard_array_assignment from class data
                 class_data = self.character_data.get("class_data", {})
@@ -2277,7 +2277,8 @@ class CharacterBuilder:
                         f"Warning: Class {class_data.get('name', 'Unknown')} missing standard_array_assignment"
                     )
                     return False
-            # "manual" and "point_buy" both store scores via the "ability_scores" key;
+            # "manual", "roll", "standard_array", and "point_buy" all store scores via
+            # the "ability_scores" key;
             # nothing extra needed here beyond recording the method choice.
             return True
         elif choice_key_lower == "background_ability_score_assignment":
@@ -2297,6 +2298,14 @@ class CharacterBuilder:
                 if "abilities" not in self.character_data:
                     self.character_data["abilities"] = {}
                 self.character_data["abilities"]["background_bonuses"] = choice_value
+            return True
+        elif choice_key_lower in ["additional_ability_modifiers", "ability_modifiers"]:
+            # Apply user-entered additional ability modifiers
+            if isinstance(choice_value, dict):
+                self.ability_scores.apply_additional_modifiers(choice_value)
+                if "abilities" not in self.character_data:
+                    self.character_data["abilities"] = {}
+                self.character_data["abilities"]["additional_modifiers"] = choice_value
             return True
         elif choice_key_lower == "background_bonuses_method":
             # Handle "suggested" background bonuses
@@ -3368,6 +3377,7 @@ class CharacterBuilder:
             "background_ability_score_assignment",
             "background_bonuses_method",
             "background_bonuses",
+            "additional_ability_modifiers",
             "tool_choices",
             "tools",
             "spellcasting",
@@ -3391,6 +3401,10 @@ class CharacterBuilder:
             if key in working_choices:
                 # Skip ability_scores_method if we have explicit ability_scores
                 if key == "ability_scores_method" and not apply_method:
+                    # Preserve the user's selected method in choices_made for
+                    # UI round-tripping/validation while avoiding method-driven
+                    # score reassignment over explicit ability_scores.
+                    self.character_data["choices_made"][key] = choices[key]
                     continue
                 self.apply_choice(key, working_choices[key])
 
@@ -3882,6 +3896,9 @@ class CharacterBuilder:
         background_bonuses = (
             getattr(self.ability_scores, "background_bonuses", {}) or {}
         )
+        additional_modifiers = (
+            getattr(self.ability_scores, "additional_modifiers", {}) or {}
+        )
         base_scores = getattr(self.ability_scores, "base_scores", {}) or {}
 
         processed_scores = {}
@@ -3899,6 +3916,7 @@ class CharacterBuilder:
                 "base_score": base_scores.get(ability_name, score),
                 "species_bonus": species_bonuses.get(ability_name, 0),
                 "background_bonus": background_bonuses.get(ability_name, 0),
+                "additional_modifier": additional_modifiers.get(ability_name, 0),
             }
 
         return processed_scores
@@ -5059,6 +5077,10 @@ class CharacterBuilder:
             if "background_bonuses" in abilities:
                 self.ability_scores.apply_background_bonuses(
                     abilities["background_bonuses"]
+                )
+            if "additional_modifiers" in abilities:
+                self.ability_scores.apply_additional_modifiers(
+                    abilities["additional_modifiers"]
                 )
 
         # Restore applied_effects from exported effects array
