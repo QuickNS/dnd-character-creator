@@ -139,12 +139,13 @@ class TestWizard:
         # Species change must invalidate lineage
         assert "lineage" in deps["species"]
 
-    def test_steps_class_no_longer_requires_level(self, client):
+    def test_steps_class_only_requires_class_selection(self, client):
         r = client.get("/api/v1/wizard/steps")
         assert r.status_code == 200
         steps = r.get_json()["steps"]
         class_step = next(s for s in steps if s["id"] == "class")
-        assert "character_name" in class_step["required_keys"]
+        assert "class" in class_step["required_keys"]
+        assert "character_name" not in class_step["required_keys"]
         assert "level" not in class_step["required_keys"]
 
 
@@ -632,10 +633,11 @@ class TestCharacterBuild:
             "complete",
         ]
 
-    def test_validate_missing_character_name_reported_in_class_step(self, client):
-        choices = {
-            "classes": [{"class_name": "Fighter", "level": 1}],
-        }
+    def test_validate_missing_character_name_does_not_block_class_step(
+        self, client, dwarf_cleric_choices
+    ):
+        choices = dict(dwarf_cleric_choices)
+        choices.pop("character_name")
         r = client.post(
             "/api/v1/character/validate",
             json={"choices_made": choices},
@@ -644,8 +646,7 @@ class TestCharacterBuild:
         assert r.status_code == 200
         data = r.get_json()
         class_step = next(s for s in data["steps"] if s["step"] == "class")
-        assert class_step["complete"] is False
-        assert "character_name" in class_step["missing"]
+        assert "character_name" not in class_step["missing"]
         assert "class" not in class_step["missing"]
 
     def test_validate_multiclass_requires_subclass_per_qualifying_class_row(self, client):
@@ -692,6 +693,23 @@ class TestCharacterBuild:
         champion = next((s for s in data["available_subclasses"] if s["name"] == "Champion"), None)
         assert champion is not None
         assert "Improved Critical" in champion["level_3_feature_names"]
+
+    def test_preview_class_step_respects_explicit_multiclass_active_row(self, client):
+        choices = self._cleric_fighter_multiclass_choices()
+        choices["class"] = "Fighter"
+        choices["level"] = 1
+        choices.pop("subclass", None)
+
+        r = client.post(
+            "/api/v1/character/preview-step",
+            json={"step": "class", "choices_made": choices},
+        )
+
+        assert r.status_code == 200
+        data = r.get_json()
+        assert data["choices_made"]["class"] == "Fighter"
+        assert data["needs_subclass"] is False
+        assert "available_subclasses" not in data
 
     def test_preview_class_no_subclass_at_low_level(self, client):
         r = client.post(
@@ -813,6 +831,46 @@ class TestCharacterDerived:
         assert "available_spells" in data
         assert "spell_slots" in data
         assert "limits" in data
+
+    def test_derived_spell_management_respects_explicit_multiclass_active_row(self, client):
+        choices = TestCharacterBuild._cleric_fighter_multiclass_choices()
+        choices["class"] = "Fighter"
+        choices["level"] = 1
+        choices.pop("subclass", None)
+
+        r = client.post(
+            "/api/v1/character/derived",
+            json={"choices_made": choices, "view": "spell_management"},
+        )
+
+        assert r.status_code == 200
+        body = r.get_json()
+        assert body["choices_made"]["class"] == "Fighter"
+        assert body["applicable"] is False
+        assert body["data"] is None
+
+    def test_derived_spell_management_includes_always_prepared_spell_details(
+        self, client, dwarf_cleric_choices
+    ):
+        r = client.post(
+            "/api/v1/character/derived",
+            json={"choices_made": dwarf_cleric_choices, "view": "spell_management"},
+        )
+        assert r.status_code == 200
+        data = r.get_json()["data"]
+
+        always_prepared = data["always_prepared"]
+        assert always_prepared
+
+        burning_hands = next(
+            spell for spell in always_prepared if spell["name"] == "Burning Hands"
+        )
+        assert burning_hands["source"] == "Light Domain"
+        assert burning_hands["level"] == 1
+        assert isinstance(burning_hands.get("description"), str)
+        assert burning_hands.get("description")
+        assert isinstance(burning_hands.get("duration"), str)
+        assert burning_hands.get("duration")
 
     def test_derived_spell_management_non_caster_not_applicable(self, client, elf_fighter_choices):
         # Champion Fighter is not a spellcaster

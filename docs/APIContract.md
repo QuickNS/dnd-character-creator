@@ -108,7 +108,7 @@ Current required keys for the class step (as returned by `/wizard/steps`):
 ```json
 {
   "id": "class",
-  "required_keys": ["character_name", "class"]
+  "required_keys": ["class"]
 }
 ```
 
@@ -308,8 +308,6 @@ Errors:
 - `400` `{ "error": "Body must be JSON with 'choices_made' and 'step'" }`
 - `500` `{ "error": "<message>", "traceback": "<python traceback>" }`
 
-> **Type drift to fix on the frontend:** `PreviewStepResponse` in `frontend/src/lib/api.ts` is `{ choices_made, [key]: unknown }`. The server returns `{ step, ... }` and does **not** include `choices_made`. Update the type to `{ step: string; [key: string]: unknown }`.
-
 ### `POST /character/derived`
 
 Return a derived view-model for the SPA. Used for screens that need a tailored shape rather than the full `Character`.
@@ -330,12 +328,23 @@ Allowed `view` values:
 
 Response (200):
 ```json
-{ "view": "<name>", "applicable": true, "data": { /* view-specific shape */ } }
+{
+  "view": "<name>",
+  "applicable": true,
+  "choices_made": { /* echoed request choices */ },
+  "data": { /* view-specific shape */ }
+}
 ```
 
 Response (200, valid view but not applicable):
 ```json
-{ "view": "<name>", "applicable": false, "reason": "<message>", "data": null }
+{
+  "view": "<name>",
+  "applicable": false,
+  "choices_made": { /* echoed request choices */ },
+  "reason": "<message>",
+  "data": null
+}
 ```
 
 Errors:

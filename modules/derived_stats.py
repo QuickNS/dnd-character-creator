@@ -127,9 +127,11 @@ def build_spell_management_view(builder) -> Dict[str, Any]:
     always_prepared: List[Dict[str, Any]] = []
     spells_block = builder.character_data.get("spells", {}) or {}
     for spell_name, spell_data in (spells_block.get("always_prepared", {}) or {}).items():
+        spell_definition = builder._load_spell_definition(spell_name)
         always_prepared.append({
+            **spell_definition,
             "name": spell_name,
-            "level": spell_data.get("level", 0),
+            "level": spell_data.get("level", spell_definition.get("level", 0)),
             "source": spell_data.get("source", "Unknown"),
             "counts_against_limit": spell_data.get("counts_against_limit", True),
         })

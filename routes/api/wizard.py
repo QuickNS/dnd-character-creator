@@ -20,7 +20,7 @@ _STEPS = [
         "id": "class",
         "label": "Class",
         "description": "Class selection(s), per-class levels, subclass (when level qualifies), and class feature choices.",
-        "required_keys": ["character_name", "class"],
+        "required_keys": ["class"],
         "nested_choices": ["subclass", "fighting_style", "maneuvers", "spells", "cantrips"],
     },
     {

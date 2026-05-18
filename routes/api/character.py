@@ -89,7 +89,11 @@ def _normalize_class_entries(classes: Any, field_name: str = "choices_made.class
     return normalized_entries
 
 
-def _normalize_choices_for_builder(choices_made: Dict[str, Any]) -> Dict[str, Any]:
+def _normalize_choices_for_builder(
+    choices_made: Dict[str, Any],
+    *,
+    preserve_explicit_class_context: bool = False,
+) -> Dict[str, Any]:
     """Normalize legacy/new class payload shapes into canonical class structures."""
     if not isinstance(choices_made, dict):
         raise ChoicesValidationError("'choices_made' must be a JSON object")
@@ -116,6 +120,29 @@ def _normalize_choices_for_builder(choices_made: Dict[str, Any]) -> Dict[str, An
     class_entries = _normalize_class_entries(classes)
     normalized["classes"] = class_entries
 
+    explicit_class = normalized.get("class")
+    if (
+        preserve_explicit_class_context
+        and isinstance(explicit_class, str)
+        and explicit_class.strip()
+    ):
+        normalized["class"] = explicit_class.strip()
+        normalized["level"] = _coerce_level(
+            normalized.get("level", 1), "choices_made.level"
+        )
+        class_entry: Dict[str, Any] = {
+            "class_name": normalized["class"],
+            "level": normalized["level"],
+        }
+        explicit_subclass = normalized.get("subclass")
+        if isinstance(explicit_subclass, str) and explicit_subclass.strip():
+            normalized["subclass"] = explicit_subclass.strip()
+            class_entry["subclass"] = normalized["subclass"]
+        else:
+            normalized.pop("subclass", None)
+        normalized["classes"] = [class_entry]
+        return normalized
+
     primary = class_entries[0]
     normalized["class"] = primary["class_name"]
     normalized["level"] = sum(entry["level"] for entry in class_entries)
@@ -127,9 +154,16 @@ def _normalize_choices_for_builder(choices_made: Dict[str, Any]) -> Dict[str, An
     return normalized
 
 
-def _build(choices_made: Dict[str, Any]) -> CharacterBuilder:
+def _build(
+    choices_made: Dict[str, Any],
+    *,
+    preserve_explicit_class_context: bool = False,
+) -> CharacterBuilder:
     builder = CharacterBuilder()
-    normalized_choices = _normalize_choices_for_builder(choices_made)
+    normalized_choices = _normalize_choices_for_builder(
+        choices_made,
+        preserve_explicit_class_context=preserve_explicit_class_context,
+    )
     builder.apply_choices(normalized_choices)
     return builder
 
@@ -200,7 +234,7 @@ def build_character():
     if body is None or "choices_made" not in body:
         return jsonify({"error": "Body must be JSON with 'choices_made'"}), 400
     try:
-        builder = _build(body["choices_made"])
+        builder = _build(body["choices_made"], preserve_explicit_class_context=True)
         return jsonify({"character": builder.to_character()})
     except ChoicesValidationError as exc:
         return jsonify({"error": str(exc)}), 400
@@ -215,7 +249,7 @@ def build_character():
 # report per-step completion. Optional/conditional keys (subclass, lineage,
 # trait choices) are evaluated dynamically against the current build.
 _STEP_REQUIRED_KEYS: Dict[str, List[str]] = {
-    "class": ["character_name", "class"],
+    "class": ["class"],
     "background": ["background"],
     "species": ["species"],
     "languages": [],
@@ -457,14 +491,27 @@ def preview_step():
         return jsonify({"error": str(exc), "traceback": traceback.format_exc()}), 500
 
     try:
-        result: Dict[str, Any] = {"step": step}
+        result: Dict[str, Any] = {"step": step, "choices_made": body["choices_made"]}
         character = builder.to_character()
 
         if step == "class":
-            class_name = character.get("class")
-            level = character.get("level", 1)
+            request_choices = body.get("choices_made") or {}
+            explicit_class = request_choices.get("class")
+            class_name = (
+                explicit_class.strip()
+                if isinstance(explicit_class, str) and explicit_class.strip()
+                else character.get("class")
+            )
+            level = (
+                _coerce_level(request_choices.get("level", 1), "choices_made.level")
+                if isinstance(explicit_class, str) and explicit_class.strip()
+                else character.get("level", 1)
+            )
             class_rows = (character.get("choices_made") or {}).get("classes")
-            if isinstance(class_rows, list) and class_rows and isinstance(class_rows[0], dict):
+            if (
+                not isinstance(explicit_class, str)
+                or not explicit_class.strip()
+            ) and isinstance(class_rows, list) and class_rows and isinstance(class_rows[0], dict):
                 class_name = class_rows[0].get("class_name", class_name)
                 level = class_rows[0].get("level", level)
             if class_name:
@@ -576,7 +623,7 @@ def derived_view():
         }), 400
 
     try:
-        builder = _build(body["choices_made"])
+        builder = _build(body["choices_made"], preserve_explicit_class_context=True)
     except Exception as exc:
         return jsonify({"error": str(exc), "traceback": traceback.format_exc()}), 500
 
@@ -589,11 +636,17 @@ def derived_view():
             data = build_mastery_management_view(builder)
         else:  # invocation_management
             data = build_invocation_management_view(builder)
-        return jsonify({"view": view, "applicable": True, "data": data})
+        return jsonify({
+            "view": view,
+            "applicable": True,
+            "choices_made": body["choices_made"],
+            "data": data,
+        })
     except ValueError as exc:
         return jsonify({
             "view": view,
             "applicable": False,
+            "choices_made": body["choices_made"],
             "reason": str(exc),
             "data": None,
         })
