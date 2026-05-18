@@ -607,6 +607,7 @@ class TestCharacterBuild:
         abilities_step = next(s for s in data["steps"] if s["step"] == "abilities")
         assert abilities_step["complete"] is False
         assert "ability_scores" in abilities_step["missing"]
+        
     def test_validate_step_list_excludes_basics(self, client):
         choices = {
             "character_name": "Phase3",
