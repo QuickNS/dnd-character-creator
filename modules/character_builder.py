@@ -1070,8 +1070,10 @@ class CharacterBuilder:
             if "skill_expertise" not in self.character_data:
                 self.character_data["skill_expertise"] = []
             for skill in skills:
-                # Skip choice placeholders like "__expertise_skills__"
-                if isinstance(skill, str) and skill.startswith("__"):
+                # Skip unresolved choice placeholders (e.g. Ranger still uses
+                # "__deft_explorer_expertise__" / "__expertise_skills__" until
+                # those classes are migrated to the from_choice pattern).
+                if skill.startswith("__"):
                     continue
                 if skill not in self.character_data["skill_expertise"]:
                     self.character_data["skill_expertise"].append(skill)
