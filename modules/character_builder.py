@@ -2925,6 +2925,9 @@ class CharacterBuilder:
             if key in choices:
                 # Skip ability_scores_method if we have explicit ability_scores
                 if key == "ability_scores_method" and not apply_method:
+                    # Preserve the user's selected method in choices_made for
+                    # UI round-tripping/validation while avoiding method-driven
+                    # score reassignment over explicit ability_scores.
                     self.character_data["choices_made"][key] = choices[key]
                     continue
                 self.apply_choice(key, choices[key])

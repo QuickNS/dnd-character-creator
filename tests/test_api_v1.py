@@ -176,7 +176,7 @@ class TestCharacterBuild:
         assert class_step["complete"] is False
         assert "class" in class_step["missing"]
 
-    def test_validate_rejects_invalid_standard_array_state(self, client):
+    def test_validate_standard_array_duplicate_values(self, client):
         r = client.post(
             "/api/v1/character/validate",
             json={

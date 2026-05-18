@@ -83,6 +83,7 @@ function formatModifier(score: number) {
 
 function roll4d6DropLowest() {
   const rolls = Array.from({ length: 4 }, () => Math.floor(Math.random() * 6) + 1);
+  // Descending sort keeps the highest three values in indices 0..2.
   rolls.sort((a, b) => b - a);
   return rolls[0] + rolls[1] + rolls[2];
 }
@@ -447,7 +448,7 @@ export function AbilitiesStep() {
                 {method === "standard_array" ? (
                   <select
                     id={`score-${ability}`}
-                    value={standardArrayAssignments[ability] === "" ? "" : String(standardArrayAssignments[ability])}
+                    value={String(standardArrayAssignments[ability] || "")}
                     onChange={(e) =>
                       setStandardArrayScore(
                         ability,
