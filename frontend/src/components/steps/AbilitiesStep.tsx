@@ -327,7 +327,8 @@ export function AbilitiesStep() {
             <button
               type="button"
               onClick={rollAllAbilityScores}
-              className="rounded border border-border px-2 py-1 text-xs hover:bg-secondary/60"
+              className="rounded border border-border px-2 py-1 text-xs bg-primary text-primary-foreground hover:translate-y-[-1px] hover:opacity-95"
+              
             >
               Roll now
             </button>
@@ -391,8 +392,8 @@ export function AbilitiesStep() {
                 className={
                   "rounded border px-2 py-1 text-xs " +
                   (rollAssignmentsComplete
-                    ? "border-border hover:bg-secondary/60"
-                    : "border-border opacity-50 cursor-not-allowed")
+                    ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20 hover:translate-y-[-1px] hover:opacity-95"
+                    : "cursor-not-allowed bg-muted text-muted-foreground opacity-60")
                 }
               >
                 Apply roll assignments
