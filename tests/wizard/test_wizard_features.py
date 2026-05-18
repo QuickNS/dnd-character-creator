@@ -133,7 +133,7 @@ class TestWizardBaseClass:
         self, level, expected_prepared, expected_cantrips
     ):
         """Wizard class data should provide prepared/cantrip limits by level."""
-        character = build_wizard(level, "Evocation" if level >= 3 else None)
+        character = build_wizard(level)
         class_data = character["class_data"]
         assert class_data["prepared_spells_by_level"][str(level)] == expected_prepared
         assert class_data["cantrips_by_level"][str(level)] == expected_cantrips
