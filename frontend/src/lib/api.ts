@@ -103,9 +103,34 @@ export interface ValidationResponse {
   missing_top_level: string[];
 }
 
+export interface PreviewStepRowContext {
+  row_index: number;
+  is_primary: boolean;
+  total_class_rows: number;
+}
+
 export interface PreviewStepResponse {
   step: string;
+  row_context?: PreviewStepRowContext;
   [key: string]: unknown;
+}
+
+export interface MulticlassingSkillProficiencies {
+  count: number;
+  /** Either a closed list of skills, or the literal string "any". */
+  options: string[] | "any";
+}
+
+export interface Multiclassing {
+  hit_die_granted: number;
+  armor_training: string[];
+  weapon_training: string[];
+  tool_training: string[];
+  skill_proficiencies: MulticlassingSkillProficiencies | null;
+  saving_throw_proficiencies: string[];
+  other_proficiencies: string[];
+  notes: string | null;
+  source_text: string;
 }
 
 export interface ClassSummary {
@@ -113,8 +138,38 @@ export interface ClassSummary {
   name: string;
   description?: string;
   hit_die: number;
+  /**
+   * Raw primary-ability string from the wiki. May be a single ability
+   * ("Intelligence"), an AND combo ("Strength & Charisma"), or an OR
+   * combo ("Strength or Dexterity"). Not pre-parsed by the backend.
+   */
   primary_ability: string;
   subclass_selection_level: number;
+  multiclassing?: Multiclassing;
+}
+
+/**
+ * Full class payload from /catalog/classes/{name}. Includes everything in
+ * `ClassSummary` plus the proficiency tables, feature progression, and
+ * spellcasting tables consumed by the class info panel.
+ */
+export interface ClassDetail extends ClassSummary {
+  saving_throw_proficiencies: string[];
+  armor_proficiencies: string[];
+  weapon_proficiencies: string[];
+  tool_proficiencies?: string[] | null;
+  skill_proficiencies_count: number;
+  skill_options: string[];
+  features_by_level?: Record<string, Record<string, unknown> | string[]>;
+  spellcasting_ability?: string;
+  spellcasting_focus?: string[];
+  spell_slots_by_level?: Record<string, Record<string, number>>;
+  spells_known_by_level?: Record<string, number>;
+  prepared_spells_by_level?: Record<string, number>;
+  cantrips_known_by_level?: Record<string, number>;
+  proficiency_bonus_by_level?: Record<string, number>;
+  starting_equipment?: unknown;
+  standard_array_assignment?: Record<string, string | number>;
 }
 
 export interface BackgroundSummary {
@@ -205,8 +260,8 @@ export const api = {
         (r) => r.classes,
       ),
 
-    getClass: (className: string) =>
-      apiFetch(`/catalog/classes/${encodeURIComponent(className)}`),
+    getClass: (className: string): Promise<ClassDetail> =>
+      apiFetch<ClassDetail>(`/catalog/classes/${encodeURIComponent(className)}`),
 
     subclasses: (className: string) =>
       apiFetch(`/catalog/classes/${encodeURIComponent(className)}/subclasses`),

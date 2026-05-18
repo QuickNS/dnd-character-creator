@@ -96,7 +96,8 @@
     "18": 6,
     "19": 6,
     "20": 6
-  },  "masteries_by_level": {
+  },
+  "masteries_by_level": {
     "1": 2,
     "2": 2,
     "3": 2,
@@ -117,7 +118,8 @@
     "18": 2,
     "19": 2,
     "20": 2
-  },  "sneak_attack_by_level": {
+  },
+  "sneak_attack_by_level": {
     "1": "1d6",
     "3": "2d6",
     "5": "3d6",
@@ -134,14 +136,24 @@
       "Expertise": {
         "description": "Gain Expertise in two skills of your choice. Sleight of Hand and Stealth are recommended if you have proficiency in them.",
         "effects": [
-          {"type": "grant_skill_expertise", "skills": ["__expertise_skills__"]}
+          {
+            "type": "grant_skill_expertise",
+            "skills": [
+              "__expertise_skills__"
+            ]
+          }
         ]
       },
       "Sneak Attack": "Once per turn, deal extra 1d6 damage with Finesse/Ranged weapon if you have Advantage or ally within 5 feet of target. The extra damage's type is the same as the weapon's type.",
       "Thieves' Cant": {
         "description": "You know Thieves' Cant and one other language of your choice.",
         "effects": [
-          {"type": "grant_language", "languages": ["Thieves' Cant"]}
+          {
+            "type": "grant_language",
+            "languages": [
+              "Thieves' Cant"
+            ]
+          }
         ]
       },
       "Weapon Mastery": "Use mastery properties of two weapons of your choice with which you have proficiency."
@@ -164,7 +176,12 @@
       "Expertise": {
         "description": "Gain Expertise in two more skills of your choice.",
         "effects": [
-          {"type": "grant_skill_expertise", "skills": ["__expertise_skills__"]}
+          {
+            "type": "grant_skill_expertise",
+            "skills": [
+              "__expertise_skills__"
+            ]
+          }
         ]
       }
     },
@@ -197,7 +214,13 @@
       "Slippery Mind": {
         "description": "Your mind is exceptionally difficult to control. You gain proficiency in Wisdom and Charisma saving throws.",
         "effects": [
-          {"type": "grant_save_proficiency", "abilities": ["Wisdom", "Charisma"]}
+          {
+            "type": "grant_save_proficiency",
+            "abilities": [
+              "Wisdom",
+              "Charisma"
+            ]
+          }
         ]
       }
     },
@@ -216,5 +239,35 @@
     "20": {
       "Stroke of Luck": "If you fail a d20 Test, you can turn the roll into a 20. Once per Short or Long Rest."
     }
+  },
+  "multiclassing": {
+    "hit_die_granted": 8,
+    "armor_training": [
+      "Light"
+    ],
+    "weapon_training": [],
+    "tool_training": [
+      "Thieves' Tools"
+    ],
+    "skill_proficiencies": {
+      "count": 1,
+      "options": [
+        "Acrobatics",
+        "Athletics",
+        "Deception",
+        "Insight",
+        "Intimidation",
+        "Investigation",
+        "Perception",
+        "Performance",
+        "Persuasion",
+        "Sleight of Hand",
+        "Stealth"
+      ]
+    },
+    "saving_throw_proficiencies": [],
+    "other_proficiencies": [],
+    "notes": null,
+    "source_text": "As a Multiclass Character: Gain the following traits from the Core Rogue Traits table: Hit Point Die, proficiency in one skill of your choice from the Rogue's skill list, proficiency with Thieves' Tools, and training with Light Armor. Gain the Rogue's level 1 features, which are listed in the Rogue Features table."
   }
 }

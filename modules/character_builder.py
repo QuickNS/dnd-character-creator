@@ -828,8 +828,14 @@ class CharacterBuilder:
         # If trait_data is a dict, check for effects
         if isinstance(trait_data, dict):
             effects = trait_data.get("effects", [])
+            # For class/subclass effects, capture which class the effect came from
+            # so per-level scaling (e.g., Draconic Resilience) can be scoped to that
+            # class's level in multiclass builds rather than total character level.
+            source_class_name = None
+            if source in ("class", "subclass"):
+                source_class_name = self.character_data.get("class")
             for effect in effects:
-                self._apply_effect(effect, trait_name, source)
+                self._apply_effect(effect, trait_name, source, source_class_name=source_class_name)
 
     def _extract_parenthetical(self, value: str) -> str:
         """
@@ -883,7 +889,7 @@ class CharacterBuilder:
 
         return description
 
-    def _apply_effect(self, effect: Dict[str, Any], source_name: str, source_type: str):
+    def _apply_effect(self, effect: Dict[str, Any], source_name: str, source_type: str, source_class_name: Optional[str] = None):
         """
         Apply a single effect from the effects system.
 
@@ -891,6 +897,8 @@ class CharacterBuilder:
             effect: Effect dictionary with 'type' and other parameters
             source_name: Name of the feature/trait providing the effect
             source_type: Type of source ('species', 'lineage', 'class', etc.)
+            source_class_name: For class/subclass effects, the originating class name
+                (used so per-level scaling is scoped to that class's level in multiclass).
         """
         effect_type = effect.get("type")
 
@@ -1220,14 +1228,15 @@ class CharacterBuilder:
                     self.character_data["pending_species_feat"] = feat_name
 
         # Track applied effect
-        self.applied_effects.append(
-            {
-                "type": effect_type,
-                "source": source_name,
-                "source_type": source_type,
-                "effect": effect,
-            }
-        )
+        tracked: Dict[str, Any] = {
+            "type": effect_type,
+            "source": source_name,
+            "source_type": source_type,
+            "effect": effect,
+        }
+        if source_class_name:
+            tracked["source_class_name"] = source_class_name
+        self.applied_effects.append(tracked)
 
     # ==================== Class/Subclass Methods ====================
 
@@ -2822,6 +2831,137 @@ class CharacterBuilder:
             for feature_name, feature_data in level_features.items():
                 self._apply_trait_effects(feature_name, feature_data, "class", feat_level)
 
+    def _apply_multiclass_entry_proficiencies(self, class_data: Dict[str, Any]) -> None:
+        """Apply proficiencies granted when this class is taken as a SECONDARY class.
+
+        Reads the ``multiclassing`` block from the class JSON and additively
+        merges its armor/weapon/tool/save/other proficiencies into the
+        character's proficiency lists. Skill picks and wildcard tool picks
+        are surfaced as pending player choices on
+        ``character_data["pending_multiclass_skill_choices"]`` and
+        ``character_data["pending_multiclass_tool_choices"]``.
+
+        Never branches on class name. Always additive, always de-duped.
+        """
+        mc = class_data.get("multiclassing")
+        class_name = class_data.get("name", "Unknown")
+        if not isinstance(mc, dict):
+            print(
+                f"Warning: class '{class_name}' has no multiclassing block; "
+                f"secondary-class proficiencies will not be applied."
+            )
+            return
+
+        proficiencies = self.character_data["proficiencies"]
+        sources = self.character_data["proficiency_sources"]
+
+        # Saving throws (RAW for 2024: no secondary class grants saves, but
+        # honor the field if a future class JSON ever populates it).
+        for save in mc.get("saving_throw_proficiencies", []) or []:
+            if save not in proficiencies["saving_throws"]:
+                proficiencies["saving_throws"].append(save)
+
+        # Armor — normalize bare "Light"/"Medium"/"Heavy" to canonical
+        # "Light armor"/"Medium armor"/"Heavy armor" used by primary classes.
+        _ARMOR_NORMALIZE = {
+            "Light": "Light armor",
+            "Medium": "Medium armor",
+            "Heavy": "Heavy armor",
+        }
+        for armor in mc.get("armor_training", []) or []:
+            canonical = _ARMOR_NORMALIZE.get(armor, armor)
+            if canonical not in proficiencies["armor"]:
+                proficiencies["armor"].append(canonical)
+
+        # Weapons — normalize bare "Simple"/"Martial" to canonical
+        # "Simple weapons"/"Martial weapons".
+        _WEAPON_NORMALIZE = {
+            "Simple": "Simple weapons",
+            "Martial": "Martial weapons",
+        }
+        for weapon in mc.get("weapon_training", []) or []:
+            canonical = _WEAPON_NORMALIZE.get(weapon, weapon)
+            if canonical not in proficiencies["weapons"]:
+                proficiencies["weapons"].append(canonical)
+
+        # Tools — split fixed grants from wildcard "choose one" entries.
+        pending_tool_choices = self.character_data.setdefault(
+            "pending_multiclass_tool_choices", []
+        )
+        for tool in mc.get("tool_training", []) or []:
+            if isinstance(tool, str) and "(" in tool and "choice" in tool.lower():
+                # Wildcard like "Musical Instrument (1 of your choice)" —
+                # surface as a pending choice; do not auto-grant.
+                if not any(
+                    c.get("class_name") == class_name and c.get("label") == tool
+                    for c in pending_tool_choices
+                ):
+                    pending_tool_choices.append({
+                        "class_name": class_name,
+                        "label": tool,
+                    })
+                continue
+            if tool not in proficiencies["tools"]:
+                proficiencies["tools"].append(tool)
+                sources["tools"][tool] = class_name
+
+        # Skill proficiencies — apply player choice if present, else queue.
+        skill_block = mc.get("skill_proficiencies")
+        if isinstance(skill_block, dict):
+            count = int(skill_block.get("count", 0) or 0)
+            options = skill_block.get("options")
+            if options == "any":
+                resolved_options = list(self._ALL_SKILLS)
+            elif isinstance(options, list):
+                resolved_options = list(options)
+            else:
+                resolved_options = []
+
+            choices_made = self.character_data["choices_made"]
+            multiclass_skill_picks = choices_made.get(
+                "multiclass_skill_choices", {}
+            )
+            picks = multiclass_skill_picks.get(class_name, []) if isinstance(
+                multiclass_skill_picks, dict
+            ) else []
+
+            applied = 0
+            for skill in picks:
+                if applied >= count:
+                    break
+                if resolved_options and skill not in resolved_options:
+                    continue
+                if skill not in proficiencies["skills"]:
+                    proficiencies["skills"].append(skill)
+                    sources["skills"][skill] = class_name
+                applied += 1
+
+            if applied < count:
+                pending_skill_choices = self.character_data.setdefault(
+                    "pending_multiclass_skill_choices", []
+                )
+                # De-dupe by class_name; replace if already present.
+                pending_skill_choices[:] = [
+                    c for c in pending_skill_choices
+                    if c.get("class_name") != class_name
+                ]
+                pending_skill_choices.append({
+                    "class_name": class_name,
+                    "count": count - applied,
+                    "options": [
+                        s for s in resolved_options
+                        if s not in proficiencies["skills"]
+                    ],
+                })
+
+        # Other proficiencies — append to a generic bucket. Create it if needed.
+        other_profs = mc.get("other_proficiencies", []) or []
+        if other_profs:
+            bucket = self.character_data.setdefault("other_proficiencies", [])
+            for entry in other_profs:
+                if entry not in bucket:
+                    bucket.append(entry)
+
     def _apply_additional_multiclass_tracks(self, class_rows: List[Dict[str, Any]]) -> None:
         """Apply class/subclass features for non-primary multiclass rows."""
         if len(class_rows) <= 1:
@@ -2842,6 +2982,7 @@ class CharacterBuilder:
                 # Apply each additional class at its own level threshold.
                 self.character_data["level"] = class_level
                 self.character_data["class"] = class_name
+                self._apply_multiclass_entry_proficiencies(class_data)
                 self._apply_class_features_only(class_data, class_level)
 
                 subclass_name = row.get("subclass")
@@ -3085,7 +3226,8 @@ class CharacterBuilder:
                 effective_caster_level += class_level
                 has_standard_contributor = True
             elif progression == "half":
-                effective_caster_level += class_level // 2
+                # D&D 2024: half your levels (round up) in Paladin/Ranger.
+                effective_caster_level += (class_level + 1) // 2
                 has_standard_contributor = True
             elif progression == "third":
                 effective_caster_level += class_level // 3
@@ -3186,19 +3328,40 @@ class CharacterBuilder:
                     )
 
         constitution_bonus = con_modifier * total_level
-        feature_bonus = self.hp_calculator.calculate_feature_bonuses(feature_bonuses, total_level)
-        total_hp = base_hp + constitution_bonus + feature_bonus
 
+        # Compute feature HP bonus. For per-level bonuses originating from a
+        # class or subclass feature, scale by THAT class's level (not total
+        # character level). Non-class sources (species/background/feat) keep
+        # using total level. Branch on data fields only, never on names.
+        class_level_by_name = {
+            row["class_name"]: max(1, int(row.get("level", 1)))
+            for row in class_rows
+        }
+
+        feature_bonus = 0
         feature_breakdown = []
         for hp_bonus in feature_bonuses:
             source = hp_bonus.get("source", "Unknown")
             value = hp_bonus.get("value", 0)
             scaling = hp_bonus.get("scaling")
+            src_type = hp_bonus.get("source_type")
+            src_class = hp_bonus.get("source_class_name")
+
             if scaling == "per_level":
-                total_bonus = value * total_level
-                feature_breakdown.append(f"{source}: +{value} per level (+{total_bonus} total)")
+                if src_type in ("class", "subclass") and src_class in class_level_by_name:
+                    scale_level = class_level_by_name[src_class]
+                else:
+                    scale_level = total_level
+                total_bonus = value * scale_level
+                feature_bonus += total_bonus
+                feature_breakdown.append(
+                    f"{source}: +{value} per level (+{total_bonus} total)"
+                )
             else:
+                feature_bonus += value
                 feature_breakdown.append(f"{source}: +{value}")
+
+        total_hp = base_hp + constitution_bonus + feature_bonus
 
         return {
             "base_hp": base_hp,
@@ -4752,6 +4915,8 @@ class CharacterBuilder:
                             "source": applied_effect.get("source", "Unknown"),
                             "value": value,
                             "scaling": scaling,
+                            "source_type": applied_effect.get("source_type"),
+                            "source_class_name": applied_effect.get("source_class_name"),
                         }
                     )
 
@@ -4929,6 +5094,8 @@ class CharacterBuilder:
                 effect = applied_effect["effect"].copy()
                 effect["source"] = applied_effect.get("source", "Unknown")
                 effect["source_type"] = applied_effect.get("source_type", "Unknown")
+                if applied_effect.get("source_class_name"):
+                    effect["source_class_name"] = applied_effect["source_class_name"]
                 effects_for_export.append(effect)
             character_data["effects"] = effects_for_export
         else:
@@ -5095,11 +5262,13 @@ class CharacterBuilder:
                         "effect": {
                             k: v
                             for k, v in effect.items()
-                            if k not in ["source", "source_type"]
+                            if k not in ["source", "source_type", "source_class_name"]
                         },
                         "source": effect.get("source", "Unknown"),
                         "source_type": effect.get("source_type", "Unknown"),
                     }
+                    if effect.get("source_class_name"):
+                        applied_effect["source_class_name"] = effect["source_class_name"]
                     self.applied_effects.append(applied_effect)
         self._ensure_base_language()
 

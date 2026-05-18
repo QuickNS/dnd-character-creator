@@ -33,16 +33,16 @@ export function FeatChoicesPicker({ data, heading }: Props) {
   return (
     <section className="rounded-md border border-border bg-card/40 p-4 space-y-3">
       <header>
-        <h3 className="text-sm font-semibold">
+        <h3 className="text-lg font-semibold">
           {heading}: <span className="text-primary">{data.feat_name}</span>
         </h3>
         {data.feat_description && (
-          <p className="mt-1 text-xs text-muted-foreground">
+          <p className="mt-1 text-sm text-muted-foreground">
             {data.feat_description}
           </p>
         )}
         {data.feat_benefits && data.feat_benefits.length > 0 && (
-          <ul className="mt-2 text-xs text-muted-foreground list-disc pl-5">
+          <ul className="mt-2 text-sm text-muted-foreground list-disc pl-5">
             {data.feat_benefits.map((b, i) => (
               <li key={i}>{b}</li>
             ))}

@@ -162,9 +162,18 @@
         "description": "As a Bonus Action, regain Hit Points equal to 1d10 + Fighter level. You can use this feature {uses} times, regaining one use on Short Rest and all uses on Long Rest.",
         "scaling": {
           "uses": [
-            {"min_level": 1, "value": "2"},
-            {"min_level": 4, "value": "3"},
-            {"min_level": 10, "value": "4"}
+            {
+              "min_level": 1,
+              "value": "2"
+            },
+            {
+              "min_level": 4,
+              "value": "3"
+            },
+            {
+              "min_level": 10,
+              "value": "4"
+            }
           ]
         }
       }
@@ -198,9 +207,18 @@
         "description": "If you fail a saving throw, you can reroll it with a bonus equal to your Fighter level. You must use the new roll. You can use this feature {uses} before a Long Rest.",
         "scaling": {
           "uses": [
-            {"min_level": 9, "value": "once"},
-            {"min_level": 13, "value": "twice"},
-            {"min_level": 17, "value": "three times"}
+            {
+              "min_level": 9,
+              "value": "once"
+            },
+            {
+              "min_level": 13,
+              "value": "twice"
+            },
+            {
+              "min_level": 17,
+              "value": "three times"
+            }
           ]
         }
       },
@@ -243,5 +261,22 @@
     "20": {
       "Three Extra Attacks": "You can attack four times instead of once whenever you take the Attack action on your turn."
     }
+  },
+  "multiclassing": {
+    "hit_die_granted": 10,
+    "armor_training": [
+      "Light",
+      "Medium",
+      "Shields"
+    ],
+    "weapon_training": [
+      "Martial"
+    ],
+    "tool_training": [],
+    "skill_proficiencies": null,
+    "saving_throw_proficiencies": [],
+    "other_proficiencies": [],
+    "notes": null,
+    "source_text": "As a Multiclass Fighter: Gain the following traits from the Core Fighter Traits table: Hit Point Die, proficiency with Martial weapons, and training with Light and Medium armor and Shields. Gain the Fighter's level 1 features, which are listed in the Fighter Features table."
   }
 }

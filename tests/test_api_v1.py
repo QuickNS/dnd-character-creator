@@ -726,6 +726,193 @@ class TestCharacterBuild:
         assert r.status_code == 200
         assert r.get_json()["needs_subclass"] is False
 
+    # ---------- preview-step: multiclass row_context + nested_choices filtering ----------
+
+    @staticmethod
+    def _basics_for_preview():
+        return {
+            "character_name": "Preview",
+            "species": "Human",
+            "background": "Acolyte",
+            "ability_scores": {
+                "Strength": 10,
+                "Dexterity": 12,
+                "Constitution": 14,
+                "Intelligence": 13,
+                "Wisdom": 14,
+                "Charisma": 10,
+            },
+            "background_bonuses": {"Intelligence": 2, "Wisdom": 1},
+        }
+
+    @staticmethod
+    def _find_choices_of_type(nested_choices, choice_type):
+        return [c for c in nested_choices if (c.get("type") or "").lower() == choice_type]
+
+    def _preview_class(self, client, choices, *, target_class, target_level):
+        """Preview the class step for a specific multiclass row.
+
+        Mirrors the `class` + `level` explicit-row pattern used by
+        test_preview_class_step_respects_explicit_multiclass_active_row.
+        """
+        payload = dict(choices)
+        payload["class"] = target_class
+        payload["level"] = target_level
+        payload.pop("subclass", None)
+        r = client.post(
+            "/api/v1/character/preview-step",
+            json={"step": "class", "choices_made": payload},
+        )
+        assert r.status_code == 200, r.get_data(as_text=True)
+        return r.get_json()
+
+    def test_preview_class_primary_returns_is_primary_true_and_full_choices(self, client):
+        choices = self._basics_for_preview()
+        choices["classes"] = [{"class_name": "Cleric", "level": 1}]
+        data = self._preview_class(client, choices, target_class="Cleric", target_level=1)
+
+        assert data["row_context"] == {
+            "row_index": 0,
+            "is_primary": True,
+            "total_class_rows": 1,
+        }
+        nested = data["nested_choices"]
+        assert self._find_choices_of_type(nested, "skills"), \
+            "Primary Cleric preview must include the skill picker"
+        # Divine Order is a select_single choice keyed under the feature.
+        divine = [
+            c for c in nested
+            if "divine" in (c.get("choice_key") or "").lower()
+            or "divine order" in (c.get("title") or c.get("feature_name") or "").lower()
+        ]
+        assert divine, "Primary Cleric preview must include Divine Order picker"
+
+    def test_preview_class_secondary_wizard_druid_drops_all_choices(self, client):
+        choices = self._basics_for_preview()
+        choices["classes"] = [
+            {"class_name": "Wizard", "level": 3},
+            {"class_name": "Druid", "level": 1},
+        ]
+        data = self._preview_class(client, choices, target_class="Druid", target_level=1)
+
+        assert data["row_context"]["is_primary"] is False
+        assert data["row_context"]["row_index"] == 1
+        assert data["row_context"]["total_class_rows"] == 2
+        assert data["nested_choices"] == []
+
+    def test_preview_class_secondary_bard_keeps_skill_and_instrument(self, client):
+        choices = self._basics_for_preview()
+        choices["classes"] = [
+            {"class_name": "Wizard", "level": 3},
+            {"class_name": "Bard", "level": 1},
+        ]
+        data = self._preview_class(client, choices, target_class="Bard", target_level=1)
+
+        assert data["row_context"]["is_primary"] is False
+        assert data["row_context"]["row_index"] == 1
+        nested = data["nested_choices"]
+        assert len(nested) == 2, f"Expected 2 nested choices, got {len(nested)}: {nested}"
+
+        skill_choices = self._find_choices_of_type(nested, "skills")
+        tool_choices = self._find_choices_of_type(nested, "tools")
+        assert len(skill_choices) == 1
+        assert len(tool_choices) == 1
+
+        skill = skill_choices[0]
+        assert skill["count"] == 1
+        assert len(skill["options"]) >= 15
+
+        tool = tool_choices[0]
+        assert tool["count"] == 1
+        assert len(tool["options"]) >= 1
+
+    def test_preview_class_secondary_rogue_narrows_skill_options(self, client):
+        choices = self._basics_for_preview()
+        choices["classes"] = [
+            {"class_name": "Wizard", "level": 3},
+            {"class_name": "Rogue", "level": 1},
+        ]
+        data = self._preview_class(client, choices, target_class="Rogue", target_level=1)
+
+        assert data["row_context"]["is_primary"] is False
+        nested = data["nested_choices"]
+        assert len(nested) == 1, f"Expected exactly 1 nested choice (skill), got: {nested}"
+        skill = nested[0]
+        assert (skill.get("type") or "").lower() == "skills"
+        assert skill["count"] == 1
+        assert set(skill["options"]) == {
+            "Acrobatics", "Athletics", "Deception", "Insight", "Intimidation",
+            "Investigation", "Perception", "Performance", "Persuasion",
+            "Sleight of Hand", "Stealth",
+        }
+
+    def test_preview_class_secondary_ranger_narrows_skill_options_no_fighting_style(self, client):
+        choices = self._basics_for_preview()
+        choices["classes"] = [
+            {"class_name": "Wizard", "level": 3},
+            {"class_name": "Ranger", "level": 1},
+        ]
+        data = self._preview_class(client, choices, target_class="Ranger", target_level=1)
+
+        assert data["row_context"]["is_primary"] is False
+        nested = data["nested_choices"]
+        assert len(nested) == 1, f"Expected exactly 1 nested choice (skill), got: {nested}"
+        skill = nested[0]
+        assert (skill.get("type") or "").lower() == "skills"
+        assert set(skill["options"]) == {
+            "Animal Handling", "Athletics", "Insight", "Investigation",
+            "Nature", "Perception", "Stealth", "Survival",
+        }
+
+    def test_preview_class_secondary_fighter_drops_fighting_style_and_skills(self, client):
+        choices = self._basics_for_preview()
+        choices["classes"] = [
+            {"class_name": "Wizard", "level": 3},
+            {"class_name": "Fighter", "level": 1},
+        ]
+        data = self._preview_class(client, choices, target_class="Fighter", target_level=1)
+
+        assert data["row_context"]["is_primary"] is False
+        assert data["row_context"]["row_index"] == 1
+        assert data["nested_choices"] == []
+
+    def test_preview_class_legacy_single_class_unchanged(self, client):
+        r = client.post(
+            "/api/v1/character/preview-step",
+            json={
+                "step": "class",
+                "choices_made": {
+                    "character_name": "Test",
+                    "level": 1,
+                    "class": "Wizard",
+                },
+            },
+        )
+        assert r.status_code == 200
+        data = r.get_json()
+        assert data["row_context"] == {
+            "row_index": 0,
+            "is_primary": True,
+            "total_class_rows": 1,
+        }
+        skill_choices = self._find_choices_of_type(data["nested_choices"], "skills")
+        assert len(skill_choices) == 1
+        assert skill_choices[0]["count"] == 2
+
+    def test_preview_class_secondary_subclass_unlock_still_offered(self, client):
+        choices = self._basics_for_preview()
+        choices["classes"] = [
+            {"class_name": "Wizard", "level": 3},
+            {"class_name": "Cleric", "level": 3},
+        ]
+        data = self._preview_class(client, choices, target_class="Cleric", target_level=3)
+
+        assert data["row_context"]["is_primary"] is False
+        assert data["row_context"]["row_index"] == 1
+        assert data.get("needs_subclass") is True
+        assert isinstance(data.get("available_subclasses"), list)
+        assert len(data["available_subclasses"]) > 0
+
     def test_preview_species_step(self, client):
         r = client.post(
             "/api/v1/character/preview-step",

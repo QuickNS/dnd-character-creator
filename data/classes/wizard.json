@@ -504,5 +504,16 @@
     "18": 5,
     "19": 5,
     "20": 5
+  },
+  "multiclassing": {
+    "hit_die_granted": 6,
+    "armor_training": [],
+    "weapon_training": [],
+    "tool_training": [],
+    "skill_proficiencies": null,
+    "saving_throw_proficiencies": [],
+    "other_proficiencies": [],
+    "notes": null,
+    "source_text": "As a Multiclass Character: Gain the Hit Point Die from the Core Wizard Traits table. Gain the Wizard's level 1 features, which are listed in the Wizard Features table. See the multiclassing rules in multiclassing to determine your available spell slots."
   }
 }

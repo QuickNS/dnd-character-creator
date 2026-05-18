@@ -292,6 +292,75 @@ The `character_data` dictionary contains:
 }
 ```
 
+## Multiclassing
+
+The builder supports multiclass characters via `choices_made.classes` (an ordered list of `{ class_name, level, subclass? }` rows). The first row is the **primary class**; subsequent rows are **secondary classes**. The rules below match D&D 2024 RAW.
+
+### Hit points
+
+- **Level 1 of the primary class** uses the class's maximum hit die value.
+- **Every other level (any class, primary or secondary)** uses that class's hit-die average (`die/2 + 1`).
+- The Constitution modifier is added at every level (including level 1).
+
+Worked example — **Fighter 3 / Druid 2**, Constitution 14 (`+2`):
+
+```
+Fighter L1 (primary):           10 + 2 = 12   (max d10 + CON)
+Fighter L2, L3:           2 × (  6 + 2) = 16   (avg d10 + CON, twice)
+Druid   L1, L2:           2 × (  5 + 2) = 14   (avg d8 + CON, twice)
+                                        ────
+                                          42
+```
+
+Worked example — **Paladin 5 / Sorcerer 5**, Constitution 14 (`+2`), with Draconic Resilience (`bonus_hp +1 per_level`, source = Sorcerer):
+
+```
+Paladin L1 (primary):           10 + 2 = 12   (max d10 + CON)
+Paladin L2–L5:            4 × (  6 + 2) = 32   (avg d10 + CON, four times)
+Sorcerer L1–L5:           5 × (  4 + 2) = 30   (avg d6 + CON, five times)
+Draconic Resilience:    +1 × (sorcerer level) =  5
+                                        ────
+                                          79
+```
+
+Note that Draconic Resilience scales on the **Sorcerer level (5)**, not on total character level (10) — see [FEATURE_EFFECTS.md](FEATURE_EFFECTS.md#bonus_hp).
+
+### Proficiencies for secondary classes
+
+Only the grants declared in each secondary class's `multiclassing` block (see [DataFiles.md](DataFiles.md#multiclassing-block)) are added, de-duplicated against proficiencies the character already has. **Saving throw proficiencies are never granted by multiclassing.**
+
+Skill and tool grants that require a player choice surface on the build response as `pending_multiclass_skill_choices` and `pending_multiclass_tool_choices`. The player resolves them by posting `choices_made.multiclass_skill_choices = { "<ClassName>": ["<Skill>"] }`. See [APIContract.md](APIContract.md#multiclass-pending-choices).
+
+### Spell slots
+
+Standard (non-Pact) spell slots use the canonical **Multiclass Spellcaster** table. The builder encodes this as `_get_canonical_full_caster_slots_table()`, derived from the full-caster slot progression in the class data files (Wizard / Cleric / Druid / Bard / Sorcerer share the same column).
+
+The effective caster level is:
+
+```
+effective_caster_level
+    = sum(full-caster levels)
+    + ceil(half-caster levels / 2)
+    + floor(third-caster levels / 3)
+```
+
+> ⚠️ **Half-caster fix**: half-caster contribution now uses `ceil` ("round up") per RAW. A previous implementation used `floor`, which under-counted slots for characters with an odd number of half-caster levels (e.g. Paladin 3 → 2, not 1).
+
+**Pact Magic** is tracked separately from standard slots and is not merged into the multiclass slot table. It is surfaced on the response as `character.pact_magic_slots` with explanatory `character.spell_slot_notes`.
+
+### `per_level` bonus_hp scoping
+
+`bonus_hp` effects with `scaling: "per_level"` are scoped by source:
+
+| Source              | Scales on               |
+|---------------------|-------------------------|
+| Class feature       | Source class's level    |
+| Subclass feature    | Source class's level    |
+| Species / lineage   | Total character level   |
+| Background / feat   | Total character level   |
+
+This matches the Paladin/Sorcerer example above.
+
 ## Effects System
 
 The CharacterBuilder automatically applies effects from species, lineages, classes, and backgrounds:

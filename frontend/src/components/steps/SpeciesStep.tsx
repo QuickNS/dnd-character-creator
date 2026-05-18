@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
-import { Check, ChevronRight, Leaf } from "lucide-react";
+import { Check, ChevronRight, Leaf, Sparkles } from "lucide-react";
 import { api } from "@/lib/api";
 import type { SpeciesSummary } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -73,6 +73,30 @@ function normalizeLineages(raw: unknown): LineageEntry[] {
   return [];
 }
 
+interface GrantedSpell {
+  spell: string;
+  level: "cantrip" | number;
+}
+
+function extractGrantedSpells(traits: Record<string, unknown>): GrantedSpell[] {
+  const spells: GrantedSpell[] = [];
+  for (const traitValue of Object.values(traits)) {
+    if (!traitValue || typeof traitValue !== "object" || Array.isArray(traitValue)) continue;
+    const effects = (traitValue as Record<string, unknown>).effects;
+    if (!Array.isArray(effects)) continue;
+    for (const effect of effects) {
+      if (!effect || typeof effect !== "object") continue;
+      const e = effect as Record<string, unknown>;
+      if (e.type === "grant_cantrip" && typeof e.spell === "string") {
+        spells.push({ spell: e.spell, level: "cantrip" });
+      } else if (e.type === "grant_spell" && typeof e.spell === "string") {
+        spells.push({ spell: e.spell, level: typeof e.min_level === "number" ? e.min_level : 1 });
+      }
+    }
+  }
+  return spells;
+}
+
 function traitDescription(value: unknown): string | undefined {
   if (typeof value === "string") return value;
   if (value && typeof value === "object" && !Array.isArray(value)) {
@@ -100,18 +124,35 @@ export function SpeciesStep() {
     placeholderData: keepPreviousData,
   });
 
+  const fullSpeciesQuery = useQuery({
+    queryKey: ["catalog", "species", selectedSpecies],
+    queryFn: () => api.catalog.getSpecies(selectedSpecies),
+    enabled: !!selectedSpecies,
+    placeholderData: keepPreviousData,
+  });
+
   const selectedSpeciesSummary = (speciesQuery.data ?? []).find(
     (sp) => sp.id === selectedSpecies,
   );
 
+  const fullSpeciesData = fullSpeciesQuery.isPlaceholderData
+    ? undefined
+    : (fullSpeciesQuery.data as Record<string, unknown> | undefined);
+
   useEffect(() => {
     setSidebarPanel(
       selectedSpeciesSummary
-        ? <SpeciesInfoPanel selectedSpeciesSummary={selectedSpeciesSummary} />
+        ? (
+            <SpeciesInfoPanel
+              selectedSpeciesSummary={selectedSpeciesSummary}
+              fullSpeciesData={fullSpeciesData}
+              speciesLoading={(fullSpeciesQuery.isLoading || fullSpeciesQuery.isPlaceholderData) && !fullSpeciesData}
+            />
+          )
         : null,
     );
     return () => setSidebarPanel(null);
-  }, [selectedSpeciesSummary, setSidebarPanel]);
+  }, [selectedSpeciesSummary, fullSpeciesData, fullSpeciesQuery.isLoading, fullSpeciesQuery.isPlaceholderData, setSidebarPanel]);
 
   return (
     <div className="space-y-8">
@@ -241,11 +282,48 @@ export function SpeciesStep() {
   );
 }
 
+function SpeciesTraits({ traits }: { traits: Record<string, unknown> }) {
+  const entries = Object.entries(traits);
+  if (entries.length === 0) return null;
+  return (
+    <div className="mt-6">
+      <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-background px-3 py-1 text-xs font-medium text-primary">
+        <Sparkles className="h-3.5 w-3.5" />
+        Species traits
+      </div>
+      <ul className="mt-2 max-h-[28rem] space-y-3 overflow-y-auto pr-1">
+        {entries.map(([name, value]) => {
+          const desc = traitDescription(value);
+          return (
+            <li key={name} className="info-panel-block">
+              <p className="font-semibold text-sm">{name}</p>
+              {desc && (
+                <div className="mt-1 rounded-md border border-border/60 bg-background px-3 py-2">
+                  <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                    Trait details
+                  </p>
+                  <p className="mt-1 text-sm text-foreground/85">{desc}</p>
+                </div>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
 function SpeciesInfoPanel({
   selectedSpeciesSummary,
+  fullSpeciesData,
+  speciesLoading,
 }: {
   selectedSpeciesSummary?: SpeciesSummary;
+  fullSpeciesData?: Record<string, unknown>;
+  speciesLoading?: boolean;
 }) {
+  const traits = fullSpeciesData?.traits as Record<string, unknown> | undefined;
+
   return (
     <aside className="info-panel" aria-label="Species details panel">
       <div className="info-panel-header">
@@ -305,6 +383,15 @@ function SpeciesInfoPanel({
               )}
           </div>
         )}
+        {selectedSpeciesSummary && speciesLoading && (
+          <div className="mt-6">
+            <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-background px-3 py-1 text-xs font-medium text-primary">
+              <Sparkles className="h-3.5 w-3.5 animate-pulse" />
+              Loading species traits…
+            </div>
+          </div>
+        )}
+        {traits && <SpeciesTraits traits={traits} />}
       </div>
     </aside>
   );
@@ -353,7 +440,7 @@ function SpeciesDetail({
                   )}
                 >
                   <div className="mb-3 flex items-start justify-between gap-3">
-                    <div className="font-display text-lg text-primary">
+                    <div className="font-display text-lg text-primary font-semibold">
                       {entry.name}
                     </div>
                     <span
@@ -393,6 +480,28 @@ function SpeciesDetail({
                       </dl>
                     </div>
                   )}
+                  {(() => {
+                    const spells = extractGrantedSpells(entry.traits ?? {});
+                    if (spells.length === 0) return null;
+                    return (
+                      <div className="mt-3 border-t border-border pt-3">
+                        <div className="mb-1.5 flex items-center gap-1 text-xs font-semibold text-primary">
+                          <Sparkles className="h-3 w-3" />
+                          Granted spells
+                        </div>
+                        <ul className="space-y-1">
+                          {spells.map((s) => (
+                            <li key={s.spell} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                              <span className="inline-flex items-center rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                                {s.level === "cantrip" ? "Cantrip" : `Lvl ${s.level}+`}
+                              </span>
+                              {s.spell}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    );
+                  })()}
                   <div className="mt-4 flex items-center justify-between text-xs font-medium text-muted-foreground">
                     <span>
                       {isSelected

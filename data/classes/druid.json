@@ -369,7 +369,10 @@
         {
           "type": "ability_bonus",
           "ability": "Intelligence",
-          "skills": ["Arcana", "Nature"],
+          "skills": [
+            "Arcana",
+            "Nature"
+          ],
           "value": "wisdom_modifier",
           "minimum": 1
         }
@@ -380,11 +383,15 @@
       "effects": [
         {
           "type": "grant_weapon_proficiency",
-          "proficiencies": ["Martial weapons"]
+          "proficiencies": [
+            "Martial weapons"
+          ]
         },
         {
           "type": "grant_armor_proficiency",
-          "proficiencies": ["Medium armor"]
+          "proficiencies": [
+            "Medium armor"
+          ]
         }
       ]
     }
@@ -394,8 +401,14 @@
       "description": "Add your Wisdom modifier to the damage you deal with any Druid cantrip. {improved_text}",
       "scaling": {
         "improved_text": [
-          {"min_level": 7, "value": ""},
-          {"min_level": 15, "value": "When you cast a Druid cantrip with a range of 10 feet or greater, the spell's range increases by 300 feet."}
+          {
+            "min_level": 7,
+            "value": ""
+          },
+          {
+            "min_level": 15,
+            "value": "When you cast a Druid cantrip with a range of 10 feet or greater, the spell's range increases by 300 feet."
+          }
         ]
       }
     },
@@ -403,8 +416,14 @@
       "description": "Once on each of your turns when you hit a creature with an attack roll using a weapon or a Beast form's attack in Wild Shape, you can cause the target to take an extra {strike_dice} Cold, Fire, Lightning, or Thunder damage (choose when you hit).",
       "scaling": {
         "strike_dice": [
-          {"min_level": 7, "value": "1d8"},
-          {"min_level": 15, "value": "2d8"}
+          {
+            "min_level": 7,
+            "value": "1d8"
+          },
+          {
+            "min_level": 15,
+            "value": "2d8"
+          }
         ]
       }
     }
@@ -500,5 +519,19 @@
     "20": {
       "Archdruid": "The vitality of nature constantly blooms within you, granting you the following benefits. Evergreen Wild Shape: Whenever you roll Initiative and have no uses of Wild Shape left, you regain one expended use. Nature Magician: You can convert uses of Wild Shape into a spell slot (no action required), with each use contributing 2 spell levels. Once per Long Rest. Longevity: For every ten years that pass, your body ages only one year."
     }
+  },
+  "multiclassing": {
+    "hit_die_granted": 8,
+    "armor_training": [
+      "Light",
+      "Shields"
+    ],
+    "weapon_training": [],
+    "tool_training": [],
+    "skill_proficiencies": null,
+    "saving_throw_proficiencies": [],
+    "other_proficiencies": [],
+    "notes": null,
+    "source_text": "As a Multiclass Druid: Gain the following traits from the Core Druid Traits table: Hit Point Die and training with Light armor and Shields. Gain the Druid's level 1 features, which are listed in the Druid Features table. See the multiclassing rules in multiclassing to determine your available spell slots."
   }
 }

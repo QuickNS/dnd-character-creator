@@ -121,7 +121,10 @@
           {
             "type": "alternative_ac",
             "base": 10,
-            "modifiers": ["dexterity", "wisdom"],
+            "modifiers": [
+              "dexterity",
+              "wisdom"
+            ],
             "condition": "no_armor_no_shield"
           }
         ]
@@ -207,7 +210,14 @@
         "effects": [
           {
             "type": "grant_save_proficiency",
-            "abilities": ["Strength", "Dexterity", "Constitution", "Intelligence", "Wisdom", "Charisma"]
+            "abilities": [
+              "Strength",
+              "Dexterity",
+              "Constitution",
+              "Intelligence",
+              "Wisdom",
+              "Charisma"
+            ]
           }
         ]
       },
@@ -248,10 +258,29 @@
       "Body and Mind": {
         "description": "You have developed your body and mind to new heights. Your Dexterity and Wisdom scores increase by 4, to a maximum of 25.",
         "effects": [
-          {"type": "ability_bonus", "ability": "Dexterity", "value": 4},
-          {"type": "ability_bonus", "ability": "Wisdom", "value": 4}
+          {
+            "type": "ability_bonus",
+            "ability": "Dexterity",
+            "value": 4
+          },
+          {
+            "type": "ability_bonus",
+            "ability": "Wisdom",
+            "value": 4
+          }
         ]
       }
     }
+  },
+  "multiclassing": {
+    "hit_die_granted": 8,
+    "armor_training": [],
+    "weapon_training": [],
+    "tool_training": [],
+    "skill_proficiencies": null,
+    "saving_throw_proficiencies": [],
+    "other_proficiencies": [],
+    "notes": "Multiclass Monks gain only the Hit Point Die from the Core Monk Traits table (no weapon, armor, or tool proficiencies granted on multiclass entry).",
+    "source_text": "As a Multiclass Monk: Gain the Hit Point Die trait from the Core Monk Traits table. Gain the Monk's level 1 features, which are listed in the Monk Features table."
   }
 }

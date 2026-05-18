@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   BookOpen,
@@ -11,7 +11,7 @@ import {
   Sword,
   Trash2,
 } from "lucide-react";
-import { api, type ChoicesMade, type ClassAllocation } from "@/lib/api";
+import { api, type ChoicesMade, type ClassAllocation, type ClassDetail, type ClassSummary, type Multiclassing } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { useCharacterStore } from "@/store/characterStore";
 import { ChoiceList } from "@/components/wizard/ChoiceList";
@@ -183,6 +183,134 @@ function matchesPreviewContext(
 }
 
 
+/**
+ * Parse a class's `primary_ability` string into a list of required abilities
+ * and a combinator. Wiki shapes seen:
+ *   "Intelligence"           -> { kind: 'and', abilities: ['Intelligence'] }
+ *   "Strength & Charisma"    -> { kind: 'and', abilities: ['Strength','Charisma'] }
+ *   "Dexterity & Wisdom"     -> { kind: 'and', abilities: ['Dexterity','Wisdom'] }
+ *   "Strength or Dexterity"  -> { kind: 'or',  abilities: ['Strength','Dexterity'] }
+ * "&" / "and" are treated as AND; "or" / "/" as OR.
+ */
+function parsePrimaryAbilities(
+  primary: string | undefined | null,
+): { kind: "and" | "or"; abilities: string[] } {
+  if (!primary || typeof primary !== "string") {
+    return { kind: "and", abilities: [] };
+  }
+  const trimmed = primary.trim();
+  if (!trimmed) return { kind: "and", abilities: [] };
+  const orRe = /\s+or\s+|\s*\/\s*/i;
+  const andRe = /\s*&\s*|\s+and\s+/i;
+  if (orRe.test(trimmed)) {
+    return {
+      kind: "or",
+      abilities: trimmed.split(orRe).map((s) => s.trim()).filter(Boolean),
+    };
+  }
+  if (andRe.test(trimmed)) {
+    return {
+      kind: "and",
+      abilities: trimmed.split(andRe).map((s) => s.trim()).filter(Boolean),
+    };
+  }
+  return { kind: "and", abilities: [trimmed] };
+}
+
+/**
+ * Sum base ability score + species/feat additional modifiers + background
+ * bonuses, all of which are already in `choicesMade` if the player has
+ * progressed that far. Returns `undefined` if the base map is missing.
+ */
+function combinedAbilityScores(
+  choicesMade: ChoicesMade,
+): Record<string, number> | undefined {
+  const base = choicesMade.ability_scores;
+  if (!base || typeof base !== "object") return undefined;
+  const result: Record<string, number> = { ...base };
+  const additional = choicesMade.additional_ability_modifiers;
+  if (additional && typeof additional === "object") {
+    for (const [k, v] of Object.entries(additional)) {
+      if (typeof v === "number") result[k] = (result[k] ?? 0) + v;
+    }
+  }
+  const bg = choicesMade.background_bonuses;
+  if (bg && typeof bg === "object") {
+    for (const [k, v] of Object.entries(bg)) {
+      if (typeof v === "number") result[k] = (result[k] ?? 0) + v;
+    }
+  }
+  return result;
+}
+
+/**
+ * D&D 2024 multiclass prerequisites: to multiclass INTO a new class the
+ * character needs ≥13 in the primary ability of every class they have plus
+ * the candidate class. AND combos require all listed abilities ≥13; OR combos
+ * require any one ≥13. The primary class row is unrestricted.
+ *
+ * When ability scores are unknown (player hasn't reached the Abilities step
+ * yet), returns `ok: true` with `abilitiesUnknown: true` so the picker stays
+ * enabled and the UI can surface an advisory instead.
+ */
+function checkMulticlassPrereqs(
+  candidateClass: ClassSummary | undefined,
+  currentClasses: ClassAllocation[],
+  abilityScores: Record<string, number> | undefined,
+  allClasses: ClassSummary[],
+): { ok: boolean; missing: string[]; abilitiesUnknown: boolean } {
+  if (!candidateClass) return { ok: true, missing: [], abilitiesUnknown: false };
+  if (!abilityScores || Object.keys(abilityScores).length === 0) {
+    return { ok: true, missing: [], abilitiesUnknown: true };
+  }
+  const byId = new Map(allClasses.map((c) => [c.id, c]));
+  const involved: ClassSummary[] = [];
+  for (const row of currentClasses) {
+    if (!row.class_name) continue;
+    if (row.class_name === candidateClass.id) continue;
+    const summary = byId.get(row.class_name);
+    if (summary) involved.push(summary);
+  }
+  involved.push(candidateClass);
+
+  const missing = new Set<string>();
+  for (const cls of involved) {
+    const parsed = parsePrimaryAbilities(cls.primary_ability);
+    if (parsed.abilities.length === 0) continue;
+    const checks = parsed.abilities.map((ab) => (abilityScores[ab] ?? 0) >= 13);
+    const ok = parsed.kind === "or" ? checks.some(Boolean) : checks.every(Boolean);
+    if (!ok) {
+      const failed = parsed.abilities.filter(
+        (ab) => (abilityScores[ab] ?? 0) < 13,
+      );
+      for (const ab of failed) missing.add(ab);
+    }
+  }
+  return {
+    ok: missing.size === 0,
+    missing: Array.from(missing),
+    abilitiesUnknown: false,
+  };
+}
+
+function formatProfList(values: string[] | null | undefined): string {
+  if (!values || values.length === 0) return "—";
+  return values.join(", ");
+}
+
+function formatMulticlassSkillProfs(
+  block: Multiclassing["skill_proficiencies"],
+): string {
+  if (!block) return "None";
+  const opts = block.options;
+  if (opts === "any") return `Choose ${block.count} from any skill`;
+  if (Array.isArray(opts) && opts.length > 0) {
+    return `Choose ${block.count} from ${opts.join(", ")}`;
+  }
+  return `Choose ${block.count}`;
+}
+
+
 export function ClassStep() {
   const choicesMade = useCharacterStore((s) => s.choicesMade);
   const setChoice = useCharacterStore((s) => s.setChoice);
@@ -296,6 +424,17 @@ export function ClassStep() {
     queryFn: api.catalog.classes,
   });
 
+  const allClassSummaries = useMemo(
+    () => classesQuery.data ?? [],
+    [classesQuery.data],
+  );
+  const combinedScores = useMemo(
+    () => combinedAbilityScores(choicesMade),
+    [choicesMade],
+  );
+  const abilitiesUnknown =
+    !combinedScores || Object.keys(combinedScores).length === 0;
+
   // Fetch full class data (with features_by_level) for the detail panel
   const fullClassQuery = useQuery({
     queryKey: ["catalog", "classes", selectedClass],
@@ -304,7 +443,12 @@ export function ClassStep() {
   });
 
   const previewQuery = useQuery({
-    queryKey: ["character", "preview-step", "class", previewChoices],
+    // Key on the three fields that actually change what class features are
+    // shown. Deliberately excludes spell_selections, mastery_selections, etc.
+    // so picking a spell/mastery/invocation doesn't force a reload of the
+    // class preview. The queryFn still receives the full previewChoices so
+    // the backend can use them if needed.
+    queryKey: ["character", "preview-step", "class", selectedClass, clampLevel(activeRow.level), selectedSubclass],
     queryFn: () => api.character.previewStep(previewChoices, "class"),
     enabled: !!selectedClass,
   });
@@ -320,7 +464,7 @@ export function ClassStep() {
   const fullClassData =
     fullClassQuery.isPlaceholderData
       ? undefined
-      : (fullClassQuery.data as Record<string, unknown> | undefined);
+      : (fullClassQuery.data as ClassDetail | undefined);
   const detailClass = selectedClass && classSummary ? ({
     ...classSummary,
     features_by_level: (fullClassData?.features_by_level as Record<string, Record<string, unknown> | string[]> | undefined) ?? {}
@@ -377,6 +521,8 @@ export function ClassStep() {
             <ClassInfoPanel
               infoTarget={infoTarget}
               detailClass={detailClass}
+              fullClassData={fullClassData}
+              isPrimaryRow={activeRowIndex === 0}
               selectedClass={selectedClass}
               classLoading={
                 (fullClassQuery.isLoading || fullClassQuery.isPlaceholderData) && !fullClassData
@@ -400,6 +546,7 @@ export function ClassStep() {
     return () => setSidebarPanel(null);
   }, [
     activeFeatureLevels,
+    activeRowIndex,
     activeSubclassDetail,
     activeSubclassId,
     availableSubclasses,
@@ -495,6 +642,12 @@ export function ClassStep() {
                     >
                       {rowSubclassLabel}
                     </span>
+                    <RowPendingIndicator
+                      row={row}
+                      rowSummary={rowClassSummary}
+                      choicesMade={choicesMade}
+                      isPrimary={isPrimary}
+                    />
                   </div>
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-[minmax(0,1fr)_8rem_auto] md:items-end">
                     <div>
@@ -524,12 +677,61 @@ export function ClassStep() {
                         className="mt-2 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                       >
                         <option value="">Select class</option>
-                        {(classesQuery.data ?? []).map((cls) => (
-                          <option key={cls.id} value={cls.id}>
-                            {cls.name}
-                          </option>
-                        ))}
+                        {allClassSummaries.map((cls) => {
+                          // Dedupe: hide any class already used by ANOTHER
+                          // row. The current row's own selection always
+                          // remains available so the player can keep it.
+                          const usedByOtherRow = classAllocations.some(
+                            (entry, entryIdx) =>
+                              entryIdx !== idx && entry.class_name === cls.id,
+                          );
+                          if (usedByOtherRow && cls.id !== row.class_name) {
+                            return null;
+                          }
+                          // Primary row (idx 0) is never restricted by
+                          // multiclass prereqs.
+                          // For multiclass rows, disable any candidate whose
+                          // prereqs the character doesn't meet — but never
+                          // disable the option that is already selected for
+                          // this row (you can't un-pick something via the
+                          // disabled attribute).
+                          if (isPrimary || cls.id === row.class_name) {
+                            return (
+                              <option key={cls.id} value={cls.id}>
+                                {cls.name}
+                              </option>
+                            );
+                          }
+                          const check = checkMulticlassPrereqs(
+                            cls,
+                            classAllocations,
+                            combinedScores,
+                            allClassSummaries,
+                          );
+                          if (check.ok) {
+                            return (
+                              <option key={cls.id} value={cls.id}>
+                                {cls.name}
+                              </option>
+                            );
+                          }
+                          const reasonParts = check.missing.map((ab) => {
+                            const have = combinedScores?.[ab] ?? 0;
+                            return `${ab} 13+ (have ${have})`;
+                          });
+                          return (
+                            <option key={cls.id} value={cls.id} disabled>
+                              {cls.name} — requires {reasonParts.join(", ")}
+                            </option>
+                          );
+                        })}
                       </select>
+                      {!isPrimary && abilitiesUnknown && (
+                        <p className="mt-2 text-[11px] text-muted-foreground">
+                          Ability scores not yet set — multiclass prerequisites
+                          will be checked once you complete the Abilities step.
+                        </p>
+                      )}
                     </div>
 
                     <div>
@@ -622,14 +824,30 @@ export function ClassStep() {
                     { class_name: "", level: 1 },
                   ])
                 }
-                className="inline-flex items-center gap-2 rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground transition-colors hover:bg-secondary"
+                disabled={abilitiesUnknown}
+                title={
+                  abilitiesUnknown
+                    ? "Set your ability scores first — multiclassing requires a score of 13 in the primary ability of each class involved."
+                    : undefined
+                }
+                className={cn(
+                  "inline-flex items-center gap-2 rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground transition-colors hover:bg-secondary",
+                  abilitiesUnknown &&
+                    "cursor-not-allowed opacity-50 hover:bg-background",
+                )}
               >
                 <Plus className="h-4 w-4" />
                 Add class
               </button>
-              <p className="text-xs text-muted-foreground">
-                Select an active row to drive class details, subclass selection, and class loadout picks.
-              </p>
+              {abilitiesUnknown ? (
+                <p className="text-xs text-muted-foreground">
+                  Set your ability scores first — multiclassing requires a score of 13 in the primary ability of each class involved.
+                </p>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  Select an active row to drive class details, subclass selection, and class loadout picks.
+                </p>
+              )}
             </div>
 
             {multiclassPending && (
@@ -770,6 +988,109 @@ function SpellInfoPanel({
   );
 }
 
+function ClassTraitsSection({
+  fullClassData,
+  isPrimaryRow,
+}: {
+  fullClassData: ClassDetail;
+  isPrimaryRow: boolean;
+}) {
+  const rows: Array<{ label: string; value: ReactNode }> = [];
+  let title: string;
+  let notes: string | null = null;
+  let sourceText: string | undefined;
+
+  if (isPrimaryRow) {
+    title = "Core Traits";
+    rows.push({
+      label: "Saving throws",
+      value: formatProfList(fullClassData.saving_throw_proficiencies),
+    });
+    rows.push({
+      label: "Armor training",
+      value: formatProfList(fullClassData.armor_proficiencies),
+    });
+    rows.push({
+      label: "Weapon training",
+      value: formatProfList(fullClassData.weapon_proficiencies),
+    });
+    rows.push({
+      label: "Tool training",
+      value: formatProfList(fullClassData.tool_proficiencies ?? null),
+    });
+    const skillCount = fullClassData.skill_proficiencies_count;
+    const skillOptions = fullClassData.skill_options ?? [];
+    const skillValue =
+      skillCount && skillCount > 0 && skillOptions.length > 0
+        ? skillOptions.length === 1 && skillOptions[0].toLowerCase() === "any"
+          ? `Choose ${skillCount} from any skill`
+          : `Choose ${skillCount} from ${skillOptions.join(", ")}`
+        : "—";
+    rows.push({ label: "Skill proficiencies", value: skillValue });
+  } else {
+    title = "Multiclass Traits";
+    const mc = fullClassData.multiclassing;
+    if (!mc) {
+      return (
+        <div className="mt-6 rounded-lg border border-border/60 bg-background px-4 py-3">
+          <p className="text-sm text-muted-foreground">
+            Multiclass information is not available for this class.
+          </p>
+        </div>
+      );
+    }
+    rows.push({ label: "Hit Die", value: `d${mc.hit_die_granted}` });
+    rows.push({ label: "Armor training", value: formatProfList(mc.armor_training) });
+    rows.push({ label: "Weapon training", value: formatProfList(mc.weapon_training) });
+    rows.push({ label: "Tool training", value: formatProfList(mc.tool_training) });
+    rows.push({
+      label: "Skill proficiencies",
+      value: formatMulticlassSkillProfs(mc.skill_proficiencies),
+    });
+    rows.push({
+      label: "Saving throws",
+      value:
+        mc.saving_throw_proficiencies.length > 0
+          ? mc.saving_throw_proficiencies.join(", ")
+          : "None",
+    });
+    notes = mc.notes;
+    sourceText = mc.source_text;
+  }
+
+  return (
+    <div className="mt-6">
+      <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-background px-3 py-1 text-xs font-medium text-primary">
+        <Shield className="h-3.5 w-3.5" />
+        {title}
+      </div>
+      <div className="mt-2 grid grid-cols-1 gap-2">
+        {rows.map((row) => (
+          <div
+            key={row.label}
+            className="rounded-lg border border-border/70 bg-background/80 px-3 py-2"
+          >
+            <div className="text-xs uppercase tracking-wide text-muted-foreground">
+              {row.label}
+            </div>
+            <div className="mt-1 text-sm font-medium text-foreground">
+              {row.value}
+            </div>
+          </div>
+        ))}
+      </div>
+      {notes && (
+        <p className="mt-3 text-sm italic text-muted-foreground">{notes}</p>
+      )}
+      {sourceText && (
+        <p className="mt-3 border-t border-border/60 pt-2 text-[11px] leading-relaxed text-muted-foreground">
+          {sourceText}
+        </p>
+      )}
+    </div>
+  );
+}
+
 function ClassFeatureProgression({ featuresByLevel }: { featuresByLevel: Record<string, Record<string, unknown> | string[]> }) {
   // Reuse featureLevelEntries logic for robust feature extraction
   const levels = featureLevelEntries(featuresByLevel);
@@ -793,12 +1114,9 @@ function ClassFeatureProgression({ featuresByLevel }: { featuresByLevel: Record<
             <ul className="mt-2 space-y-3 text-sm text-foreground/90">
               {entry.features.map((feature) => (
                 <li key={feature.name}>
-                  <p className="font-semibold">• {feature.name}</p>
+                  <p className="font-semibold">{feature.name}</p>
                   {feature.description && (
                     <div className="mt-1 rounded-md border border-border/60 bg-background px-3 py-2">
-                      <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                        Feature details
-                      </p>
                       <p className="mt-1 text-sm text-foreground/85">
                         {feature.description}
                       </p>
@@ -814,9 +1132,114 @@ function ClassFeatureProgression({ featuresByLevel }: { featuresByLevel: Record<
   );
 }
 
+/**
+ * Per-row indicator that surfaces "this class row has unsatisfied required
+ * choices". Re-uses the same `/character/preview-step` endpoint the active
+ * row uses, scoped to this row's class/level/subclass; react-query caches
+ * the response by that triple to avoid hammering the API.
+ *
+ * A choice is considered satisfied when `choicesMade[choice_key]` is
+ * non-empty. Subclass requirement is checked against the row's own
+ * `subclass` (per-allocation) and the class's `subclass_selection_level`.
+ *
+ * Known limitation: nested-choice keys (skill_choices, tool_choices,
+ * fighting_style, ...) live in a single shared `choicesMade` map, so in a
+ * multiclass build both rows read the same value for those keys. This
+ * mirrors the existing storage model and matches what the backend sees.
+ */
+function RowPendingIndicator({
+  row,
+  rowSummary,
+  choicesMade,
+  isPrimary,
+}: {
+  row: ClassAllocation;
+  rowSummary: ClassSummary | undefined;
+  choicesMade: ChoicesMade;
+  isPrimary: boolean;
+}) {
+  const level = clampLevel(row.level);
+  const subclass = row.subclass ?? "";
+  const enabled = Boolean(row.class_name);
+
+  const rowChoices: ChoicesMade = useMemo(
+    () => ({
+      ...choicesMade,
+      class: row.class_name,
+      level,
+      ...(subclass ? { subclass } : {}),
+    }),
+    [choicesMade, row.class_name, level, subclass],
+  );
+
+  const previewQuery = useQuery({
+    queryKey: [
+      "character",
+      "preview-step",
+      "class-pending",
+      row.class_name,
+      level,
+      subclass,
+    ],
+    queryFn: () => api.character.previewStep(rowChoices, "class"),
+    enabled,
+    staleTime: 60_000,
+  });
+
+  if (!enabled) return null;
+
+  const data = previewQuery.data as Record<string, unknown> | undefined;
+  const missing: string[] = [];
+
+  // Subclass requirement applies to all rows.
+  const subclassThreshold = rowSummary?.subclass_selection_level;
+  if (
+    !subclass &&
+    typeof subclassThreshold === "number" &&
+    level >= subclassThreshold
+  ) {
+    missing.push("subclass");
+  }
+
+  if (data) {
+    const nested = (data["nested_choices"] as PreviewChoice[] | undefined) ?? [];
+    for (const choice of nested) {
+      const key =
+        choice.choice_key ?? choice.feature_name ?? choice.name ?? "";
+      if (!key) continue;
+      const value = choicesMade[key];
+      const satisfied = Array.isArray(value)
+        ? value.length > 0
+        : typeof value === "string"
+          ? value.length > 0
+          : value !== undefined && value !== null && value !== "";
+      if (!satisfied) missing.push(key);
+    }
+  }
+
+  if (missing.length === 0) return null;
+
+  const labels = missing.map((m) => m.replace(/_/g, " "));
+  const title = `${missing.length} choice${missing.length === 1 ? "" : "s"} missing: ${labels.join(", ")}`;
+
+  return (
+    <span
+      className="inline-flex items-center gap-1 rounded-full border border-amber-400/50 bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-800 dark:text-amber-300"
+      title={title}
+      aria-label={title}
+      data-row-primary={isPrimary || undefined}
+    >
+      <span className="h-2 w-2 rounded-full bg-amber-500" aria-hidden />
+      {missing.length} pending
+    </span>
+  );
+}
+
 function ClassInfoPanel({
   infoTarget,
   detailClass,
+  fullClassData,
+  isPrimaryRow,
   selectedClass,
   classLoading,
   showClassFeatureFallback,
@@ -829,6 +1252,8 @@ function ClassInfoPanel({
 }: {
   infoTarget: ClassInfoTarget;
   detailClass?: any;
+  fullClassData?: ClassDetail;
+  isPrimaryRow: boolean;
   selectedClass: string;
   classLoading: boolean;
   showClassFeatureFallback: boolean;
@@ -890,7 +1315,7 @@ function ClassInfoPanel({
                       <ul className="mt-2 space-y-3 text-sm text-foreground/90">
                         {entry.features.map((feature) => (
                           <li key={feature.name}>
-                            <p className="font-semibold">• {feature.name}</p>
+                            <p className="font-semibold">{feature.name}</p>
                             {feature.description && (
                               <div className="mt-1 rounded-md border border-border/60 bg-background px-3 py-2">
                                 <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
@@ -957,17 +1382,15 @@ function ClassInfoPanel({
                       d{detailClass.hit_die}
                     </div>
                   </div>
-                  <div className="rounded-lg border border-border/70 bg-background/80 px-3 py-2">
-                    <div className="text-xs uppercase tracking-wide text-muted-foreground">
-                      Subclass choice
-                    </div>
-                    <div className="mt-1 font-medium text-foreground">
-                      Level {detailClass.subclass_selection_level}
-                    </div>
-                  </div>
                 </>
               )}
             </div>
+            {detailClass && fullClassData && (
+              <ClassTraitsSection
+                fullClassData={fullClassData}
+                isPrimaryRow={isPrimaryRow}
+              />
+            )}
             {selectedClass && classLoading && (
               <div className="mt-6">
                 <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-background px-3 py-1 text-xs font-medium text-primary">

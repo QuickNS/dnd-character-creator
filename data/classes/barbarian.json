@@ -79,7 +79,10 @@
           {
             "type": "alternative_ac",
             "base": 10,
-            "modifiers": ["dexterity", "constitution"],
+            "modifiers": [
+              "dexterity",
+              "constitution"
+            ],
             "condition": "no_armor"
           }
         ]
@@ -92,7 +95,9 @@
         "effects": [
           {
             "type": "grant_save_advantage",
-            "abilities": ["Dexterity"],
+            "abilities": [
+              "Dexterity"
+            ],
             "condition": "not Incapacitated",
             "display": "Advantage on Dexterity saving throws (Danger Sense)"
           }
@@ -179,5 +184,20 @@
         ]
       }
     }
+  },
+  "multiclassing": {
+    "hit_die_granted": 12,
+    "armor_training": [
+      "Shields"
+    ],
+    "weapon_training": [
+      "Martial"
+    ],
+    "tool_training": [],
+    "skill_proficiencies": null,
+    "saving_throw_proficiencies": [],
+    "other_proficiencies": [],
+    "notes": null,
+    "source_text": "As a Multiclass Character: Gain the following traits from the Core Barbarian Traits table: Hit Point Die, proficiency with Martial weapons, and training with Shields. Gain the Barbarian's level 1 features, which are listed in the Barbarian Features table."
   }
 }

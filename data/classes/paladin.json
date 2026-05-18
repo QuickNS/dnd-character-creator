@@ -400,7 +400,11 @@
       "Paladin's Smite": {
         "description": "You always have the Divine Smite spell prepared. You can cast it once without expending a spell slot, regaining this ability when you finish a Long Rest.",
         "effects": [
-          {"type": "grant_spell", "spell": "Divine Smite", "min_level": 2}
+          {
+            "type": "grant_spell",
+            "spell": "Divine Smite",
+            "min_level": 2
+          }
         ]
       }
     },
@@ -416,7 +420,11 @@
       "Faithful Steed": {
         "description": "You always have the Find Steed spell prepared. You can also cast it once without expending a spell slot, regaining this ability when you finish a Long Rest.",
         "effects": [
-          {"type": "grant_spell", "spell": "Find Steed", "min_level": 5}
+          {
+            "type": "grant_spell",
+            "spell": "Find Steed",
+            "min_level": 5
+          }
         ]
       }
     },
@@ -459,5 +467,22 @@
     "20": {
       "Subclass Feature": "You gain your capstone feature from your sacred oath."
     }
+  },
+  "multiclassing": {
+    "hit_die_granted": 10,
+    "armor_training": [
+      "Light",
+      "Medium",
+      "Shields"
+    ],
+    "weapon_training": [
+      "Martial"
+    ],
+    "tool_training": [],
+    "skill_proficiencies": null,
+    "saving_throw_proficiencies": [],
+    "other_proficiencies": [],
+    "notes": null,
+    "source_text": "As a Multiclass Character: Gain the following traits from the Core Paladin Traits table: Hit Point Die, proficiency with Martial weapons, and training with Light and Medium armor and Shields. Gain the Paladin's level 1 features, which are listed in the Paladin Features table. See the multiclassing rules in multiclassing to determine your available spell slots."
   }
 }

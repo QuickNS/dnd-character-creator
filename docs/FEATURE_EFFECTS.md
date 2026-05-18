@@ -427,6 +427,10 @@ Grants a bonus to hit points.
 }
 ```
 
+**Multiclass scoping for `per_level`**: when a `bonus_hp` effect with `scaling: "per_level"` originates from a **class or subclass feature**, it scales on the **source class's level**, not on total character level. Non-class sources (species, background, feats) continue to scale on total character level.
+
+Example: a Sorcerer 5 / Paladin 5 with Draconic Resilience (Draconic Sorcery, `value: 1`, `per_level`, source = Sorcerer) gains `+5` HP from that effect, not `+10`. Dwarven Toughness on the same character still grants `+10`.
+
 ## Feature Structure
 
 Features can include an `effects` array alongside their description:

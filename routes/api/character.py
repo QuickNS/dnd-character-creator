@@ -8,6 +8,7 @@ frontend is the source of truth for in-progress choices, the Python
 
 from __future__ import annotations
 
+import re
 import traceback
 from typing import Any, Dict, List
 
@@ -34,6 +35,162 @@ _DERIVED_VIEWS = {
 
 class ChoicesValidationError(ValueError):
     """Raised when API request choices are structurally invalid."""
+
+
+# ==================== Multiclass nested-choice filtering ====================
+#
+# Per D&D 2024 multiclassing rules, a secondary class entry grants ONLY the
+# proficiencies listed in that class's `multiclassing` block — it does NOT
+# grant the class's level-1 features (no fighting style, no expertise, no
+# divine/primal order, no level-1 spells/cantrips, no weapon mastery picks,
+# no invocations, etc.). The wizard's level-up step pipeline naively produces
+# every nested choice the class would offer at level 1, so for secondary
+# rows we filter that list down to only:
+#   - skill picks (if `multiclassing.skill_proficiencies` is a non-null dict)
+#   - tool picks  (if any `multiclassing.tool_training` entry is a wildcard
+#                  like "Musical Instrument (1 of your choice)")
+# Subclass selection is handled by `available_subclasses` / `needs_subclass`
+# on the response and is always allowed for any class row.
+
+
+def _classify_choice_for_multiclass(choice: Dict[str, Any]) -> str:
+    """Classify a nested_choice as 'skill', 'tool', or 'other'.
+
+    Inspects the structured `type` field first (set by CharacterBuilder for
+    level-1 proficiency pickers), then falls back to keywords in
+    `choice_key` / `feature_name` / `title`. Branching is intentionally
+    generic — never on specific class or feature names.
+    """
+    ctype = (choice.get("type") or "").lower()
+    if ctype == "skills":
+        return "skill"
+    if ctype == "tools":
+        return "tool"
+    key = " ".join(
+        str(choice.get(k) or "")
+        for k in ("choice_key", "feature_name", "title")
+    ).lower()
+    if "skill" in key:
+        return "skill"
+    if "tool" in key or "instrument" in key:
+        return "tool"
+    return "other"
+
+
+def _parse_tool_wildcard(tool_training: List[Any]) -> Dict[str, Any] | None:
+    """Return {count, label} for the first wildcard entry, or None.
+
+    Wildcard form: "<Category> (<N> of your choice)" or any entry containing
+    "of your choice" (case-insensitive). Concrete grants like "Thieves' Tools"
+    are NOT wildcards and produce no picker.
+    """
+    for entry in tool_training or []:
+        if not isinstance(entry, str) or "of your choice" not in entry.lower():
+            continue
+        count = 1
+        m = re.search(r"\((\d+)\s+of your choice\)", entry, re.IGNORECASE)
+        if m:
+            count = int(m.group(1))
+        label = re.sub(r"\s*\(.*?\)\s*$", "", entry).strip() or entry
+        return {"count": count, "label": label}
+    return None
+
+
+def _filter_nested_choices_for_secondary_class(
+    nested_choices: List[Dict[str, Any]],
+    class_data: Dict[str, Any],
+) -> List[Dict[str, Any]]:
+    """Drop everything except the proficiency picks the multiclass block allows.
+
+    For surviving skill/tool pickers, narrow count and options to match the
+    multiclass entry (e.g. Rogue multiclass = 1 skill from a constrained list).
+    """
+    multiclass = class_data.get("multiclassing") or {}
+
+    skill_block = multiclass.get("skill_proficiencies")
+    allow_skill = isinstance(skill_block, dict)
+
+    tool_wildcard = _parse_tool_wildcard(multiclass.get("tool_training") or [])
+    allow_tool = tool_wildcard is not None
+
+    filtered: List[Dict[str, Any]] = []
+    for choice in nested_choices:
+        kind = _classify_choice_for_multiclass(choice)
+
+        if kind == "skill" and allow_skill:
+            narrowed = dict(choice)
+            mc_options = skill_block.get("options")
+            # "any" (Bard) → keep the existing full-skill list the builder
+            # already expanded. A constrained list (Rogue, Ranger) → use the
+            # multiclass list directly as the authoritative set; do NOT
+            # intersect with the primary class's skill_options, which may be
+            # narrower than the multiclass-entry list per RAW.
+            if isinstance(mc_options, list) and mc_options:
+                narrowed["options"] = list(mc_options)
+            mc_count = skill_block.get("count")
+            if isinstance(mc_count, int) and mc_count > 0:
+                narrowed["count"] = mc_count
+                noun = "proficiency" if mc_count == 1 else "proficiencies"
+                narrowed["description"] = (
+                    f"Choose {mc_count} skill {noun} (multiclass)."
+                )
+            filtered.append(narrowed)
+
+        elif kind == "tool" and allow_tool:
+            narrowed = dict(choice)
+            narrowed["count"] = tool_wildcard["count"]
+            # The primary class's tool_options usually already enumerates the
+            # category (e.g. Bard's instrument list). If empty, fall back to
+            # the label as a single non-selectable entry.
+            if not narrowed.get("options"):
+                narrowed["options"] = [tool_wildcard["label"]]
+                # TODO: enumerate the category from a shared data source once
+                # one exists for tool categories beyond Musical Instrument.
+                narrowed["_todo"] = (
+                    "Multiclass tool picker has no options list; using label fallback."
+                )
+            filtered.append(narrowed)
+
+        # All other categories (fighting style, expertise, spells, cantrips,
+        # divine/primal order, weapon mastery, invocations, etc.) are dropped.
+
+    return filtered
+
+
+def _resolve_class_row_context(
+    request_choices: Dict[str, Any],
+    previewed_class: str | None,
+) -> Dict[str, Any]:
+    """Determine which row of choices_made.classes is being previewed.
+
+    Resolution rules:
+      - No `classes` array (legacy single-class) → row_index 0, primary.
+      - Otherwise: find the first row whose class_name matches the previewed
+        class. If multiple rows share the class name (rare; e.g. someone
+        previewing a duplicate), the first match wins. The request currently
+        has no row-index hint — Phase 2 will likely add one; until then,
+        first-match is the documented resolution.
+    """
+    classes = request_choices.get("classes")
+    if not isinstance(classes, list) or not classes:
+        return {"row_index": 0, "is_primary": True, "total_class_rows": 1}
+
+    total = len(classes)
+    row_index = 0
+    if previewed_class:
+        target = previewed_class.strip().lower()
+        for idx, row in enumerate(classes):
+            if not isinstance(row, dict):
+                continue
+            name = row.get("class_name")
+            if isinstance(name, str) and name.strip().lower() == target:
+                row_index = idx
+                break
+    return {
+        "row_index": row_index,
+        "is_primary": row_index == 0,
+        "total_class_rows": total,
+    }
 
 
 def _require_json() -> Dict[str, Any] | None:
@@ -486,7 +643,11 @@ def preview_step():
 
     step = body["step"]
     try:
-        builder = _build(body["choices_made"])
+        # preserve_explicit_class_context ensures that when the frontend sends
+        # `class: "druid"` for the active multiclass row, the builder uses only
+        # that class — not the first entry in the `classes` array (which would
+        # surface the wrong class's features, e.g. Cleric's Divine Order for Druid).
+        builder = _build(body["choices_made"], preserve_explicit_class_context=True)
     except Exception as exc:
         return jsonify({"error": str(exc), "traceback": traceback.format_exc()}), 500
 
@@ -518,7 +679,15 @@ def preview_step():
                 from modules.data_loader import DataLoader
                 from pathlib import Path
                 dl = DataLoader(data_dir=str(Path(__file__).resolve().parent.parent.parent / "data"))
-                cdata = dl.classes.get(class_name, {})
+                # DataLoader keys classes by their canonical-cased name (e.g.
+                # "Bard"), but request payloads carry lowercase ("bard"). Do a
+                # case-insensitive resolution so the multiclassing block and
+                # subclass lookups work regardless of incoming case.
+                canonical_class = next(
+                    (k for k in dl.classes if k.lower() == class_name.lower()),
+                    class_name,
+                )
+                cdata = dl.classes.get(canonical_class, {})
                 sub_level = cdata.get("subclass_selection_level", 3)
                 result["needs_subclass"] = level >= sub_level
                 if result["needs_subclass"]:
@@ -529,11 +698,28 @@ def preview_step():
                             "description": d.get("description", ""),
                             "level_3_feature_names": _subclass_level_feature_names(d),
                         }
-                        for n, d in sorted(dl.get_subclasses_for_class(class_name).items())
+                        for n, d in sorted(dl.get_subclasses_for_class(canonical_class).items())
                     ]
                 feature_data = builder.get_class_features_and_choices()
                 result["features_by_level"] = feature_data.get("features_by_level", {})
                 result["nested_choices"] = feature_data.get("choices", [])
+
+                # Resolve which class row this preview corresponds to and, if it
+                # is a secondary multiclass row, filter nested_choices down to
+                # only the proficiency picks RAW grants on multiclass entry.
+                row_context = _resolve_class_row_context(request_choices, class_name)
+                if not row_context["is_primary"]:
+                    result["nested_choices"] = _filter_nested_choices_for_secondary_class(
+                        result["nested_choices"], cdata
+                    )
+                result["row_context"] = row_context
+            else:
+                # No class resolved — still surface a legacy single-class context.
+                result["row_context"] = {
+                    "row_index": 0,
+                    "is_primary": True,
+                    "total_class_rows": 1,
+                }
 
         elif step == "species":
             species = character.get("species")

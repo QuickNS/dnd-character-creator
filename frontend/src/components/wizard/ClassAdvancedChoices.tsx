@@ -148,7 +148,7 @@ export function ClassAdvancedChoices({
           <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">
             Class refinement
           </p>
-          <h3 className="mt-1 font-display text-xl text-primary">Class loadout</h3>
+          <h3 className="mt-1 font-display text-xl text-primary font-semibold">Class loadout</h3>
           <p className="mt-1 text-sm text-muted-foreground">
             Finish the class-specific picks that shape how this character plays.
           </p>
@@ -183,8 +183,19 @@ export function ClassAdvancedChoices({
 }
 
 function useDerived(choicesMade: Loose, view: string) {
+  // Key on only the fields that change which options are available.
+  // Selecting a spell/mastery/invocation updates spell_selections in the
+  // store but does NOT change the available-options list, so we deliberately
+  // exclude it (and other selection fields) from the cache key to avoid a
+  // spurious re-fetch every time the player makes a pick.
   return useQuery({
-    queryKey: ["character", "derived", view, choicesMade],
+    queryKey: [
+      "character", "derived", view,
+      choicesMade.class,
+      choicesMade.level,
+      choicesMade.subclass,
+      choicesMade.classes,
+    ],
     queryFn: () => api.character.derived(choicesMade, view),
     enabled: !!choicesMade["class"],
     retry: false,
@@ -309,7 +320,7 @@ function SpellPicker({
   return (
     <div className="rounded-xl border border-border/70 bg-background/70 p-4 shadow-sm space-y-4 sm:p-5">
       <header>
-        <h4 className="font-display text-base text-primary">Spells</h4>
+        <h4 className="font-display text-base text-primary font-semibold">Spells</h4>
         <p className="text-xs text-muted-foreground">
           Cantrips {current.cantrips.length}/{maxCantrips} · Prepared spells{" "}
           {current.spells.length}/{maxSpells}
@@ -594,7 +605,7 @@ function MasteryPicker({ data }: { data: Loose }) {
   return (
     <div className="rounded-xl border border-border/70 bg-background/70 p-4 shadow-sm sm:p-5">
       <header className="mb-3">
-        <h4 className="font-display text-base text-primary">Weapon Masteries</h4>
+        <h4 className="font-display text-base text-primary font-semibold">Weapon Masteries</h4>
         <p className="text-xs text-muted-foreground">
           {current.length}/{max} chosen
         </p>
@@ -670,7 +681,7 @@ function InvocationPicker({ data }: { data: Loose }) {
   return (
     <div className="rounded-xl border border-border/70 bg-background/70 p-4 shadow-sm sm:p-5">
       <header className="mb-3">
-        <h4 className="flex items-center gap-2 font-display text-base text-primary">
+        <h4 className="flex items-center gap-2 font-display text-base text-primary font-semibold">
           <Wand2 className="h-4 w-4" />
           Eldritch Invocations
         </h4>

@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Outlet, useNavigate, useParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { RotateCcw } from "lucide-react";
+import { ChevronLeft, ChevronRight, RotateCcw } from "lucide-react";
 import { api } from "@/lib/api";
 import { useCharacterStore } from "@/store/characterStore";
 import { StepSidebar } from "@/components/wizard/StepSidebar";
@@ -17,6 +17,7 @@ export function WizardLayout() {
   const reset = useCharacterStore((s) => s.reset);
   const [sidebarPanel, setSidebarPanel] = useState<ReactNode | null>(null);
   const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const stepsQuery = useQuery({
     queryKey: ["wizard", "steps"],
@@ -85,26 +86,48 @@ export function WizardLayout() {
   return (
     <div className="min-h-dvh bg-background text-foreground font-sans">
       <div
-        className={`grid grid-cols-1 md:grid-cols-[16rem_minmax(0,1fr)_24rem] gap-0 min-h-dvh relative z-10`}
+        className={`grid grid-cols-1 gap-0 min-h-dvh relative z-10 ${sidebarCollapsed ? 'md:grid-cols-[3rem_minmax(0,1fr)_24rem]' : 'md:grid-cols-[16rem_minmax(0,1fr)_24rem]'}`}
       >
-        <aside className="border-r border-border bg-card/50">
-          <div className="px-5 py-6 border-b border-border flex items-center justify-between gap-2">
-            <h2 className="text-2xl font-semibold text-primary">D&D Character Creator</h2>
-            <div className="flex items-center gap-2">
+        <aside className="border-r border-border bg-card/50 transition-[grid-template-columns] overflow-hidden">
+          <div className={`border-b border-border flex items-center gap-2 ${sidebarCollapsed ? 'px-2 py-6 justify-center flex-col' : 'px-5 py-6 justify-between'}`}>
+            {!sidebarCollapsed && (
+              <img
+                src="/images/logos/logo.png"
+                alt="D&D Character Creator"
+                className="h-28 w-auto object-contain"
+              />
+            )}
+            <div className={`flex items-center gap-2 ${sidebarCollapsed ? 'flex-col' : ''}`}>
+              {!sidebarCollapsed && (
+                <>
+                  <button
+                    type="button"
+                    onClick={handleStartOver}
+                    aria-label="Reset wizard"
+                    title="Discard all choices and restart the wizard"
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border bg-background text-foreground hover:bg-secondary transition-colors"
+                  >
+                    <RotateCcw className="h-4 w-4" aria-hidden="true" />
+                    <span className="sr-only">Reset</span>
+                  </button>
+                  <ThemeToggle />
+                </>
+              )}
               <button
                 type="button"
-                onClick={handleStartOver}
-                aria-label="Reset wizard"
-                title="Discard all choices and restart the wizard"
+                onClick={() => setSidebarCollapsed((c) => !c)}
+                aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+                title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
                 className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border bg-background text-foreground hover:bg-secondary transition-colors"
               >
-                <RotateCcw className="h-4 w-4" aria-hidden="true" />
-                <span className="sr-only">Reset</span>
+                {sidebarCollapsed
+                  ? <ChevronRight className="h-4 w-4" aria-hidden="true" />
+                  : <ChevronLeft className="h-4 w-4" aria-hidden="true" />}
+                <span className="sr-only">{sidebarCollapsed ? "Expand" : "Collapse"}</span>
               </button>
-              <ThemeToggle />
             </div>
           </div>
-          <StepSidebar steps={steps} currentStepId={stepId ?? null} />
+          {!sidebarCollapsed && <StepSidebar steps={steps} currentStepId={stepId ?? null} />}
         </aside>
         <main className="px-6 md:px-10 py-8 w-full min-w-0">
           <Outlet context={{ setSidebarPanel: handleSetSidebarPanel }} />

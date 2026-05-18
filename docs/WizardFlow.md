@@ -26,9 +26,26 @@ Class-step row interaction is active-row driven in the SPA:
 - The user can mark any class row as active.
 - Class details, subclass picker, and class advanced-choice sections target the active row.
 - Subclass validation remains per row at build/validate time (`classes[i].subclass` when that row qualifies).
-- Multiclass standard spell slots now use effective caster level aggregation (full = 1x level, half = floor(level / 2), third = floor(level / 3), non-caster = 0) and the canonical full-caster slot table.
+- Multiclass standard spell slots now use effective caster level aggregation (full = 1x level, half = ceil(level / 2), third = floor(level / 3), non-caster = 0) and the canonical full-caster slot table.
 - Pact Magic slots are tracked separately from standard slots in this phase (not merged).
 - Single-class spellcasting behavior remains compatible.
+
+### Multiclass class step UX
+
+The class step adapts its rendering and validation to the active row's `row_context` (see [APIContract.md](APIContract.md#step-class--row-context-and-multiclass-filtering)). The `is_primary` flag returned by `/api/v1/character/preview-step` drives the following frontend behaviour:
+
+- **Core Traits vs Multiclass Traits panel.** The class info panel renders above the feature progression and switches on `row_context.is_primary`:
+  - **Primary row (`is_primary: true`)** — a **Core Traits** block lists the full level-1 grants (HP die, primary ability, saving throws, armour / weapon / tool proficiencies, full skill list, starting equipment) from the class's top-level fields.
+  - **Secondary row (`is_primary: false`)** — a **Multiclass Traits** block sourced from the class's `multiclassing` JSON block lists only what multiclass entry actually grants (armour / weapon / tool training, the narrowed skill picker, and the note that saves are never granted).
+- **Multiclass prerequisite gating on the class picker.** On secondary rows, every candidate class is checked against D&D 2024 multiclassing prerequisites — every class in the build (the candidate plus all already-selected classes) must have ≥13 in its primary ability. Candidates that fail get a `disabled` `<option>` with an inline reason (e.g. "Requires STR 13 (Fighter) and CHA 13 (Bard)"). The primary class row is never gated.
+- **Advisory state when ability scores are unset.** If `choices_made.ability_scores` has not been entered yet, the prerequisite check is skipped: all classes remain selectable and an advisory notice renders beside the picker ("Set ability scores to confirm multiclass eligibility"). The build endpoint enforces the rule at submission time regardless.
+- **Per-row pending indicator.** Each class row in the list shows an amber dot when that row has unresolved choices. A row is "pending" when:
+  - `row_context.is_primary == true` (or there is only one row) and any of the row's required `nested_choices` are unsatisfied; or
+  - `needs_subclass == true` for the row and `classes[i].subclass` is empty; or
+  - `is_primary == false` and the filtered secondary-row `nested_choices` (skill / tool picks granted by multiclass entry) are unsatisfied.
+
+> **Known limitation — shared choice keys across rows.** Player choices like `skill_choices` and `tool_choices` are stored under a single key in `choices_made`, not partitioned per class row. In multi-row builds where both the primary row and a secondary row prompt for skill picks, the two pickers currently write to the same storage slot and can overwrite each other. Per-row choice partitioning (e.g. `skill_choices_by_row`) is tracked as a future improvement.
+
 
 ## Nesting Rules
 

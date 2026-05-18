@@ -402,10 +402,38 @@
       "Words of Creation": {
         "description": "You have mastered two of the Words of Creation: the words of life and death. You always have the Power Word Heal and Power Word Kill spells prepared. When you cast either spell, you can target a second creature with it if that creature is within 10 feet of the first target.",
         "effects": [
-          {"type": "grant_spell", "spell": "Power Word: Heal", "min_level": 20, "counts_against_limit": false},
-          {"type": "grant_spell", "spell": "Power Word: Kill", "min_level": 20, "counts_against_limit": false}
+          {
+            "type": "grant_spell",
+            "spell": "Power Word: Heal",
+            "min_level": 20,
+            "counts_against_limit": false
+          },
+          {
+            "type": "grant_spell",
+            "spell": "Power Word: Kill",
+            "min_level": 20,
+            "counts_against_limit": false
+          }
         ]
       }
     }
+  },
+  "multiclassing": {
+    "hit_die_granted": 8,
+    "armor_training": [
+      "Light"
+    ],
+    "weapon_training": [],
+    "tool_training": [
+      "Musical Instrument (1 of your choice)"
+    ],
+    "skill_proficiencies": {
+      "count": 1,
+      "options": "any"
+    },
+    "saving_throw_proficiencies": [],
+    "other_proficiencies": [],
+    "notes": null,
+    "source_text": "As a Multiclass Character: Gain the following traits from the Core Bard Traits table: Hit Point Die, proficiency in one skill of your choice, proficiency with one Musical Instrument of your choice, and training with Light armor. Gain the Bard's level 1 features, which are listed in the Bard Features table. See the multiclassing rules in multiclassing to determine your available spell slots."
   }
 }

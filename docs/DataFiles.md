@@ -43,6 +43,38 @@ Validated against [models/class_schema.json](../models/class_schema.json). Requi
 
 `features_by_level` is **always an object of `{ feature_name: description }`**, never an array. See [.github/instructions/data-schemas.instructions.md](../.github/instructions/data-schemas.instructions.md).
 
+#### Multiclassing block
+
+Every class file carries a `multiclassing` object describing what the class grants **when taken as a secondary class** via multiclassing. It is **not** applied for the primary (first) class — that path uses the full class block. The shape is defined in [models/class_schema.json](../models/class_schema.json):
+
+```json
+"multiclassing": {
+  "hit_die_granted": 8,
+  "armor_training": ["Light", "Shields"],
+  "weapon_training": [],
+  "tool_training": [],
+  "skill_proficiencies": null,
+  "saving_throw_proficiencies": [],
+  "other_proficiencies": [],
+  "notes": null,
+  "source_text": "exact wiki quote"
+}
+```
+
+| Field                         | Notes                                                                                  |
+|-------------------------------|----------------------------------------------------------------------------------------|
+| `hit_die_granted`             | Hit die size added to the HP pool for each level of this class beyond level 1 of the primary class. |
+| `armor_training`              | Armor groups granted (e.g. `"Light"`, `"Medium"`, `"Heavy"`, `"Shields"`).             |
+| `weapon_training`             | Weapon proficiencies granted (e.g. `"Martial"`, named simple weapons).                 |
+| `tool_training`               | Tool proficiencies granted.                                                            |
+| `skill_proficiencies`         | `null`, or `{ "count": n, "options": ["Skill", ...] }`. `options` may be `"any"`.      |
+| `saving_throw_proficiencies`  | Always `[]` per D&D 2024 RAW — multiclass never grants save proficiencies. Field is present for schema uniformity. |
+| `other_proficiencies`         | Anything that doesn't fit the buckets above (rare).                                    |
+| `notes`                       | Free-text rules notes (optional).                                                      |
+| `source_text`                 | The exact wiki quote the block was authored from. Preserved for auditability so a reviewer can diff the structured grants against the original prose. |
+
+The builder consumes this block when assembling a multiclass character (see [character_builder_guide.md](character_builder_guide.md#multiclassing)). Skill / tool grants that require a player choice surface as `pending_multiclass_skill_choices` and `pending_multiclass_tool_choices` on the build response — see [APIContract.md](APIContract.md#multiclass-pending-choices).
+
 ### Subclasses (`data/subclasses/<class>/`)
 
 One folder per class, one file per subclass within. Validated against [models/subclass_schema.json](../models/subclass_schema.json). Same `features_by_level` rule applies.

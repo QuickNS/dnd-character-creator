@@ -169,10 +169,11 @@ Request notes:
 ```
 
 - `classes` may contain multiple rows. The builder applies each row's class/subclass features and computes total character level as the sum of row levels.
+- The **first row is the primary class** (used for level-1 max-hit-die HP and starting proficiencies); subsequent rows are secondary classes (proficiencies are limited to each class's `multiclassing` block — see [DataFiles.md](DataFiles.md#multiclassing-block) and [character_builder_guide.md](character_builder_guide.md#multiclassing)).
 - `proficiency_bonus` is computed from total character level.
 - Multiclass spellcasting progression now uses effective caster level aggregation for standard slots:
   - Full caster row contributes `class_level`.
-  - Half caster row contributes `floor(class_level / 2)`.
+  - Half caster row contributes `ceil(class_level / 2)` (RAW, "round up").
   - Third caster row contributes `floor(class_level / 3)`.
   - Non-caster row contributes `0`.
 - Standard spell slots use the canonical full-caster slot table keyed by `effective_caster_level`.
@@ -248,7 +249,53 @@ Response (200) — **always includes `step`**, plus a step-specific payload. Exa
     "level_3_feature_names": ["Feature A", "Feature B", "Feature C"]
   }],
   "features_by_level": { "1": { "Feature": "Description" } },
-  "nested_choices": [ /* choice descriptors */ ]
+  "nested_choices": [ /* choice descriptors */ ],
+  "row_context": {
+    "row_index": 0,        // index into choices_made.classes
+    "is_primary": true,    // row_index == 0
+    "total_class_rows": 1
+  }
+}
+```
+
+#### `step: "class"` — row context and multiclass filtering
+
+Every `class` preview response carries a `row_context` object describing which row of `choices_made.classes` the payload corresponds to:
+
+| Field              | Type    | Meaning                                                          |
+|--------------------|---------|------------------------------------------------------------------|
+| `row_index`        | int     | Index of the resolved row in `choices_made.classes`.             |
+| `is_primary`       | bool    | `true` when `row_index == 0` (the primary class).                |
+| `total_class_rows` | int     | Length of `choices_made.classes`.                                |
+
+Resolution: the server matches the request's previewed class (case-insensitive) against `choices_made.classes` and returns the first matching row. Legacy single-class payloads (`class` / `level` without a `classes` array) always receive `{"row_index": 0, "is_primary": true, "total_class_rows": 1}` with `nested_choices` unfiltered.
+
+When `is_primary` is `false`, `nested_choices` is filtered **server-side** to only the proficiency picks D&D 2024 multiclassing actually grants on entry. The filter consults the class's `multiclassing` block (see [DataFiles.md](DataFiles.md#multiclassing-block)) and:
+
+| Category in `nested_choices`                | Kept on secondary rows? | Conditions                                                                                              |
+|---------------------------------------------|-------------------------|---------------------------------------------------------------------------------------------------------|
+| Skill picker                                | Only when allowed       | `multiclassing.skill_proficiencies` is non-null (Bard, Rogue, Ranger). `count` and `options` are narrowed to the multiclass entry — Bard = any skill, Rogue / Ranger = their constrained lists. |
+| Tool picker                                 | Only when allowed       | `multiclassing.tool_training` contains a wildcard "(N of your choice)" entry (e.g. Bard musical instrument). `count` and `options` reflect the wildcard. |
+| Subclass selection (`needs_subclass` / `available_subclasses`) | Always              | Reported via top-level fields, independent of `nested_choices` filtering. Always allowed at the subclass-unlock level for every row. |
+| Fighting style, expertise, divine / primal order, bonus cantrip, weapon mastery, eldritch invocations, any other category | Dropped                 | Not granted by multiclass entry per RAW.                                                                |
+
+Example secondary-row payload (`choices_made.classes = [{Wizard, 5}, {Rogue, 1}]`, previewing Rogue):
+
+```jsonc
+{
+  "step": "class",
+  "needs_subclass": false,
+  "features_by_level": { "1": { "Expertise": "...", "Sneak Attack": "..." } },
+  "nested_choices": [
+    {
+      "type": "skills",
+      "choice_key": "skill_choices",
+      "count": 1,
+      "description": "Choose 1 skill proficiency (multiclass).",
+      "options": ["Acrobatics", "Athletics", "Insight", "Investigation", "Perception", "Persuasion", "Sleight of Hand", "Stealth"]
+    }
+  ],
+  "row_context": { "row_index": 1, "is_primary": false, "total_class_rows": 2 }
 }
 
 // step: "species"
@@ -403,6 +450,8 @@ interface ChoicesMade {
   species_trait_choices?: Record<string, string>;
   species_feat_choices?: Record<string, string>;
   origin_feat?: string;
+  // Multiclass: player's resolution of pending skill picks per secondary class
+  multiclass_skill_choices?: Record<string, string[]>;
   // Class feature choices keyed by their `choice_key`
   [key: string]: unknown;
 }
@@ -452,6 +501,33 @@ Multiclass spellcasting additive fields now available in build responses:
 - `character.spellcasting_stats.effective_caster_level`
 - `character.spellcasting_stats.pact_magic_slots`
 - `character.spellcasting_stats.multiclass_notes`
+
+### Multiclass pending choices
+
+When a secondary class's `multiclassing` block requires the player to pick skills or tools (Bard, Rogue, Ranger), the build response surfaces them as optional top-level arrays. Both default to `[]` (or are omitted) when nothing is pending. They are **backward-compatible additive fields** — existing single-class responses are unchanged.
+
+| Field                              | Type                                                                | Notes                                                       |
+|------------------------------------|---------------------------------------------------------------------|-------------------------------------------------------------|
+| `pending_multiclass_skill_choices` | `Array<{ class_name: string; count: number; options: string[] \| "any" }>` | One entry per secondary class awaiting a skill pick.        |
+| `pending_multiclass_tool_choices`  | `Array<{ class_name: string; label: string }>`                      | One entry per secondary class awaiting a tool pick (e.g. Bard musical instrument). |
+
+The player resolves skill picks by including `multiclass_skill_choices` in the next request:
+
+```json
+{
+  "choices_made": {
+    "classes": [
+      { "class_name": "Fighter", "level": 5 },
+      { "class_name": "Bard",    "level": 1 }
+    ],
+    "multiclass_skill_choices": {
+      "Bard": ["Persuasion"]
+    }
+  }
+}
+```
+
+Once resolved, the corresponding entry disappears from `pending_multiclass_skill_choices` on the next build.
 
 ### Flattened proficiencies
 

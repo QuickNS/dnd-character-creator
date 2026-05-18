@@ -3,7 +3,10 @@
   "description": "Born with magic stamped into their being, Sorcerers wield innate power from draconic blessings, planar exposure, or glimpses into reality's workings. This churning magic creates an indelible mark that can be passed down through generations.",
   "hit_die": 6,
   "primary_ability": "Charisma",
-  "saving_throw_proficiencies": ["Constitution", "Charisma"],
+  "saving_throw_proficiencies": [
+    "Constitution",
+    "Charisma"
+  ],
   "standard_array_assignment": {
     "Strength": 10,
     "Dexterity": 13,
@@ -13,7 +16,9 @@
     "Charisma": 15
   },
   "armor_proficiencies": [],
-  "weapon_proficiencies": ["Simple weapons"],
+  "weapon_proficiencies": [
+    "Simple weapons"
+  ],
   "skill_proficiencies_count": 2,
   "skill_options": [
     "Arcana",
@@ -39,7 +44,9 @@
   },
   "subclass_selection_level": 3,
   "spellcasting_ability": "Charisma",
-  "spellcasting_focus": ["Arcane Focus"],
+  "spellcasting_focus": [
+    "Arcane Focus"
+  ],
   "cantrips_by_level": {
     "1": 4,
     "2": 4,
@@ -107,30 +114,248 @@
     "20": 20
   },
   "proficiency_bonus_by_level": {
-    "1": 2, "2": 2, "3": 2, "4": 2, "5": 3, "6": 3, "7": 3, "8": 3, "9": 4, "10": 4,
-    "11": 4, "12": 4, "13": 5, "14": 5, "15": 5, "16": 5, "17": 6, "18": 6, "19": 6, "20": 6
+    "1": 2,
+    "2": 2,
+    "3": 2,
+    "4": 2,
+    "5": 3,
+    "6": 3,
+    "7": 3,
+    "8": 3,
+    "9": 4,
+    "10": 4,
+    "11": 4,
+    "12": 4,
+    "13": 5,
+    "14": 5,
+    "15": 5,
+    "16": 5,
+    "17": 6,
+    "18": 6,
+    "19": 6,
+    "20": 6
   },
   "spell_slots_by_level": {
-    "1": [2, 0, 0, 0, 0, 0, 0, 0, 0],
-    "2": [3, 0, 0, 0, 0, 0, 0, 0, 0],
-    "3": [4, 2, 0, 0, 0, 0, 0, 0, 0],
-    "4": [4, 3, 0, 0, 0, 0, 0, 0, 0],
-    "5": [4, 3, 2, 0, 0, 0, 0, 0, 0],
-    "6": [4, 3, 3, 0, 0, 0, 0, 0, 0],
-    "7": [4, 3, 3, 1, 0, 0, 0, 0, 0],
-    "8": [4, 3, 3, 2, 0, 0, 0, 0, 0],
-    "9": [4, 3, 3, 3, 1, 0, 0, 0, 0],
-    "10": [4, 3, 3, 3, 2, 0, 0, 0, 0],
-    "11": [4, 3, 3, 3, 2, 1, 0, 0, 0],
-    "12": [4, 3, 3, 3, 2, 1, 0, 0, 0],
-    "13": [4, 3, 3, 3, 2, 1, 1, 0, 0],
-    "14": [4, 3, 3, 3, 2, 1, 1, 0, 0],
-    "15": [4, 3, 3, 3, 2, 1, 1, 1, 0],
-    "16": [4, 3, 3, 3, 2, 1, 1, 1, 0],
-    "17": [4, 3, 3, 3, 2, 1, 1, 1, 1],
-    "18": [4, 3, 3, 3, 3, 1, 1, 1, 1],
-    "19": [4, 3, 3, 3, 3, 2, 1, 1, 1],
-    "20": [4, 3, 3, 3, 3, 2, 2, 1, 1]
+    "1": [
+      2,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "2": [
+      3,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "3": [
+      4,
+      2,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "4": [
+      4,
+      3,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "5": [
+      4,
+      3,
+      2,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "6": [
+      4,
+      3,
+      3,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "7": [
+      4,
+      3,
+      3,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "8": [
+      4,
+      3,
+      3,
+      2,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "9": [
+      4,
+      3,
+      3,
+      3,
+      1,
+      0,
+      0,
+      0,
+      0
+    ],
+    "10": [
+      4,
+      3,
+      3,
+      3,
+      2,
+      0,
+      0,
+      0,
+      0
+    ],
+    "11": [
+      4,
+      3,
+      3,
+      3,
+      2,
+      1,
+      0,
+      0,
+      0
+    ],
+    "12": [
+      4,
+      3,
+      3,
+      3,
+      2,
+      1,
+      0,
+      0,
+      0
+    ],
+    "13": [
+      4,
+      3,
+      3,
+      3,
+      2,
+      1,
+      1,
+      0,
+      0
+    ],
+    "14": [
+      4,
+      3,
+      3,
+      3,
+      2,
+      1,
+      1,
+      0,
+      0
+    ],
+    "15": [
+      4,
+      3,
+      3,
+      3,
+      2,
+      1,
+      1,
+      1,
+      0
+    ],
+    "16": [
+      4,
+      3,
+      3,
+      3,
+      2,
+      1,
+      1,
+      1,
+      0
+    ],
+    "17": [
+      4,
+      3,
+      3,
+      3,
+      2,
+      1,
+      1,
+      1,
+      1
+    ],
+    "18": [
+      4,
+      3,
+      3,
+      3,
+      3,
+      1,
+      1,
+      1,
+      1
+    ],
+    "19": [
+      4,
+      3,
+      3,
+      3,
+      3,
+      2,
+      1,
+      1,
+      1
+    ],
+    "20": [
+      4,
+      3,
+      3,
+      3,
+      3,
+      2,
+      2,
+      1,
+      1
+    ]
   },
   "features_by_level": {
     "1": {
@@ -151,8 +376,14 @@
           },
           "optional": false,
           "additional_choices_by_level": {
-            "10": {"count": 2, "replace_allowed": true},
-            "17": {"count": 2, "replace_allowed": true}
+            "10": {
+              "count": 2,
+              "replace_allowed": true
+            },
+            "17": {
+              "count": 2,
+              "replace_allowed": true
+            }
           }
         }
       }
@@ -211,5 +442,16 @@
     "Subtle Spell": "When you cast a spell, you can spend 1 Sorcery Point to cast it without any Verbal or Somatic components.",
     "Transmuted Spell": "When you cast a spell that deals a type of damage from the following list, you can spend 1 Sorcery Point to change that damage type to one of the other listed types: Acid, Cold, Fire, Lightning, Poison, Thunder.",
     "Twinned Spell": "When you cast a spell that targets only one creature and doesn't have a range of Self, you can spend a number of Sorcery Points equal to the spell's level (1 Sorcery Point minimum) to target a second creature in range with the same spell."
+  },
+  "multiclassing": {
+    "hit_die_granted": 6,
+    "armor_training": [],
+    "weapon_training": [],
+    "tool_training": [],
+    "skill_proficiencies": null,
+    "saving_throw_proficiencies": [],
+    "other_proficiencies": [],
+    "notes": null,
+    "source_text": "As a Multiclass Character: Gain the Hit Point Die from the Core Sorcerer Traits table. Gain the Sorcerer's level 1 features, which are listed in the Sorcerer Features table. See the multiclassing rules in multiclassing to determine your available spell slots."
   }
 }

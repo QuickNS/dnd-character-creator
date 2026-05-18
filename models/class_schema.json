@@ -180,6 +180,39 @@
           "type": "string"
         }
       }
+    },
+    "multiclassing": {
+      "type": "object",
+      "description": "Proficiencies and traits granted when this class is taken as a SECONDARY class during multiclassing. NOT applied when this is the first/primary class.",
+      "properties": {
+        "hit_die_granted":            { "type": "integer", "enum": [6, 8, 10, 12] },
+        "armor_training":             { "type": "array", "items": { "type": "string" } },
+        "weapon_training":            { "type": "array", "items": { "type": "string" } },
+        "tool_training":              { "type": "array", "items": { "type": "string" } },
+        "skill_proficiencies":        {
+          "oneOf": [
+            { "type": "null" },
+            {
+              "type": "object",
+              "properties": {
+                "count":   { "type": "integer", "minimum": 1 },
+                "options": {
+                  "oneOf": [
+                    { "type": "string", "enum": ["any"] },
+                    { "type": "array", "items": { "type": "string" } }
+                  ]
+                }
+              },
+              "required": ["count", "options"]
+            }
+          ]
+        },
+        "saving_throw_proficiencies": { "type": "array", "items": { "type": "string" } },
+        "other_proficiencies":        { "type": "array", "items": { "type": "string" } },
+        "notes":                      { "type": ["string", "null"] },
+        "source_text":                { "type": "string" }
+      },
+      "required": ["hit_die_granted", "armor_training", "weapon_training", "tool_training", "saving_throw_proficiencies", "source_text"]
     }
   }
 }

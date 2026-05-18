@@ -5,15 +5,6 @@
   "source": "Player's Handbook 2024",
   "features_by_level": {
     "3": {
-      "Bonus Cantrip": {
-        "description": "You know the Light cantrip.",
-        "effects": [
-          {
-            "type": "grant_cantrip",
-            "spell": "Light"
-          }
-        ]
-      },
       "Radiance of the Dawn": "As a Magic action, you present your Holy Symbol and expend a use of your Channel Divinity to emit a flash of light in a 30-foot Emanation originating from yourself. Any magical Darkness\u2014such as that created by the Darkness spell\u2014in that area is dispelled. Additionally, each creature of your choice in that area must make a Constitution saving throw, taking Radiant damage equal to 2d10 plus your Cleric level on a failed save or half as much damage on a successful one.",
       "Warding Flare": "When a creature that you can see within 30 feet of yourself makes an attack roll, you can take a Reaction to impose Disadvantage on the attack roll, causing light to flare before it hits or misses. You can use this feature a number of times equal to your Wisdom modifier (minimum of once). You regain all expended uses when you finish a Long Rest.",
       "Light Domain Spells": {

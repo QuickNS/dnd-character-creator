@@ -350,11 +350,15 @@
       "effects": [
         {
           "type": "grant_weapon_proficiency",
-          "proficiencies": ["Martial weapons"]
+          "proficiencies": [
+            "Martial weapons"
+          ]
         },
         {
           "type": "grant_armor_proficiency",
-          "proficiencies": ["Heavy armor"]
+          "proficiencies": [
+            "Heavy armor"
+          ]
         }
       ]
     },
@@ -381,7 +385,10 @@
         {
           "type": "ability_bonus",
           "ability": "Intelligence",
-          "skills": ["Arcana", "Religion"],
+          "skills": [
+            "Arcana",
+            "Religion"
+          ],
           "value": "wisdom_modifier",
           "minimum": 1
         }
@@ -393,8 +400,14 @@
       "description": "Once on each of your turns when you hit a creature with an attack roll using a weapon, you can cause the target to take an extra {strike_dice} Necrotic or Radiant damage (your choice).",
       "scaling": {
         "strike_dice": [
-          {"min_level": 7, "value": "1d8"},
-          {"min_level": 14, "value": "2d8"}
+          {
+            "min_level": 7,
+            "value": "1d8"
+          },
+          {
+            "min_level": 14,
+            "value": "2d8"
+          }
         ]
       }
     },
@@ -402,8 +415,14 @@
       "description": "Add your Wisdom modifier to the damage you deal with any Cleric cantrip. {improved_text}",
       "scaling": {
         "improved_text": [
-          {"min_level": 7, "value": ""},
-          {"min_level": 14, "value": "When you cast a Cleric cantrip and deal damage to a creature with it, you can give vitality to yourself or another creature within 60 feet of yourself, granting a number of Temporary Hit Points equal to twice your Wisdom modifier."}
+          {
+            "min_level": 7,
+            "value": ""
+          },
+          {
+            "min_level": 14,
+            "value": "When you cast a Cleric cantrip and deal damage to a creature with it, you can give vitality to yourself or another creature within 60 feet of yourself, granting a number of Temporary Hit Points equal to twice your Wisdom modifier."
+          }
         ]
       }
     }
@@ -415,7 +434,7 @@
       },
       "Divine Order": {
         "description": "You have dedicated yourself to one of the following sacred roles of your choice.",
-       "choices": {
+        "choices": {
           "type": "select_single",
           "count": 1,
           "name": "divine_order",
@@ -432,15 +451,36 @@
         "description": "You can channel divine energy directly from the Outer Planes to fuel magical effects. You start with two such effects: Divine Spark and Turn Undead. You can use this class's Channel Divinity {uses} per Short/Long Rest. Divine Spark: Point your Holy Symbol at a creature within 30 feet, roll {spark_dice} + Wisdom modifier, restore HP or deal Necrotic/Radiant damage (Constitution save for half). Turn Undead: Present Holy Symbol, Undead within 30 feet make Wisdom save or be Frightened and Incapacitated for 1 minute.",
         "scaling": {
           "spark_dice": [
-            {"min_level": 2, "value": "1d8"},
-            {"min_level": 7, "value": "2d8"},
-            {"min_level": 13, "value": "3d8"},
-            {"min_level": 18, "value": "4d8"}
+            {
+              "min_level": 2,
+              "value": "1d8"
+            },
+            {
+              "min_level": 7,
+              "value": "2d8"
+            },
+            {
+              "min_level": 13,
+              "value": "3d8"
+            },
+            {
+              "min_level": 18,
+              "value": "4d8"
+            }
           ],
           "uses": [
-            {"min_level": 2, "value": "2"},
-            {"min_level": 6, "value": "3"},
-            {"min_level": 18, "value": "4"}
+            {
+              "min_level": 2,
+              "value": "2"
+            },
+            {
+              "min_level": 6,
+              "value": "3"
+            },
+            {
+              "min_level": 18,
+              "value": "4"
+            }
           ]
         }
       }
@@ -501,5 +541,20 @@
     "20": {
       "Greater Divine Intervention": "Can use Divine Intervention to cast Wish once per week, or any level 8 or lower Cleric spell once per day."
     }
+  },
+  "multiclassing": {
+    "hit_die_granted": 8,
+    "armor_training": [
+      "Light",
+      "Medium",
+      "Shields"
+    ],
+    "weapon_training": [],
+    "tool_training": [],
+    "skill_proficiencies": null,
+    "saving_throw_proficiencies": [],
+    "other_proficiencies": [],
+    "notes": null,
+    "source_text": "As a Multiclass Character: Gain the following traits from the Core Cleric Traits table: Hit Point Die and training with Light and Medium armor and Shields. Gain the Cleric's level 1 features, which are listed in the Cleric Features table. See the multiclassing rules in multiclassing to determine your available spell slots."
   }
 }
