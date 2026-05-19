@@ -2,20 +2,17 @@ import { useNavigate, Link } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { ChevronLeft } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { useIsDark } from "@/hooks/useIsDark";
 import { useCharacterStore } from "@/store/characterStore";
 import { SAMPLE_CHARACTERS, type SampleCharacter } from "@/data/sampleCharacters";
 
 function CharacterCard({
   char,
-  isDark,
   onLoad,
 }: {
   char: SampleCharacter;
-  isDark: boolean;
   onLoad: (char: SampleCharacter) => void;
 }) {
-  const imgSrc = `/images/classes/${char.classKey}-${isDark ? "dark" : "light"}.png`;
+  const imgSrc = `/images/classes/${char.classKey}-card.png`;
 
   return (
     <article
@@ -59,7 +56,6 @@ function CharacterCard({
 }
 
 export function SampleCharacters() {
-  const isDark = useIsDark();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -112,7 +108,7 @@ export function SampleCharacters() {
       <div className="container max-w-7xl px-6 py-12">
         <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4">
           {SAMPLE_CHARACTERS.map((char) => (
-            <CharacterCard key={char.id} char={char} isDark={isDark} onLoad={handleLoad} />
+            <CharacterCard key={char.id} char={char} onLoad={handleLoad} />
           ))}
         </div>
       </div>
