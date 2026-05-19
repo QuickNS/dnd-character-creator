@@ -1941,6 +1941,10 @@ class CharacterBuilder:
                     spell_data["components"], list
                 ):
                     spell_data["components"] = ", ".join(spell_data["components"])
+                # Derive concentration flag from duration string
+                spell_data["concentration"] = str(
+                    spell_data.get("duration", "")
+                ).startswith("Concentration")
                 # Cache it
                 self._spell_definitions_cache[spell_name] = spell_data
                 return spell_data
@@ -1954,6 +1958,7 @@ class CharacterBuilder:
                 "level": 0,
                 "description": "Spell definition not available.",
                 "source": "Unknown",
+                "concentration": False,
             }
 
     def _get_weapon_properties(self, weapon_name: str) -> Dict[str, Any]:

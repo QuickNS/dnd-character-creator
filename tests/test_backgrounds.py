@@ -530,3 +530,161 @@ class TestBackgroundSkillReplacementKeyNormalization:
         )
         assert len(set(skills)) == len(skills), "No duplicate proficiencies"
 
+
+class TestBackgroundSkillReplacementValidationRegression:
+    """Regression tests for the validation bug where the background step was
+    incorrectly reported as incomplete even after the player supplied a valid
+    background_skill_replacement.
+
+    Root cause: the validator was checking
+      ``choices.get("background_skill_replacement")`` (wrong key, never set)
+    instead of
+      ``info.get("already_chosen")`` from get_background_skill_replacement_info().
+
+    Scenario: Cleric picks History + Religion as class skills, then takes Sage
+    background which grants Arcana + History.  History overlaps → 1 replacement
+    needed.  Player picks Athletics.
+    """
+
+    def _cleric_sage_choices(self):
+        """Cleric with History + Religion class skills and Sage background."""
+        return {
+            "character_name": "Regdar the Scholar",
+            "level": 1,
+            "species": "Human",
+            "class": "Cleric",
+            "background": "Sage",
+            "skill_choices": ["History", "Religion"],
+            "ability_scores": {
+                "Strength": 10, "Dexterity": 12, "Constitution": 13,
+                "Intelligence": 12, "Wisdom": 16, "Charisma": 10,
+            },
+            "background_bonuses": {"Constitution": 1, "Intelligence": 2},
+        }
+
+    # ---- overlap detection -------------------------------------------------
+
+    def test_cleric_sage_overlap_detected(self):
+        """Cleric(History+Religion) + Sage(Arcana+History): History overlap triggers needed=1."""
+        builder = CharacterBuilder()
+        builder.apply_choices(self._cleric_sage_choices())
+
+        info = builder.get_background_skill_replacement_info()
+        assert info["needed"] > 0, (
+            f"Expected needed > 0 for History overlap, got {info['needed']}"
+        )
+
+    # ---- replacement resolves the choice -----------------------------------
+
+    def test_already_chosen_populated_after_replacement(self):
+        """After apply_choices with replacement, already_chosen is non-empty.
+
+        This directly covers the fixed bug: the old code checked the wrong key
+        and always saw an empty value, so it incorrectly kept reporting the
+        background step as incomplete.
+        """
+        builder = CharacterBuilder()
+        builder.apply_choices({
+            **self._cleric_sage_choices(),
+            "background_skill_replacements": ["Athletics"],
+        })
+
+        info = builder.get_background_skill_replacement_info()
+        assert info["already_chosen"], (
+            "already_chosen should be non-empty after providing the replacement — "
+            "empty means the validator would (incorrectly) flag the background step "
+            "as incomplete, which is the regression being guarded here"
+        )
+        assert "Athletics" in info["already_chosen"]
+
+    def test_replacement_skill_in_final_character(self):
+        """After replacement, Athletics appears in the character's skill proficiencies."""
+        builder = CharacterBuilder()
+        builder.apply_choices({
+            **self._cleric_sage_choices(),
+            "background_skill_replacements": ["Athletics"],
+        })
+        character = builder.to_character()
+
+        skills = character.get("skill_proficiencies", [])
+        assert "Athletics" in skills, (
+            f"Replacement skill Athletics should be in skill_proficiencies, got: {skills}"
+        )
+        # The duplicate History should not appear twice
+        assert skills.count("History") == 1, (
+            f"History should appear exactly once, got: {skills}"
+        )
+        # Arcana from Sage should be present (non-overlapping background skill)
+        assert "Arcana" in skills, (
+            f"Arcana (non-overlapping Sage skill) should be present, got: {skills}"
+        )
+
+    def test_total_distinct_skills_after_replacement(self):
+        """Cleric(2 class skills) + Sage(2 background skills, 1 overlap) → 4 distinct skills."""
+        builder = CharacterBuilder()
+        builder.apply_choices({
+            **self._cleric_sage_choices(),
+            "background_skill_replacements": ["Athletics"],
+        })
+        character = builder.to_character()
+
+        skills = character.get("skill_proficiencies", [])
+        assert len(set(skills)) == len(skills), f"Duplicate skills found: {skills}"
+        # History (class), Religion (class), Arcana (bg), Athletics (bg replacement)
+        for expected in ("History", "Religion", "Arcana", "Athletics"):
+            assert expected in skills, f"Expected '{expected}' in {skills}"
+
+    # ---- API validation regression -----------------------------------------
+
+    def test_api_background_step_complete_after_replacement(self, client):
+        """POST /api/v1/character/validate must report background step complete
+        once background_skill_replacements has been supplied.
+
+        This is the exact API-level regression: before the fix the validator
+        used the wrong key and always reported background as incomplete even
+        when the player had already made the replacement choice.
+        """
+        choices_made = {
+            **self._cleric_sage_choices(),
+            "background_skill_replacements": ["Athletics"],
+        }
+        response = client.post(
+            "/api/v1/character/validate",
+            json={"choices_made": choices_made},
+        )
+        assert response.status_code == 200
+        data = response.get_json()
+
+        steps_by_name = {s["step"]: s for s in data["steps"]}
+        background_status = steps_by_name.get("background", {})
+        assert background_status.get("complete"), (
+            "background step should be complete after providing background_skill_replacements; "
+            f"missing keys: {background_status.get('missing', [])}"
+        )
+        assert "background_skill_replacement" not in background_status.get("missing", []), (
+            "background_skill_replacement should not appear in missing keys "
+            "when already_chosen is populated — this is the fixed regression"
+        )
+
+    def test_api_background_step_incomplete_without_replacement(self, client):
+        """POST /api/v1/character/validate must report background step incomplete
+        when a replacement is needed but has not been provided.
+        """
+        choices_made = self._cleric_sage_choices()  # no replacement key
+        response = client.post(
+            "/api/v1/character/validate",
+            json={"choices_made": choices_made},
+        )
+        assert response.status_code == 200
+        data = response.get_json()
+
+        steps_by_name = {s["step"]: s for s in data["steps"]}
+        background_status = steps_by_name.get("background", {})
+        assert not background_status.get("complete"), (
+            "background step should be incomplete when replacement not yet chosen"
+        )
+        assert "background_skill_replacement" in background_status.get("missing", []), (
+            "background_skill_replacement should be listed in missing keys "
+            f"when the overlap is unresolved; status={background_status}"
+        )
+

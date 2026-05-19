@@ -358,22 +358,23 @@ function SpellPicker({
                       <span className="rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2 py-0.5 text-[11px] uppercase tracking-wide text-emerald-700 dark:text-emerald-300">
                         Always prepared
                       </span>
-                      <span className="rounded-full border border-border/70 bg-background px-2 py-0.5 text-[11px] uppercase tracking-wide text-muted-foreground">
+                      <span className="rounded-full border border-primary/70 bg-background px-2 py-0.5 text-[11px] uppercase tracking-wide text-foreground">
                         {spellLevelLabel(spell.level)}
                       </span>
                       {spell.source && (
-                        <span className="rounded-full border border-border/70 bg-background px-2 py-0.5 text-[11px] uppercase tracking-wide text-muted-foreground">
+                        <span className="rounded-full border border-border/70 bg-primary px-2 py-0.5 text-[11px] uppercase tracking-wide text-background">
                           {spell.source}
                         </span>
                       )}
 
                     </div>
                     {(spell.school || spell.description) && (
-                      <div className="mt-2 text-xs text-muted-foreground">
-                        {spell.school && <span>{spell.school}</span>}
-                        {spell.school && spell.description && <span> · </span>}
+                      <div className="mt-2 text-sm text-muted-foreground">
                         {spell.description && (
-                          <span className="line-clamp-2">{spell.description}</span>
+                          <div className="line-clamp-2">{spell.description}</div>
+                        )}
+                        {spell.school && (
+                          <span className="text-primary text-xs">{spell.school}</span>
                         )}
                       </div>
                     )}

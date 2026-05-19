@@ -56,37 +56,41 @@ export function BackgroundStep() {
     placeholderData: keepPreviousData,
   });
 
-  const selectedBgSummary = (bgQuery.data ?? []).find((bg) => bg.id === selectedBg);
+  const selectedBgSummary = (bgQuery.data ?? []).find(
+    (bg) => bg.id === selectedBg,
+  );
   const fullBgData = fullBgQuery.isPlaceholderData
     ? undefined
     : (fullBgQuery.data as FullBackground | undefined);
 
   useEffect(() => {
     setSidebarPanel(
-      selectedBgSummary
-        ? (
-            <BackgroundInfoPanel
-              summary={selectedBgSummary}
-              fullData={fullBgData}
-              loading={(fullBgQuery.isLoading || fullBgQuery.isPlaceholderData) && !fullBgData}
-            />
-          )
-        : null,
+      selectedBgSummary ? (
+        <BackgroundInfoPanel
+          summary={selectedBgSummary}
+          fullData={fullBgData}
+          loading={
+            (fullBgQuery.isLoading || fullBgQuery.isPlaceholderData) &&
+            !fullBgData
+          }
+        />
+      ) : null,
     );
     return () => setSidebarPanel(null);
-  }, [selectedBgSummary, fullBgData, fullBgQuery.isLoading, fullBgQuery.isPlaceholderData, setSidebarPanel]);
+  }, [
+    selectedBgSummary,
+    fullBgData,
+    fullBgQuery.isLoading,
+    fullBgQuery.isPlaceholderData,
+    setSidebarPanel,
+  ]);
 
   const skillReplacement =
     (previewQuery.data?.skill_replacement as SkillReplacement | undefined) ??
     undefined;
   const neededSkillReplacements = skillReplacement?.needed ?? 0;
   const alreadyChosenReplacements = skillReplacement?.already_chosen ?? [];
-  const replacementOptions = Array.from(
-    new Set([
-      ...alreadyChosenReplacements,
-      ...(skillReplacement?.options ?? []),
-    ]),
-  );
+  const replacementOptions = skillReplacement?.options ?? [];
   const remainingSkillReplacements = Math.max(
     neededSkillReplacements - alreadyChosenReplacements.length,
     0,
@@ -106,15 +110,11 @@ export function BackgroundStep() {
     const gp = previewQuery.data?.granted_proficiencies as
       | { skills?: string[]; tools?: string[] }
       | undefined;
-    return [
-      ...(gp?.skills ?? []),
-      ...(gp?.tools ?? []),
-    ];
+    return [...(gp?.skills ?? []), ...(gp?.tools ?? [])];
   })();
 
   const hasDependentChoices =
-    hasSkillReplacementChoice ||
-    (featData && featData.feat_name);
+    hasSkillReplacementChoice || (featData && featData.feat_name);
 
   return (
     <div className="space-y-8">
@@ -132,8 +132,9 @@ export function BackgroundStep() {
                 Choose your background
               </h3>
               <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
-                Your background defines your character's history and grants ability score improvements,
-                skill and tool proficiencies, and an Origin feat.
+                Your background defines your character's history and grants
+                ability score improvements, skill and tool proficiencies, and an
+                Origin feat.
               </p>
               <p className="mt-2 text-xs text-muted-foreground">
                 Select a background to see its full details in the side panel.
@@ -144,7 +145,9 @@ export function BackgroundStep() {
 
         <div className="px-5 py-5 sm:px-6">
           {bgQuery.isLoading && (
-            <p className="text-xs text-muted-foreground">Loading backgrounds…</p>
+            <p className="text-xs text-muted-foreground">
+              Loading backgrounds…
+            </p>
           )}
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 items-start">
             {(bgQuery.data ?? []).map((bg) => {
@@ -164,7 +167,9 @@ export function BackgroundStep() {
                   )}
                 >
                   <div className="mb-3 flex items-start justify-between gap-3">
-                    <div className="font-display text-xl text-primary font-semibold">{bg.name}</div>
+                    <div className="font-display text-xl text-primary font-semibold">
+                      {bg.name}
+                    </div>
                     <span
                       className={cn(
                         "inline-flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border transition-colors",
@@ -189,9 +194,13 @@ export function BackgroundStep() {
                     </div>
                   )}
                   <div className="mt-4 flex items-center justify-between text-xs font-medium text-muted-foreground">
-                    <span>{isSelected ? "Selected background" : "Click to select"}</span>
+                    <span>
+                      {isSelected ? "Selected background" : "Click to select"}
+                    </span>
                     <span className="inline-flex items-center gap-1 text-primary/80">
-                      {isSelected ? "Details on panel" : "Select to view details"}
+                      {isSelected
+                        ? "Details on panel"
+                        : "Select to view details"}
                       <ChevronRight className="h-3.5 w-3.5" />
                     </span>
                   </div>
@@ -214,22 +223,18 @@ export function BackgroundStep() {
           </div>
           <div className="space-y-6 px-5 py-5 sm:px-6">
             {hasSkillReplacementChoice && replacementOptions.length > 0 && (
-                <ChoiceList
-                  choiceKey={BG_SKILL_REPLACEMENT_KEY}
-                  title="Replacement skill proficiencies"
-                  description={`Your background grants skills you already have. Choose ${
-                    neededSkillReplacements
-                  } replacement${
-                    neededSkillReplacements === 1 ? "" : "s"
-                  } from your class's skill list.${
-                    remainingSkillReplacements === 0
-                      ? " Selection complete."
-                      : ` ${remainingSkillReplacements} remaining.`
-                  }`}
-                  options={replacementOptions}
-                  count={skillReplacementCount}
-                />
-              )}
+              <ChoiceList
+                choiceKey={BG_SKILL_REPLACEMENT_KEY}
+                title="Replacement skill proficiencies"
+                description={`Your background grants skills you already have. Choose ${
+                  neededSkillReplacements
+                } replacement${
+                  neededSkillReplacements === 1 ? "" : "s"
+                } from your class's skill list.`}
+                options={replacementOptions}
+                count={skillReplacementCount}
+              />
+            )}
 
             {featData && featData.feat_name && (
               <FeatChoicesPicker
@@ -241,7 +246,6 @@ export function BackgroundStep() {
           </div>
         </section>
       )}
-
     </div>
   );
 }
