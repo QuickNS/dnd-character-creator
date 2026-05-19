@@ -138,21 +138,6 @@ class TestSubclassSpellCleanup:
         assert "Bless" in always_prepared
         assert "Cure Wounds" in always_prepared
 
-    def test_subclass_cantrip_cleared_on_change(self, builder):
-        builder.set_species("Human")
-        builder.set_class("Cleric", 3)
-        builder.set_subclass("Light Domain")
-
-        # Light Domain grants Light cantrip
-        always_prepared = builder.character_data["spells"]["always_prepared"]
-        assert "Light" in always_prepared
-
-        # Switch subclass
-        builder.set_subclass("Life Domain")
-
-        always_prepared = builder.character_data["spells"]["always_prepared"]
-        assert "Light" not in always_prepared
-
     def test_subclass_spell_metadata_cleared(self, builder):
         builder.set_species("Human")
         builder.set_class("Cleric", 3)

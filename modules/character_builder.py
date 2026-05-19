@@ -1233,11 +1233,15 @@ class CharacterBuilder:
                     for feat_effect in feat_data.get("effects", []):
                         self._apply_effect(feat_effect, feat_name, "feat")
 
-                # If granted via a species/lineage choice, record the feat
-                # name so the species route can present the description and any
-                # additional choices (e.g., Skilled needs 3 skill/tool picks).
+                # If granted via a species/lineage choice and the feat has
+                # follow-up choices (e.g., Skilled needs 3 skill/tool picks),
+                # record the feat name so the species route can present them.
+                # Feats with no choices (e.g., Alert, Tough) need no follow-up.
                 if source_type in ("species_choice", "lineage_choice") and feat_data:
-                    self.character_data["pending_species_feat"] = feat_name
+                    if feat_data.get("choices") or feat_data.get("choice_options"):
+                        self.character_data["pending_species_feat"] = feat_name
+                    else:
+                        self.character_data.pop("pending_species_feat", None)
 
         # Track applied effect
         tracked: Dict[str, Any] = {

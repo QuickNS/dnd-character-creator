@@ -8,7 +8,7 @@ and the effects-based spell granting system (grant_spell, grant_cantrip).
 
 import pytest
 from modules.character_builder import CharacterBuilder
-from routes.character_summary import _ORDINAL_TO_INT
+from modules.derived_stats import ORDINAL_TO_INT
 
 
 class TestSpellManagement:
@@ -374,8 +374,8 @@ class TestSpellManagement:
         cantrips = spells_by_level.get(0, [])
         cantrip_names = [s["name"] for s in cantrips]
 
-        # Should have Light from Light Domain and Guidance from Thaumaturge
-        assert "Light" in cantrip_names
+        # Should have Guidance from Thaumaturge Divine Order
+        # Note: Light Domain does not grant a bonus cantrip in D&D 2024
         assert "Guidance" in cantrip_names
 
     def test_spell_management_data_loads_definitions(self, wizard_builder):
@@ -515,9 +515,9 @@ class TestSpellManagement:
 
         # Replicate the route filtering logic
         available_slot_levels = {
-            _ORDINAL_TO_INT[name]
+            ORDINAL_TO_INT[name]
             for name in spell_slots
-            if name in _ORDINAL_TO_INT and spell_slots[name] > 0
+            if name in ORDINAL_TO_INT and spell_slots[name] > 0
         }
 
         # Build available_spells as the route does (string keys)
@@ -568,9 +568,9 @@ class TestSpellManagement:
 
         # Apply filtering
         available_slot_levels = {
-            _ORDINAL_TO_INT[name]
+            ORDINAL_TO_INT[name]
             for name in spell_slots
-            if name in _ORDINAL_TO_INT and spell_slots[name] > 0
+            if name in ORDINAL_TO_INT and spell_slots[name] > 0
         }
         stats = builder.calculate_spellcasting_stats()
         raw_available = {

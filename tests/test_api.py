@@ -1,147 +1,77 @@
-"""Tests for the API endpoints including test-only endpoints."""
+"""Tests for the REST API v1 endpoints and character builder functionality."""
 
 import pytest
 import json
 from modules.character_builder import CharacterBuilder
 
 
-class TestChoicesToCharacterAPI:
-    """Tests for the existing /api/choices-to-character endpoint."""
-
-    def test_valid_character_build(self, client, dwarf_cleric_choices):
-        response = client.post(
-            "/legacy/api/choices-to-character",
-            json={"choices_made": dwarf_cleric_choices},
-            content_type="application/json"
-        )
-        assert response.status_code == 200
-        data = response.get_json()
-        assert data["success"] is True
-        assert "character_data" in data
-
-    def test_missing_choices_made(self, client):
-        response = client.post(
-            "/legacy/api/choices-to-character",
-            json={"invalid": "data"},
-            content_type="application/json"
-        )
-        assert response.status_code == 400
-
-    def test_wrong_content_type(self, client):
-        response = client.post(
-            "/legacy/api/choices-to-character",
-            data="not json"
-        )
-        assert response.status_code == 400
-
-
 class TestBuildCharacterAPI:
-    """Tests for /api/test/build-character."""
+    """Tests for /api/v1/character/build."""
 
     def test_valid_build(self, client, dwarf_cleric_choices):
         response = client.post(
-            "/api/test/build-character",
+            "/api/v1/character/build",
             json={"choices_made": dwarf_cleric_choices},
             content_type="application/json"
         )
         assert response.status_code == 200
         data = response.get_json()
-        assert data["success"] is True
         assert "character" in data
         character = data["character"]
         assert character.get("name") == "Thorin"
 
     def test_elf_fighter_build(self, client, elf_fighter_choices):
         response = client.post(
-            "/api/test/build-character",
+            "/api/v1/character/build",
             json={"choices_made": elf_fighter_choices},
             content_type="application/json"
         )
         assert response.status_code == 200
         data = response.get_json()
-        assert data["success"] is True
+        assert "character" in data
 
     def test_missing_choices(self, client):
         response = client.post(
-            "/api/test/build-character",
+            "/api/v1/character/build",
             json={},
             content_type="application/json"
         )
         assert response.status_code == 400
 
 
-class TestValidateEffectsAPI:
-    """Tests for /api/test/validate-effects."""
+class TestValidateEffects:
+    """Tests for species/class effect validation using CharacterBuilder directly."""
 
-    def test_dwarf_effects(self, client):
-        response = client.post(
-            "/api/test/validate-effects",
-            json={"species": "Dwarf", "class": "Cleric", "level": 3},
-            content_type="application/json"
-        )
-        assert response.status_code == 200
-        data = response.get_json()
-        assert data["success"] is True
-        effects = data["effects"]
-        # Dwarf should have poison resistance
+    def test_dwarf_effects(self, built_character):
+        choices = {
+            "species": "Dwarf",
+            "class": "Cleric",
+            "level": 3,
+            "background": "Acolyte",
+            "ability_scores": {
+                "Strength": 10, "Dexterity": 10, "Constitution": 14,
+                "Intelligence": 10, "Wisdom": 14, "Charisma": 10
+            }
+        }
+        character = built_character(choices)
+        effects = character.get("effects", [])
         resistance_types = [e.get("damage_type") for e in effects if e.get("type") == "grant_damage_resistance"]
         assert "Poison" in resistance_types
 
-    def test_minimal_request(self, client):
-        response = client.post(
-            "/api/test/validate-effects",
-            json={"species": "Human", "class": "Fighter"},
-            content_type="application/json"
-        )
-        assert response.status_code == 200
-        data = response.get_json()
-        assert data["success"] is True
-
-
-class TestSchemaValidateAPI:
-    """Tests for /api/test/schema-validate."""
-
-    def test_valid_class_data(self, client):
-        valid_class = {
-            "name": "TestClass",
-            "description": "A test class",
-            "hit_die": 8,
-            "primary_ability": "Strength",
-            "saving_throw_proficiencies": ["Strength", "Constitution"],
-            "subclass_selection_level": 3,
-            "proficiency_bonus_by_level": {str(i): (2 + (i - 1) // 4) for i in range(1, 21)},
-            "features_by_level": {
-                "1": {"Test Feature": "A test feature description."}
+    def test_human_fighter_builds(self, built_character):
+        choices = {
+            "species": "Human",
+            "class": "Fighter",
+            "level": 1,
+            "background": "Soldier",
+            "ability_scores": {
+                "Strength": 15, "Dexterity": 13, "Constitution": 14,
+                "Intelligence": 10, "Wisdom": 12, "Charisma": 8
             }
         }
-        response = client.post(
-            "/api/test/schema-validate",
-            json={"schema_type": "class", "data": valid_class},
-            content_type="application/json"
-        )
-        assert response.status_code == 200
-        data = response.get_json()
-        assert data["valid"] is True
-
-    def test_invalid_class_missing_fields(self, client):
-        invalid_class = {"name": "Bad", "hit_die": 8}
-        response = client.post(
-            "/api/test/schema-validate",
-            json={"schema_type": "class", "data": invalid_class},
-            content_type="application/json"
-        )
-        assert response.status_code == 200
-        data = response.get_json()
-        assert data["valid"] is False
-        assert len(data["errors"]) > 0
-
-    def test_unknown_schema_type(self, client):
-        response = client.post(
-            "/api/test/schema-validate",
-            json={"schema_type": "unknown", "data": {}},
-            content_type="application/json"
-        )
-        assert response.status_code == 400
+        character = built_character(choices)
+        assert character.get("class") == "Fighter"
+        assert character.get("species") == "Human"
 
 
 class TestDirectBuilder:

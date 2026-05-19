@@ -66,6 +66,11 @@ def _classify_choice_for_multiclass(choice: Dict[str, Any]) -> str:
         return "skill"
     if ctype == "tools":
         return "tool"
+    if ctype:
+        # Explicit type is set but is not skills/tools (e.g. "feature").
+        # Do not fall through to keyword matching — the choice is not a
+        # basic proficiency pick and must be dropped on secondary rows.
+        return "other"
     key = " ".join(
         str(choice.get(k) or "")
         for k in ("choice_key", "feature_name", "title")

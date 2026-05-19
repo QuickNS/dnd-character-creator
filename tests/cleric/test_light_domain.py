@@ -25,12 +25,8 @@ class TestLightDomain:
         """Test Light Domain specific effects"""
         char_data = light_cleric_builder.character_data
 
-        # Check bonus cantrip (Light)
-        always_prepared = char_data["spells"]["always_prepared"]
-        cantrips = [s["name"] for s in char_data.get("spells_by_level", {}).get(0, [])]
-        assert "Light" in cantrips or "Light" in always_prepared
-
         # Check domain spells — all four min_level:3 spells at level 3
+        always_prepared = char_data["spells"]["always_prepared"]
         assert "Burning Hands" in always_prepared
         assert "Faerie Fire" in always_prepared
         assert "Scorching Ray" in always_prepared
@@ -43,30 +39,9 @@ class TestLightDomain:
         feature_names = [f["name"] for f in subclass_features]
 
         # Light Domain should have these features at level 3
-        assert "Bonus Cantrip" in feature_names
         assert "Light Domain Spells" in feature_names
         assert "Warding Flare" in feature_names
         assert "Radiance of the Dawn" in feature_names
-
-    def test_bonus_cantrip_feature(self, light_cleric_builder):
-        """Test Light Domain bonus cantrip feature"""
-        char_data = light_cleric_builder.character_data
-
-        # Should have Light cantrip from the bonus cantrip feature
-        always_prepared = char_data["spells"]["always_prepared"]
-        cantrips = [s["name"] for s in char_data.get("spells_by_level", {}).get(0, [])]
-        assert "Light" in cantrips or "Light" in always_prepared
-
-        # Check feature is listed
-        subclass_features = char_data["features"]["subclass"]
-        bonus_cantrip_feature = None
-        for feature in subclass_features:
-            if feature["name"] == "Bonus Cantrip":
-                bonus_cantrip_feature = feature
-                break
-
-        assert bonus_cantrip_feature is not None
-        assert "Light" in bonus_cantrip_feature["description"]
 
     def test_warding_flare_feature(self, light_cleric_builder):
         """Test Warding Flare feature"""
