@@ -119,6 +119,9 @@ class CharacterBuilder:
 
         # Load weapon and armor data for equipment processing
         self._weapon_data = self._load_weapon_data()
+        self._weapon_data_lowercase = {
+            weapon_key.lower(): weapon_key for weapon_key in self._weapon_data.keys()
+        }
         self._armor_data = self._load_armor_data()
 
         # Spell definitions cache
@@ -1964,53 +1967,79 @@ class CharacterBuilder:
 
     def _resolve_weapon_key(self, weapon_name: str) -> Optional[str]:
         """Resolve a starting-equipment weapon string to a key in weapons.json."""
-        import re
-
         if not weapon_name:
             return None
 
         candidates = [weapon_name.strip()]
-        parenthetical_matches = re.findall(r'\(([^)]+)\)', weapon_name)
-        for match in parenthetical_matches:
-            candidate = match.strip()
-            if candidate:
-                candidates.append(candidate)
 
-        without_parentheses = re.sub(r'\s*\([^)]*\)', '', weapon_name).strip()
+        # Collect text that appears inside parentheses, e.g. "Arcane Focus (Quarterstaff)"
+        search_start = 0
+        while True:
+            start_idx = weapon_name.find("(", search_start)
+            if start_idx == -1:
+                break
+            end_idx = weapon_name.find(")", start_idx + 1)
+            if end_idx == -1:
+                break
+            parenthetical_value = weapon_name[start_idx + 1 : end_idx].strip()
+            if parenthetical_value:
+                candidates.append(parenthetical_value)
+            search_start = end_idx + 1
+
+        # Remove parenthetical content while preserving spacing between remaining words
+        without_parentheses_chars = []
+        paren_depth = 0
+        for char in weapon_name:
+            if char == "(":
+                paren_depth += 1
+                continue
+            if char == ")" and paren_depth > 0:
+                paren_depth -= 1
+                continue
+            if paren_depth == 0:
+                without_parentheses_chars.append(char)
+        without_parentheses = " ".join("".join(without_parentheses_chars).split())
         if without_parentheses:
             candidates.append(without_parentheses)
+
+        def strip_leading_number(candidate: str) -> str:
+            parts = candidate.split(maxsplit=1)
+            if len(parts) == 2 and parts[0].isdigit():
+                return parts[1].strip()
+            return candidate.strip()
 
         expanded_candidates = []
         for candidate in candidates:
             expanded_candidates.append(candidate)
 
-            without_leading_number = re.sub(r'^\d+\s+', '', candidate).strip()
+            without_leading_number = strip_leading_number(candidate)
             if without_leading_number and without_leading_number != candidate:
                 expanded_candidates.append(without_leading_number)
 
             if without_leading_number.endswith("s") and len(without_leading_number) > 1:
                 singular_candidate = without_leading_number[:-1]
-                if singular_candidate:
+                # Best-effort plural handling; only keep singular forms that
+                # actually exist in the loaded weapon catalog.
+                if singular_candidate and (
+                    singular_candidate in self._weapon_data
+                    or singular_candidate.lower() in self._weapon_data_lowercase
+                ):
                     expanded_candidates.append(singular_candidate)
 
-        unique_candidates = []
-        seen = set()
+        unique_candidates_by_lowercase = {}
         for candidate in expanded_candidates:
             lowered = candidate.lower()
-            if lowered and lowered not in seen:
-                seen.add(lowered)
-                unique_candidates.append(candidate)
+            if lowered and lowered not in unique_candidates_by_lowercase:
+                unique_candidates_by_lowercase[lowered] = candidate
+        unique_candidates = list(unique_candidates_by_lowercase.values())
 
         for candidate in unique_candidates:
             if candidate in self._weapon_data:
                 return candidate
 
-        lowercase_weapon_keys = {
-            weapon_key.lower(): weapon_key for weapon_key in self._weapon_data.keys()
-        }
         for candidate in unique_candidates:
-            if candidate.lower() in lowercase_weapon_keys:
-                return lowercase_weapon_keys[candidate.lower()]
+            if candidate.lower() in self._weapon_data_lowercase:
+                return self._weapon_data_lowercase[candidate.lower()]
 
         return None
 
