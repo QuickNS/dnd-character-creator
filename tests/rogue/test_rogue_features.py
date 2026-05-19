@@ -612,3 +612,78 @@ class TestRogueExpertise:
                 "rogue_expertise_skills_1", "rogue_expertise_skills_6"
             ):
                 assert choice["count"] == 2
+
+
+class TestRogueSleightOfHandExpertise:
+    """Regression tests: 'Sleight of Hand' expertise not applied due to name normalisation."""
+
+    def _build(self, expertise_1=None):
+        """Build a Rogue with Investigation/Stealth/Perception/Sleight of Hand as skill choices."""
+        builder = CharacterBuilder()
+        choices = {
+            "character_name": "Test Rogue",
+            "level": 1,
+            "class": "Rogue",
+            "species": "Human",
+            "background": "Criminal",
+            "skill_choices": ["Investigation", "Stealth", "Perception", "Sleight of Hand"],
+            "ability_scores": {
+                "Strength": 10, "Dexterity": 15, "Constitution": 14,
+                "Intelligence": 12, "Wisdom": 10, "Charisma": 8,
+            },
+            "background_bonuses": {"Dexterity": 2, "Intelligence": 1},
+        }
+        if expertise_1:
+            choices["rogue_expertise_skills_1"] = expertise_1
+        builder.apply_choices(choices)
+        return builder.to_character()
+
+    def test_sleight_of_hand_marked_proficient(self):
+        """Sleight of Hand selected as a class skill should appear as proficient in the skills dict."""
+        char = self._build()
+        assert "Sleight of Hand" in char["proficiencies"]["skills"]
+        assert char["skills"]["sleight_of_hand"]["proficient"] is True
+
+    def test_sleight_of_hand_expertise_applied(self):
+        """Selecting 'Sleight of Hand' for expertise should mark it expert in the skills dict."""
+        char = self._build(expertise_1=["Sleight of Hand", "Stealth"])
+        assert "Sleight of Hand" in char.get("skill_expertise", [])
+        assert char["skills"]["sleight_of_hand"]["expertise"] is True
+        # Stealth should also work (regression guard)
+        assert char["skills"]["stealth"]["expertise"] is True
+
+    def test_sleight_of_hand_expertise_bonus_doubled(self):
+        """Expertise on Sleight of Hand must double the proficiency bonus."""
+        char = self._build(expertise_1=["Sleight of Hand", "Stealth"])
+        prof_bonus = char["proficiency_bonus"]
+        dex_mod = char["abilities"]["dexterity"]["modifier"]
+        expected = dex_mod + prof_bonus * 2
+        assert char["skills"]["sleight_of_hand"]["bonus"] == expected
+
+    def test_expertise_picker_includes_sleight_of_hand(self):
+        """The expertise picker options must include 'Sleight of Hand' when the character is proficient."""
+        builder = CharacterBuilder()
+        builder.apply_choices({
+            "character_name": "Test",
+            "level": 1,
+            "class": "Rogue",
+            "species": "Human",
+            "background": "Criminal",
+            "skill_choices": ["Investigation", "Stealth", "Perception", "Sleight of Hand"],
+            "ability_scores": {
+                "Strength": 10, "Dexterity": 15, "Constitution": 14,
+                "Intelligence": 12, "Wisdom": 10, "Charisma": 8,
+            },
+            "background_bonuses": {"Dexterity": 2, "Intelligence": 1},
+        })
+        features = builder.get_class_features_and_choices()
+        expertise_choice = next(
+            (c for c in features["choices"] if c.get("choice_key") == "rogue_expertise_skills_1"),
+            None,
+        )
+        assert expertise_choice is not None, "Expertise picker not found"
+        assert "Sleight of Hand" in expertise_choice["options"]
+        # All options must be from the character's skill proficiencies
+        char = builder.to_character()
+        proficient_skills = set(char["proficiencies"]["skills"])
+        assert set(expertise_choice["options"]) == proficient_skills

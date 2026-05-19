@@ -4191,6 +4191,15 @@ class CharacterBuilder:
 
         return processed_scores
 
+    @staticmethod
+    def _normalize_skill_name(name: str) -> str:
+        """Normalize a skill name to lowercase with spaces for case-insensitive comparison.
+
+        Handles variants stored as "Sleight of Hand", "sleight_of_hand",
+        "Sleight Of Hand", etc. by collapsing all forms to "sleight of hand".
+        """
+        return name.replace("_", " ").lower()
+
     def calculate_skills(self) -> Dict[str, Dict[str, Any]]:
         """Calculate skill bonuses with proficiency and expertise."""
         ability_scores = self.calculate_processed_ability_scores()
@@ -4204,33 +4213,27 @@ class CharacterBuilder:
             self.character_data.get("level", 1)
         )
 
+        # Build normalized (lowercase, space-separated) lookup sets so that
+        # "Sleight of Hand", "Sleight Of Hand", and "sleight_of_hand" all match
+        # the skill key "sleight_of_hand" correctly.
+        norm = self._normalize_skill_name
+        skill_prof_normalized = {norm(s) for s in skill_proficiencies}
+        skill_exp_normalized = {norm(s) for s in skill_expertise}
+        # Map normalized name → original stored name for source lookups
+        skill_sources_normalized = {norm(k): v for k, v in skill_sources.items()}
+
         skills = {}
         for skill, ability in self.skill_abilities.items():
-            # Handle different skill name variants
-            skill_name_variants = [
-                skill,
-                skill.replace("_", " ").title(),
-                skill.title(),
-                skill.replace("_", ""),
-            ]
+            skill_norm = norm(skill)
 
-            # Check proficiency
-            proficient = any(
-                variant in skill_proficiencies for variant in skill_name_variants
-            )
-            expertise = any(
-                variant in skill_expertise for variant in skill_name_variants
-            )
+            # Check proficiency and expertise with normalized comparison
+            proficient = skill_norm in skill_prof_normalized
+            expertise = skill_norm in skill_exp_normalized
 
             # Determine source of proficiency
             source = "None"
             if proficient:
-                for variant in skill_name_variants:
-                    if variant in skill_sources:
-                        source = skill_sources[variant]
-                        break
-                else:
-                    source = "Class"  # Default assumption
+                source = skill_sources_normalized.get(skill_norm, "Class")
 
             # Calculate bonus
             ability_modifier = ability_scores[ability]["modifier"]

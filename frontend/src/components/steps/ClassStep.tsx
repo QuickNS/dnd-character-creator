@@ -441,13 +441,23 @@ export function ClassStep() {
     enabled: !!selectedClass,
   });
 
+  // Stable key fragment for skill_choices: sorted join so that order changes
+  // don't cause spurious re-fetches, but adding/removing a skill does.
+  // skill_choices must be included so expertise pickers (whose options are
+  // filtered to the character's current proficiencies) refresh when the user
+  // changes their skill selection.
+  const skillChoicesKey = (choicesMade.skill_choices as string[] | undefined)
+    ?.slice()
+    .sort()
+    .join(",") ?? "";
+
   const previewQuery = useQuery({
-    // Key on the three fields that actually change what class features are
+    // Key on the four fields that actually change what class features are
     // shown. Deliberately excludes spell_selections, mastery_selections, etc.
     // so picking a spell/mastery/invocation doesn't force a reload of the
-    // class preview. The queryFn still receives the full previewChoices so
-    // the backend can use them if needed.
-    queryKey: ["character", "preview-step", "class", selectedClass, clampLevel(activeRow.level), selectedSubclass],
+    // class preview. skill_choices IS included because expertise-picker options
+    // depend on the character's skill proficiencies.
+    queryKey: ["character", "preview-step", "class", selectedClass, clampLevel(activeRow.level), selectedSubclass, skillChoicesKey],
     queryFn: () => api.character.previewStep(previewChoices, "class"),
     enabled: !!selectedClass,
     placeholderData: keepPreviousData,
