@@ -6636,6 +6636,9 @@ class CharacterBuilder:
                 "option_descriptions": {},
                 "already_chosen": already_chosen or [],
             }
+            choice_category = self._get_choice_category(choice_item)
+            if choice_category:
+                choice["choice_category"] = choice_category
             choices.append(choice)
 
         return {
@@ -6705,6 +6708,9 @@ class CharacterBuilder:
                 "option_descriptions": {},
                 "already_chosen": already_chosen or [],
             }
+            choice_category = self._get_choice_category(choice_item)
+            if choice_category:
+                choice["choice_category"] = choice_category
             choices.append(choice)
 
         return {
@@ -6713,6 +6719,17 @@ class CharacterBuilder:
             "feat_benefits": feat_data.get("benefits", []),
             "choices": choices,
         }
+
+    @staticmethod
+    def _get_choice_category(choice_item: Dict[str, Any]) -> Optional[str]:
+        """Categorize feat choice options for frontend rendering."""
+        source = choice_item.get("source", {})
+        if not isinstance(source, dict):
+            return None
+        source_file = source.get("file", "")
+        if isinstance(source_file, str) and source_file.startswith("spells/"):
+            return "spells"
+        return None
 
     def clear_pending_species_feat(self) -> None:
         """Clear the pending species feat flag after choices have been applied."""

@@ -207,7 +207,7 @@ export interface SpellDefinition {
   casting_time?: string;
   range?: string;
   duration?: string;
-  components?: string[];
+  components?: string | string[];
   source?: string;
   ritual?: boolean;
 }

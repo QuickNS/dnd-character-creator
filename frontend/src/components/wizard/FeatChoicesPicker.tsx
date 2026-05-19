@@ -19,6 +19,7 @@ interface FeatChoice {
   count?: number;
   choices_made_key?: string;
   feature_name?: string;
+  choice_category?: string;
 }
 
 interface FeatChoicesData {
@@ -51,9 +52,7 @@ function isProficiencyChoice(choice: FeatChoice): boolean {
 }
 
 function isSpellChoice(choice: FeatChoice): boolean {
-  const text =
-    `${choice.title ?? ""} ${choice.feature_name ?? ""} ${choice.type ?? ""}`.toLowerCase();
-  return text.includes("spell") || text.includes("cantrip");
+  return choice.choice_category === "spells";
 }
 
 function normalizeSpellOptions(options: Array<unknown>): string[] {

@@ -65,27 +65,13 @@ export function BackgroundStep() {
   const fullBgData = fullBgQuery.isPlaceholderData
     ? undefined
     : (fullBgQuery.data as FullBackground | undefined);
-  const spellDefinitionQuery = useQuery({
-    queryKey: ["catalog", "spell-definition", inspectedSpell?.name],
-    queryFn: () =>
-      inspectedSpell?.name
-        ? api.catalog.getSpellDefinition(inspectedSpell.name)
-        : Promise.reject(new Error("No spell selected")),
-    enabled: Boolean(inspectedSpell?.name),
-    placeholderData: keepPreviousData,
-  });
-  const activeSpell =
-    inspectedSpell?.name && spellDefinitionQuery.data?.name === inspectedSpell.name
-      ? spellDefinitionQuery.data
-      : inspectedSpell;
 
   useEffect(() => {
     setSidebarPanel(
-      activeSpell ? (
+      inspectedSpell ? (
         <SpellInfoPanel
-          spell={activeSpell}
+          spell={inspectedSpell}
           onBack={() => setInspectedSpell(null)}
-          loading={spellDefinitionQuery.isLoading || spellDefinitionQuery.isPlaceholderData}
         />
       ) : selectedBgSummary ? (
           <BackgroundInfoPanel
@@ -100,9 +86,7 @@ export function BackgroundStep() {
     );
     return () => setSidebarPanel(null);
   }, [
-    activeSpell,
-    spellDefinitionQuery.isLoading,
-    spellDefinitionQuery.isPlaceholderData,
+    inspectedSpell,
     selectedBgSummary,
     fullBgData,
     fullBgQuery.isLoading,
@@ -268,7 +252,7 @@ export function BackgroundStep() {
                 heading="Origin feat"
                 grantedProficiencies={grantedProficiencies}
                 onInspectSpell={(spell) => setInspectedSpell(spell)}
-                inspectedSpellName={activeSpell?.name}
+                inspectedSpellName={inspectedSpell?.name}
               />
             )}
           </div>
@@ -281,11 +265,9 @@ export function BackgroundStep() {
 function SpellInfoPanel({
   spell,
   onBack,
-  loading,
 }: {
   spell: SpellDefinition;
   onBack: () => void;
-  loading?: boolean;
 }) {
   const concentration = (spell.duration ?? "")
     .toLowerCase()
@@ -296,9 +278,11 @@ function SpellInfoPanel({
     ["Range", spell.range],
     [
       "Components",
-      Array.isArray(spell.components) && spell.components.length > 0
-        ? spell.components.join(", ")
-        : undefined,
+      typeof spell.components === "string"
+        ? spell.components
+        : Array.isArray(spell.components) && spell.components.length > 0
+          ? spell.components.join(", ")
+          : undefined,
     ],
     ["Duration", spell.duration],
     ["Source", spell.source],
@@ -322,13 +306,7 @@ function SpellInfoPanel({
         </div>
       </div>
       <div className="info-panel-body">
-        {loading && (
-          <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-background px-3 py-1 text-xs font-medium text-primary">
-            <Sparkles className="h-3.5 w-3.5 animate-pulse" />
-            Loading details…
-          </div>
-        )}
-        <div className="mt-4 flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2">
           <span className="rounded-full border border-border/70 bg-background px-2.5 py-1 text-[11px] uppercase tracking-wide text-muted-foreground">
             {spell.level === 0 ? "Cantrip" : `Level ${spell.level ?? "—"}`}
           </span>
