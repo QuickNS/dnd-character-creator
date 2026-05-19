@@ -538,7 +538,7 @@ export function AbilitiesStep() {
               <div className={cn(
                 "flex-shrink-0 rounded-lg border px-3 py-2 text-center min-w-[100px]",
                 arrayComplete
-                  ? "border-primary/40 bg-primary/10 text-primary"
+                  ? "border-green-500/40 bg-green-500/10 text-green-700 dark:text-green-400"
                   : "border-border bg-secondary/30 text-muted-foreground",
               )}>
                 <p className="text-xs uppercase tracking-widest mb-0.5">Assigned</p>
