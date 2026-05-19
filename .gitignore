@@ -51,3 +51,5 @@ wiki_data/
 
 # log files
 character_creator.log
+frontend/tsconfig.app.tsbuildinfo
+frontend/tsconfig.node.tsbuildinfo
