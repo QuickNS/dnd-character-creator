@@ -163,9 +163,9 @@ export function SummaryStep({ steps }: Props) {
         {!validateQuery.isLoading && !validateQuery.error && (
           <>
             {allComplete ? (
-              <div className="flex items-center gap-2 rounded-md bg-primary/10 border border-primary/20 p-3 mb-4">
-                <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0" />
-                <p className="text-sm font-semibold text-primary">All required choices made. Ready to play.</p>
+              <div className="flex items-center gap-2 rounded-md bg-green-500/10 border border-green-500/30 p-3 mb-4">
+                <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400 flex-shrink-0" />
+                <p className="text-sm font-semibold text-green-700 dark:text-green-400">All required choices made. Ready to play.</p>
               </div>
             ) : (
               <>
@@ -192,7 +192,7 @@ export function SummaryStep({ steps }: Props) {
                 return (
                   <li key={s.step} className="flex items-start gap-2">
                     {s.complete ? (
-                      <CheckCircle2 className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
+                      <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
                     ) : (
                       <Circle className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
                     )}
