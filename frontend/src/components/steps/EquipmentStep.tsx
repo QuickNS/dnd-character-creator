@@ -1,5 +1,7 @@
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
+import { Backpack, BookOpen, Check, Loader2 } from "lucide-react";
 import { api } from "@/lib/api";
+import { cn } from "@/lib/utils";
 import { useCharacterStore } from "@/store/characterStore";
 
 interface EquipmentOption {
@@ -12,9 +14,20 @@ type EquipmentBlock = Record<string, EquipmentOption>;
 
 const EQUIPMENT_KEY = "equipment_selections";
 
-const SLOT_LABEL: Record<string, string> = {
-  class_equipment: "From your class",
-  background_equipment: "From your background",
+const SLOT_META: Record<
+  string,
+  { kicker: string; title: string; icon: React.ReactNode }
+> = {
+  class_equipment: {
+    kicker: "From your class",
+    title: "Class Starting Equipment",
+    icon: <Backpack className="h-4 w-4" />,
+  },
+  background_equipment: {
+    kicker: "From your background",
+    title: "Background Starting Equipment",
+    icon: <BookOpen className="h-4 w-4" />,
+  },
 };
 
 export function EquipmentStep() {
@@ -38,7 +51,14 @@ export function EquipmentStep() {
   }
 
   if (previewQuery.isLoading && !previewQuery.data) {
-    return <p className="text-xs text-muted-foreground">Loading equipment…</p>;
+    return (
+      <div className="overflow-hidden rounded-2xl border border-border/80 bg-gradient-to-br from-card via-card to-secondary/40 shadow-sm">
+        <div className="flex items-center gap-3 px-5 py-8 sm:px-6">
+          <Loader2 className="h-5 w-5 animate-spin text-primary" />
+          <p className="text-sm text-muted-foreground">Loading equipment…</p>
+        </div>
+      </div>
+    );
   }
 
   const slots: Array<{ key: string; block: EquipmentBlock }> = [
@@ -58,12 +78,11 @@ export function EquipmentStep() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {slots.map(({ key, block }) => (
         <EquipmentSlot
           key={key}
-          title={SLOT_LABEL[key] ?? key}
-          slot={key}
+          slotKey={key}
           block={block}
           selected={stored[key] ?? null}
           onSelect={(option) => setSelection(key, option)}
@@ -74,73 +93,118 @@ export function EquipmentStep() {
 }
 
 function EquipmentSlot({
-  title,
-  slot,
+  slotKey,
   block,
   selected,
   onSelect,
 }: {
-  title: string;
-  slot: string;
+  slotKey: string;
   block: EquipmentBlock;
   selected: string | null;
   onSelect: (option: string | null) => void;
 }) {
   const options = Object.entries(block ?? {});
-
-  if (options.length === 0) {
-    return (
-      <section>
-        <h3 className="text-sm font-semibold mb-2">{title}</h3>
-        <p className="text-xs text-muted-foreground">
-          No starting equipment data available.
-        </p>
-      </section>
-    );
-  }
+  const meta = SLOT_META[slotKey] ?? {
+    kicker: slotKey,
+    title: humanizeOption(slotKey),
+    icon: <Backpack className="h-4 w-4" />,
+  };
 
   return (
-    <section className="space-y-3">
-      <h3 className="text-sm font-semibold">{title}</h3>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-start">
-        {options.map(([optKey, opt]) => {
-          const isSelected = selected === optKey;
-          const items = Array.isArray(opt?.items) ? (opt.items as unknown[]) : [];
-          const gold = typeof opt?.gold === "number" ? opt.gold : undefined;
-          const label = humanizeOption(optKey);
-          return (
-            <button
-              key={`${slot}-${optKey}`}
-              type="button"
-              onClick={() => onSelect(isSelected ? null : optKey)}
-              aria-pressed={isSelected}
-              className={
-                "flex h-full w-full flex-col items-stretch text-left rounded-md border p-3 transition-colors " +
-                (isSelected
-                  ? "border-primary bg-secondary"
-                  : "border-border hover:bg-secondary/60")
-              }
-            >
-              <div className="font-display text-lg text-primary">{label}</div>
-              {gold !== undefined && (
-                <dl className="mt-1 text-xs text-muted-foreground/80 space-y-0.5">
-                  <div>
-                    <span className="font-semibold">Gold:</span> {gold} gp
+    <section className="overflow-hidden rounded-2xl border border-border/80 bg-gradient-to-br from-card via-card to-secondary/40 shadow-sm">
+      {/* Section header */}
+      <div className="border-b border-border/70 px-5 py-5 sm:px-6">
+        <div className="flex items-start gap-3">
+          <div className="rounded-full bg-primary/10 p-2 text-primary">
+            {meta.icon}
+          </div>
+          <div>
+            <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">
+              {meta.kicker}
+            </p>
+            <h3 className="mt-1 font-display text-xl text-primary font-bold">
+              {meta.title}
+            </h3>
+          </div>
+        </div>
+      </div>
+
+      {/* Section body */}
+      <div className="px-5 py-5 sm:px-6">
+        {options.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            No starting equipment data available for this source.
+          </p>
+        ) : (
+          <div className="flex flex-col gap-3">
+            {options.map(([optKey, opt]) => {
+              const isSelected = selected === optKey;
+              const items = Array.isArray(opt?.items)
+                ? (opt.items as unknown[])
+                : [];
+              const gold =
+                typeof opt?.gold === "number" ? opt.gold : undefined;
+              const label = humanizeOption(optKey);
+
+              return (
+                <button
+                  key={`${slotKey}-${optKey}`}
+                  type="button"
+                  onClick={() => onSelect(isSelected ? null : optKey)}
+                  aria-pressed={isSelected}
+                  className={cn(
+                    "group relative flex h-full w-full flex-col items-stretch text-left rounded-xl border p-4 transition-all duration-200",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                    isSelected
+                      ? "border-primary bg-muted/60 shadow-md ring-1 ring-primary/20"
+                      : "border-border/80 bg-background/75 hover:-translate-y-1 hover:border-primary/40 hover:bg-secondary/50 hover:shadow-md",
+                  )}
+                >
+                  {/* Card header row: label + check circle */}
+                  <div className="mb-3 flex items-start justify-between gap-3">
+                    <div className="font-display text-xl text-primary font-semibold">
+                      {label}
+                    </div>
+                    <span
+                      className={cn(
+                        "inline-flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border transition-colors",
+                        isSelected
+                          ? "border-primary bg-background text-primary"
+                          : "border-border bg-background text-transparent group-hover:border-primary/40",
+                      )}
+                    >
+                      <Check className="h-4 w-4" />
+                    </span>
                   </div>
-                </dl>
-              )}
-              {items.length > 0 && (
-                <ul className="mt-2 text-xs text-muted-foreground list-disc pl-5 space-y-0.5">
-                  {items.map((it, i) => (
-                    <li key={i}>
-                      {typeof it === "string" ? it : JSON.stringify(it)}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </button>
-          );
-        })}
+
+                  {/* Gold */}
+                  {gold !== undefined && (
+                    <div className={cn("text-sm", items.length > 0 && "mb-3 pb-3 border-b border-border/60")}>
+                      <span className="text-xs uppercase tracking-wide text-muted-foreground">Gold</span>
+                      <p className="mt-0.5 font-medium text-foreground">{gold} gp</p>
+                    </div>
+                  )}
+
+                  {/* Items list */}
+                  {items.length > 0 && (
+                    <ul className="space-y-1 text-sm text-muted-foreground">
+                      {items.map((it, i) => (
+                        <li key={i} className="flex items-start gap-1.5">
+                          <span className="mt-0.5 select-none text-muted-foreground/60">
+                            •
+                          </span>
+                          <span>
+                            {typeof it === "string" ? it : JSON.stringify(it)}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
     </section>
   );

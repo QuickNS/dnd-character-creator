@@ -1,7 +1,9 @@
 import { Link } from "react-router-dom";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
+import { AlertCircle, CheckCircle2, ChevronRight, Circle } from "lucide-react";
 import { api, type WizardStep } from "@/lib/api";
 import { useCharacterStore } from "@/store/characterStore";
+import { Button } from "@/components/ui/button";
 
 interface Props {
   steps: WizardStep[];
@@ -134,10 +136,20 @@ export function SummaryStep({ steps }: Props) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
+      {/* Step header */}
+      <header className="mb-8">
+        <h1 className="font-display text-3xl md:text-4xl text-primary mb-2">
+          Character Summary
+        </h1>
+        <p className="text-base text-muted-foreground max-w-3xl">
+          Review your character and head to the full sheet when you're ready.
+        </p>
+      </header>
+
       {/* Validation */}
       <section className="rounded-md border border-border bg-card/50 p-4">
-        <h2 className="font-display text-lg text-primary mb-2">
+        <h2 className="font-display text-2xl text-foreground mb-2">
           Completion checklist
         </h2>
         {validateQuery.isLoading && (
@@ -151,33 +163,39 @@ export function SummaryStep({ steps }: Props) {
         {!validateQuery.isLoading && !validateQuery.error && (
           <>
             {allComplete ? (
-              <p className="text-sm">
-                <span className="text-primary font-semibold">
-                  ✓ All required choices made.
-                </span>{" "}
-                Ready to play.
-              </p>
+              <div className="flex items-center gap-2 rounded-md bg-primary/10 border border-primary/20 p-3 mb-4">
+                <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0" />
+                <p className="text-sm font-semibold text-primary">All required choices made. Ready to play.</p>
+              </div>
             ) : (
-              <p className="text-sm text-muted-foreground">
-                {incomplete.length} step{incomplete.length === 1 ? "" : "s"}{" "}
-                still need attention:
-              </p>
+              <>
+                {incomplete.length > 0 && (
+                  <div className="rounded-md bg-destructive/10 border border-destructive/20 p-4 mb-4">
+                    <div className="flex items-start gap-2">
+                      <AlertCircle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
+                      <div>
+                        <h4 className="font-semibold text-destructive mb-1">
+                          Incomplete selections
+                        </h4>
+                        <p className="text-sm text-muted-foreground">
+                          {incomplete.length} step{incomplete.length === 1 ? "" : "s"} still need attention.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </>
             )}
             <ul className="mt-3 space-y-1 text-sm">
               {statuses.map((s) => {
                 const label = stepLabel.get(s.step) ?? s.step;
                 return (
                   <li key={s.step} className="flex items-start gap-2">
-                    <span
-                      className={
-                        s.complete
-                          ? "text-primary"
-                          : "text-destructive"
-                      }
-                      aria-hidden
-                    >
-                      {s.complete ? "✓" : "○"}
-                    </span>
+                    {s.complete ? (
+                      <CheckCircle2 className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
+                    ) : (
+                      <Circle className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                    )}
                     <div className="flex-1">
                       <Link
                         to={`/wizard/${s.step}`}
@@ -206,7 +224,7 @@ export function SummaryStep({ steps }: Props) {
       {/* Build error */}
       {buildError && (
         <section className="rounded-md border border-destructive/40 bg-destructive/10 p-4">
-          <h2 className="font-display text-lg text-destructive mb-1">
+          <h2 className="font-display text-2xl text-destructive mb-1">
             Build failed
           </h2>
           <p className="text-sm text-destructive">{buildError}</p>
@@ -220,12 +238,12 @@ export function SummaryStep({ steps }: Props) {
       {/* Character preview */}
       {!buildError && (
         <section className="rounded-md border border-border bg-card/50 p-4">
-          <h2 className="font-display text-lg text-primary mb-3">
+          <h2 className="font-display text-2xl text-foreground mb-3">
             Character preview
           </h2>
 
           <div className="mb-4">
-            <div className="font-display text-2xl text-foreground">{name}</div>
+            <div className="font-display text-3xl text-foreground">{name}</div>
             <div className="text-sm text-muted-foreground">
               {level !== undefined ? `Level ${level}` : "Level —"}{" "}
               {cls ?? "—"}
@@ -312,29 +330,23 @@ export function SummaryStep({ steps }: Props) {
 
       {/* Actions */}
       <section className="rounded-md border border-border bg-card/50 p-4">
-        <h2 className="font-display text-lg text-primary mb-3">Next steps</h2>
+        <h2 className="font-display text-2xl text-foreground mb-3">Next steps</h2>
         <div className="flex flex-wrap gap-3">
-          <Link
-            to="/sheet"
-            className="inline-flex items-center rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground font-semibold hover:opacity-90"
-          >
-            View full character sheet →
-          </Link>
-          <button
-            type="button"
-            onClick={handleExport}
-            className="inline-flex items-center rounded-md border border-border px-4 py-2 text-sm hover:bg-secondary"
-          >
+          <Button asChild>
+            <Link to="/sheet">
+              View full character sheet <ChevronRight className="h-4 w-4 ml-1" />
+            </Link>
+          </Button>
+          <Button variant="outline" onClick={handleExport}>
             Download choices (JSON)
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
+            variant="outline"
             onClick={handleExportFull}
             disabled={!buildQuery.data || !!buildError}
-            className="inline-flex items-center rounded-md border border-border px-4 py-2 text-sm hover:bg-secondary disabled:opacity-30 disabled:cursor-not-allowed"
           >
             Download character (JSON)
-          </button>
+          </Button>
         </div>
         <p className="mt-3 text-xs text-muted-foreground">
           Your progress is saved automatically in this browser. Use{" "}

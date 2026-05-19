@@ -1,6 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
+import { AlertCircle, Check, ChevronDown, ChevronUp, Dice6, Info, Loader2 } from "lucide-react";
 import { api } from "@/lib/api";
+import { cn } from "@/lib/utils";
 import { useCharacterStore } from "@/store/characterStore";
 
 const ABILITIES = [
@@ -79,6 +81,13 @@ function normalizeMethod(method: unknown): Method {
 function formatModifier(score: number) {
   const mod = Math.floor((score - 10) / 2);
   return mod >= 0 ? `+${mod}` : `${mod}`;
+}
+
+function modifierColor(score: number): string {
+  const mod = Math.floor((score - 10) / 2);
+  if (mod > 0) return "text-green-600 dark:text-green-400";
+  if (mod < 0) return "text-destructive/80";
+  return "text-muted-foreground";
 }
 
 function roll4d6DropLowest() {
@@ -275,74 +284,133 @@ export function AbilitiesStep() {
   const rollAssignmentsComplete =
     rolledValues.length === 6 && ABILITIES.every((a) => rollAssignments[a] !== null);
 
-  const rolledCounts = useMemo(() => {
-    const counts = new Map<number, number>();
-    for (const value of rolledValues) {
-      counts.set(value, (counts.get(value) ?? 0) + 1);
-    }
-    return counts;
-  }, [rolledValues]);
-
   return (
-    <div className="space-y-6">
-      <section className="space-y-3">
-        <h3 className="text-sm font-semibold">Generation method</h3>
-        <div className="flex flex-wrap gap-2">
-          {methodButtons.map(([id, label]) => {
-            const disabled = id === "recommended" && !recommended;
-            return (
-              <button
-                key={id}
-                type="button"
-                onClick={() => !disabled && setMethod(id)}
-                disabled={disabled}
-                title={
-                  disabled ? "Pick a class to see its recommended array." : undefined
-                }
-                className={
-                  "rounded-md border px-3 py-2 text-sm transition-colors " +
-                  (method === id
-                    ? "border-primary bg-secondary"
-                    : "border-border hover:bg-secondary/60") +
-                  (disabled ? " opacity-40 cursor-not-allowed" : "")
-                }
-              >
-                {label}
-              </button>
-            );
-          })}
+    <div className="space-y-8">
+
+      {/* ── Generation method ─────────────────────────────────────────── */}
+      <section className="overflow-hidden rounded-2xl border border-border/80 bg-gradient-to-br from-card via-card to-secondary/40 shadow-sm">
+        <div className="border-b border-border/70 px-5 py-5 sm:px-6">
+          <div className="flex items-start gap-3">
+            <div className="rounded-full bg-primary/10 p-2 text-primary">
+              <Dice6 className="h-4 w-4" />
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">
+                Step 1 of 2
+              </p>
+              <h3 className="mt-1 font-display text-2xl text-primary font-bold">
+                Generation method
+              </h3>
+              <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
+                Choose how to determine your six ability scores. Standard array and Point Buy are the balanced options; roll or enter values manually for a more adventurous approach.
+              </p>
+            </div>
+          </div>
         </div>
-        {method === "recommended" && recommended && (
-          <p className="text-xs text-muted-foreground">
-            Uses the suggested array for your class. Switch to <strong>Standard array</strong>,{" "}
-            <strong>Point buy</strong>, or <strong>Manual / Roll</strong> to customize.
-          </p>
-        )}
+
+        <div className="px-5 py-5 sm:px-6 space-y-4">
+          <div className="flex flex-wrap gap-2">
+            {methodButtons.map(([id, label]) => {
+              const disabled = id === "recommended" && !recommended;
+              const isSelected = method === id;
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => !disabled && setMethod(id)}
+                  disabled={disabled}
+                  aria-pressed={isSelected}
+                  title={disabled ? "Pick a class to see its recommended array." : undefined}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 rounded-lg border px-4 py-2 text-sm font-medium transition-all duration-200",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                    isSelected
+                      ? "border-primary bg-muted/60 text-foreground shadow-sm ring-1 ring-primary/20"
+                      : "border-border/80 bg-background/75 text-muted-foreground hover:bg-secondary/50 hover:border-primary/40 hover:text-foreground",
+                    disabled && "cursor-not-allowed opacity-40",
+                  )}
+                >
+                  {isSelected && <Check className="h-3.5 w-3.5 text-primary" />}
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+
+          {method === "recommended" && recommended && (
+            <div className="flex items-start gap-2 rounded-lg border border-border/60 bg-secondary/30 px-4 py-3">
+              <Info className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-muted-foreground">
+                Uses the suggested array for your class. Switch to{" "}
+                <strong className="text-foreground">Standard array</strong>,{" "}
+                <strong className="text-foreground">Point buy</strong>, or{" "}
+                <strong className="text-foreground">Manual / Roll</strong> to customize.
+              </p>
+            </div>
+          )}
+        </div>
       </section>
 
+      {/* ── Roll helper (manual mode only) ────────────────────────────── */}
       {method === "manual" && (
-        <section className="rounded-md border border-border bg-card/40 p-4 space-y-3">
-          <div className="flex items-center justify-between gap-3">
-            <h3 className="text-sm font-semibold">Roll helper (4d6 drop lowest × 6)</h3>
-            <button
-              type="button"
-              onClick={rollAllAbilityScores}
-              className="rounded border border-border px-2 py-1 text-xs bg-primary text-primary-foreground hover:translate-y-[-1px] hover:opacity-95"
-              
-            >
-              Roll now
-            </button>
+        <section className="overflow-hidden rounded-2xl border border-border/80 bg-gradient-to-br from-card via-card to-secondary/40 shadow-sm">
+          <div className="border-b border-border/70 px-5 py-4 sm:px-6">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <h3 className="font-semibold text-lg">Roll helper</h3>
+                <p className="text-sm text-muted-foreground">
+                  4d6 drop lowest × 6 — then assign each result to an ability.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={rollAllAbilityScores}
+                className={cn(
+                  "inline-flex items-center gap-1.5 rounded-lg border border-primary bg-primary px-4 py-2 text-sm font-medium text-primary-foreground",
+                  "transition-all duration-200 hover:-translate-y-0.5 hover:opacity-95",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                )}
+              >
+                <Dice6 className="h-4 w-4" />
+                Roll now
+              </button>
+            </div>
           </div>
 
           {rolledValues.length > 0 && (
-            <>
-              <p className="text-xs text-muted-foreground">
-                Rolled values: {Array.from(rolledCounts.entries())
-                  .map(([value, count]) => (count > 1 ? `${value}×${count}` : `${value}`))
-                  .join(", ")}
-              </p>
+            <div className="px-5 py-5 sm:px-6 space-y-5">
+              {/* Dice chips — one per rolled value */}
+              <div>
+                <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-3">Rolled values</p>
+                <div className="flex flex-wrap gap-2">
+                  {rolledValues.map((value, idx) => {
+                    const assignedTo = ABILITIES.find((a) => rollAssignments[a] === idx);
+                    const mod = Math.floor((value - 10) / 2);
+                    const modStr = mod >= 0 ? `+${mod}` : `${mod}`;
+                    return (
+                      <div
+                        key={idx}
+                        className={cn(
+                          "flex flex-col items-center rounded-xl border px-3 py-2 min-w-[54px] transition-all duration-200",
+                          assignedTo
+                            ? "border-border/50 bg-muted/30 opacity-50"
+                            : "border-border/80 bg-background/80 shadow-sm",
+                        )}
+                      >
+                        <span className="text-xl font-bold text-foreground leading-tight">{value}</span>
+                        <span className={cn("text-xs font-medium", modifierColor(value))}>{modStr}</span>
+                        {assignedTo && (
+                          <span className="text-[10px] uppercase tracking-wider text-muted-foreground mt-0.5">
+                            {assignedTo.slice(0, 3)}
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {ABILITIES.map((ability) => {
                   const current = rollAssignments[ability];
                   const usedByOthers = new Set<number>(
@@ -355,10 +423,10 @@ export function AbilitiesStep() {
                     .filter(({ idx }) => idx === current || !usedByOthers.has(idx));
 
                   return (
-                    <div key={`roll-${ability}`} className="rounded border border-border px-2 py-1">
+                    <div key={`roll-${ability}`} className="rounded-xl border border-border/80 bg-background/75 px-3 py-3">
                       <label
                         htmlFor={`roll-assignment-${ability}`}
-                        className="text-xs uppercase text-muted-foreground"
+                        className="text-xs uppercase tracking-[0.2em] text-muted-foreground"
                       >
                         {ability}
                       </label>
@@ -371,9 +439,12 @@ export function AbilitiesStep() {
                             e.target.value === "" ? null : Number(e.target.value),
                           )
                         }
-                        className="mt-1 w-full rounded border border-input bg-background px-2 py-1 text-sm"
+                        className={cn(
+                          "mt-2 w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm",
+                          "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1",
+                        )}
                       >
-                        <option value="">--</option>
+                        <option value="">— assign —</option>
                         {options.map(({ value, idx }) => (
                           <option key={`${ability}-${idx}-${value}`} value={idx}>
                             {value}
@@ -389,217 +460,339 @@ export function AbilitiesStep() {
                 type="button"
                 onClick={applyRollAssignments}
                 disabled={!rollAssignmentsComplete}
-                className={
-                  "rounded border px-2 py-1 text-xs " +
-                  (rollAssignmentsComplete
-                    ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20 hover:translate-y-[-1px] hover:opacity-95"
-                    : "cursor-not-allowed bg-muted text-muted-foreground opacity-60")
-                }
+                className={cn(
+                  "inline-flex items-center gap-1.5 rounded-lg border px-4 py-2 text-sm font-medium transition-all duration-200",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                  rollAssignmentsComplete
+                    ? "border-primary bg-primary text-primary-foreground shadow-sm hover:-translate-y-0.5 hover:opacity-95"
+                    : "cursor-not-allowed border-border bg-muted text-muted-foreground opacity-60",
+                )}
               >
-                Apply roll assignments
+                {rollAssignmentsComplete && <Check className="h-3.5 w-3.5" />}
+                Apply assignments
               </button>
-            </>
+            </div>
           )}
         </section>
       )}
 
-      <section>
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-semibold">Assign scores</h3>
-          {method === "standard_array" && (
-            <p className="text-xs text-muted-foreground">
-              Use each of {STANDARD_ARRAY.join(", ")} exactly once.
-            </p>
-          )}
-          {method === "point_buy" && (
-            <p className="text-xs text-muted-foreground">
-              {pointSpend} / {POINT_BUY_TOTAL} points spent
-              {pointSpend > POINT_BUY_TOTAL ? " · over budget" : ""}
-            </p>
-          )}
-          {method === "recommended" && (
-            <p className="text-xs text-muted-foreground">
-              Class-recommended allocation (read-only)
-            </p>
-          )}
+      {/* ── Assign scores ─────────────────────────────────────────────── */}
+      <section className="overflow-hidden rounded-2xl border border-border/80 bg-gradient-to-br from-card via-card to-secondary/40 shadow-sm">
+        <div className="border-b border-border/70 px-5 py-4 sm:px-6">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h3 className="font-semibold text-lg">Assign scores</h3>
+              {method === "standard_array" && (
+                <p className="text-sm text-muted-foreground">
+                  Assign each of {STANDARD_ARRAY.join(", ")} to exactly one ability.
+                </p>
+              )}
+              {method === "point_buy" && (
+                <p className="text-sm text-muted-foreground">
+                  Spend up to {POINT_BUY_TOTAL} points. Higher scores cost more.
+                </p>
+              )}
+              {method === "recommended" && (
+                <p className="text-sm text-muted-foreground">
+                  Class-recommended allocation — read-only.
+                </p>
+              )}
+              {method === "manual" && (
+                <p className="text-sm text-muted-foreground">
+                  Enter scores between {MANUAL_MIN} and {MANUAL_MAX} for each ability.
+                </p>
+              )}
+            </div>
+
+            {method === "point_buy" && (
+              <div className={cn(
+                "flex-shrink-0 rounded-lg border px-3 py-2 text-center min-w-[108px]",
+                pointSpend > POINT_BUY_TOTAL
+                  ? "border-destructive/40 bg-destructive/10 text-destructive"
+                  : pointSpend === POINT_BUY_TOTAL
+                    ? "border-green-500/40 bg-green-500/10 text-green-700 dark:text-green-400"
+                    : "border-border bg-secondary/30 text-muted-foreground",
+              )}>
+                {pointSpend > POINT_BUY_TOTAL ? (
+                  <>
+                    <p className="text-xs uppercase tracking-widest mb-0.5">Over budget</p>
+                    <p className="text-lg font-bold">+{pointSpend - POINT_BUY_TOTAL}</p>
+                  </>
+                ) : pointSpend === POINT_BUY_TOTAL ? (
+                  <>
+                    <p className="text-xs uppercase tracking-widest mb-0.5">Complete</p>
+                    <p className="text-lg font-bold flex items-center justify-center gap-1">
+                      <Check className="h-5 w-5" />
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-xs uppercase tracking-widest mb-0.5">Remaining</p>
+                    <p className="text-lg font-bold">{POINT_BUY_TOTAL - pointSpend}</p>
+                  </>
+                )}
+              </div>
+            )}
+
+            {method === "standard_array" && (
+              <div className={cn(
+                "flex-shrink-0 rounded-lg border px-3 py-2 text-center min-w-[100px]",
+                arrayComplete
+                  ? "border-primary/40 bg-primary/10 text-primary"
+                  : "border-border bg-secondary/30 text-muted-foreground",
+              )}>
+                <p className="text-xs uppercase tracking-widest mb-0.5">Assigned</p>
+                <p className="text-lg font-bold">
+                  {arraySelections.length}
+                  <span className="text-sm font-normal">/{ABILITIES.length}</span>
+                </p>
+              </div>
+            )}
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {ABILITIES.map((ability) => {
-            const pointBuyScore = scores[ability];
-            const pointBuyIncrementCost =
-              (POINT_BUY_COSTS[pointBuyScore + 1] ?? POINT_BUY_TOTAL + 1) -
-              (POINT_BUY_COSTS[pointBuyScore] ?? 0);
-            const canPointBuyDecrement = pointBuyScore > POINT_BUY_MIN;
-            const canPointBuyIncrement =
-              pointBuyScore < POINT_BUY_MAX &&
-              pointSpend + pointBuyIncrementCost <= POINT_BUY_TOTAL;
+        <div className="px-5 py-5 sm:px-6 space-y-4">
+          {previewQuery.isLoading && method === "recommended" && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Loading recommended scores…
+            </div>
+          )}
 
-            return (
-              <div
-                key={ability}
-                className="rounded-md border border-border bg-card/40 p-3"
-              >
-                <label
-                  htmlFor={`score-${ability}`}
-                  className="text-xs uppercase tracking-widest text-muted-foreground"
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {ABILITIES.map((ability) => {
+              const currentScore = scores[ability];
+              const pointBuyIncrementCost =
+                (POINT_BUY_COSTS[currentScore + 1] ?? POINT_BUY_TOTAL + 1) -
+                (POINT_BUY_COSTS[currentScore] ?? 0);
+              const canPointBuyDecrement = currentScore > POINT_BUY_MIN;
+              const canPointBuyIncrement =
+                currentScore < POINT_BUY_MAX &&
+                pointSpend + pointBuyIncrementCost <= POINT_BUY_TOTAL;
+
+              const displayScore =
+                method === "standard_array"
+                  ? standardArrayAssignments[ability] || null
+                  : currentScore;
+
+              return (
+                <div
+                  key={ability}
+                  className="rounded-xl border border-border/80 bg-background/75 p-4"
                 >
-                  {ability}
-                </label>
-                {method === "standard_array" ? (
-                  <select
-                    id={`score-${ability}`}
-                    value={String(standardArrayAssignments[ability] || "")}
-                    onChange={(e) =>
-                      setStandardArrayScore(
-                        ability,
-                        e.target.value === "" ? "" : Number(e.target.value),
-                      )
-                    }
-                    className="mt-1 w-full rounded border border-input bg-background px-2 py-1 text-sm"
-                  >
-                    <option value="">--</option>
-                    {STANDARD_ARRAY.filter((value) => {
-                      const current = standardArrayAssignments[ability];
-                      if (current === value) return true;
-                      return !ABILITIES.some(
-                        (a) => a !== ability && standardArrayAssignments[a] === value,
-                      );
-                    }).map((value) => (
-                      <option key={`${ability}-${value}`} value={value}>
-                        {value}
-                      </option>
-                    ))}
-                  </select>
-                ) : method === "point_buy" ? (
-                  <div className="mt-1 flex items-center gap-2">
+                  <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-3">
+                    {ability}
+                  </p>
+
+                  {/* Score + modifier display */}
+                  {method !== "standard_array" && (
+                    <div className="flex items-baseline gap-2 mb-3">
+                      <span className="text-2xl font-bold text-foreground">
+                        {displayScore ?? "—"}
+                      </span>
+                      {displayScore !== null && (
+                        <span className={cn("text-sm font-medium", modifierColor(displayScore))}>
+                          {formatModifier(displayScore)}
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Controls */}
+                  {method === "standard_array" ? (
+                    <div>
+                      <div className="flex items-baseline gap-2 mb-2">
+                        <span className="text-2xl font-bold text-foreground">
+                          {standardArrayAssignments[ability] || "—"}
+                        </span>
+                        {standardArrayAssignments[ability] && (
+                          <span className={cn("text-sm font-medium", modifierColor(standardArrayAssignments[ability] as number))}>
+                            {formatModifier(standardArrayAssignments[ability] as number)}
+                          </span>
+                        )}
+                      </div>
+                      <select
+                        id={`score-${ability}`}
+                        value={String(standardArrayAssignments[ability] || "")}
+                        onChange={(e) =>
+                          setStandardArrayScore(
+                            ability,
+                            e.target.value === "" ? "" : Number(e.target.value),
+                          )
+                        }
+                        className={cn(
+                          "w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm",
+                          "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1",
+                        )}
+                      >
+                        <option value="">— choose —</option>
+                        {STANDARD_ARRAY.filter((value) => {
+                          const current = standardArrayAssignments[ability];
+                          if (current === value) return true;
+                          return !ABILITIES.some(
+                            (a) => a !== ability && standardArrayAssignments[a] === value,
+                          );
+                        }).map((value) => (
+                          <option key={`${ability}-${value}`} value={value}>
+                            {value}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  ) : method === "point_buy" ? (
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => decrementPointBuy(ability)}
+                        disabled={!canPointBuyDecrement}
+                        aria-label={`Decrease ${ability}`}
+                        className={cn(
+                          "h-8 w-8 rounded-md border text-sm font-bold transition-colors",
+                          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
+                          canPointBuyDecrement
+                            ? "border-border hover:bg-secondary/60 hover:border-primary/40"
+                            : "cursor-not-allowed border-border opacity-40",
+                        )}
+                      >
+                        <ChevronDown className="h-4 w-4 mx-auto" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => incrementPointBuy(ability)}
+                        disabled={!canPointBuyIncrement}
+                        aria-label={`Increase ${ability}`}
+                        className={cn(
+                          "h-8 w-8 rounded-md border text-sm font-bold transition-colors",
+                          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
+                          canPointBuyIncrement
+                            ? "border-border hover:bg-secondary/60 hover:border-primary/40"
+                            : "cursor-not-allowed border-border opacity-40",
+                        )}
+                      >
+                        <ChevronUp className="h-4 w-4 mx-auto" />
+                      </button>
+                      {method === "point_buy" && (
+                        <span className="text-xs text-muted-foreground">
+                          costs {POINT_BUY_COSTS[currentScore] ?? 0} pts
+                        </span>
+                      )}
+                    </div>
+                  ) : method === "recommended" ? null : (
+                    <div className="flex items-center gap-2">
+                      <input
+                        id={`score-${ability}`}
+                        type="number"
+                        min={MANUAL_MIN}
+                        max={MANUAL_MAX}
+                        value={currentScore}
+                        onChange={(e) =>
+                          setScore(
+                            ability,
+                            Math.max(
+                              MANUAL_MIN,
+                              Math.min(MANUAL_MAX, Number(e.target.value) || MANUAL_MIN),
+                            ),
+                          )
+                        }
+                        className={cn(
+                          "w-20 rounded-md border border-input bg-background px-3 py-1.5 text-sm",
+                          "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1",
+                        )}
+                      />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {!arrayValid && method === "standard_array" && (
+            <div className="rounded-md border border-destructive/30 bg-destructive/10 p-4">
+              <div className="flex items-start gap-2">
+                <AlertCircle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
+                <div>
+                  <h4 className="font-semibold text-destructive text-sm mb-1">
+                    Incomplete assignment
+                  </h4>
+                  <p className="text-sm text-destructive/80">
+                    Each value in the standard array must be used exactly once before continuing.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* ── Additional modifiers (optional) ───────────────────────────── */}
+      <section className="overflow-hidden rounded-2xl border border-border/80 bg-gradient-to-br from-card via-card to-secondary/40 shadow-sm">
+        <div className="border-b border-border/70 px-5 py-4 sm:px-6">
+          <h3 className="font-semibold text-lg">
+            Additional modifiers
+            <span className="text-sm font-normal text-muted-foreground ml-2">(Optional)</span>
+          </h3>
+          <p className="text-sm text-muted-foreground mt-1">
+            Applied on top of base scores and background bonuses — for magic items, feats, or DM rulings.
+          </p>
+        </div>
+
+        <div className="px-5 py-5 sm:px-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {ABILITIES.map((ability) => {
+              const value = additionalModifiers[ability];
+              const canDown = value > EXTRA_MOD_MIN;
+              const canUp = value < EXTRA_MOD_MAX;
+              return (
+                <div
+                  key={`additional-${ability}`}
+                  className="rounded-xl border border-border/80 bg-background/75 px-3 py-3"
+                >
+                  <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-2">
+                    {ability.slice(0, 3)}
+                  </p>
+                  <div className="flex items-center gap-1.5">
                     <button
                       type="button"
-                      onClick={() => decrementPointBuy(ability)}
-                      disabled={!canPointBuyDecrement}
-                      className={
-                        "h-8 w-8 rounded border text-sm " +
-                        (canPointBuyDecrement
-                          ? "border-border hover:bg-secondary/60"
-                          : "border-border opacity-50 cursor-not-allowed")
-                      }
+                      onClick={() => setAdditionalModifier(ability, value - 1)}
+                      disabled={!canDown}
+                      aria-label={`Decrease ${ability} modifier`}
+                      className={cn(
+                        "h-7 w-7 rounded-md border text-xs font-bold transition-colors",
+                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
+                        canDown
+                          ? "border-border hover:bg-secondary/60 hover:border-primary/40"
+                          : "cursor-not-allowed border-border opacity-40",
+                      )}
                     >
-                      -
+                      −
                     </button>
-                    <div className="min-w-[96px] rounded border border-input bg-background px-2 py-1 text-center text-sm font-semibold">
-                      {pointBuyScore} ({formatModifier(pointBuyScore)})
+                    <div className={cn(
+                      "h-7 min-w-[44px] rounded-md border border-input bg-background px-2 text-center text-sm leading-7 font-medium",
+                      value > 0 && "text-green-600 dark:text-green-400",
+                      value < 0 && "text-destructive/80",
+                    )}>
+                      {value >= 0 ? `+${value}` : value}
                     </div>
                     <button
                       type="button"
-                      onClick={() => incrementPointBuy(ability)}
-                      disabled={!canPointBuyIncrement}
-                      className={
-                        "h-8 w-8 rounded border text-sm " +
-                        (canPointBuyIncrement
-                          ? "border-border hover:bg-secondary/60"
-                          : "border-border opacity-50 cursor-not-allowed")
-                      }
+                      onClick={() => setAdditionalModifier(ability, value + 1)}
+                      disabled={!canUp}
+                      aria-label={`Increase ${ability} modifier`}
+                      className={cn(
+                        "h-7 w-7 rounded-md border text-xs font-bold transition-colors",
+                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
+                        canUp
+                          ? "border-border hover:bg-secondary/60 hover:border-primary/40"
+                          : "cursor-not-allowed border-border opacity-40",
+                      )}
                     >
                       +
                     </button>
                   </div>
-                ) : method === "recommended" ? (
-                  <div className="mt-1 flex items-baseline gap-2">
-                    <span className="text-lg font-semibold">{scores[ability]}</span>
-                    <span className="text-xs text-muted-foreground">
-                      {formatModifier(scores[ability])}
-                    </span>
-                  </div>
-                ) : (
-                  <div className="mt-1 flex items-center gap-2">
-                    <input
-                      id={`score-${ability}`}
-                      type="number"
-                      min={MANUAL_MIN}
-                      max={MANUAL_MAX}
-                      value={scores[ability]}
-                      onChange={(e) =>
-                        setScore(
-                          ability,
-                          Math.max(
-                            MANUAL_MIN,
-                            Math.min(MANUAL_MAX, Number(e.target.value) || MANUAL_MIN),
-                          ),
-                        )
-                      }
-                      className="w-20 rounded border border-input bg-background px-2 py-1 text-sm"
-                    />
-                    <span className="text-xs text-muted-foreground">
-                      {formatModifier(scores[ability])}
-                    </span>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-
-        {!arrayValid && method === "standard_array" && (
-          <p className="mt-2 text-xs text-destructive">
-            Standard array values must each be used exactly once before completing this step.
-          </p>
-        )}
-      </section>
-
-      <section className="rounded-md border border-border bg-card/40 p-4">
-        <div className="flex items-center justify-between mb-2">
-          <h3 className="text-sm font-semibold">Additional modifiers</h3>
-          <p className="text-xs text-muted-foreground">
-            Applied after base scores and background bonuses.
-          </p>
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-          {ABILITIES.map((ability) => {
-            const value = additionalModifiers[ability];
-            const canDown = value > EXTRA_MOD_MIN;
-            const canUp = value < EXTRA_MOD_MAX;
-            return (
-              <div
-                key={`additional-${ability}`}
-                className="rounded border border-border bg-background/40 px-2 py-1"
-              >
-                <p className="text-xs uppercase text-muted-foreground mb-1">
-                  {ability.slice(0, 3)}
-                </p>
-                <div className="flex items-center gap-1">
-                  <button
-                    type="button"
-                    onClick={() => setAdditionalModifier(ability, value - 1)}
-                    disabled={!canDown}
-                    className={
-                      "h-7 w-7 rounded border text-xs " +
-                      (canDown
-                        ? "border-border hover:bg-secondary/60"
-                        : "border-border opacity-50 cursor-not-allowed")
-                    }
-                  >
-                    -
-                  </button>
-                  <div className="h-7 min-w-[44px] rounded border border-input bg-background px-2 text-center text-sm leading-7">
-                    {value >= 0 ? `+${value}` : value}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setAdditionalModifier(ability, value + 1)}
-                    disabled={!canUp}
-                    className={
-                      "h-7 w-7 rounded border text-xs " +
-                      (canUp
-                        ? "border-border hover:bg-secondary/60"
-                        : "border-border opacity-50 cursor-not-allowed")
-                    }
-                  >
-                    +
-                  </button>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
       </section>
 
@@ -647,65 +840,95 @@ function BackgroundAsiPicker({
 
   if (!hasBackground) {
     return (
-      <section className="rounded-md border border-border bg-card/40 p-4">
-        <h3 className="text-sm font-semibold mb-1">
-          Background ability bonuses
-        </h3>
-        <p className="text-xs text-muted-foreground">
-          No background selected. Pick a background first to distribute its
-          ability bonuses.
-        </p>
+      <section className="overflow-hidden rounded-2xl border border-border/80 bg-gradient-to-br from-card via-card to-secondary/40 shadow-sm">
+        <div className="px-5 py-5 sm:px-6">
+          <h3 className="font-semibold text-lg mb-1">Background ability bonuses</h3>
+          <p className="text-sm text-muted-foreground">
+            No background selected yet — pick a background first to distribute its ability bonuses here.
+          </p>
+        </div>
       </section>
     );
   }
 
   return (
-    <section className="rounded-md border border-border bg-card/40 p-4">
-      <div className="flex items-center justify-between mb-2">
-        <h3 className="text-sm font-semibold">Background ability bonuses</h3>
-        {asi.suggested && Object.keys(asi.suggested).length > 0 && (
-          <button
-            type="button"
-            onClick={applySuggested}
-            className="text-xs text-primary underline"
-          >
-            Use suggested
-          </button>
-        )}
-      </div>
-      <p className="text-xs text-muted-foreground mb-3">
-        Distribute {total} point{total === 1 ? "" : "s"} (no single ability may
-        gain more than 2). {remaining} remaining.
-      </p>
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-        {options.map((ability) => {
-          const v = Number(stored[ability] ?? 0);
-          return (
-            <div
-              key={ability}
-              className="rounded border border-border bg-background/40 px-2 py-1"
+    <section className="overflow-hidden rounded-2xl border border-border/80 bg-gradient-to-br from-card via-card to-secondary/40 shadow-sm">
+      <div className="border-b border-border/70 px-5 py-4 sm:px-6">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h3 className="font-semibold text-lg">Background ability bonuses</h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              Distribute {total} point{total === 1 ? "" : "s"} across abilities (max +2 per ability).{" "}
+              <span className={cn(
+                "font-medium",
+                remaining === 0 ? "text-green-600 dark:text-green-400" : "text-muted-foreground",
+              )}>
+                {remaining} remaining.
+              </span>
+            </p>
+          </div>
+          {asi.suggested && Object.keys(asi.suggested).length > 0 && (
+            <button
+              type="button"
+              onClick={applySuggested}
+              className={cn(
+                "flex-shrink-0 inline-flex items-center gap-1.5 rounded-lg border border-border/80 px-3 py-2 text-sm font-medium",
+                "bg-background/75 text-muted-foreground hover:bg-secondary/50 hover:border-primary/40 hover:text-foreground",
+                "transition-all duration-200",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+              )}
             >
-              <label
-                htmlFor={`bonus-${ability}`}
-                className="text-xs uppercase text-muted-foreground"
+              Use suggested
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div className="px-5 py-5 sm:px-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          {options.map((ability) => {
+            const v = Number(stored[ability] ?? 0);
+            return (
+              <div
+                key={ability}
+                className="rounded-xl border border-border/80 bg-background/75 px-3 py-3"
               >
-                {ability.slice(0, 3)}
-              </label>
-              <select
-                id={`bonus-${ability}`}
-                value={v}
-                onChange={(e) => setBonus(ability, Number(e.target.value))}
-                className="mt-1 w-full rounded border border-input bg-background px-2 py-0.5 text-sm"
-              >
-                {[0, 1, 2].map((opt) => (
-                  <option key={opt} value={opt}>
-                    +{opt}
-                  </option>
-                ))}
-              </select>
-            </div>
-          );
-        })}
+                <label
+                  htmlFor={`bonus-${ability}`}
+                  className="text-xs uppercase tracking-[0.2em] text-muted-foreground"
+                >
+                  {ability.slice(0, 3)}
+                </label>
+                <div className="flex items-baseline gap-2 mt-1 mb-2">
+                  <span className={cn(
+                    "text-xl font-bold",
+                    v > 0 ? "text-green-600 dark:text-green-400" : "text-muted-foreground",
+                  )}>
+                    +{v}
+                  </span>
+                </div>
+                <select
+                  id={`bonus-${ability}`}
+                  value={v}
+                  onChange={(e) => setBonus(ability, Number(e.target.value))}
+                  className={cn(
+                    "w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm",
+                    "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1",
+                  )}
+                >
+                  {[0, 1, 2].map((opt) => {
+                    const wouldExceed = spent - v + opt > total;
+                    return (
+                      <option key={opt} value={opt} disabled={wouldExceed}>
+                        +{opt}{wouldExceed ? " (over budget)" : ""}
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
+            );
+          })}
+        </div>
       </div>
     </section>
   );
