@@ -58,6 +58,11 @@
   "spellcasting_focus": [
     "Druidic Focus"
   ],
+  "spellcasting_type": "prepared",
+  "spell_preparation_formula": "level + wisdom_modifier",
+  "cantrip_progression": "class_table",
+  "spell_list_restrictions": null,
+  "ritual_casting": false,
   "masterable_weapons": [
     "Battleaxe",
     "Club",
@@ -134,6 +139,28 @@
     "18": 2,
     "19": 2,
     "20": 2
+  },
+  "cantrips_by_level": {
+    "1": 0,
+    "2": 0,
+    "3": 0,
+    "4": 0,
+    "5": 0,
+    "6": 0,
+    "7": 0,
+    "8": 0,
+    "9": 0,
+    "10": 0,
+    "11": 0,
+    "12": 0,
+    "13": 0,
+    "14": 0,
+    "15": 0,
+    "16": 0,
+    "17": 0,
+    "18": 0,
+    "19": 0,
+    "20": 0
   },
   "spell_slots_by_level": {
     "1": [
@@ -381,7 +408,9 @@
   },
   "features_by_level": {
     "1": {
-      "Spellcasting": "You have learned to channel the magical essence of nature to cast spells. Wisdom is your spellcasting ability. You can use a Druidic Focus as a Spellcasting Focus. You prepare level 1+ Ranger spells, regaining all expended spell slots on a Long Rest.",
+      "Spellcasting": {
+        "description": "You have learned to channel the magical essence of nature to cast spells. Wisdom is your spellcasting ability. You can use a Druidic Focus as a Spellcasting Focus. You prepare level 1+ Ranger spells, regaining all expended spell slots on a Long Rest."
+      },
       "Favored Enemy": {
         "description": "You always have the Hunter's Mark spell prepared, and it doesn't count against the number of spells you can prepare. You can cast Hunter's Mark without expending a spell slot a number of times shown in the Favored Enemy column of the Ranger Features table (2 at level 1, increasing at levels 5, 9, 13, and 17), and you regain all expended uses when you finish a Long Rest.",
         "effects": [
