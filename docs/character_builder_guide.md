@@ -16,7 +16,7 @@ The `CharacterBuilder` class is a **Flask-independent**, **stateful** character 
 - Couldn't easily test specific character states
 - Hard to reproduce bugs
 - No automated testing possible
-- Tightly coupled to Flask/sessions
+- Tightly coupled to Flask request state
 
 ### After (Solutions)
 - Create any character state in seconds with code
@@ -235,14 +235,7 @@ Other API v1 endpoints follow the same pattern:
 - `GET /api/v1/{classes,species,backgrounds,feats,spells,equipment,reference}` — read-only catalog
 - `GET /api/v1/wizard/{steps,dependencies}` — declarative wizard metadata
 
-All of them are stateless — no Flask session, no cookies, no in-memory state.
-
-### Legacy Jinja routes (quarantined)
-
-The original session-based UI is still mounted under `/legacy/*` for
-side-by-side comparison. New work does not touch it. If you need to read it,
-see [.github/instructions/flask-routes.instructions.md](../.github/instructions/flask-routes.instructions.md)
-for the legacy `get_builder_from_session` / `save_builder_to_session` pattern.
+All of them are stateless — no server-side request state, no cookies, no in-memory state.
 
 ## Character Data Structure
 

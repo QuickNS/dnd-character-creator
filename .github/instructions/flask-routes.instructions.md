@@ -1,7 +1,6 @@
 ---
 description: "Use when creating or modifying Flask route handlers in the REST API v1. Legacy Jinja routes are quarantined and must not be modified."
-applyTo: "routes/**/*.py"
----
+applyTo: "routes/api/**/*.py"
 
 # Flask Route Conventions
 
@@ -10,13 +9,11 @@ The Flask backend exposes two route surfaces:
 | Surface | Path prefix | Status | Source |
 |---|---|---|---|
 | **REST API v1** | `/api/v1/*` | **Primary** — consumed by the React SPA | `routes/api/` |
-| **Legacy Jinja UI** | `/legacy/*` | **Quarantined** — kept side-by-side for comparison only | `routes/` (non-`api/`) |
-| Test API | `/api/test/*` | Helper endpoints used by integration tests | `routes/test_api.py` |
 
 The React SPA (`frontend/`) is the new UI. Flask serves the built SPA bundle
-from `frontend/dist/` at `/` via a catch-all in `app.py`. **All new UI work
-goes into the SPA; all new server-side endpoints go into `routes/api/v1`.**
-The legacy routes will be removed in a future phase.
+from `frontend/dist/` at `/` via a catch-all in `app.py`. **All UI work is
+in the React SPA; all server-side endpoints are in `routes/api/v1`.** Legacy
+Jinja routes have been removed.
 
 ## REST API v1 (primary surface)
 
@@ -74,61 +71,14 @@ def build_character():
 ### Stateless helpers
 
 Reusable view-shaping helpers live in `modules/derived_stats.py` and are
-shared between the REST API and the legacy summary route. Add new view
-projections there, not inline in route handlers.
-
-## Legacy Jinja UI (quarantined)
-
-The legacy session-based UI lives under `routes/` (everything except
-`routes/api/`) and is mounted with `url_prefix="/legacy"` in
-`routes/__init__.py`. It exists only so users can visually compare the SPA
-against the original implementation.
-
-**Do not add new features to the legacy UI.** Bug fixes are acceptable when
-they reflect a calculation change in `CharacterBuilder` that should also show
-up here.
-
-### Legacy route pattern
-
-```python
-@bp.route("/endpoint", methods=["GET", "POST"])
-def handler():
-    builder = get_builder_from_session()
-    if not builder:
-        return redirect(url_for('index.index'))
-
-    if request.method == "POST":
-        builder.apply_choice(key, value)
-        save_builder_to_session(builder)
-
-    character = builder.to_character()
-    return render_template('template.html', character=character)
-```
-
-### Legacy session helpers
-
-```python
-from utils.route_helpers import get_builder_from_session, save_builder_to_session
-```
-
-- `get_builder_from_session()` → `CharacterBuilder | None`
-- `save_builder_to_session(builder)` → serializes to `session['builder_state']`
-- Always call `save_builder_to_session(builder)` after any `apply_choice` or setter
-
-### Rules for legacy routes
-
-1. **No calculations in routes** — `builder.to_character()` does all math
-2. **No calculations in templates** — Jinja2 only reads pre-calculated values
-3. **No direct session access** — use the helpers above
-4. **No new endpoints** — extend the API v1 surface instead
+shared between the REST API and other surfaces. Add new view projections there,
+not inline in route handlers.
 
 ## Blueprint registration
 
-All blueprints are registered in `routes/__init__.py` via `register_blueprints(app)`:
+The API v1 blueprint is registered in `routes/__init__.py` via `register_routes(app)`:
 
 - API v1 blueprint registered at `/api/v1`
-- Test API blueprint registered at `/api/test`
-- Each legacy blueprint registered with `url_prefix=LEGACY_PREFIX` (`/legacy`)
 
 `app.py` then adds a SPA catch-all that serves `frontend/dist/index.html`
-for any unmatched non-API, non-legacy, non-static path.
+for any unmatched non-API, non-static path.

@@ -28,7 +28,6 @@ from pathlib import Path
 from typing import Dict, List, Any, Optional, Tuple
 from copy import deepcopy
 
-from .character import Character
 from .ability_scores import AbilityScores
 from .feature_manager import FeatureManager
 from .hp_calculator import HPCalculator
@@ -5195,52 +5194,6 @@ class CharacterBuilder:
             Complete character data as dictionary
         """
         return self.to_character()
-
-    def to_character_object(self) -> Character:
-        """
-        Convert to Character object (renamed from old to_character method).
-
-        Returns:
-            Character object with all data populated
-        """
-        char = Character()
-        character_data = self.to_character()
-
-        char.name = character_data.get("name", "")
-        char.species = character_data.get("species", "")
-        char.species_variant = character_data.get("lineage", "")
-        char.class_name = character_data.get("class", "")
-        char.subclass = character_data.get("subclass", "")
-        char.background = character_data.get("background", "")
-        char.level = character_data.get("level", 1)
-
-        # Ability scores from calculated data
-        abilities = character_data.get("abilities", {})
-        for ability_name, ability_data in abilities.items():
-            char.abilities[ability_name.title()] = ability_data.get("score", 10)
-
-        return char
-        if abilities:
-            char.ability_scores = self.ability_scores
-
-        # Proficiencies
-        profs = self.character_data.get("proficiencies", {})
-        char.weapon_proficiencies = profs.get("weapons", [])
-        char.armor_proficiencies = profs.get("armor", [])
-        char.tool_proficiencies = profs.get("tools", [])
-        char.skill_proficiencies = profs.get("skills", [])
-        char.languages = profs.get("languages", [])
-
-        # Other attributes
-        char.speed = self.character_data.get("speed", 30)
-        char.darkvision_range = self.character_data.get("darkvision", 0)
-
-        # Store data references
-        char.species_data = self.character_data.get("species_data")
-        char.class_data = self.character_data.get("class_data")
-        char.background_data = self.character_data.get("background_data")
-
-        return char
 
     def from_json(self, data: dict):
         """

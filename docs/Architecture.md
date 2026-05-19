@@ -101,19 +101,9 @@ Both are deliberately funnelled through narrow interfaces:
 
 The planned next step is a **Flask + PostgreSQL** persistence service behind the same `Persistence` interface, with user accounts and authentication. The SPA boundary does not change: roster sync becomes a different `Persistence` implementation; in-progress drafts continue to live in the Zustand store but mirror to the server. The API contract for character calculation is untouched.
 
-## Legacy Quarantine
+## UI Surface
 
-The legacy server-rendered Jinja UI is **deprecated and frozen**:
-
-| Path | Status |
-|------|--------|
-| `routes/` (every file outside `routes/api/`) | Deprecated. Do not modify or extend. |
-| `templates/` | Deprecated. |
-| `static/` (legacy Bootstrap CSS, sheet PNGs used by Jinja) | Deprecated except for assets the SPA also serves. |
-| `routes/test_api.py` | Deprecated probe page. |
-| `modules/character.py`, `modules/level_manager.py` | Suspected legacy-only. Flagged for backend verification before deletion. |
-
-These surfaces will be deleted in a future cleanup. They must not be used as a reference for new behaviour; `CharacterBuilder` and the `/api/v1` contract are authoritative.
+The product surface is now React SPA + `/api/v1` only. Documentation and implementation guidance assume the SPA consumes stateless JSON endpoints backed by `CharacterBuilder`.
 
 ## See Also
 

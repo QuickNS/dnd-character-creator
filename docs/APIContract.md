@@ -1,6 +1,6 @@
 # API Contract — `/api/v1`
 
-The REST API is **stateless JSON**. No Flask sessions, no cookies. The frontend is the source of truth for in-progress `choices_made`; the backend (`CharacterBuilder`) is the source of truth for every calculated value.
+The REST API is **stateless JSON**. No server-side request state, no cookies. The frontend is the source of truth for in-progress `choices_made`; the backend (`CharacterBuilder`) is the source of truth for every calculated value.
 
 Source layout:
 
@@ -151,7 +151,7 @@ Request:
 ```
 
 Request notes:
-- Supports legacy single-class inputs (`class`, `level`, optional `subclass`).
+- Supports single-class compatibility inputs (`class`, `level`, optional `subclass`).
 - Also supports `choices_made.classes` in this shape:
 
 ```json
@@ -198,12 +198,12 @@ Request:
 { "choices_made": { /* ChoicesMade */ } }
 ```
 
-Request notes are identical to `/character/build` for `choices_made.classes` and legacy `class`/`level` compatibility.
+Request notes are identical to `/character/build` for `choices_made.classes` and single-class `class`/`level` compatibility.
 
 Validation behavior for class rows:
 - For `choices_made.classes`, validation checks each row independently.
 - If a row's level meets that class's `subclass_selection_level`, `classes[i].subclass` is required.
-- Legacy `class`/`level` payloads still use `subclass` for this check.
+- Single-class `class`/`level` payloads still use `subclass` for this check.
 
 Response (200):
 ```json
@@ -268,7 +268,7 @@ Every `class` preview response carries a `row_context` object describing which r
 | `is_primary`       | bool    | `true` when `row_index == 0` (the primary class).                |
 | `total_class_rows` | int     | Length of `choices_made.classes`.                                |
 
-Resolution: the server matches the request's previewed class (case-insensitive) against `choices_made.classes` and returns the first matching row. Legacy single-class payloads (`class` / `level` without a `classes` array) always receive `{"row_index": 0, "is_primary": true, "total_class_rows": 1}` with `nested_choices` unfiltered.
+Resolution: the server matches the request's previewed class (case-insensitive) against `choices_made.classes` and returns the first matching row. Single-class payloads (`class` / `level` without a `classes` array) always receive `{"row_index": 0, "is_primary": true, "total_class_rows": 1}` with `nested_choices` unfiltered.
 
 When `is_primary` is `false`, `nested_choices` is filtered **server-side** to only the proficiency picks D&D 2024 multiclassing actually grants on entry. The filter consults the class's `multiclassing` block (see [DataFiles.md](DataFiles.md#multiclassing-block)) and:
 
@@ -485,7 +485,7 @@ The `Character` object is the literal output of `CharacterBuilder.to_character()
 | `attack_combinations`       | `calculate_weapon_attacks().combinations`           | List of multi-weapon combinations.                                    |
 | `ac_options`                | `calculate_ac_options()`                            | List of AC formulas with their components.                            |
 | `spells_by_level`           | Computed inline                                     | `{ [level: number]: SpellDefinition[] }` — flattens `always_prepared`, `prepared`, `known`, `background_spells` and merges with definitions from `data/spells/definitions/`. |
-| `spell_slots`               | Inline (session override; otherwise computed)        | `{ "1st": n, "2nd": n, ... }` (English ordinals). For multiclass rows, standard slots come from the canonical full-caster table keyed by `effective_caster_level`; single-class fallback remains class/subclass-by-level. |
+| `spell_slots`               | Inline (override if supplied; otherwise computed)    | `{ "1st": n, "2nd": n, ... }` (English ordinals). For multiclass rows, standard slots come from the canonical full-caster table keyed by `effective_caster_level`; single-class fallback remains class/subclass-by-level. |
 | `pact_magic_slots`          | Inline (multiclass spellcasting calc)               | Optional list of Pact Magic slot tracks, one entry per pact-contributing row. |
 | `spell_slot_notes`          | Inline (multiclass spellcasting calc)               | Optional explanatory notes for slot handling (for example, pact slots tracked separately). |
 | `proficiency_bonus`         | `calculate_proficiency_bonus(level)`                | Uses total character level (`sum(classes[].level)` when `classes` is present). |

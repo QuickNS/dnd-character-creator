@@ -3,8 +3,8 @@
 Phase 2 extraction: these were previously private helpers inside
 `routes/character_summary.py`, mixing session state and file I/O with
 pure calculation. They are now pure functions over a `CharacterBuilder`
-or its `to_character()` output, so both the legacy Jinja routes and the
-new `/api/v1/character/derived` endpoint can share them.
+or its `to_character()` output, exposed through the `/api/v1/character/derived`
+endpoint.
 
 NEVER import Flask or session state here.
 """

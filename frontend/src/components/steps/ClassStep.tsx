@@ -321,7 +321,7 @@ export function ClassStep() {
     () => normalizeAllocations(choicesMade.classes),
     [choicesMade.classes],
   );
-  const fallbackLegacyRow = useMemo<ClassAllocation | null>(() => {
+  const fallbackClassRow = useMemo<ClassAllocation | null>(() => {
     const className =
       typeof choicesMade.class === "string" && choicesMade.class.length > 0
         ? choicesMade.class
@@ -340,8 +340,8 @@ export function ClassStep() {
 
   const classAllocations = useMemo(() => {
     if (storedRows.length > 0) return storedRows;
-    return fallbackLegacyRow ? [fallbackLegacyRow] : [];
-  }, [storedRows, fallbackLegacyRow]);
+    return fallbackClassRow ? [fallbackClassRow] : [];
+  }, [storedRows, fallbackClassRow]);
 
   const { setSidebarPanel } = useWizardSidebarPanel();
   const [infoTarget, setInfoTarget] = useState<ClassInfoTarget>({ kind: "class" });

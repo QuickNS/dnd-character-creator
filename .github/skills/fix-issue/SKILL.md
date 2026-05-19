@@ -118,7 +118,6 @@ Depending on issue type and category:
 - Calculation/data bugs → `modules/character_builder.py` (and friends). All math must stay here.
 - REST API shape bugs → `routes/api/`. Keep these stateless and JSON-only.
 - New SPA UI is the primary surface — fix it under `frontend/src/`. Remember the SPA only consumes `/api/v1/*`; it never recalculates.
-- Legacy Jinja UI under `/legacy/*` is quarantined; only patch `routes/` (non-`api/`) or `templates/` if the bug is exclusive to that surface.
 
 **Application — `enhancement`**: Implement the feature following existing patterns. If a new effect type is needed, add a handler in `_apply_effect()` and document it in `docs/FEATURE_EFFECTS.md`. New UI features go into `frontend/src/`, not the legacy templates.
 

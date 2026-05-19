@@ -50,7 +50,7 @@ Self-hosted via fontsource so there is no third-party font request and the PWA c
 ## Backend
 
 ### Flask
-Small, dependency-light HTTP framework. The REST API lives entirely under `routes/api/` (blueprints `catalog_bp`, `character_bp`, `wizard_bp`) and is stateless — no Flask sessions, no cookies. The legacy Jinja routes outside `routes/api/` are deprecated and frozen (see [docs/Architecture.md#legacy-quarantine](Architecture.md#legacy-quarantine)).
+Small, dependency-light HTTP framework. The REST API lives entirely under `routes/api/` (blueprints `catalog_bp`, `character_bp`, `wizard_bp`) and is stateless — no server-side request state, no cookies.
 
 ### `CharacterBuilder` + effects system
 The single source of truth for every derived value. Choices in, calculated character out via `to_character()`. All mechanical benefits are structured `effects` arrays in JSON, applied by a generic dispatcher — application code never branches on feature names. See [docs/FEATURE_EFFECTS.md](FEATURE_EFFECTS.md) and [docs/character_builder_guide.md](character_builder_guide.md).

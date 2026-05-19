@@ -33,9 +33,12 @@ export function ClassImageBackground() {
       }
     }
 
-    const fromLegacy = s.choicesMade.class;
-    if (typeof fromLegacy === "string" && fromLegacy.length > 0) {
-      return fromLegacy;
+    const fallbackClassChoice = s.choicesMade.class;
+    if (
+      typeof fallbackClassChoice === "string" &&
+      fallbackClassChoice.length > 0
+    ) {
+      return fallbackClassChoice;
     }
 
     if (!Array.isArray(rows) || rows.length === 0) return undefined;

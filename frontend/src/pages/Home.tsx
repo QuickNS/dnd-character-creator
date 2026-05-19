@@ -203,13 +203,6 @@ export function Home() {
           >
             View Sheet
           </Link>
-          <a
-            href="/legacy/"
-            className="inline-flex items-center rounded-md border border-border px-6 py-3 text-muted-foreground hover:bg-secondary hover:text-foreground"
-            title="Open the legacy Jinja UI in this tab for side-by-side comparison"
-          >
-            Compare with legacy →
-          </a>
         </div>
 
         {importOpen && (

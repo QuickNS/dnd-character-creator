@@ -3,8 +3,7 @@
  *
  * Mirrors `templates/character_sheet_pdf.html`: an 8.5×11in canvas
  * with the official background image, overlaying read-only fields at
- * pixel-precise positions. Designed for `window.print()` to produce
- * the same output the legacy Jinja sheet did.
+ * pixel-precise positions. Designed for `window.print()` output.
  *
  * Read-only by design — the React SPA's source of truth is the wizard,
  * so this view only renders. Edit in the wizard, print here.
@@ -433,7 +432,7 @@ function Page2({ c: _c }: { c: Char }) {
     <div className="sheet-container">
       <div className="sheet-bg sheet-bg-2" />
       <div className="sheet-fields">
-        {/* Page 2 fields not yet positioned in legacy template — kept blank for parity. */}
+        {/* Page 2 fields are not positioned yet; this page remains blank for now. */}
       </div>
     </div>
   );

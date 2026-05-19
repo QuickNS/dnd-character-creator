@@ -133,7 +133,7 @@ Class lists hold `{ class, cantrips: [...], spells_by_level: { "1": [...], "2": 
 | `eldritch_invocations.json`   | All warlock invocations, prerequisites, effects.                      |
 | `origin_feats.json`           | Origin feats granted by 2024 backgrounds.                             |
 | `general_feats.json`          | General feats available at level 4+.                                  |
-| `trait_patterns.json`         | Shared trait shape templates referenced by species traits.            |
+| `trait_patterns.json`         | Shared trait shape patterns referenced by species traits.             |
 | `character_sheet_model.json`  | Reference model used when exporting a complete character.             |
 | `example_complete_character.json` | A worked example — handy for tests and inspection.                |
 

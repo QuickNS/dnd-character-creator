@@ -75,7 +75,7 @@ Source: `_DEPENDENCIES` in `routes/api/wizard.py`, served by `GET /api/v1/wizard
 | `species`    | `lineage`, `species_trait_choices`, `species_feat_choices`, `species_skill_replacement`, `languages` |
 | `lineage`    | `lineage_features`, `lineage_spells`, `languages`                                               |
 
-The cascade is implemented in `frontend/src/store/characterStore.ts` (`cascade()`). Setting a key always re-asserts that key after pruning dependents, in case of accidental self-reference. Changing `class` additionally wipes any positional `class_choice_*` legacy keys.
+The cascade is implemented in `frontend/src/store/characterStore.ts` (`cascade()`). Setting a key always re-asserts that key after pruning dependents, in case of accidental self-reference. Changing `class` additionally wipes any positional `class_choice_*` compatibility keys.
 
 ## Frontend Layout
 
@@ -109,7 +109,7 @@ The Zustand `partialize` config persists `choicesMade` and `currentStepId` only;
 `WizardLayout.handleStartOver`:
 1. Confirms with the user.
 2. Calls `useCharacterStore.reset()`.
-3. Removes `["character"]` and `["wizard"]` query caches from react-query so the new session does not render stale build/preview data.
+3. Removes `["character"]` and `["wizard"]` query caches from react-query so the new run does not render stale build/preview data.
 4. Navigates to the first step.
 
 ## Open Follow-Ups

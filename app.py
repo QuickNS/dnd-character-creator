@@ -6,12 +6,10 @@ All routes are organized into blueprint modules in the routes/ directory.
 """
 
 from flask import Flask, session
-from flask_session import Session
 import logging
 import os
-from datetime import timedelta
 from typing import Dict, Any, Optional
-from routes import register_blueprints
+from routes import register_routes
 
 from modules.data_loader import DataLoader
 from modules.character_builder import CharacterBuilder
@@ -30,21 +28,9 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 app.secret_key = "dnd-character-creator-secret-key-2024"  # Change this in production
 
-# Configure server-side sessions (filesystem)
-app.config["SESSION_TYPE"] = "filesystem"
-app.config["SESSION_FILE_DIR"] = "./flask_session"
-app.config["SESSION_PERMANENT"] = True
-app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(hours=24)
-app.config["SESSION_COOKIE_SECURE"] = False  # Set to True in production with HTTPS
-app.config["SESSION_COOKIE_HTTPONLY"] = True
-app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
-
-# Initialize Flask-Session
-Session(app)
 
 # Enable CORS for the Vite dev server when running in development. In
-# production the Flask app serves the built React bundle from the same
-# origin, so CORS is not needed.
+    # production, CORS is not needed.
 if os.environ.get("FLASK_ENV") == "development" or app.debug:
     try:
         from flask_cors import CORS
@@ -193,136 +179,42 @@ app.log_route_processing = log_route_processing
 app.log_builder_changes = log_builder_changes
 app.log_builder_state = log_builder_state
 
-# ==================== Session Helper Functions ====================
 
 
-def get_builder_from_session() -> Optional[CharacterBuilder]:
-    """
-    Get CharacterBuilder from session.
-
-    Returns:
-        CharacterBuilder if found in session, None otherwise
-    """
-    if "builder_state" not in session:
-        return None
-
-    builder = CharacterBuilder()
-    builder.from_json(session["builder_state"])
-    return builder
 
 
-def save_builder_to_session(builder: CharacterBuilder):
-    """
-    Save CharacterBuilder state to session.
-
-    Args:
-        builder: The CharacterBuilder instance to save
-    """
-    session["builder_state"] = builder.to_json()
-    session.modified = True
 
 
-# Make session helpers available to blueprints
-app.get_builder_from_session = get_builder_from_session
-app.save_builder_to_session = save_builder_to_session
-
-# ==================== Legacy Helper Functions ====================
 
 
-def _extract_hp_bonuses_from_character(character):
-    """Extract HP bonuses from character effects using the effects system."""
-    hp_bonuses = []
-
-    # Check effects array for bonus_hp effects
-    effects = character.get("effects", [])
-    for effect in effects:
-        if isinstance(effect, dict) and effect.get("type") == "bonus_hp":
-            hp_bonuses.append(
-                {
-                    "source": effect.get("source", "Unknown"),
-                    "value": effect.get("value", 0),
-                    "scaling": effect.get("scaling", "flat"),
-                }
-            )
-
-    return hp_bonuses
 
 
-# Make helper functions available to blueprints
-app._extract_hp_bonuses_from_character = _extract_hp_bonuses_from_character
-
-# ==================== Jinja2 Filters ====================
-
-import re
-import markupsafe
 
 
-@app.template_filter("nl2br")
-def nl2br_filter(value):
-    """Convert newlines to <br>, **bold** to <strong>, and render sub-features as lists."""
-    if not value:
-        return value
-
-    # Extract embedded HTML blocks (tables, divs) before escaping
-    html_blocks = {}
-    placeholder_prefix = "\x00HTML_BLOCK_"
-
-    def _save_html(match):
-        key = f"{placeholder_prefix}{len(html_blocks)}\x00"
-        html_blocks[key] = match.group(0)
-        return key
-
-    preserved = re.sub(r"<(?:table|div)\b[^>]*>.*?</(?:table|div)>", _save_html, value, flags=re.DOTALL)
-
-    escaped = str(markupsafe.escape(preserved))
-    escaped = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", escaped)
-
-    # Detect sub-features: paragraphs (after the first) that start with <strong>
-    paragraphs = escaped.split("\n\n")
-    if len(paragraphs) > 1 and any(
-        p.lstrip().startswith("<strong>") for p in paragraphs[1:]
-    ):
-        parts = []
-        list_items = []
-        for i, para in enumerate(paragraphs):
-            para_html = para.replace("\n", "<br>")
-            if i > 0 and para_html.lstrip().startswith("<strong>"):
-                list_items.append(f"<li>{para_html}</li>")
-            else:
-                if list_items:
-                    parts.append(f'<ul class="sub-feature-list">{"".join(list_items)}</ul>')
-                    list_items = []
-                if i == 0:
-                    parts.append(para_html)
-                else:
-                    parts.append(f"<br><br>{para_html}")
-        if list_items:
-            parts.append(f'<ul class="sub-feature-list">{"".join(list_items)}</ul>')
-        result = "".join(parts)
-    else:
-        result = escaped.replace("\n", "<br>")
-
-    # Restore preserved HTML blocks
-    for key, html in html_blocks.items():
-        result = result.replace(markupsafe.escape(key), html)
-
-    return markupsafe.Markup(result)
 
 
-# ==================== Blueprint Registration ====================
+
+
+
+
+
+
+
+
+# ==================== Route Registration ====================
 
 try:
-    register_blueprints(app)
-    logger.info("All blueprints registered successfully")
+    register_routes(app)
+    logger.info("API routes registered successfully")
 except Exception as e:
-    logger.error(f"Error registering blueprints: {e}")
+    logger.error(f"Error registering routes: {e}")
     raise
 
 # ==================== React SPA serving (Phase 7) ====================
 #
 # In production, the React SPA's built bundle (`frontend/dist/`) is
 # served from the Flask root. Any path not claimed by a blueprint
-# (`/api/v1/*`, `/api/test/*`, `/legacy/*`, `/static/*`) falls through
+ # (`/api/v1/*`, `/static/*`) falls through
 # to `index.html` so client-side routing handles it.
 #
 # In development, you typically run `npm run dev` (Vite on :5173) and
@@ -344,7 +236,6 @@ def serve_spa(path: str):
             "error": "React SPA bundle not built.",
             "hint": "Run `npm run build` in frontend/, or use the Vite dev "
                     "server at http://localhost:5173 during development.",
-            "legacy_ui": "/legacy/",
             "api": "/api/v1/health",
         }), 503
 

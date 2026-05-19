@@ -48,7 +48,7 @@ Everything in `.github/` exists to enforce those three ideas while keeping AI-as
                               by topic / file path
 ```
 
-Tier-2 stack reminder (also in `copilot-instructions.md`): React 18 + Vite + TS + shadcn/ui + Tailwind + Zustand 5 (UI state only) + react-query + react-router + vite-plugin-pwa over a stateless Flask `/api/v1/*` API backed by `CharacterBuilder` and JSON `data/`. Persistence is LocalStorage today and Flask + Postgres + auth in the future. The legacy Jinja UI under `routes/` (non-`api/`) and `templates/` is **quarantined** — do not modify.
+Tier-2 stack reminder (also in `copilot-instructions.md`): React 18 + Vite + TS + shadcn/ui + Tailwind + Zustand 5 (UI state only) + react-query + react-router + vite-plugin-pwa over a stateless Flask `/api/v1/*` API backed by `CharacterBuilder` and JSON `data/`. Persistence is LocalStorage today and Flask + Postgres + auth in the future.
 
 ---
 
@@ -169,7 +169,7 @@ Skills are split into **reference** (knowledge lookup; auto-surfaces by relevanc
 | Skill                       | What you get                                                            |
 |-----------------------------|-------------------------------------------------------------------------|
 | `dnd-rules-reference`       | D&D 2024 rule lookup; where each rule type lives in `data/`             |
-| `codebase-navigator`        | Repo map; "where does X live?"; quarantined surfaces                    |
+| `codebase-navigator`        | Repo map; "where does X live?"; layer and ownership boundaries          |
 | `design-system-reference`   | Tailwind tokens, typography, shadcn customisations (abridged)           |
 | `api-contract-reference`    | `/api/v1/*` endpoint catalogue (abridged)                               |
 | `dependency-map`            | How layers depend on each other; blast-radius cheatsheet                |
@@ -210,14 +210,14 @@ These are **rules, not procedures**. They tell the agent what to do at a fine-gr
 
 ## Prompts
 
-Prompts are explicit launchers (slash-commands) that take template variables and target a specific agent.
+Prompts are explicit launchers (slash-commands) that take input variables and target a specific agent.
 
 | Prompt                          | Variable             | Target agent        | Purpose                                  |
 |---------------------------------|----------------------|---------------------|------------------------------------------|
 | `add-data-files.prompt.md`      | `{{ content_type }}` | `backend`           | Generate data files for a content type.  |
 | `check-data-files.prompt.md`    | (none)               | `data-completeness` | Read-only audit of `data/` against schemas. |
 
-The legacy `implement-class` / `implement-species` prompts have been removed — the `implement-feature` skill (invoked by name or auto-detected) covers both, plus every other entity type.
+The older `implement-class` / `implement-species` prompts have been removed — the `implement-feature` skill (invoked by name or auto-detected) covers both, plus every other entity type.
 
 ---
 
@@ -236,7 +236,7 @@ Frontend has no hook today. The `frontend` agent runs `npm run typecheck` itself
 
 ## Setup Steps
 
-`.github/copilot-setup-steps.yml` runs when the **GitHub Copilot Coding Agent** (cloud sessions triggered by labelling an issue with `copilot`) bootstraps:
+`.github/copilot-setup-steps.yml` runs when the **GitHub Copilot Coding Agent** (cloud runs triggered by labelling an issue with `copilot`) bootstraps:
 
 ```yaml
 - pip install -r requirements.txt
