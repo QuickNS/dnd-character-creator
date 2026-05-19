@@ -93,10 +93,10 @@ export function BackgroundStep() {
   );
   const hasSkillReplacementChoice =
     neededSkillReplacements > 0 || alreadyChosenReplacements.length > 0;
-  const skillReplacementCount = Math.max(
-    neededSkillReplacements,
-    alreadyChosenReplacements.length,
-  );
+  const skillReplacementCount =
+    neededSkillReplacements > 0
+      ? neededSkillReplacements
+      : alreadyChosenReplacements.length;
 
   const featData = previewQuery.data?.origin_feat_choices as
     | Parameters<typeof FeatChoicesPicker>[0]["data"]
