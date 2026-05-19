@@ -1846,20 +1846,22 @@ class CharacterBuilder:
             item_name_lower = item.lower()
 
             # Check if item is a weapon by looking it up in weapon data
-            weapon_props = self._get_weapon_properties(item)
+            weapon_key = self._resolve_weapon_key(item)
+            weapon_props = self._weapon_data[weapon_key].copy() if weapon_key else {}
             if weapon_props:
-                # Extract quantity from item name (e.g., "Javelin (5)" -> 5)
-                quantity_match = re.search(r'\((\d+)\)', item)
-                quantity = int(quantity_match.group(1)) if quantity_match else 1
-                
-                # Get clean weapon name for display
-                clean_name = re.sub(r'\s*\([^)]*\)', '', item).strip()
-                clean_name = re.sub(r'^\d+\s+', '', clean_name).strip()
+                # Extract quantity from item name (e.g., "2 Daggers" -> 2, "Javelin (5)" -> 5)
+                quantity = 1
+                leading_quantity_match = re.search(r'^(\d+)\s+', item)
+                if leading_quantity_match:
+                    quantity = int(leading_quantity_match.group(1))
+                else:
+                    quantity_match = re.search(r'\((\d+)\)', item)
+                    quantity = int(quantity_match.group(1)) if quantity_match else 1
                 
                 # Item exists in weapons.json, so it's a weapon
                 self.character_data["equipment"]["weapons"].append(
                     {
-                        "name": clean_name,
+                        "name": weapon_key,
                         "display_name": item,  # Keep original for display
                         "quantity": quantity,
                         "source": source,
@@ -1953,25 +1955,64 @@ class CharacterBuilder:
 
     def _get_weapon_properties(self, weapon_name: str) -> Dict[str, Any]:
         """Get weapon properties from loaded weapon data."""
-        # Strip quantity indicators from weapon name
-        # Examples: "Javelin (5)" -> "Javelin", "20 Arrows" -> "Arrows"
+        weapon_key = self._resolve_weapon_key(weapon_name)
+        if weapon_key:
+            return self._weapon_data[weapon_key].copy()
+
+        # Return empty dict for non-weapons (will be categorized elsewhere)
+        return {}
+
+    def _resolve_weapon_key(self, weapon_name: str) -> Optional[str]:
+        """Resolve a starting-equipment weapon string to a key in weapons.json."""
         import re
-        
-        # Remove anything in parentheses (e.g., "Javelin (5)" -> "Javelin")
-        clean_name = re.sub(r'\s*\([^)]*\)', '', weapon_name).strip()
-        
-        # Remove leading numbers (e.g., "20 Arrows" -> "Arrows")
-        clean_name = re.sub(r'^\d+\s+', '', clean_name).strip()
-        
-        # Try the cleaned name first
-        if clean_name in self._weapon_data:
-            return self._weapon_data[clean_name].copy()
-        # Fall back to original name
-        elif weapon_name in self._weapon_data:
-            return self._weapon_data[weapon_name].copy()
-        else:
-            # Return empty dict for non-weapons (will be categorized elsewhere)
-            return {}
+
+        if not weapon_name:
+            return None
+
+        candidates = [weapon_name.strip()]
+        parenthetical_matches = re.findall(r'\(([^)]+)\)', weapon_name)
+        for match in parenthetical_matches:
+            candidate = match.strip()
+            if candidate:
+                candidates.append(candidate)
+
+        without_parentheses = re.sub(r'\s*\([^)]*\)', '', weapon_name).strip()
+        if without_parentheses:
+            candidates.append(without_parentheses)
+
+        expanded_candidates = []
+        for candidate in candidates:
+            expanded_candidates.append(candidate)
+
+            without_leading_number = re.sub(r'^\d+\s+', '', candidate).strip()
+            if without_leading_number and without_leading_number != candidate:
+                expanded_candidates.append(without_leading_number)
+
+            if without_leading_number.endswith("s") and len(without_leading_number) > 1:
+                singular_candidate = without_leading_number[:-1]
+                if singular_candidate:
+                    expanded_candidates.append(singular_candidate)
+
+        unique_candidates = []
+        seen = set()
+        for candidate in expanded_candidates:
+            lowered = candidate.lower()
+            if lowered and lowered not in seen:
+                seen.add(lowered)
+                unique_candidates.append(candidate)
+
+        for candidate in unique_candidates:
+            if candidate in self._weapon_data:
+                return candidate
+
+        lowercase_weapon_keys = {
+            weapon_key.lower(): weapon_key for weapon_key in self._weapon_data.keys()
+        }
+        for candidate in unique_candidates:
+            if candidate.lower() in lowercase_weapon_keys:
+                return lowercase_weapon_keys[candidate.lower()]
+
+        return None
 
     def calculate_ac_options(self) -> List[Dict[str, Any]]:
         """

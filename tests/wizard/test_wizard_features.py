@@ -540,6 +540,42 @@ class TestWizardEffectsAndEdgeCases:
         character = build_wizard(1)
         assert character["proficiency_bonus"] == 2
 
+    def test_option_a_equipment_adds_dagger_and_quarterstaff_attacks(self):
+        """Wizard class option A should expose Dagger and Quarterstaff in attacks."""
+        builder = CharacterBuilder()
+        builder.apply_choices(
+            {
+                "character_name": "Equipment Test Wizard",
+                "species": "Human",
+                "class": "Wizard",
+                "level": 1,
+                "background": "Sage",
+                "ability_scores": {
+                    "Strength": 8,
+                    "Dexterity": 14,
+                    "Constitution": 13,
+                    "Intelligence": 15,
+                    "Wisdom": 12,
+                    "Charisma": 10,
+                },
+                "background_bonuses": {"Intelligence": 2, "Constitution": 1},
+                "equipment_selections": {
+                    "class_equipment": "option_a",
+                    "background_equipment": "option_b",
+                },
+            }
+        )
+
+        character = builder.to_character()
+        attack_names = [attack["name"] for attack in character["attacks"]]
+        assert "Unarmed Strike" in attack_names
+        assert "Dagger" in attack_names
+        assert "Quarterstaff" in attack_names
+
+        weapons_by_name = {weapon["name"]: weapon for weapon in character["equipment"]["weapons"]}
+        assert weapons_by_name["Dagger"]["quantity"] == 2
+        assert weapons_by_name["Quarterstaff"]["quantity"] == 1
+
     def test_proficiency_bonus_at_level_5(self):
         character = build_wizard(5, "Evocation")
         assert character["proficiency_bonus"] == 3
