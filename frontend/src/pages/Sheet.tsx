@@ -2,6 +2,9 @@ import { Link } from "react-router-dom";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { useCharacterStore } from "@/store/characterStore";
+import { useIsDark } from "@/hooks/useIsDark";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { Button } from "@/components/ui/button";
 
 // `to_character()` is too sprawling to fully type at the boundary.
 // We treat it as a loose record and narrow only where we read.
@@ -85,29 +88,59 @@ export function Sheet() {
 }
 
 function Shell({ children }: { children: React.ReactNode }) {
+  const isDark = useIsDark();
+  const choicesMade = useCharacterStore((s) => s.choicesMade);
+  const classKey = str(choicesMade.class)?.toLowerCase() ?? "";
+  const leftSrc = isDark
+    ? "/images/home/sidebar-1-dark.png"
+    : "/images/home/sidebar-1.png";
+  const rightSrc = classKey
+    ? `/images/classes/${classKey}-${isDark ? "dark" : "light"}.png`
+    : isDark
+      ? `/images/home/sidebar-2-dark.png`
+      : `/images/home/sidebar-2.png`;
+
   return (
     <div className="min-h-dvh bg-background text-foreground">
-      <div className="container py-10 max-w-5xl">
-        <div className="flex items-center justify-between mb-6">
-          <Link to="/" className="text-xs text-muted-foreground hover:text-foreground">
-            ← Home
-          </Link>
-          <div className="flex items-center gap-4">
-            <Link
-              to="/sheet/pdf"
-              className="text-xs text-primary hover:text-primary/80"
-            >
-              Printable sheet →
-            </Link>
-            <Link
-              to="/wizard"
-              className="text-xs text-muted-foreground hover:text-foreground"
-            >
-              Edit in wizard →
-            </Link>
+      {/* ── Fixed sidebar art ─────────────────────────────────── */}
+      <div
+        className="fixed top-0 left-0 bottom-0 hidden lg:flex items-stretch z-0 select-none pointer-events-none"
+        aria-hidden="true"
+      >
+        <img src={leftSrc} alt="" className="h-full w-auto object-left" />
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-background" />
+      </div>
+      <div
+        className="fixed top-0 right-0 bottom-0 hidden lg:flex items-stretch z-0 select-none pointer-events-none"
+        aria-hidden="true"
+      >
+        <img
+          src={rightSrc}
+          alt=""
+          className="h-full w-auto [transform:scaleX(-1)] object-right"
+        />
+        <div className="absolute inset-0 bg-gradient-to-l from-transparent via-transparent to-background" />
+      </div>
+
+      {/* ── Content — sits above the fixed sidebars ─────────── */}
+      <div className="relative z-10">
+        <div className="container py-10 max-w-5xl">
+          <div className="flex items-center justify-between mb-6">
+            <Button asChild variant="ghost" size="sm">
+              <Link to="/">← Home</Link>
+            </Button>
+            <div className="flex items-center gap-3">
+              <Button asChild variant="outline" size="sm">
+                <Link to="/sheet/pdf">Printable Sheet</Link>
+              </Button>
+              <Button asChild size="sm">
+                <Link to="/wizard">Edit in Wizard</Link>
+              </Button>
+              <ThemeToggle />
+            </div>
           </div>
+          {children}
         </div>
-        {children}
       </div>
     </div>
   );
@@ -436,7 +469,7 @@ function Skills({ c }: { c: Char }) {
                 const showSource = marked && source && source !== "None";
                 const marker = expertise ? "★" : proficient ? "★" : "○";
                 const markerClass = expertise
-                  ? "text-amber-400"
+                  ? "text-blue-400"
                   : proficient
                     ? "text-primary"
                     : "text-muted-foreground/60";
@@ -484,7 +517,7 @@ function Skills({ c }: { c: Char }) {
           </ul>
           <div className="mt-3 border-t border-border/60 pt-2 text-[10px] uppercase tracking-wide text-muted-foreground/80">
             <span className="text-primary">★</span> Proficient ·{" "}
-            <span className="text-amber-400">★</span> Expertise
+            <span className="text-blue-400">★</span> Expertise
           </div>
         </>
       )}

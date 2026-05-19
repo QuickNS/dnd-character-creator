@@ -474,10 +474,14 @@ export function Home() {
                 {featured.map((c) => (
                   <li
                     key={c.id}
-                    className="rounded-md border border-dashed border-border bg-secondary/20 px-3 py-2.5 flex items-center gap-3"
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => applyChoices(c.choices)}
+                    onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && applyChoices(c.choices)}
+                    className="rounded-md border border-dashed border-border bg-secondary/20 px-3 py-2.5 flex items-center gap-3 cursor-pointer hover:border-primary/50 hover:bg-secondary/40 transition-colors focus:outline-none focus:ring-2 focus:ring-primary/50"
                   >
                     <img
-                      src={`/images/classes/${c.classKey}-${isDark ? "dark" : "light"}.png`}
+                      src={`/images/classes/${c.classKey}-card.png`}
                       alt={c.characterClass}
                       className="h-10 w-10 rounded object-cover object-top shrink-0"
                     />
@@ -486,9 +490,6 @@ export function Home() {
                       <p className="text-xs text-primary/80 font-medium">{c.species} {c.characterClass}</p>
                       <p className="text-xs text-muted-foreground italic mt-0.5 truncate">"{c.flavor}"</p>
                     </div>
-                    <span className="shrink-0 rounded-full border border-border px-2 py-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">
-                      Soon
-                    </span>
                   </li>
                 ))}
               </ul>

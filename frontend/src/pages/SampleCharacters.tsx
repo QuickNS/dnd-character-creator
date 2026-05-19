@@ -1,14 +1,30 @@
-import { Link } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { ChevronLeft } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useIsDark } from "@/hooks/useIsDark";
+import { useCharacterStore } from "@/store/characterStore";
 import { SAMPLE_CHARACTERS, type SampleCharacter } from "@/data/sampleCharacters";
 
-function CharacterCard({ char, isDark }: { char: SampleCharacter; isDark: boolean }) {
-  const imgSrc = `/images/classes/${char.classKey}-card.png`;
+function CharacterCard({
+  char,
+  isDark,
+  onLoad,
+}: {
+  char: SampleCharacter;
+  isDark: boolean;
+  onLoad: (char: SampleCharacter) => void;
+}) {
+  const imgSrc = `/images/classes/${char.classKey}-${isDark ? "dark" : "light"}.png`;
 
   return (
-    <article className="rounded-lg border border-border bg-card flex flex-col overflow-hidden group hover:border-primary/50 transition-colors">
+    <article
+      role="button"
+      tabIndex={0}
+      onClick={() => onLoad(char)}
+      onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && onLoad(char)}
+      className="rounded-lg border border-border bg-card flex flex-col overflow-hidden group hover:border-primary/50 cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-primary/50"
+    >
       <div className="relative aspect-[3/4] bg-muted overflow-hidden">
         <img
           src={imgSrc}
@@ -17,7 +33,7 @@ function CharacterCard({ char, isDark }: { char: SampleCharacter; isDark: boolea
         />
         <div className="absolute inset-0 bg-gradient-to-t from-card via-transparent to-transparent" />
         <span className="absolute bottom-3 left-3 rounded-full border border-border bg-card/80 backdrop-blur-sm px-2.5 py-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">
-          Coming Soon
+          Level 3
         </span>
       </div>
 
@@ -34,6 +50,9 @@ function CharacterCard({ char, isDark }: { char: SampleCharacter; isDark: boolea
         <p className="text-sm text-muted-foreground italic mt-1 leading-relaxed">
           "{char.flavor}"
         </p>
+        <p className="mt-auto pt-3 text-xs font-semibold text-primary group-hover:underline">
+          View Sheet →
+        </p>
       </div>
     </article>
   );
@@ -41,6 +60,18 @@ function CharacterCard({ char, isDark }: { char: SampleCharacter; isDark: boolea
 
 export function SampleCharacters() {
   const isDark = useIsDark();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
+  function handleLoad(char: SampleCharacter) {
+    useCharacterStore.setState({
+      choicesMade: char.choices,
+      currentStepId: null,
+    });
+    queryClient.removeQueries({ queryKey: ["character"] });
+    queryClient.removeQueries({ queryKey: ["wizard"] });
+    navigate("/sheet");
+  }
 
   return (
     <main className="min-h-dvh bg-background text-foreground font-sans">
@@ -72,11 +103,8 @@ export function SampleCharacters() {
         </h2>
         <p className="text-muted-foreground max-w-2xl mx-auto leading-relaxed">
           Twelve pre-forged adventurers, each shaped by a different destiny.
-          Browse the roster, find a soul that speaks to you, and step into the
-          Forgotten Realms with purpose.
-        </p>
-        <p className="mt-3 text-xs text-muted-foreground italic">
-          Pre-built character files are coming soon — check back shortly.
+          Browse the roster, find a soul that speaks to you, and click to
+          view their full character sheet.
         </p>
       </section>
 
@@ -84,7 +112,7 @@ export function SampleCharacters() {
       <div className="container max-w-7xl px-6 py-12">
         <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4">
           {SAMPLE_CHARACTERS.map((char) => (
-            <CharacterCard key={char.id} char={char} isDark={isDark} />
+            <CharacterCard key={char.id} char={char} isDark={isDark} onLoad={handleLoad} />
           ))}
         </div>
       </div>
