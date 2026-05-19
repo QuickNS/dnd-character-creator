@@ -56,8 +56,8 @@
     --popover: 240 8% 10%;
     --popover-foreground: 40 30% 92%;
 
-    --primary: 351 85% 41%;
-    --primary-foreground: 40 30% 96%;
+    --primary: 43 85% 54%;              /* fantasy gold for dark bg */
+    --primary-foreground: 240 10% 4%;
 
     --secondary: 240 6% 18%;
     --secondary-foreground: 40 30% 92%;

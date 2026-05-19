@@ -4,10 +4,12 @@ import { WizardIndex } from "@/pages/WizardIndex";
 import { WizardStep } from "@/pages/WizardStep";
 import { Sheet } from "@/pages/Sheet";
 import { SheetPdf } from "@/pages/SheetPdf";
+import { SampleCharacters } from "@/pages/SampleCharacters";
 import { WizardLayout } from "@/components/layout/WizardLayout";
 
 export const router = createBrowserRouter([
   { path: "/", element: <Home /> },
+  { path: "/characters", element: <SampleCharacters /> },
   {
     path: "/wizard",
     element: <WizardLayout />,

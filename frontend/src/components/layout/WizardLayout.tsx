@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { Outlet, useNavigate, useParams } from "react-router-dom";
+import { Outlet, Link, useNavigate, useParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ChevronLeft, ChevronRight, RotateCcw } from "lucide-react";
+import { ChevronLeft, ChevronRight, Home as HomeIcon, RotateCcw } from "lucide-react";
 import { api } from "@/lib/api";
 import { useCharacterStore } from "@/store/characterStore";
 import { StepSidebar } from "@/components/wizard/StepSidebar";
@@ -88,7 +88,7 @@ export function WizardLayout() {
       <div
         className={`grid grid-cols-1 gap-0 min-h-dvh relative z-10 ${sidebarCollapsed ? 'md:grid-cols-[3rem_minmax(0,1fr)_24rem]' : 'md:grid-cols-[16rem_minmax(0,1fr)_24rem]'}`}
       >
-        <aside className="border-r border-border bg-card/50 transition-[grid-template-columns] overflow-hidden">
+        <aside className="border-r border-border bg-card/50 transition-[grid-template-columns] overflow-hidden flex flex-col sticky top-0 h-dvh">
           <div className={`border-b border-border flex items-center gap-2 ${sidebarCollapsed ? 'px-2 py-6 justify-center flex-col' : 'px-5 py-6 justify-between'}`}>
             {!sidebarCollapsed && (
               <img
@@ -99,20 +99,20 @@ export function WizardLayout() {
             )}
             <div className={`flex items-center gap-2 ${sidebarCollapsed ? 'flex-col' : ''}`}>
               {!sidebarCollapsed && (
-                <>
-                  <button
-                    type="button"
-                    onClick={handleStartOver}
-                    aria-label="Reset wizard"
-                    title="Discard all choices and restart the wizard"
-                    className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border bg-background text-foreground hover:bg-secondary transition-colors"
-                  >
-                    <RotateCcw className="h-4 w-4" aria-hidden="true" />
-                    <span className="sr-only">Reset</span>
-                  </button>
-                  <ThemeToggle />
-                </>
-              )}
+                  <>
+                    <button
+                      type="button"
+                      onClick={handleStartOver}
+                      aria-label="Reset wizard"
+                      title="Discard all choices and restart the wizard"
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border bg-background text-foreground hover:bg-secondary transition-colors"
+                    >
+                      <RotateCcw className="h-4 w-4" aria-hidden="true" />
+                      <span className="sr-only">Reset</span>
+                    </button>
+                    <ThemeToggle />
+                  </>
+                )}
               <button
                 type="button"
                 onClick={() => setSidebarCollapsed((c) => !c)}
@@ -127,7 +127,32 @@ export function WizardLayout() {
               </button>
             </div>
           </div>
-          {!sidebarCollapsed && <StepSidebar steps={steps} currentStepId={stepId ?? null} />}
+          {!sidebarCollapsed && (
+            <div className="flex-1 overflow-y-auto min-h-0">
+              <StepSidebar steps={steps} currentStepId={stepId ?? null} />
+            </div>
+          )}
+          {/* ── Home button — bottom of sidebar ───────────────── */}
+          <div className="border-t border-border p-3">
+            {sidebarCollapsed ? (
+              <Link
+                to="/"
+                aria-label="Return to home page"
+                title="Return to home page"
+                className="flex h-9 w-9 mx-auto items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
+              >
+                <HomeIcon className="h-4 w-4" aria-hidden="true" />
+              </Link>
+            ) : (
+              <Link
+                to="/"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-border px-5 py-2 text-sm text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
+              >
+                <HomeIcon className="h-4 w-4" aria-hidden="true" />
+                Back to Home
+              </Link>
+            )}
+          </div>
         </aside>
         <main className="px-6 md:px-10 py-8 w-full min-w-0">
           <Outlet context={{ setSidebarPanel: handleSetSidebarPanel }} />
