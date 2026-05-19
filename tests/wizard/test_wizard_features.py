@@ -117,6 +117,27 @@ class TestWizardBaseClass:
         stats = character["spellcasting_stats"]
         assert stats["max_spells_prepared"] == 4
 
+    def test_spellcasting_metadata(self):
+        """Wizard should expose prepared-caster metadata used by the class wizard."""
+        character = build_wizard(1)
+        stats = character["spellcasting_stats"]
+        assert stats["spellcasting_type"] == "prepared"
+        assert stats["preparation_formula"] == "level + intelligence_modifier"
+        assert stats["ritual_casting"] is True
+
+    @pytest.mark.parametrize(
+        "level,expected_prepared,expected_cantrips",
+        [(1, 4, 3), (5, 9, 4), (10, 15, 5), (17, 19, 5), (20, 22, 5)],
+    )
+    def test_wizard_spell_progression(
+        self, level, expected_prepared, expected_cantrips
+    ):
+        """Wizard class data should provide prepared/cantrip limits by level."""
+        character = build_wizard(level)
+        class_data = character["class_data"]
+        assert class_data["prepared_spells_by_level"][str(level)] == expected_prepared
+        assert class_data["cantrips_by_level"][str(level)] == expected_cantrips
+
     # -- Spell slot progression --
 
     def test_spell_slots_level_1(self):

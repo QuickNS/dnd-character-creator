@@ -49,6 +49,10 @@
     "Arcane focus",
     "Spellbook"
   ],
+  "spellcasting_type": "prepared",
+  "spell_preparation_formula": "level + intelligence_modifier",
+  "cantrip_progression": "class_table",
+  "ritual_casting": true,
   "subclass_selection_level": 3,
   "proficiency_bonus_by_level": {
     "1": 2,
@@ -74,7 +78,9 @@
   },
   "features_by_level": {
     "1": {
-      "Spellcasting": "You have learned to cast spells through study of arcane magic. You know three Wizard cantrips (Light, Mage Hand, and Ray of Frost are recommended). Your spellbook starts with six level 1 Wizard spells (Detect Magic, Feather Fall, Mage Armor, Magic Missile, Sleep, and Thunderwave are recommended). You prepare spells from your spellbook and can change your prepared spells when you finish a Long Rest.",
+      "Spellcasting": {
+        "description": "You have learned to cast spells through study of arcane magic. You know three Wizard cantrips (Light, Mage Hand, and Ray of Frost are recommended). Your spellbook starts with six level 1 Wizard spells (Detect Magic, Feather Fall, Mage Armor, Magic Missile, Sleep, and Thunderwave are recommended). You prepare spells from your spellbook and can change your prepared spells when you finish a Long Rest."
+      },
       "Ritual Adept": "You can cast any spell as a Ritual if that spell has the Ritual tag and the spell is in your spellbook. You needn't have the spell prepared, but you must read from the book to cast a spell in this way.",
       "Arcane Recovery": "When you finish a Short Rest, you can choose expended spell slots to recover. The spell slots can have a combined level equal to no more than half your Wizard level (round up), and none of the slots can be level 6 or higher. Once you use this feature, you can't do so again until you finish a Long Rest."
     },
@@ -461,13 +467,35 @@
       "cantrips": 5
     }
   },
+  "cantrips_by_level": {
+    "1": 3,
+    "2": 3,
+    "3": 3,
+    "4": 4,
+    "5": 4,
+    "6": 4,
+    "7": 4,
+    "8": 4,
+    "9": 4,
+    "10": 5,
+    "11": 5,
+    "12": 5,
+    "13": 5,
+    "14": 5,
+    "15": 5,
+    "16": 5,
+    "17": 5,
+    "18": 5,
+    "19": 5,
+    "20": 5
+  },
   "prepared_spells_by_level": {
     "1": 4,
     "2": 5,
     "3": 6,
     "4": 7,
     "5": 9,
-    "6": 10,
+    "6": 9,
     "7": 11,
     "8": 12,
     "9": 14,
@@ -475,13 +503,13 @@
     "11": 16,
     "12": 16,
     "13": 17,
-    "14": 18,
-    "15": 19,
-    "16": 21,
-    "17": 22,
-    "18": 23,
-    "19": 24,
-    "20": 25
+    "14": 17,
+    "15": 18,
+    "16": 18,
+    "17": 19,
+    "18": 20,
+    "19": 21,
+    "20": 22
   },
   "cantrips_known_by_level": {
     "1": 3,
