@@ -79,6 +79,24 @@ export function BackgroundStep() {
   const skillReplacement =
     (previewQuery.data?.skill_replacement as SkillReplacement | undefined) ??
     undefined;
+  const neededSkillReplacements = skillReplacement?.needed ?? 0;
+  const alreadyChosenReplacements = skillReplacement?.already_chosen ?? [];
+  const replacementOptions = Array.from(
+    new Set([
+      ...alreadyChosenReplacements,
+      ...(skillReplacement?.options ?? []),
+    ]),
+  );
+  const remainingSkillReplacements = Math.max(
+    neededSkillReplacements - alreadyChosenReplacements.length,
+    0,
+  );
+  const hasSkillReplacementChoice =
+    neededSkillReplacements > 0 || alreadyChosenReplacements.length > 0;
+  const skillReplacementCount =
+    neededSkillReplacements > 0
+      ? neededSkillReplacements
+      : alreadyChosenReplacements.length;
 
   const featData = previewQuery.data?.origin_feat_choices as
     | Parameters<typeof FeatChoicesPicker>[0]["data"]
@@ -95,7 +113,7 @@ export function BackgroundStep() {
   })();
 
   const hasDependentChoices =
-    (skillReplacement && (skillReplacement.needed ?? 0) > 0 && (skillReplacement.options?.length ?? 0) > 0) ||
+    hasSkillReplacementChoice ||
     (featData && featData.feat_name);
 
   return (
@@ -195,17 +213,21 @@ export function BackgroundStep() {
             </h3>
           </div>
           <div className="space-y-6 px-5 py-5 sm:px-6">
-            {skillReplacement &&
-              (skillReplacement.needed ?? 0) > 0 &&
-              (skillReplacement.options?.length ?? 0) > 0 && (
+            {hasSkillReplacementChoice && replacementOptions.length > 0 && (
                 <ChoiceList
                   choiceKey={BG_SKILL_REPLACEMENT_KEY}
                   title="Replacement skill proficiencies"
                   description={`Your background grants skills you already have. Choose ${
-                    skillReplacement.needed
-                  } replacement${skillReplacement.needed === 1 ? "" : "s"} from your class's skill list.`}
-                  options={skillReplacement.options ?? []}
-                  count={skillReplacement.needed ?? 1}
+                    neededSkillReplacements
+                  } replacement${
+                    neededSkillReplacements === 1 ? "" : "s"
+                  } from your class's skill list.${
+                    remainingSkillReplacements === 0
+                      ? " Selection complete."
+                      : ` ${remainingSkillReplacements} remaining.`
+                  }`}
+                  options={replacementOptions}
+                  count={skillReplacementCount}
                 />
               )}
 
