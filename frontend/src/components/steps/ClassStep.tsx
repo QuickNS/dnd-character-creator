@@ -1200,6 +1200,22 @@ function RowPendingIndicator({
   if (data) {
     const nested = (data["nested_choices"] as PreviewChoice[] | undefined) ?? [];
     for (const choice of nested) {
+      // Skip conditional choices whose parent condition is not met
+      if (choice.depends_on) {
+        const variants = parentKeyVariants(choice.depends_on);
+        const parent = variants.reduce<string | string[] | undefined>(
+          (acc, v) => acc ?? (choicesMade[v] as string | string[] | undefined),
+          undefined,
+        );
+        const met =
+          choice.depends_on_value === undefined
+            ? Boolean(parent)
+            : Array.isArray(parent)
+              ? parent.includes(choice.depends_on_value)
+              : parent === choice.depends_on_value;
+        if (!met) continue;
+      }
+
       const key =
         choice.choice_key ?? choice.feature_name ?? choice.name ?? "";
       if (!key) continue;
