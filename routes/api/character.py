@@ -543,7 +543,7 @@ def _step_status(builder: CharacterBuilder, step: str) -> Dict[str, Any]:
         if choices.get("background"):
             try:
                 info = builder.get_background_skill_replacement_info()
-                if info.get("needed", 0) > 0 and not info.get("already_chosen"):
+                if len(info.get("already_chosen", [])) < info.get("needed", 0):
                     missing.append("background_skill_replacement")
             except Exception:
                 pass

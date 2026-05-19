@@ -587,3 +587,177 @@ class TestSpellManagement:
         assert "1" in filtered
         assert "2" in filtered
         assert "3" not in filtered
+
+
+# ---------------------------------------------------------------------------
+# Concentration flag tests
+# ---------------------------------------------------------------------------
+
+
+class TestConcentrationFlag:
+    """Tests for the `concentration` boolean field on spell objects.
+
+    _load_spell_definition() derives this flag by checking whether the
+    spell's `duration` string starts with "Concentration".  The field
+    must flow through to every spell object in spells_by_level.
+    """
+
+    # ------------------------------------------------------------------
+    # Helpers
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _builder() -> CharacterBuilder:
+        return CharacterBuilder()
+
+    # ------------------------------------------------------------------
+    # Unit-level: _load_spell_definition() sets the flag correctly
+    # ------------------------------------------------------------------
+
+    @pytest.mark.parametrize(
+        "spell_name,expected_concentration",
+        [
+            # Concentration spells (duration starts with "Concentration")
+            ("Bless", True),           # "Concentration, up to 1 minute"
+            ("Hold Person", True),     # "Concentration, up to 1 minute"
+            ("Faerie Fire", True),     # "Concentration, up to 1 minute"
+            # Non-concentration spells
+            ("Alarm", False),          # "8 hours"
+            ("Acid Splash", False),    # "Instantaneous"
+        ],
+    )
+    def test_concentration_flag_from_load_spell_definition(
+        self, spell_name: str, expected_concentration: bool
+    ):
+        """_load_spell_definition() derives `concentration` correctly from the duration field."""
+        builder = self._builder()
+        spell = builder._load_spell_definition(spell_name)
+
+        assert "concentration" in spell, (
+            f"'concentration' key missing from spell object for '{spell_name}'"
+        )
+        assert spell["concentration"] is expected_concentration, (
+            f"Expected concentration={expected_concentration} for '{spell_name}' "
+            f"(duration={spell.get('duration')!r}), got {spell['concentration']}"
+        )
+
+    def test_concentration_flag_true(self):
+        """Positive test: a known concentration spell has concentration=True."""
+        builder = self._builder()
+        # Bless: "Concentration, up to 1 minute"
+        spell = builder._load_spell_definition("Bless")
+        assert spell["concentration"] is True
+
+    def test_concentration_flag_false(self):
+        """Negative test: a known non-concentration spell has concentration=False."""
+        builder = self._builder()
+        # Alarm: "8 hours"
+        spell = builder._load_spell_definition("Alarm")
+        assert spell["concentration"] is False
+
+    def test_concentration_absent_source_returns_false(self):
+        """A spell with no matching file gets a fallback object with concentration=False."""
+        builder = self._builder()
+        result = builder._load_spell_definition("__nonexistent_spell_xyz__")
+        # The fallback dict must still carry the key and default to False
+        assert "concentration" in result
+        assert result["concentration"] is False
+
+    # ------------------------------------------------------------------
+    # Stacking / caching: loading the same spell twice is idempotent
+    # ------------------------------------------------------------------
+
+    def test_concentration_flag_cached_result_is_consistent(self):
+        """Repeated calls for the same spell return the same concentration value."""
+        builder = self._builder()
+        first = builder._load_spell_definition("Bless")
+        second = builder._load_spell_definition("Bless")
+        assert first["concentration"] is True
+        assert second["concentration"] is True
+        assert first["concentration"] == second["concentration"]
+
+    # ------------------------------------------------------------------
+    # Integration: flag flows into to_character() → spells_by_level
+    # ------------------------------------------------------------------
+
+    @pytest.fixture
+    def light_domain_cleric_character(self):
+        """Level-3 Light Domain Cleric whose domain spells include Faerie Fire (concentration)."""
+        builder = CharacterBuilder()
+        builder.apply_choices(
+            {
+                "character_name": "Test Cleric",
+                "species": "Human",
+                "class": "Cleric",
+                "level": 3,
+                "subclass": "Light Domain",
+                "background": "Acolyte",
+                "ability_scores": {
+                    "Strength": 10,
+                    "Dexterity": 12,
+                    "Constitution": 14,
+                    "Intelligence": 10,
+                    "Wisdom": 16,
+                    "Charisma": 12,
+                },
+                "background_bonuses": {"Wisdom": 2, "Constitution": 1},
+                "skill_choices": ["Insight", "Religion"],
+                "Divine Order": "Thaumaturge",
+                "Thaumaturge_bonus_cantrip": "Guidance",
+            }
+        )
+        return builder.to_character()
+
+    def test_concentration_in_to_character(self, light_domain_cleric_character):
+        """A concentration domain spell in spells_by_level has concentration=True."""
+        spells_by_level = light_domain_cleric_character.get("spells_by_level", {})
+
+        # Light Domain grants Faerie Fire (level-1, concentration) always-prepared
+        level_1_spells = spells_by_level.get(1, [])
+        faerie_fire = next(
+            (s for s in level_1_spells if s.get("name") == "Faerie Fire"), None
+        )
+        assert faerie_fire is not None, (
+            "Faerie Fire not found in spells_by_level[1] for Light Domain Cleric; "
+            f"found: {[s.get('name') for s in level_1_spells]}"
+        )
+        assert "concentration" in faerie_fire, (
+            "Faerie Fire spell object is missing the 'concentration' key in spells_by_level"
+        )
+        assert faerie_fire["concentration"] is True, (
+            f"Expected Faerie Fire to have concentration=True, got {faerie_fire['concentration']!r}"
+        )
+
+    def test_non_concentration_spell_in_to_character(self, light_domain_cleric_character):
+        """A non-concentration domain spell in spells_by_level has concentration=False."""
+        spells_by_level = light_domain_cleric_character.get("spells_by_level", {})
+
+        # Light Domain grants Burning Hands (level-1, instantaneous) always-prepared
+        level_1_spells = spells_by_level.get(1, [])
+        burning_hands = next(
+            (s for s in level_1_spells if s.get("name") == "Burning Hands"), None
+        )
+        assert burning_hands is not None, (
+            "Burning Hands not found in spells_by_level[1] for Light Domain Cleric; "
+            f"found: {[s.get('name') for s in level_1_spells]}"
+        )
+        assert "concentration" in burning_hands, (
+            "Burning Hands spell object is missing the 'concentration' key in spells_by_level"
+        )
+        assert burning_hands["concentration"] is False, (
+            f"Expected Burning Hands to have concentration=False, got {burning_hands['concentration']!r}"
+        )
+
+    def test_all_spells_in_spells_by_level_have_concentration_key(
+        self, light_domain_cleric_character
+    ):
+        """Every spell in every level of spells_by_level carries the `concentration` key."""
+        spells_by_level = light_domain_cleric_character.get("spells_by_level", {})
+        missing = []
+        for level, spells in spells_by_level.items():
+            for spell in spells:
+                if "concentration" not in spell:
+                    missing.append((level, spell.get("name")))
+        assert missing == [], (
+            f"The following spells are missing the 'concentration' key: {missing}"
+        )

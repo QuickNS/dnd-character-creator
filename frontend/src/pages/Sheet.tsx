@@ -951,8 +951,18 @@ function Spells({ c }: { c: Char }) {
                           key={`${name}-${i}`}
                           className="rounded border border-border bg-background/40 p-3"
                         >
-                          <div className="font-semibold text-foreground">
-                            {name}
+                          {sp.concentration === true && (
+                            <div className="mb-2 rounded bg-amber-600/20 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-400 border border-amber-600/40">
+                              ✦ Concentration
+                            </div>
+                          )}
+                          <div className="flex flex-wrap items-center gap-3 font-semibold text-foreground">
+                            <span>{name}</span>
+                            {sp.concentration === true && (
+                              <span className="shrink-0 rounded bg-amber-600/80 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
+                                C
+                              </span>
+                            )}
                           </div>
                           <div className="mt-1 text-xs text-muted-foreground">
                             {meta

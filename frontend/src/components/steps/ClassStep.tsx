@@ -968,6 +968,12 @@ function SpellInfoPanel({
           )}
         </div>
 
+        {spell.concentration === true && (
+          <div className="mt-3 rounded bg-amber-600/20 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-400 border border-amber-600/40">
+            ✦ Concentration
+          </div>
+        )}
+
         {spell.description && (
           <p className="mt-4 text-sm text-muted-foreground">{spell.description}</p>
         )}

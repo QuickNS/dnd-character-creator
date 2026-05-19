@@ -90,7 +90,12 @@ export function BackgroundStep() {
     undefined;
   const neededSkillReplacements = skillReplacement?.needed ?? 0;
   const alreadyChosenReplacements = skillReplacement?.already_chosen ?? [];
-  const replacementOptions = skillReplacement?.options ?? [];
+  const replacementOptions = Array.from(
+    new Set([
+      ...(skillReplacement?.options ?? []),
+      ...alreadyChosenReplacements,
+    ]),
+  ).sort();
   const remainingSkillReplacements = Math.max(
     neededSkillReplacements - alreadyChosenReplacements.length,
     0,

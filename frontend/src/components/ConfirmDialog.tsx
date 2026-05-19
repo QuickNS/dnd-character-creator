@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, type ReactNode } from "react";
+import { Button } from "@/components/ui/button";
 
 type ConfirmDialogProps = {
   open: boolean;
@@ -62,21 +63,21 @@ export function ConfirmDialog({
         </h2>
         <p className="mt-2 text-sm text-muted-foreground">{description}</p>
         <div className="mt-6 flex items-center justify-end gap-3">
-          <button
+          <Button
             ref={cancelButtonRef}
             type="button"
+            variant="outline"
             onClick={onCancel}
-            className="inline-flex h-9 items-center justify-center rounded-md border border-border bg-background px-4 text-sm text-foreground hover:bg-secondary transition-colors"
           >
             {cancelLabel}
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            variant="default"
             onClick={onConfirm}
-            className="inline-flex h-9 items-center justify-center rounded-md border border-border bg-destructive px-4 text-sm font-medium text-destructive-foreground hover:opacity-90 transition-opacity"
           >
             {confirmLabel}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

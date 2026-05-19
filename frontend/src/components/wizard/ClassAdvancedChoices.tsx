@@ -40,6 +40,7 @@ export interface SpellReference {
   counts_against_limit?: boolean;
   is_always_prepared?: boolean;
   ritual?: boolean;
+  concentration?: boolean;
 }
 
 function normalizeSpellReference(raw: Loose): SpellReference | null {
@@ -70,6 +71,8 @@ function normalizeSpellReference(raw: Loose): SpellReference | null {
         ? raw.counts_against_limit
         : undefined,
     ritual: typeof raw.ritual === "boolean" ? raw.ritual : undefined,
+    concentration:
+      typeof raw.concentration === "boolean" ? raw.concentration : undefined,
   };
 }
 
@@ -353,8 +356,13 @@ function SpellPicker({
                         : "border-border/80 bg-background/80 hover:border-primary/30 hover:bg-secondary/60",
                     )}
                   >
-                    <div className="flex flex-wrap items-center gap-2 text-sm">
+                    <div className="flex flex-wrap items-center text-sm gap-1.5">
                       <span className="font-medium text-foreground">{spell.name}</span>
+                      {spell.concentration === true && (
+                        <span className="shrink-0 rounded bg-amber-600/80 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
+                          C
+                        </span>
+                      )}
                       <span className="rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2 py-0.5 text-[11px] uppercase tracking-wide text-emerald-700 dark:text-emerald-300">
                         Always prepared
                       </span>
@@ -500,7 +508,14 @@ function SpellGroup({
                 )}
               >
                 <span className="min-w-0">
-                  <span>{name}</span>
+                  <span className="flex flex-wrap items-center gap-3">
+                    <span>{name}</span>
+                    {spell.concentration === true && (
+                      <span className="shrink-0 rounded bg-amber-600/80 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
+                        C
+                      </span>
+                    )}
+                  </span>
                   {(school || isDisabled) && (
                     <span className="mt-1 flex flex-wrap gap-2 text-xs text-muted-foreground">
                       {school && <span>{school}</span>}
