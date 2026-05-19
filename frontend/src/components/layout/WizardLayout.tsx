@@ -112,7 +112,7 @@ export function WizardLayout() {
       <div
         className={`grid grid-cols-1 gap-0 min-h-dvh relative z-10 ${sidebarCollapsed ? 'md:grid-cols-[3rem_minmax(0,1fr)_24rem]' : 'md:grid-cols-[16rem_minmax(0,1fr)_24rem]'}`}
       >
-        <aside className="hidden md:flex border-r border-border bg-card/50 transition-[grid-template-columns] overflow-hidden flex-col sticky top-0 h-dvh">
+        <aside className="hidden md:flex md:flex-col border-r border-border bg-card/50 transition-[grid-template-columns] overflow-hidden sticky top-0 h-dvh">
           <div className={`border-b border-border flex items-center gap-2 ${sidebarCollapsed ? 'px-2 py-6 justify-center flex-col' : 'px-5 py-6 justify-between'}`}>
             {!sidebarCollapsed && (
               <img
@@ -178,7 +178,7 @@ export function WizardLayout() {
             )}
           </div>
         </aside>
-        <main className="px-4 sm:px-6 md:px-10 py-6 md:py-8 w-full min-w-0">
+        <main className="px-4 md:px-10 py-6 md:py-8 w-full min-w-0">
           <Outlet context={{ setSidebarPanel: handleSetSidebarPanel }} />
         </main>
         <aside className="hidden lg:block border-l border-border bg-card/30">
