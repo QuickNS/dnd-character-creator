@@ -199,6 +199,19 @@ export interface DerivedResponse {
   data: unknown | null;
 }
 
+export interface SpellDefinition {
+  name: string;
+  level?: number;
+  school?: string;
+  description?: string;
+  casting_time?: string;
+  range?: string;
+  duration?: string;
+  components?: string[];
+  source?: string;
+  ritual?: boolean;
+}
+
 export class ApiError extends Error {
   constructor(
     public status: number,
@@ -286,6 +299,11 @@ export const api = {
 
     getBackground: (backgroundName: string) =>
       apiFetch(`/catalog/backgrounds/${encodeURIComponent(backgroundName)}`),
+
+    getSpellDefinition: (spellName: string): Promise<SpellDefinition> =>
+      apiFetch(
+        `/catalog/spells/definitions/${encodeURIComponent(spellName)}`,
+      ),
   },
 
   // Character building

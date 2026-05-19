@@ -1,8 +1,8 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { BookOpen, Check, ChevronRight, Sparkles } from "lucide-react";
 import { api } from "@/lib/api";
-import type { BackgroundSummary } from "@/lib/api";
+import type { BackgroundSummary, SpellDefinition } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { useCharacterStore } from "@/store/characterStore";
 import { ChoiceList } from "@/components/wizard/ChoiceList";
@@ -36,6 +36,9 @@ export function BackgroundStep() {
   const setChoice = useCharacterStore((s) => s.setChoice);
   const selectedBg = (choicesMade["background"] as string | undefined) ?? "";
   const { setSidebarPanel } = useWizardSidebarPanel();
+  const [inspectedSpell, setInspectedSpell] = useState<SpellDefinition | null>(
+    null,
+  );
 
   const bgQuery = useQuery({
     queryKey: ["catalog", "backgrounds"],
@@ -62,22 +65,44 @@ export function BackgroundStep() {
   const fullBgData = fullBgQuery.isPlaceholderData
     ? undefined
     : (fullBgQuery.data as FullBackground | undefined);
+  const spellDefinitionQuery = useQuery({
+    queryKey: ["catalog", "spell-definition", inspectedSpell?.name],
+    queryFn: () =>
+      inspectedSpell?.name
+        ? api.catalog.getSpellDefinition(inspectedSpell.name)
+        : Promise.reject(new Error("No spell selected")),
+    enabled: Boolean(inspectedSpell?.name),
+    placeholderData: keepPreviousData,
+  });
+  const activeSpell =
+    inspectedSpell?.name && spellDefinitionQuery.data?.name === inspectedSpell.name
+      ? spellDefinitionQuery.data
+      : inspectedSpell;
 
   useEffect(() => {
     setSidebarPanel(
-      selectedBgSummary ? (
-        <BackgroundInfoPanel
-          summary={selectedBgSummary}
-          fullData={fullBgData}
-          loading={
-            (fullBgQuery.isLoading || fullBgQuery.isPlaceholderData) &&
-            !fullBgData
-          }
+      activeSpell ? (
+        <SpellInfoPanel
+          spell={activeSpell}
+          onBack={() => setInspectedSpell(null)}
+          loading={spellDefinitionQuery.isLoading || spellDefinitionQuery.isPlaceholderData}
         />
-      ) : null,
+      ) : selectedBgSummary ? (
+          <BackgroundInfoPanel
+            summary={selectedBgSummary}
+            fullData={fullBgData}
+            loading={
+              (fullBgQuery.isLoading || fullBgQuery.isPlaceholderData) &&
+              !fullBgData
+            }
+          />
+        ) : null,
     );
     return () => setSidebarPanel(null);
   }, [
+    activeSpell,
+    spellDefinitionQuery.isLoading,
+    spellDefinitionQuery.isPlaceholderData,
     selectedBgSummary,
     fullBgData,
     fullBgQuery.isLoading,
@@ -242,12 +267,99 @@ export function BackgroundStep() {
                 data={featData}
                 heading="Origin feat"
                 grantedProficiencies={grantedProficiencies}
+                onInspectSpell={(spell) => setInspectedSpell(spell)}
+                inspectedSpellName={activeSpell?.name}
               />
             )}
           </div>
         </section>
       )}
     </div>
+  );
+}
+
+function SpellInfoPanel({
+  spell,
+  onBack,
+  loading,
+}: {
+  spell: SpellDefinition;
+  onBack: () => void;
+  loading?: boolean;
+}) {
+  const concentration = (spell.duration ?? "")
+    .toLowerCase()
+    .includes("concentration");
+  const meta: Array<[string, string | undefined]> = [
+    ["School", spell.school],
+    ["Casting Time", spell.casting_time],
+    ["Range", spell.range],
+    [
+      "Components",
+      Array.isArray(spell.components) && spell.components.length > 0
+        ? spell.components.join(", ")
+        : undefined,
+    ],
+    ["Duration", spell.duration],
+    ["Source", spell.source],
+  ];
+
+  return (
+    <aside className="info-panel" aria-label="Spell details panel">
+      <div className="info-panel-header">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="info-panel-kicker">Spell details</p>
+            <h4 className="info-panel-title">{spell.name}</h4>
+          </div>
+          <button
+            type="button"
+            onClick={onBack}
+            className="inline-flex items-center rounded-md border border-border/70 bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+          >
+            Back
+          </button>
+        </div>
+      </div>
+      <div className="info-panel-body">
+        {loading && (
+          <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-background px-3 py-1 text-xs font-medium text-primary">
+            <Sparkles className="h-3.5 w-3.5 animate-pulse" />
+            Loading details…
+          </div>
+        )}
+        <div className="mt-4 flex flex-wrap gap-2">
+          <span className="rounded-full border border-border/70 bg-background px-2.5 py-1 text-[11px] uppercase tracking-wide text-muted-foreground">
+            {spell.level === 0 ? "Cantrip" : `Level ${spell.level ?? "—"}`}
+          </span>
+          {spell.ritual === true && (
+            <span className="rounded-full border border-blue-500/40 bg-blue-500/10 px-2.5 py-1 text-[11px] uppercase tracking-wide text-blue-700 dark:text-blue-300">
+              Ritual
+            </span>
+          )}
+        </div>
+        {concentration && (
+          <div className="mt-3 rounded bg-amber-600/20 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-400 border border-amber-600/40">
+            ✦ Concentration
+          </div>
+        )}
+        {spell.description && (
+          <p className="mt-4 text-sm text-muted-foreground">{spell.description}</p>
+        )}
+        <dl className="mt-4 space-y-3">
+          {meta
+            .filter(([, value]) => Boolean(value))
+            .map(([label, value]) => (
+              <div key={label}>
+                <dt className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                  {label}
+                </dt>
+                <dd className="text-sm text-foreground">{value}</dd>
+              </div>
+            ))}
+        </dl>
+      </div>
+    </aside>
   );
 }
 
