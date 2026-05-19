@@ -112,7 +112,7 @@ export function StepNav({ steps, currentStepId }: Props) {
                   <span>
                     Step {currentStepNumber} of {steps.length}
                   </span>
-                  <span>•</span>
+                  <span className="hidden sm:inline">•</span>
                   <span className="truncate font-medium text-foreground">
                     {steps[idx]?.label ?? "Current step"}
                   </span>
