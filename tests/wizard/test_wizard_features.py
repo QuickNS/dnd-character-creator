@@ -43,6 +43,34 @@ def build_wizard(level, subclass=None):
     return builder.to_character()
 
 
+def build_wizard_with_choices(level, scholar_skill=None, subclass=None):
+    """Build a Wizard via apply_choices so class feature choices are applied."""
+    builder = CharacterBuilder()
+    choices = {
+        "character_name": "Scholar Test Wizard",
+        "level": level,
+        "class": "Wizard",
+        "species": "Human",
+        "background": "Sage",
+        "skill_choices": ["Arcana", "History"],
+        "ability_scores": {
+            "Strength": 8,
+            "Dexterity": 14,
+            "Constitution": 13,
+            "Intelligence": 15,
+            "Wisdom": 12,
+            "Charisma": 10,
+        },
+        "background_bonuses": {"Intelligence": 2, "Constitution": 1},
+    }
+    if scholar_skill:
+        choices["wizard_scholar_skill"] = scholar_skill
+    if subclass and level >= 3:
+        choices["subclass"] = subclass
+    builder.apply_choices(choices)
+    return builder.to_character()
+
+
 # ---------------------------------------------------------------------------
 # 1. Base Wizard Class
 # ---------------------------------------------------------------------------
@@ -183,6 +211,17 @@ class TestWizardBaseClass:
         character = build_wizard(5, "Evocation")
         names = [f["name"] for f in character["features"]["class"]]
         assert "Memorize Spell" in names
+
+    def test_scholar_applies_expertise_from_choice(self):
+        """Level 2 Scholar should grant Expertise in the chosen skill."""
+        character = build_wizard_with_choices(2, scholar_skill="Arcana")
+        assert "Arcana" in character.get("skill_expertise", [])
+        assert character["skills"]["arcana"]["expertise"] is True
+
+    def test_scholar_does_not_grant_expertise_without_choice(self):
+        """Without a Scholar choice, no Scholar expertise should be granted."""
+        character = build_wizard_with_choices(2)
+        assert character.get("skill_expertise", []) == []
 
     @pytest.mark.parametrize(
         "level,expected_features",
