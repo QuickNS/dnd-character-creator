@@ -479,18 +479,32 @@ class TestBackgroundSkillReplacementKeyNormalization:
             "background_bonuses": {"Strength": 2, "Constitution": 1},
         }
 
-    def test_normalization_renames_singular_to_plural(self):
-        """_normalize_choices_for_builder maps background_skill_replacement → plural."""
+    def test_normalization_coerces_singular_string_to_plural_list(self):
+        """_normalize_choices_for_builder wraps singular string replacement in a plural list."""
         from routes.api.character import _normalize_choices_for_builder
 
         choices = {
             "class": "Barbarian",
             "level": 1,
-            "background_skill_replacement": ["Survival"],
+            "background_skill_replacement": "Survival",
         }
         normalized = _normalize_choices_for_builder(choices)
         assert "background_skill_replacements" in normalized
         assert normalized["background_skill_replacements"] == ["Survival"]
+        assert "background_skill_replacement" not in normalized
+
+    def test_normalization_coerces_empty_singular_to_empty_plural_list(self):
+        """Empty singular replacement value should normalize to an empty plural list."""
+        from routes.api.character import _normalize_choices_for_builder
+
+        choices = {
+            "class": "Barbarian",
+            "level": 1,
+            "background_skill_replacement": "",
+        }
+        normalized = _normalize_choices_for_builder(choices)
+        assert "background_skill_replacements" in normalized
+        assert normalized["background_skill_replacements"] == []
         assert "background_skill_replacement" not in normalized
 
     def test_substitution_applied_via_plural_key(self):
@@ -529,6 +543,109 @@ class TestBackgroundSkillReplacementKeyNormalization:
             "Survival substitution was lost — singular→plural normalization likely missing"
         )
         assert len(set(skills)) == len(skills), "No duplicate proficiencies"
+
+    def test_apply_choice_background_skill_replacements_accepts_string(self):
+        """apply_choice() should accept a singular string for plural replacement key."""
+        builder = CharacterBuilder()
+        builder.apply_choices(self._barbarian_farmer_choices())
+
+        # Farmer overlaps Animal Handling; replacement should accept a bare string.
+        builder.apply_choice("background_skill_replacements", "Survival")
+
+        skills = builder.character_data["proficiencies"]["skills"]
+        chosen = builder.character_data["choices_made"]["background_skill_replacements"]
+        assert "Survival" in skills
+        assert chosen == ["Survival"]
+
+    def test_replacement_info_coerces_legacy_string_to_list(self):
+        """get_background_skill_replacement_info() should expose already_chosen as a list."""
+        builder = CharacterBuilder()
+        builder.apply_choices(self._barbarian_farmer_choices())
+
+        # Simulate legacy persisted shape.
+        builder.character_data["choices_made"]["background_skill_replacements"] = "Survival"
+
+        info = builder.get_background_skill_replacement_info()
+        assert isinstance(info["already_chosen"], list)
+        assert info["already_chosen"] == ["Survival"]
+
+
+class TestSpeciesSkillReplacementKeyNormalization:
+    """Targeted regressions for species replacement singular/string coercion."""
+
+    def _ranger_elf_choices(self, keen_senses_pick="Perception"):
+        """Ranger who picks Perception as a class skill, then Elf Keen Senses."""
+        return {
+            "character_name": "Test Ranger",
+            "level": 1,
+            "class": "Ranger",
+            "background": "Acolyte",
+            "skill_choices": ["Perception", "Stealth", "Survival"],
+            "Keen Senses": keen_senses_pick,
+            "species": "Elf",
+            "ability_scores": {
+                "Strength": 10,
+                "Dexterity": 15,
+                "Constitution": 14,
+                "Intelligence": 8,
+                "Wisdom": 13,
+                "Charisma": 12,
+            },
+            "background_bonuses": {"Intelligence": 1, "Wisdom": 2},
+        }
+
+    def test_normalization_coerces_species_singular_string_to_plural_list(self):
+        """_normalize_choices_for_builder wraps species singular string in plural list."""
+        from routes.api.character import _normalize_choices_for_builder
+
+        choices = {
+            "class": "Ranger",
+            "level": 1,
+            "species_skill_replacement": "Athletics",
+        }
+        normalized = _normalize_choices_for_builder(choices)
+        assert "species_skill_replacements" in normalized
+        assert normalized["species_skill_replacements"] == ["Athletics"]
+        assert "species_skill_replacement" not in normalized
+
+    def test_normalization_coerces_empty_species_singular_to_empty_plural_list(self):
+        """Empty species singular replacement value should normalize to empty plural list."""
+        from routes.api.character import _normalize_choices_for_builder
+
+        choices = {
+            "class": "Ranger",
+            "level": 1,
+            "species_skill_replacement": "",
+        }
+        normalized = _normalize_choices_for_builder(choices)
+        assert "species_skill_replacements" in normalized
+        assert normalized["species_skill_replacements"] == []
+        assert "species_skill_replacement" not in normalized
+
+    def test_apply_choice_species_skill_replacements_accepts_string(self):
+        """apply_choice() should accept bare string for species_skill_replacements."""
+        builder = CharacterBuilder()
+        builder.apply_choices(self._ranger_elf_choices("Perception"))
+
+        # Keen Senses overlaps Ranger Perception; replacement should accept a bare string.
+        builder.apply_choice("species_skill_replacements", "Athletics")
+
+        skills = builder.character_data["proficiencies"]["skills"]
+        chosen = builder.character_data["choices_made"]["species_skill_replacements"]
+        assert "Athletics" in skills
+        assert chosen == ["Athletics"]
+
+    def test_species_replacement_info_coerces_legacy_string_to_list(self):
+        """get_species_skill_replacement_info() should expose already_chosen as a list."""
+        builder = CharacterBuilder()
+        builder.apply_choices(self._ranger_elf_choices("Perception"))
+
+        # Simulate legacy persisted shape.
+        builder.character_data["choices_made"]["species_skill_replacements"] = "Athletics"
+
+        info = builder.get_species_skill_replacement_info()
+        assert isinstance(info["already_chosen"], list)
+        assert info["already_chosen"] == ["Athletics"]
 
 
 class TestBackgroundSkillReplacementValidationRegression:

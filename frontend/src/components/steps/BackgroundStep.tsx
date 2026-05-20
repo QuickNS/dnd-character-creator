@@ -12,7 +12,7 @@ import { useWizardSidebarPanel } from "@/components/layout/useWizardSidebarPanel
 interface SkillReplacement {
   needed?: number;
   options?: string[];
-  already_chosen?: string[];
+  already_chosen?: string[] | string;
 }
 
 const BG_SKILL_REPLACEMENT_KEY = "background_skill_replacement";
@@ -98,7 +98,12 @@ export function BackgroundStep() {
     (previewQuery.data?.skill_replacement as SkillReplacement | undefined) ??
     undefined;
   const neededSkillReplacements = skillReplacement?.needed ?? 0;
-  const alreadyChosenReplacements = skillReplacement?.already_chosen ?? [];
+  const alreadyChosenRaw = skillReplacement?.already_chosen;
+  const alreadyChosenReplacements = Array.isArray(alreadyChosenRaw)
+    ? alreadyChosenRaw
+    : typeof alreadyChosenRaw === "string"
+      ? [alreadyChosenRaw]
+      : [];
   const replacementOptions = Array.from(
     new Set([
       ...alreadyChosenReplacements,

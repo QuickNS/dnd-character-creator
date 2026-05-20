@@ -2490,14 +2490,22 @@ class CharacterBuilder:
 
         # Background skill replacements — restore from saved choices
         elif choice_key_lower == "background_skill_replacements":
-            if isinstance(choice_value, list):
-                self.apply_background_skill_replacement(choice_value)
+            normalized_replacements: List[str] = []
+            if isinstance(choice_value, str):
+                normalized_replacements = [choice_value] if choice_value else []
+            elif isinstance(choice_value, list):
+                normalized_replacements = choice_value
+            self.apply_background_skill_replacement(normalized_replacements)
             return True
 
         # Species skill replacements — restore from saved choices
         elif choice_key_lower == "species_skill_replacements":
-            if isinstance(choice_value, list):
-                self.apply_species_skill_replacement(choice_value)
+            normalized_replacements: List[str] = []
+            if isinstance(choice_value, str):
+                normalized_replacements = [choice_value] if choice_value else []
+            elif isinstance(choice_value, list):
+                normalized_replacements = choice_value
+            self.apply_species_skill_replacement(normalized_replacements)
             return True
 
         # Spells - Legacy handler (cantrip selection removed from creation wizard)
@@ -6449,9 +6457,15 @@ class CharacterBuilder:
         needed = self.character_data["choices_made"].get(
             "background_skill_replacements_needed", 0
         )
-        already_chosen = self.character_data["choices_made"].get(
+        already_chosen_raw = self.character_data["choices_made"].get(
             "background_skill_replacements", []
         )
+        if isinstance(already_chosen_raw, str):
+            already_chosen = [already_chosen_raw] if already_chosen_raw else []
+        elif isinstance(already_chosen_raw, list):
+            already_chosen = already_chosen_raw
+        else:
+            already_chosen = []
         if not needed:
             return {"needed": 0, "options": [], "already_chosen": already_chosen}
 
@@ -6528,9 +6542,15 @@ class CharacterBuilder:
         needed = self.character_data["choices_made"].get(
             "species_skill_replacements_needed", 0
         )
-        already_chosen = self.character_data["choices_made"].get(
+        already_chosen_raw = self.character_data["choices_made"].get(
             "species_skill_replacements", []
         )
+        if isinstance(already_chosen_raw, str):
+            already_chosen = [already_chosen_raw] if already_chosen_raw else []
+        elif isinstance(already_chosen_raw, list):
+            already_chosen = already_chosen_raw
+        else:
+            already_chosen = []
         if not needed:
             return {"needed": 0, "options": [], "already_chosen": already_chosen}
 
