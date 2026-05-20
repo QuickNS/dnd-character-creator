@@ -1351,7 +1351,7 @@ function ClassFeatureProgression({ featuresByLevel }: { featuresByLevel: Record<
         <Sparkles className="h-3.5 w-3.5" />
         Feature progression
       </div>
-      <div className="max-h-[28rem] space-y-3 overflow-y-auto pr-1 mt-2">
+      <div className="space-y-3 mt-2">
         {levels.map((entry) => (
           <div key={entry.level} className="info-panel-block">
             <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">
@@ -1568,7 +1568,7 @@ function ClassInfoPanel({
                   <Sparkles className="h-3.5 w-3.5" />
                   Feature progression
                 </div>
-                <div className="max-h-[28rem] space-y-3 overflow-y-auto pr-1">
+                <div className="space-y-3">
                   {activeFeatureLevels.map((entry) => (
                     <div key={entry.level} className="info-panel-block">
                       <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">
