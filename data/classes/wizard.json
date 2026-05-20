@@ -85,7 +85,31 @@
       "Arcane Recovery": "When you finish a Short Rest, you can choose expended spell slots to recover. The spell slots can have a combined level equal to no more than half your Wizard level (round up), and none of the slots can be level 6 or higher. Once you use this feature, you can't do so again until you finish a Long Rest."
     },
     "2": {
-      "Scholar": "Choose one of the following skills in which you have proficiency: Arcana, History, Investigation, Medicine, Nature, or Religion. You have Expertise in the chosen skill."
+      "Scholar": {
+        "description": "Choose one of the following skills in which you have proficiency: Arcana, History, Investigation, Medicine, Nature, or Religion. You have Expertise in the chosen skill.",
+        "choices": {
+          "type": "select_single",
+          "count": 1,
+          "name": "wizard_scholar_skill",
+          "source": {
+            "type": "fixed_list",
+            "options": [
+              "Arcana",
+              "History",
+              "Investigation",
+              "Medicine",
+              "Nature",
+              "Religion"
+            ]
+          }
+        },
+        "effects": [
+          {
+            "type": "grant_skill_expertise",
+            "from_choice": "wizard_scholar_skill"
+          }
+        ]
+      }
     },
     "3": {
       "Wizard Subclass": "You gain a Wizard subclass of your choice. A subclass is a specialization that grants you features at certain Wizard levels."
