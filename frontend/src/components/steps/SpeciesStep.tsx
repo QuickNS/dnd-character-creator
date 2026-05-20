@@ -546,7 +546,10 @@ function SpeciesDetail({
               options={choice.options ?? []}
               optionDescriptions={choice.option_descriptions}
               count={choice.count ?? 1}
-              disabledOptions={backgroundFeat ? [backgroundFeat] : undefined}
+              disabledOptions={[
+                ...(backgroundFeat ? [backgroundFeat] : []),
+                ...grantedProficiencies,
+              ]}
             />
           ))}
         </section>
