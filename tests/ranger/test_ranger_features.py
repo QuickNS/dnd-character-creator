@@ -107,7 +107,7 @@ class TestRangerBaseFeatures:
     def test_level_3_ranger_subclass(self):
         character = build_ranger(3, "Hunter")
         class_features = [f["name"] for f in character["features"]["class"]]
-        assert "Ranger Subclass" in class_features
+        assert "Ranger Subclass" not in class_features
         # Subclass features should be present
         subclass_features = character["features"]["subclass"]
         assert len(subclass_features) > 0

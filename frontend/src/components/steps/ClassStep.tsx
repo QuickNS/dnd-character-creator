@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import {
+  AlertTriangle,
   BookOpen,
   Check,
   ChevronRight,
@@ -11,7 +12,7 @@ import {
   Sword,
   Trash2,
 } from "lucide-react";
-import { api, type ChoicesMade, type ClassAllocation, type ClassDetail, type ClassSummary, type Multiclassing } from "@/lib/api";
+import { api, type ChoicesMade, type ClassAllocation, type ClassDetail, type ClassSummary, type FeatDefinition, type GeneralFeatsReference, type Multiclassing } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { useCharacterStore } from "@/store/characterStore";
 import { ChoiceList } from "@/components/wizard/ChoiceList";
@@ -32,6 +33,11 @@ interface PreviewChoice {
   count?: number;
   depends_on?: string;
   depends_on_value?: string;
+}
+
+interface ClassFeatPrerequisiteWarning {
+  featName: string;
+  messages: string[];
 }
 
 interface SubclassSummary {
@@ -321,6 +327,102 @@ function formatMulticlassSkillProfs(
   return `Choose ${block.count}`;
 }
 
+const ABILITIES = [
+  "Strength",
+  "Dexterity",
+  "Constitution",
+  "Intelligence",
+  "Wisdom",
+  "Charisma",
+] as const;
+
+function formatChoiceLabel(value: string): string {
+  return value
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (m) => m.toUpperCase());
+}
+
+function isClassFeatChoiceKey(value: string): boolean {
+  return /^class_feat_\d+$/.test(value);
+}
+
+function featOptionName(option: string | { name?: string }): string {
+  if (typeof option === "string") return option;
+  return option.name ?? "";
+}
+
+function buildFeatPrerequisiteBadges(
+  options: Array<string | { name?: string }>,
+  featDefinitions: Record<string, FeatDefinition>,
+): Record<string, string | undefined> {
+  return Object.fromEntries(
+    options
+      .map((option) => featOptionName(option))
+      .filter(Boolean)
+      .map((name) => [name, featDefinitions[name]?.prerequisite]),
+  );
+}
+
+function evaluateFeatPrerequisite(
+  prerequisite: string | undefined,
+  choicesMade: Record<string, unknown>,
+): { met: boolean; messages: string[] } {
+  if (!prerequisite || prerequisite.trim().length === 0) {
+    return { met: true, messages: [] };
+  }
+
+  const messages: string[] = [];
+  const parts = prerequisite.split(",").map((part) => part.trim()).filter(Boolean);
+  const abilityScoresRaw = choicesMade.ability_scores;
+  const abilityScores =
+    abilityScoresRaw && typeof abilityScoresRaw === "object" && !Array.isArray(abilityScoresRaw)
+      ? (abilityScoresRaw as Record<string, number>)
+      : undefined;
+  const level =
+    typeof choicesMade.level === "number" && Number.isFinite(choicesMade.level)
+      ? Math.floor(choicesMade.level)
+      : undefined;
+
+  for (const part of parts) {
+    const levelMatch = part.match(/(\d+)(?:st|nd|rd|th)?\s+level/i);
+    if (levelMatch && level !== undefined) {
+      const requiredLevel = Number(levelMatch[1]);
+      if (Number.isFinite(requiredLevel) && level < requiredLevel) {
+        messages.push(`Requires level ${requiredLevel}. Current level: ${level}.`);
+      }
+      continue;
+    }
+
+    const scoreMatch = part.match(/(\d+)\+/);
+    if (!scoreMatch || !abilityScores) continue;
+
+    const requiredScore = Number(scoreMatch[1]);
+    const presentAbilities = ABILITIES.filter((ability) =>
+      new RegExp(`\\b${ability}\\b`, "i").test(part),
+    );
+    if (presentAbilities.length === 0) continue;
+
+    const requiresAny = /\bor\b/i.test(part);
+    if (requiresAny) {
+      const met = presentAbilities.some((ability) => (abilityScores[ability] ?? 0) >= requiredScore);
+      if (!met) {
+        const current = presentAbilities.map((ability) => `${ability} ${abilityScores[ability] ?? 0}`).join(", ");
+        messages.push(`Requires ${presentAbilities.join(" or ")} ${requiredScore}+. Current: ${current}.`);
+      }
+      continue;
+    }
+
+    for (const ability of presentAbilities) {
+      const current = abilityScores[ability] ?? 0;
+      if (current < requiredScore) {
+        messages.push(`Requires ${ability} ${requiredScore}+. Current ${ability}: ${current}.`);
+      }
+    }
+  }
+
+  return { met: messages.length === 0, messages };
+}
+
 
 export function ClassStep() {
   const choicesMade = useCharacterStore((s) => s.choicesMade);
@@ -358,6 +460,7 @@ export function ClassStep() {
   const { setSidebarPanel } = useWizardSidebarPanel();
   const [infoTarget, setInfoTarget] = useState<ClassInfoTarget>({ kind: "class" });
   const [inspectedSpell, setInspectedSpell] = useState<SpellReference | null>(null);
+  const [inspectedFeat, setInspectedFeat] = useState<string | null>(null);
 
   function writeAllocations(nextRows: ClassAllocation[]) {
     const normalized =
@@ -452,6 +555,10 @@ export function ClassStep() {
     queryFn: () => api.catalog.getClass(selectedClass),
     enabled: !!selectedClass,
   });
+  const generalFeatsQuery = useQuery({
+    queryKey: ["catalog", "reference", "general_feats"],
+    queryFn: () => api.catalog.getReference<GeneralFeatsReference>("general_feats"),
+  });
 
   // Stable key fragment for skill_choices: sorted join so that order changes
   // don't cause spurious re-fetches, but adding/removing a skill does.
@@ -529,9 +636,17 @@ export function ClassStep() {
     infoTarget.kind === "subclass"
       ? Boolean(activeSubclassId)
       : Boolean(detailClass);
+  const generalFeatDefinitions = useMemo<Record<string, FeatDefinition>>(
+    () => generalFeatsQuery.data?.general_feats ?? {},
+    [generalFeatsQuery.data],
+  );
+  const inspectedFeatDefinition = inspectedFeat
+    ? generalFeatDefinitions[inspectedFeat]
+    : undefined;
 
   useEffect(() => {
     setInspectedSpell(null);
+    setInspectedFeat(null);
     setInfoTarget({ kind: "class" });
   }, [activeRowIndex, selectedClass]);
 
@@ -542,6 +657,14 @@ export function ClassStep() {
             <SpellInfoPanel
               spell={inspectedSpell}
               onBack={() => setInspectedSpell(null)}
+            />
+          )
+        : inspectedFeat && inspectedFeatDefinition
+        ? (
+            <FeatInfoPanel
+              featName={inspectedFeat}
+              feat={inspectedFeatDefinition}
+              onBack={() => setInspectedFeat(null)}
             />
           )
         : shouldRenderInfoPanel
@@ -582,6 +705,8 @@ export function ClassStep() {
     fullClassData,
     fullClassQuery.isLoading,
     fullClassQuery.isPlaceholderData,
+    inspectedFeat,
+    inspectedFeatDefinition,
     inspectedSpell,
     infoTarget,
     needsSubclass,
@@ -897,6 +1022,14 @@ export function ClassStep() {
         <ClassDetail
           previewData={previewData}
           choicesMade={choicesMade}
+          combinedScores={combinedScores}
+          totalLevel={clampLevel(choicesMade.level)}
+          featDefinitions={generalFeatDefinitions}
+          inspectedFeatName={inspectedFeat}
+          onInspectFeat={(featName) => {
+            setInspectedSpell(null);
+            setInspectedFeat(featName);
+          }}
           selectedClassSummary={detailClass}
           selectedSubclass={selectedSubclass}
           activeRowLabel={activeRowLabel}
@@ -930,7 +1063,10 @@ export function ClassStep() {
         <ClassAdvancedChoices
           choicesForDerived={previewChoices}
           inspectedSpellName={inspectedSpell?.name}
-          onInspectSpell={setInspectedSpell}
+          onInspectSpell={(spell) => {
+            setInspectedFeat(null);
+            setInspectedSpell(spell);
+          }}
         />
       )}
     </div>
@@ -1014,6 +1150,89 @@ function SpellInfoPanel({
               </div>
             ))}
         </dl>
+      </div>
+    </aside>
+  );
+}
+
+function FeatInfoPanel({
+  featName,
+  feat,
+  onBack,
+}: {
+  featName: string;
+  feat: FeatDefinition;
+  onBack: () => void;
+}) {
+  const choices = Array.isArray(feat.choices)
+    ? feat.choices.filter(
+        (choice): choice is Record<string, unknown> =>
+          !!choice && typeof choice === "object" && !Array.isArray(choice),
+      )
+    : [];
+
+  return (
+    <aside className="info-panel" aria-label="Feat details panel">
+      <div className="info-panel-header">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="info-panel-kicker">Feat details</p>
+            <h4 className="info-panel-title">{featName}</h4>
+          </div>
+          <button
+            type="button"
+            onClick={onBack}
+            className="inline-flex items-center rounded-md border border-border/70 bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+          >
+            Back
+          </button>
+        </div>
+      </div>
+      <div className="info-panel-body">
+        {feat.prerequisite && (
+          <span className="inline-flex rounded-full border border-border/70 bg-background/70 px-2.5 py-1 text-[11px] uppercase tracking-wide text-muted-foreground">
+            {feat.prerequisite}
+          </span>
+        )}
+        {feat.description && (
+          <p className="mt-4 text-sm text-muted-foreground">{feat.description}</p>
+        )}
+        {Array.isArray(feat.benefits) && feat.benefits.length > 0 && (
+          <div className="mt-4 rounded-lg border border-border/70 bg-background/80 px-3 py-3">
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">
+              Benefits
+            </p>
+            <ul className="mt-2 list-disc space-y-1 pl-4 text-sm text-foreground/90">
+              {feat.benefits.map((benefit) => (
+                <li key={benefit}>{benefit}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {choices.length > 0 && (
+          <div className="mt-4 rounded-lg border border-border/70 bg-background/80 px-3 py-3">
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">
+              Required choices
+            </p>
+            <ul className="mt-2 space-y-1 text-sm text-foreground/90">
+              {choices.map((choice, index) => {
+                const choiceName =
+                  typeof choice.name === "string" && choice.name.length > 0
+                    ? choice.name
+                    : `choice_${index + 1}`;
+                const count =
+                  typeof choice.count === "number" && choice.count > 1
+                    ? choice.count
+                    : 1;
+                return (
+                  <li key={`${choiceName}-${index}`}>
+                    • {formatChoiceLabel(choiceName)} (choose {count})
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        )}
       </div>
     </aside>
   );
@@ -1466,6 +1685,11 @@ function ClassInfoPanel({
 function ClassDetail({
   previewData,
   choicesMade,
+  combinedScores,
+  totalLevel,
+  featDefinitions,
+  inspectedFeatName,
+  onInspectFeat,
   selectedClassSummary,
   selectedSubclass,
   activeRowLabel,
@@ -1476,6 +1700,11 @@ function ClassDetail({
 }: {
   previewData: Record<string, unknown>;
   choicesMade: Record<string, unknown>;
+  combinedScores?: Record<string, number>;
+  totalLevel: number;
+  featDefinitions: Record<string, FeatDefinition>;
+  inspectedFeatName?: string | null;
+  onInspectFeat: (featName: string) => void;
   selectedClassSummary?: {
     name: string;
     subclass_selection_level: number;
@@ -1527,6 +1756,43 @@ function ClassDetail({
     const key = choice.choice_key ?? choice.feature_name ?? choice.name ?? "";
     return !asiChoiceKeys.has(key);
   });
+  const featPrerequisiteWarnings = useMemo<ClassFeatPrerequisiteWarning[]>(() => {
+    if (!combinedScores) return [];
+
+    const warnings: ClassFeatPrerequisiteWarning[] = [];
+    for (const choice of nestedChoices) {
+      const key =
+        choice.choice_key ??
+        choice.feature_name ??
+        choice.name ??
+        "";
+      if (!isClassFeatChoiceKey(key)) continue;
+
+      const selectedFeat =
+        typeof choicesMade[key] === "string" ? String(choicesMade[key]) : "";
+      if (!selectedFeat) continue;
+
+      const feat = featDefinitions[selectedFeat];
+      if (!feat?.prerequisite) continue;
+
+      const prerequisiteContext: Record<string, unknown> = {
+        ...choicesMade,
+        ability_scores: combinedScores,
+        level: totalLevel,
+      };
+      const evaluation = evaluateFeatPrerequisite(
+        feat.prerequisite,
+        prerequisiteContext,
+      );
+      if (!evaluation.met && evaluation.messages.length > 0) {
+        warnings.push({
+          featName: selectedFeat,
+          messages: evaluation.messages,
+        });
+      }
+    }
+    return warnings;
+  }, [choicesMade, combinedScores, featDefinitions, nestedChoices, totalLevel]);
 
   return (
     <div className="space-y-6">
@@ -1655,6 +1921,29 @@ function ClassDetail({
             </div>
           </div>
 
+          {featPrerequisiteWarnings.length > 0 && (
+            <div className="mb-4 rounded-lg border border-amber-400/40 bg-amber-500/10 px-4 py-3">
+              <div className="flex items-start gap-2 text-amber-800 dark:text-amber-300">
+                <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0" />
+                <div className="text-sm">
+                  <p className="font-semibold">Prerequisite warning</p>
+                  <ul className="mt-1 list-disc space-y-1 pl-4">
+                    {featPrerequisiteWarnings.map((warning) =>
+                      warning.messages.map((message) => (
+                        <li key={`${warning.featName}-${message}`}>
+                          <strong>{warning.featName}</strong>: {message}
+                        </li>
+                      )),
+                    )}
+                  </ul>
+                  <p className="mt-2 text-xs">
+                    You can still proceed, but verify your final scores before play.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="space-y-4">
           {asiChoiceGroups.map((group) => (
             <ClassFeatAsiPicker
@@ -1702,6 +1991,23 @@ function ClassDetail({
                 options={opts as Array<string | { name?: string }>}
                 optionDescriptions={choice.option_descriptions}
                 count={choice.count ?? 1}
+                 hideOptionDescriptions={isClassFeatChoiceKey(key)}
+                 optionBadges={
+                  isClassFeatChoiceKey(key)
+                    ? buildFeatPrerequisiteBadges(
+                        opts as Array<string | { name?: string }>,
+                        featDefinitions,
+                      )
+                    : undefined
+                }
+                 onInspectOption={
+                  isClassFeatChoiceKey(key)
+                    ? (featName) => onInspectFeat(featName)
+                    : undefined
+                 }
+                 inspectedOption={
+                  isClassFeatChoiceKey(key) ? inspectedFeatName ?? undefined : undefined
+                 }
               />
             );
           })}

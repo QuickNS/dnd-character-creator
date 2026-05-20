@@ -126,94 +126,98 @@ export function WizardLayout() {
       <div
         className={`grid grid-cols-1 gap-0 min-h-dvh relative z-10 ${sidebarCollapsed ? 'md:grid-cols-[3rem_minmax(0,1fr)_24rem]' : 'md:grid-cols-[16rem_minmax(0,1fr)_24rem]'}`}
       >
-        <aside className="hidden md:flex md:flex-col border-r border-border bg-card/50 transition-[grid-template-columns] overflow-hidden sticky top-0 h-dvh">
-          <div className={`border-b border-border flex items-center gap-2 ${sidebarCollapsed ? 'px-2 py-6 justify-center flex-col' : 'px-5 py-6 justify-between'}`}>
-            {!sidebarCollapsed && (
-              <img
-                src="/images/logos/logo.png"
-                alt="D&D Character Creator"
-                className="h-28 w-auto object-contain"
-              />
-            )}
-            <div className={`flex items-center gap-2 ${sidebarCollapsed ? 'flex-col' : ''}`}>
-              {!sidebarCollapsed && (
-                  <>
-                    <button
-                      type="button"
-                      onClick={handleStartOver}
-                      aria-label="Reset wizard"
-                      title="Discard all choices and restart the wizard"
-                      className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border bg-background text-foreground hover:bg-secondary transition-colors"
-                    >
-                      <RotateCcw className="h-4 w-4" aria-hidden="true" />
-                      <span className="sr-only">Reset</span>
-                    </button>
-                    <ThemeToggle />
-                  </>
-                )}
+        <aside className="hidden md:flex md:flex-col border-r border-border bg-card/50 overflow-hidden sticky top-0 h-dvh">
+          {sidebarCollapsed ? (
+            <div className="flex flex-col items-center gap-2 py-3 px-2 border-b border-border">
               <button
                 type="button"
                 onClick={() => setSidebarCollapsed((c) => !c)}
-                aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-                title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+                aria-label="Expand sidebar"
+                title="Expand sidebar"
                 className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border bg-background text-foreground hover:bg-secondary transition-colors"
               >
-                {sidebarCollapsed
-                  ? <ChevronRight className="h-4 w-4" aria-hidden="true" />
-                  : <ChevronLeft className="h-4 w-4" aria-hidden="true" />}
-                <span className="sr-only">{sidebarCollapsed ? "Expand" : "Collapse"}</span>
+                <ChevronRight className="h-4 w-4" aria-hidden="true" />
+                <span className="sr-only">Expand</span>
               </button>
+              <Link
+                to="/"
+                aria-label="Return to home page"
+                title="Return to home page"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border bg-background text-foreground hover:bg-secondary transition-colors"
+              >
+                <HomeIcon className="h-4 w-4" aria-hidden="true" />
+              </Link>
+              <button
+                type="button"
+                onClick={handleStartOver}
+                aria-label="Reset wizard"
+                title="Discard all choices and restart the wizard"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border bg-background text-foreground hover:bg-secondary transition-colors"
+              >
+                <RotateCcw className="h-4 w-4" aria-hidden="true" />
+                <span className="sr-only">Reset</span>
+              </button>
+              <ThemeToggle />
+              <a
+                href={BUG_REPORT_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Report a bug"
+                title="Report a bug"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-secondary/60 hover:text-foreground transition-colors"
+              >
+                <Bug className="h-4 w-4" aria-hidden="true" />
+              </a>
             </div>
-          </div>
-          {!sidebarCollapsed && (
-            <div className="flex-1 overflow-y-auto min-h-0">
-              <StepSidebar steps={steps} currentStepId={stepId ?? null} />
-            </div>
-          )}
-          {/* ── Home button — bottom of sidebar ───────────────── */}
-          <div className="border-t border-border p-3">
-            {sidebarCollapsed ? (
-              <div className="flex flex-col items-center gap-2">
+          ) : (
+            <>
+              <div className="flex items-center gap-2 px-3 py-3 border-b border-border">
                 <Link
                   to="/"
                   aria-label="Return to home page"
                   title="Return to home page"
-                  className="flex h-9 w-9 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border bg-background text-foreground hover:bg-secondary transition-colors"
                 >
                   <HomeIcon className="h-4 w-4" aria-hidden="true" />
                 </Link>
+                <button
+                  type="button"
+                  onClick={handleStartOver}
+                  aria-label="Reset wizard"
+                  title="Discard all choices and restart the wizard"
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border bg-background text-foreground hover:bg-secondary transition-colors"
+                >
+                  <RotateCcw className="h-4 w-4" aria-hidden="true" />
+                  <span className="sr-only">Reset</span>
+                </button>
+                <ThemeToggle />
                 <a
                   href={BUG_REPORT_URL}
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="Report a bug"
                   title="Report a bug"
-                  className="flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-secondary/60 hover:text-foreground transition-colors"
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-secondary/60 hover:text-foreground transition-colors"
                 >
                   <Bug className="h-4 w-4" aria-hidden="true" />
                 </a>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <Link
-                  to="/"
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-border px-5 py-2 text-sm text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
+                <div className="flex-1" />
+                <button
+                  type="button"
+                  onClick={() => setSidebarCollapsed((c) => !c)}
+                  aria-label="Collapse sidebar"
+                  title="Collapse sidebar"
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border bg-background text-foreground hover:bg-secondary transition-colors"
                 >
-                  <HomeIcon className="h-4 w-4" aria-hidden="true" />
-                  Back to Home
-                </Link>
-                <a
-                  href={BUG_REPORT_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-md px-3 py-2 text-xs text-muted-foreground hover:bg-secondary/60 hover:text-foreground transition-colors"
-                >
-                  <Bug className="h-4 w-4" aria-hidden="true" />
-                  Bug Report
-                </a>
+                  <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+                  <span className="sr-only">Collapse</span>
+                </button>
               </div>
-            )}
-          </div>
+              <div className="flex-1 overflow-y-auto min-h-0">
+                <StepSidebar steps={steps} currentStepId={stepId ?? null} />
+              </div>
+            </>
+          )}
         </aside>
         <main className="px-4 md:px-10 py-6 md:py-8 w-full min-w-0">
           <Outlet context={{ setSidebarPanel: handleSetSidebarPanel }} />
@@ -223,7 +227,7 @@ export function WizardLayout() {
             {sidebarPanel}
           </aside>
         )}
-        <aside className="hidden lg:block border-l border-border bg-card/30">
+        <aside className={`hidden lg:block border-l border-border bg-card/30 ${stepId === 'complete' ? 'invisible' : ''}`}>
           <div className="sticky top-0 p-6 min-h-[100dvh]">
             {sidebarPanel}
           </div>

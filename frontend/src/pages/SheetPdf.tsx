@@ -466,6 +466,7 @@ function Page1({ c, damageCantrips }: { c: Char; damageCantrips: Row[] }) {
             height: 285,
             columnCount: 2,
             columnGap: 10,
+            columnFill: "auto",
           }}
           features={classFeatures}
           titleSize={7}
@@ -802,13 +803,14 @@ function EditableFeatureColumn({
     const newRow: EditableRow = {
       id: `f-new-${Date.now()}`,
       name: "New Feature",
-      description: "",
+      description: "Feature description",
     };
     setRows((prev) => [...prev, newRow]);
   }
 
   return (
-    <div style={merged}>
+    <div style={merged} className="feature-col-wrap">
+      <span className="bold-hint no-print">Ctrl+B / ⌘B · bold</span>
       {rows.map((f) => (
         <div
           key={f.id}
@@ -847,25 +849,26 @@ function EditableFeatureColumn({
             </button>
           </div>
           <div
-            contentEditable
-            suppressContentEditableWarning
-            onBlur={(e) =>
-              updateRow(
-                f.id,
-                "description",
-                e.currentTarget.textContent ?? "",
-              )
-            }
-            style={{
-              fontSize: `${bodySize}pt`,
-              lineHeight: 1.1,
-              whiteSpace: "pre-wrap",
-              outline: "none",
-            }}
-            className="feature-inline-field"
-          >
-            {f.description}
-          </div>
+              contentEditable
+              suppressContentEditableWarning
+              onKeyDown={(e) => {
+                if ((e.ctrlKey || e.metaKey) && e.key === "b") {
+                  e.preventDefault();
+                  document.execCommand("bold");
+                }
+              }}
+              onBlur={(e) =>
+                updateRow(f.id, "description", e.currentTarget.innerHTML ?? "")
+              }
+              dangerouslySetInnerHTML={{ __html: f.description }}
+              style={{
+                fontSize: `${bodySize}pt`,
+                lineHeight: 1.1,
+                whiteSpace: "pre-wrap",
+                outline: "none",
+              }}
+              className="feature-inline-field"
+            />
         </div>
       ))}
       <button type="button" className="feature-add-btn no-print" onClick={addRow}>
@@ -1118,6 +1121,30 @@ const SHEET_CSS = `
   opacity: 0.85;
 }
 .feature-add-btn:hover { opacity: 1; }
+
+.feature-col-wrap {
+  position: absolute;
+}
+.bold-hint {
+  position: absolute;
+  top: -16px;
+  right: 0;
+  font-size: 5pt;
+  font-family: 'Inter', sans-serif;
+  background: rgba(37,99,235,0.82);
+  color: #fff;
+  padding: 1px 5px;
+  border-radius: 2px;
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
+  white-space: nowrap;
+  line-height: 1.6;
+  z-index: 10;
+}
+.feature-col-wrap:focus-within .bold-hint {
+  opacity: 1;
+}
 
 @media print {
   .no-print { display: none !important; }

@@ -201,10 +201,10 @@ class TestWizardBaseClass:
         assert "Arcane Recovery" in names
 
     def test_level_3_wizard_subclass_feature(self):
-        """Level 3 class feature list should include 'Wizard Subclass'."""
+        """Level 3 class feature list should omit the subclass placeholder."""
         character = build_wizard(3, "Evocation")
         names = [f["name"] for f in character["features"]["class"]]
-        assert "Wizard Subclass" in names
+        assert "Wizard Subclass" not in names
 
     def test_level_5_memorize_spell(self):
         """Level 5 should grant Memorize Spell class feature."""
@@ -263,8 +263,8 @@ class TestWizardBaseClass:
         "level,expected_features",
         [
             (1, ["Spellcasting", "Ritual Adept", "Arcane Recovery"]),
-            (3, ["Wizard Subclass"]),
-            (4, ["Ability Score Improvement"]),
+            (3, []),
+            (4, []),
             (5, ["Memorize Spell"]),
         ],
     )
