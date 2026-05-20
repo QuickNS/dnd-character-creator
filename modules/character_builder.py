@@ -344,6 +344,16 @@ class CharacterBuilder:
         
         return None
 
+    @staticmethod
+    def _class_feat_slot_level(slot_key: str) -> int:
+        """Extract the numeric level from a class-level feat slot key.
+
+        For example, ``"class_feat_4"`` → ``4``.  Returns ``0`` if the key
+        does not match the expected pattern.
+        """
+        m = re.search(r"class_feat_(\d+)", slot_key)
+        return int(m.group(1)) if m else 0
+
     # ==================== Species/Lineage Methods ====================
 
     def _clear_species_features(self):
@@ -2674,24 +2684,22 @@ class CharacterBuilder:
 
         # Class-level feat sub-choices: keys like "class_feat_4_ability_plus_2"
         # These apply choice_effects from the previously-selected class-level feat.
-        elif _CLASS_FEAT_SUB_RE.match(choice_key):
-            m = _CLASS_FEAT_SUB_RE.match(choice_key)
-            if m:
-                parent_key = m.group(1)      # e.g. "class_feat_4"
-                sub_choice_name = m.group(2)  # e.g. "ability_plus_2"
-                selected_feat = self.character_data["choices_made"].get(parent_key)
-                if selected_feat:
-                    feat_data = self._load_feat_data(selected_feat)
-                    if feat_data and "choice_effects" in feat_data:
-                        choice_effect_map = feat_data["choice_effects"].get(sub_choice_name, {})
-                        values = (
-                            [choice_value] if isinstance(choice_value, str)
-                            else (choice_value if isinstance(choice_value, list) else [])
-                        )
-                        for val in values:
-                            if val in choice_effect_map:
-                                for effect in choice_effect_map[val]:
-                                    self._apply_effect(effect, selected_feat, "feat")
+        elif (m := _CLASS_FEAT_SUB_RE.match(choice_key)):
+            parent_key = m.group(1)      # e.g. "class_feat_4"
+            sub_choice_name = m.group(2)  # e.g. "ability_plus_2"
+            selected_feat = self.character_data["choices_made"].get(parent_key)
+            if selected_feat:
+                feat_data = self._load_feat_data(selected_feat)
+                if feat_data and "choice_effects" in feat_data:
+                    choice_effect_map = feat_data["choice_effects"].get(sub_choice_name, {})
+                    values = (
+                        [choice_value] if isinstance(choice_value, str)
+                        else (choice_value if isinstance(choice_value, list) else [])
+                    )
+                    for val in values:
+                        if val in choice_effect_map:
+                            for effect in choice_effect_map[val]:
+                                self._apply_effect(effect, selected_feat, "feat")
             return True
 
         # Generic choice - might be class feature choice
@@ -2956,8 +2964,7 @@ class CharacterBuilder:
                             feat_name = choice_value
 
                             # Extract slot level from choice_key (e.g. "class_feat_4" -> 4)
-                            slot_m = re.search(r"class_feat_(\d+)", choice_key)
-                            slot_level = int(slot_m.group(1)) if slot_m else 0
+                            slot_level = self._class_feat_slot_level(choice_key)
 
                             # Clear any previously picked feat for this slot
                             old_feat_entry = next(
@@ -3826,6 +3833,9 @@ class CharacterBuilder:
             k for k in working_choices
             if k not in order and k not in ("species_skill_replacements", "classes")
         ]
+        # Sort so parent feat-slot keys (class_feat_N, key=0) come before their
+        # sub-choice keys (class_feat_N_*, key=1).  Python's sort is stable and
+        # ascending, so 0 < 1 means parents are processed first.
         remaining_keys.sort(key=lambda k: (1 if _CLASS_FEAT_SUB_RE.match(k) else 0))
         for key in remaining_keys:
             self.apply_choice(key, working_choices[key])
@@ -6629,8 +6639,7 @@ class CharacterBuilder:
                 continue
 
             # Extract slot level from parent_key (e.g. "class_feat_4" -> 4)
-            slot_m = re.search(r"class_feat_(\d+)", parent_key)
-            slot_level = int(slot_m.group(1)) if slot_m else 0
+            slot_level = self._class_feat_slot_level(parent_key)
 
             for sub_item in sub_choice_items:
                 if not isinstance(sub_item, dict):
