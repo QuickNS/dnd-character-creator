@@ -212,6 +212,18 @@ export interface SpellDefinition {
   ritual?: boolean;
 }
 
+export interface FeatDefinition {
+  name?: string;
+  description?: string;
+  benefits?: string[];
+  prerequisite?: string;
+  choices?: Array<Record<string, unknown>>;
+}
+
+export interface GeneralFeatsReference {
+  general_feats: Record<string, FeatDefinition>;
+}
+
 export class ApiError extends Error {
   constructor(
     public status: number,
@@ -299,6 +311,9 @@ export const api = {
 
     getBackground: (backgroundName: string) =>
       apiFetch(`/catalog/backgrounds/${encodeURIComponent(backgroundName)}`),
+
+    getReference: <T>(name: string): Promise<T> =>
+      apiFetch<T>(`/catalog/reference/${encodeURIComponent(name)}`),
 
     getSpellDefinition: (spellName: string): Promise<SpellDefinition> =>
       apiFetch(
