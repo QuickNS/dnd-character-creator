@@ -148,12 +148,26 @@
       "Sneak Attack": "Once per turn, deal extra 1d6 damage with Finesse/Ranged weapon if you have Advantage or ally within 5 feet of target. The extra damage's type is the same as the weapon's type.",
       "Thieves' Cant": {
         "description": "You know Thieves' Cant and one other language of your choice.",
+        "choices": {
+          "type": "select_single",
+          "count": 1,
+          "name": "thieves_cant_language",
+          "source": {
+            "type": "external",
+            "file": "languages.json",
+            "list": "all"
+          }
+        },
         "effects": [
           {
             "type": "grant_language",
             "languages": [
               "Thieves' Cant"
             ]
+          },
+          {
+            "type": "grant_language",
+            "from_choice": "thieves_cant_language"
           }
         ]
       },

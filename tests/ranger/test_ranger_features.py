@@ -238,6 +238,97 @@ class TestRangerExpertiseChoices:
         assert character["skills"]["perception"]["expertise"] is True
 
 
+class TestRangerDeftExplorerLanguages:
+    """Tests for Deft Explorer language choices (Ranger level 2)."""
+
+    def test_level_2_has_deft_explorer_language_choice(self):
+        """Deft Explorer exposes a 2-language choice in class features."""
+        builder = build_ranger_with_choices(2)
+        features = builder.get_class_features_and_choices()
+
+        lang_choice = next(
+            (c for c in features["choices"] if c.get("choice_key") == "deft_explorer_languages"),
+            None,
+        )
+        assert lang_choice is not None
+        assert lang_choice["count"] == 2
+
+    def test_level_2_deft_explorer_language_choice_includes_rare_languages(self):
+        """The language choice pool includes rare languages."""
+        builder = build_ranger_with_choices(2)
+        features = builder.get_class_features_and_choices()
+
+        lang_choice = next(
+            (c for c in features["choices"] if c.get("choice_key") == "deft_explorer_languages"),
+            None,
+        )
+        assert lang_choice is not None
+        options = lang_choice["options"]
+        # Standard languages present
+        assert "Elvish" in options
+        # Rare languages present
+        assert "Abyssal" in options
+        assert "Sylvan" in options
+
+    def test_level_2_deft_explorer_language_grant_applies(self):
+        """Chosen Deft Explorer languages are added as proficiencies."""
+        builder = CharacterBuilder()
+        choices = {
+            "character_name": "Test Ranger",
+            "level": 2,
+            "class": "Ranger",
+            "species": "Human",
+            "background": "Soldier",
+            "skill_choices": ["Stealth", "Perception", "Survival"],
+            "fighting_style": "Archery",
+            "ability_scores": {
+                "Strength": 10,
+                "Dexterity": 15,
+                "Constitution": 14,
+                "Intelligence": 10,
+                "Wisdom": 14,
+                "Charisma": 8,
+            },
+            "background_bonuses": {"Strength": 2, "Constitution": 1},
+            "deft_explorer_expertise": "Stealth",
+            "deft_explorer_languages": ["Elvish", "Abyssal"],
+        }
+        builder.apply_choices(choices)
+        character = builder.to_character()
+        languages = character["proficiencies"]["languages"]
+        assert "Elvish" in languages
+        assert "Abyssal" in languages
+
+    def test_level_2_deft_explorer_language_rare_language_allowed(self):
+        """Rare languages (e.g. Sylvan, Undercommon) can be chosen via Deft Explorer."""
+        builder = CharacterBuilder()
+        choices = {
+            "character_name": "Test Ranger",
+            "level": 2,
+            "class": "Ranger",
+            "species": "Human",
+            "background": "Soldier",
+            "skill_choices": ["Stealth", "Perception", "Survival"],
+            "fighting_style": "Archery",
+            "ability_scores": {
+                "Strength": 10,
+                "Dexterity": 15,
+                "Constitution": 14,
+                "Intelligence": 10,
+                "Wisdom": 14,
+                "Charisma": 8,
+            },
+            "background_bonuses": {"Strength": 2, "Constitution": 1},
+            "deft_explorer_expertise": "Stealth",
+            "deft_explorer_languages": ["Sylvan", "Undercommon"],
+        }
+        builder.apply_choices(choices)
+        character = builder.to_character()
+        languages = character["proficiencies"]["languages"]
+        assert "Sylvan" in languages
+        assert "Undercommon" in languages
+
+
 # ---------------------------------------------------------------------------
 # Spell slot progression
 # ---------------------------------------------------------------------------

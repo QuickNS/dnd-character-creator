@@ -6,6 +6,7 @@ import { useCharacterStore } from "@/store/characterStore";
 
 interface LanguageOptions {
   base_languages?: string[];
+  rare_base_languages?: string[];
   available_languages?: string[];
   selection_count?: number;
   selected_languages?: string[];
@@ -29,6 +30,7 @@ export function LanguagesStep() {
   const data =
     (previewQuery.data?.language_options as LanguageOptions | undefined) ?? {};
   const base = data.base_languages ?? ["Common"];
+  const rareBase = data.rare_base_languages ?? [];
   const available = data.available_languages ?? [];
   const selectionCount = data.selection_count ?? 2;
   const selected = Array.from(
@@ -77,6 +79,24 @@ export function LanguagesStep() {
             </span>
           ))}
         </div>
+        {rareBase.length > 0 && (
+          <div className="mt-3">
+            <p className="mb-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              Rare languages
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {rareBase.map((lang) => (
+                <span
+                  key={lang}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/40 bg-amber-500/10 px-3 py-1 text-xs text-amber-700 dark:text-amber-400"
+                >
+                  <Check className="h-3 w-3" aria-hidden="true" />
+                  {lang}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
       </section>
 
       <section>
