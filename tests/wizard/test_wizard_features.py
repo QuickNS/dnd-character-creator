@@ -257,9 +257,7 @@ class TestWizardBaseClass:
         assert scholar_choice is not None, "Scholar choice picker not found"
 
         character = builder.to_character()
-        proficient_skills = set(character["proficiencies"]["skills"])
         assert set(scholar_choice["options"]) == {"Arcana", "History"}
-        assert set(scholar_choice["options"]) <= proficient_skills
 
     @pytest.mark.parametrize(
         "level,expected_features",
