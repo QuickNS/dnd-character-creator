@@ -222,7 +222,28 @@ class TestRangerExpertiseChoices:
         assert "Stealth" in character.get("skill_expertise", [])
         assert character["skills"]["stealth"]["expertise"] is True
 
-    def test_level_9_has_expertise_choice_for_two_skills(self):
+    def test_level_2_deft_explorer_choice_titles_are_human_readable(self):
+        """Regression: choice titles must show display_name, not raw key (e.g. 'Expertise' not 'deft_explorer_expertise')."""
+        builder = build_ranger_with_choices(2)
+        features = builder.get_class_features_and_choices()
+
+        expertise_choice = next(
+            (c for c in features["choices"] if c.get("choice_key") == "deft_explorer_expertise"),
+            None,
+        )
+        assert expertise_choice is not None
+        assert "deft_explorer_expertise" not in expertise_choice["title"]
+        assert "Expertise" in expertise_choice["title"]
+
+        language_choice = next(
+            (c for c in features["choices"] if c.get("choice_key") == "deft_explorer_languages"),
+            None,
+        )
+        assert language_choice is not None
+        assert "deft_explorer_languages" not in language_choice["title"]
+        assert "Languages" in language_choice["title"]
+
+
         builder = build_ranger_with_choices(9)
         features = builder.get_class_features_and_choices()
 
