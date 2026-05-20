@@ -5,9 +5,7 @@ import { useCharacterStore } from "@/store/characterStore";
 import { useIsDark } from "@/hooks/useIsDark";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
-
-const BUG_REPORT_URL =
-  "https://github.com/QuickNS/dnd-character-creator/issues/new?labels=bug";
+import { useBugReportUrl } from "@/hooks/useBugReportUrl";
 
 // `to_character()` is too sprawling to fully type at the boundary.
 // We treat it as a loose record and narrow only where we read.
@@ -96,6 +94,7 @@ export function Sheet() {
 
 function Shell({ children }: { children: React.ReactNode }) {
   const isDark = useIsDark();
+  const bugReportUrl = useBugReportUrl();
   const choicesMade = useCharacterStore((s) => s.choicesMade);
   const classKey = str(choicesMade.class)?.toLowerCase() ?? "";
   const leftSrc = isDark
@@ -139,7 +138,7 @@ function Shell({ children }: { children: React.ReactNode }) {
             <div className="flex items-center gap-3">
               <Button asChild variant="outline" size="sm">
                 <a
-                  href={BUG_REPORT_URL}
+                  href={bugReportUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                 >

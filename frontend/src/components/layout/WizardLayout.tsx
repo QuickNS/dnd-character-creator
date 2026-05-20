@@ -7,9 +7,7 @@ import { useCharacterStore } from "@/store/characterStore";
 import { StepSidebar } from "@/components/wizard/StepSidebar";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
-
-const BUG_REPORT_URL =
-  "https://github.com/QuickNS/dnd-character-creator/issues/new?labels=bug";
+import { useBugReportUrl } from "@/hooks/useBugReportUrl";
 
 export function WizardLayout() {
   const navigate = useNavigate();
@@ -18,6 +16,7 @@ export function WizardLayout() {
   const setDependencies = useCharacterStore((s) => s.setDependencies);
   const setCurrentStep = useCharacterStore((s) => s.setCurrentStep);
   const reset = useCharacterStore((s) => s.reset);
+  const bugReportUrl = useBugReportUrl();
   const [sidebarPanel, setSidebarPanel] = useState<ReactNode | null>(null);
   const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -99,7 +98,7 @@ export function WizardLayout() {
               Home
             </Link>
             <a
-              href={BUG_REPORT_URL}
+              href={bugReportUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 rounded-md px-2 py-2 text-xs text-muted-foreground hover:bg-secondary/60 hover:text-foreground transition-colors"
@@ -159,7 +158,7 @@ export function WizardLayout() {
               </button>
               <ThemeToggle />
               <a
-                href={BUG_REPORT_URL}
+                href={bugReportUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Report a bug"
@@ -192,7 +191,7 @@ export function WizardLayout() {
                 </button>
                 <ThemeToggle />
                 <a
-                  href={BUG_REPORT_URL}
+                  href={bugReportUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="Report a bug"
