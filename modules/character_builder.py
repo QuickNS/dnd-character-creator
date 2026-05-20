@@ -5986,7 +5986,7 @@ class CharacterBuilder:
         base_languages = {self.BASE_LANGUAGE}
         rare_base_languages = set()
         for lang in known_languages:
-            if language_sources.get(lang) != "user_choice" and language_sources.get(lang) != "rare_user_choice":
+            if language_sources.get(lang) not in ("user_choice", "rare_user_choice"):
                 if lang in rare_set:
                     rare_base_languages.add(lang)
                 else:

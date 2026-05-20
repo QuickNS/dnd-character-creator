@@ -198,7 +198,7 @@ class TestGetLanguageOptionsAllRareLanguages:
         })
         opts = builder.get_language_options()
         assert opts["selection_count"] == 2
-        assert opts["selected_languages"] == ["Dwarvish", "Elvish"] or set(opts["selected_languages"]) == {"Elvish", "Dwarvish"}
+        assert set(opts["selected_languages"]) == {"Elvish", "Dwarvish"}
 
     def test_selected_rare_languages_key_returned(self):
         """get_language_options returns selected_rare_languages reflecting current rare picks."""
