@@ -181,6 +181,11 @@ export function WizardLayout() {
         <main className="px-4 md:px-10 py-6 md:py-8 w-full min-w-0">
           <Outlet context={{ setSidebarPanel: handleSetSidebarPanel }} />
         </main>
+        {sidebarPanel && (
+          <aside className="lg:hidden border-t border-border bg-card/30 px-4 py-6">
+            {sidebarPanel}
+          </aside>
+        )}
         <aside className="hidden lg:block border-l border-border bg-card/30">
           <div className="sticky top-0 p-6 min-h-[100dvh]">
             {sidebarPanel}
