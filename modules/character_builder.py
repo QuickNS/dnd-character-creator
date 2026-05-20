@@ -56,6 +56,13 @@ def _humanize(snake: str) -> str:
     )
 
 
+# Regex patterns for class-level feat slot keys (e.g. "class_feat_4") and
+# their sub-choice keys (e.g. "class_feat_4_ability_plus_2").  Defined once
+# here so all callers share the same compiled pattern.
+_CLASS_FEAT_SLOT_RE = re.compile(r"^class_feat_\d+$")
+_CLASS_FEAT_SUB_RE = re.compile(r"^(class_feat_\d+)_(.+)$")
+
+
 class CharacterBuilder:
     """
     Stateful builder for D&D 2024 character creation.
@@ -2667,8 +2674,8 @@ class CharacterBuilder:
 
         # Class-level feat sub-choices: keys like "class_feat_4_ability_plus_2"
         # These apply choice_effects from the previously-selected class-level feat.
-        elif re.match(r"^class_feat_\d+_.+$", choice_key):
-            m = re.match(r"^(class_feat_\d+)_(.+)$", choice_key)
+        elif _CLASS_FEAT_SUB_RE.match(choice_key):
+            m = _CLASS_FEAT_SUB_RE.match(choice_key)
             if m:
                 parent_key = m.group(1)      # e.g. "class_feat_4"
                 sub_choice_name = m.group(2)  # e.g. "ability_plus_2"
@@ -2941,85 +2948,64 @@ class CharacterBuilder:
                     choices_config = feature_data["choices"]
                     source_config = choices_config.get("source", {})
 
-                    if source_config.get("type") == "external":
-                        external_file = source_config.get("file")
-                        external_list = source_config.get("list")
+                    if source_config.get("type") == "external" and isinstance(choice_value, str):
+                        # Use _load_feat_data to generically load from any feat file
+                        # (general_feats.json or origin_feats.json).
+                        feat_data_loaded = self._load_feat_data(choice_value)
+                        if feat_data_loaded is not None:
+                            feat_name = choice_value
 
-                        if external_file and external_list and isinstance(choice_value, str) and external_file == "general_feats.json":
-                            import json as _json
-                            import re as _re
+                            # Extract slot level from choice_key (e.g. "class_feat_4" -> 4)
+                            slot_m = re.search(r"class_feat_(\d+)", choice_key)
+                            slot_level = int(slot_m.group(1)) if slot_m else 0
 
-                            external_path = self.data_dir / external_file
-                            if external_path.exists():
-                                try:
-                                    with open(external_path, "r") as _f:
-                                        external_data = _json.load(_f)
-
-                                    options_list = external_data.get(external_list, {})
-                                    if choice_value in options_list:
-                                        feat_name = choice_value
-                                        feat_data = options_list[feat_name]
-
-                                        # Extract slot level from choice_key (e.g. "class_feat_4" -> 4)
-                                        slot_m = _re.search(r"class_feat_(\d+)", choice_key)
-                                        slot_level = int(slot_m.group(1)) if slot_m else 0
-
-                                        # Clear any previously picked feat for this slot
-                                        old_feat_entry = next(
-                                            (f for f in self.character_data["features"]["feats"]
-                                             if f.get("slot") == choice_key),
-                                            None,
-                                        )
-                                        if old_feat_entry:
-                                            old_feat_name = old_feat_entry["name"]
-                                            self.character_data["features"]["feats"] = [
-                                                f for f in self.character_data["features"]["feats"]
-                                                if f.get("slot") != choice_key
-                                            ]
-                                            # Revert applied effects from old feat in this slot
-                                            if hasattr(self, "applied_effects"):
-                                                self.applied_effects = [
-                                                    e for e in self.applied_effects
-                                                    if not (
-                                                        e.get("source_type") == "feat"
-                                                        and e.get("source") == old_feat_name
-                                                        and e.get("slot") == choice_key
-                                                    )
-                                                ]
-
-                                        # Build feat entry
-                                        if isinstance(feat_data, dict):
-                                            description = feat_data.get("description", "")
-                                            benefits = feat_data.get("benefits", [])
-                                            if benefits:
-                                                description += self._format_benefits(benefits)
-                                        else:
-                                            description = str(feat_data)
-
-                                        # Add feat to features["feats"] (tagged with slot)
-                                        already_in_slot = any(
-                                            f.get("slot") == choice_key
-                                            for f in self.character_data["features"]["feats"]
-                                        )
-                                        if not already_in_slot:
-                                            self.character_data["features"]["feats"].append({
-                                                "name": feat_name,
-                                                "description": description,
-                                                "source": "class",
-                                                "level": slot_level,
-                                                "slot": choice_key,
-                                            })
-
-                                        # Apply any direct effects from the feat
-                                        if isinstance(feat_data, dict):
-                                            for feat_effect in feat_data.get("effects", []):
-                                                self._apply_effect(feat_effect, feat_name, "feat")
-
-                                        return
-                                except (_json.JSONDecodeError, IOError) as _e:
-                                    print(
-                                        f"WARNING: Failed to load external file {external_file}: {_e}"
+                            # Clear any previously picked feat for this slot
+                            old_feat_entry = next(
+                                (f for f in self.character_data["features"]["feats"]
+                                 if f.get("slot") == choice_key),
+                                None,
+                            )
+                            if old_feat_entry:
+                                old_feat_name = old_feat_entry["name"]
+                                self.character_data["features"]["feats"] = [
+                                    f for f in self.character_data["features"]["feats"]
+                                    if f.get("slot") != choice_key
+                                ]
+                                # Revert applied effects from old feat in this slot
+                                self.applied_effects = [
+                                    e for e in self.applied_effects
+                                    if not (
+                                        e.get("source_type") == "feat"
+                                        and e.get("source") == old_feat_name
+                                        and e.get("slot") == choice_key
                                     )
+                                ]
+
+                            # Build feat description
+                            description = feat_data_loaded.get("description", "")
+                            benefits = feat_data_loaded.get("benefits", [])
+                            if benefits:
+                                description += self._format_benefits(benefits)
+
+                            # Add feat to features["feats"] (tagged with slot)
+                            already_in_slot = any(
+                                f.get("slot") == choice_key
+                                for f in self.character_data["features"]["feats"]
+                            )
+                            if not already_in_slot:
+                                self.character_data["features"]["feats"].append({
+                                    "name": feat_name,
+                                    "description": description,
+                                    "source": "class",
+                                    "level": slot_level,
+                                    "slot": choice_key,
+                                })
+
+                            # Apply any direct effects from the feat
+                            for feat_effect in feat_data_loaded.get("effects", []):
+                                self._apply_effect(feat_effect, feat_name, "feat")
+
+                            return
 
         # Fallback: Search for the choice in class data structures (internal references)
         # Common patterns: 'divine_orders', 'fighting_styles', etc.
@@ -3840,7 +3826,7 @@ class CharacterBuilder:
             k for k in working_choices
             if k not in order and k not in ("species_skill_replacements", "classes")
         ]
-        remaining_keys.sort(key=lambda k: (1 if re.match(r"^class_feat_\d+_.+$", k) else 0))
+        remaining_keys.sort(key=lambda k: (1 if _CLASS_FEAT_SUB_RE.match(k) else 0))
         for key in remaining_keys:
             self.apply_choice(key, working_choices[key])
 
@@ -6629,7 +6615,7 @@ class CharacterBuilder:
         defined in the feat.  Avoids adding duplicates.
         """
         for parent_key, feat_name in choices_made.items():
-            if not re.match(r"^class_feat_\d+$", parent_key):
+            if not _CLASS_FEAT_SLOT_RE.match(parent_key):
                 continue
             if not isinstance(feat_name, str) or not feat_name:
                 continue
