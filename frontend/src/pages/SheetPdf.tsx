@@ -16,10 +16,30 @@ import { Link } from "react-router-dom";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { useCharacterStore } from "@/store/characterStore";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type Char = Record<string, unknown>;
 type Row = Record<string, unknown>;
+type EditableRow = { id: string; name: string; description: string };
+type CantripEditRow = { name: string; atk: string; dmg: string; extra: string };
+
+function buildAttackEdits(rows: Row[]): CantripEditRow[] {
+  return rows.map((w) => ({
+    name: str(w.name) ?? "",
+    atk: str(w.attack_bonus_display) ?? signed(num(w.attack_bonus)),
+    dmg: `${str(w.damage) ?? ""} ${str(w.damage_type) ?? ""}`.trim(),
+    extra: arr<string>(w.properties).join(", "),
+  }));
+}
+
+function buildCantripEdits(rows: Row[]): CantripEditRow[] {
+  return rows.map((cn) => ({
+    name: str(cn.name) ?? "",
+    atk: str(cn.atk_display) ?? "",
+    dmg: `${str(cn.damage) ?? ""} ${str(cn.damage_type) ?? ""}`.trim(),
+    extra: str(cn.notes) ?? "",
+  }));
+}
 
 function num(v: unknown): number | undefined {
   return typeof v === "number" ? v : undefined;
@@ -69,7 +89,7 @@ export function SheetPdf() {
     queryKey: ["character", "derived", "damage_cantrips", choicesMade],
     queryFn: () => api.character.derived(choicesMade, "damage_cantrips"),
     retry: false,
-    enabled: !!buildQuery.data,
+    placeholderData: keepPreviousData,
   });
 
   if (!isDesktop) {
@@ -80,8 +100,8 @@ export function SheetPdf() {
             Desktop view required
           </h1>
           <p className="text-sm text-muted-foreground">
-            The printable sheet uses a fixed 8.5×11in layout. Open this
-            page on a desktop browser (≥ 900px wide) to view or print.
+            The printable sheet uses a fixed 8.5×11in layout. Open this page on
+            a desktop browser (≥ 900px wide) to view or print.
           </p>
           <p className="mt-4">
             <Link to="/sheet" className="text-primary underline">
@@ -118,7 +138,7 @@ export function SheetPdf() {
     );
   }
 
-  const c = (buildQuery.data?.character ?? {}) as Char;
+  const c = (buildQuery.data ?? {}) as Char;
   const cantripData = cantripsQuery.data?.data;
   const damageCantrips = arr<Row>(cantripData);
 
@@ -159,22 +179,18 @@ function Toolbar() {
 
 // ---------- Page 1 ----------
 
-function Page1({
-  c,
-  damageCantrips,
-}: {
-  c: Char;
-  damageCantrips: Row[];
-}) {
+function Page1({ c, damageCantrips }: { c: Char; damageCantrips: Row[] }) {
   const combat = rec(c.combat);
   const hp = rec(combat.hit_points);
   const hitDice = rec(combat.hit_dice);
   const skills = rec(c.skills);
   const abilities = rec(c.abilities);
   const acOptions = arr<Row>(c.ac_options);
+  const bestAcOption = acOptions.length > 0 ? acOptions[0] : null;
   const ac =
     num(combat.armor_class) ??
-    (acOptions.length > 0 ? num(acOptions[0].ac) : undefined);
+    (bestAcOption !== null ? num(bestAcOption.ac) : undefined);
+  const bestAcUsesShield = Boolean(bestAcOption?.shield);
 
   const perception = rec(skills.perception);
   const perceptionMod = num(perception.modifier) ?? num(perception.bonus) ?? 0;
@@ -193,9 +209,42 @@ function Page1({
   const cantripSlots = Math.max(0, 6 - attacks.length);
   const cantripRows = damageCantrips.slice(0, cantripSlots);
 
+  const [attackEdits, setAttackEdits] = useState<CantripEditRow[]>(() =>
+    buildAttackEdits(attacks),
+  );
+  const prevAttackRef = useRef(JSON.stringify(attacks));
+  const attackSer = JSON.stringify(attacks);
+  if (prevAttackRef.current !== attackSer) {
+    prevAttackRef.current = attackSer;
+    setAttackEdits(buildAttackEdits(attacks));
+  }
+  function updateAttack(idx: number, field: keyof CantripEditRow, value: string) {
+    setAttackEdits((prev) =>
+      prev.map((r, i) => (i === idx ? { ...r, [field]: value } : r)),
+    );
+  }
+
+  const [cantripEdits, setCantripEdits] = useState<CantripEditRow[]>(() =>
+    buildCantripEdits(cantripRows),
+  );
+  const prevCantripRef = useRef(JSON.stringify(cantripRows));
+  const cantripSer = JSON.stringify(cantripRows);
+  if (prevCantripRef.current !== cantripSer) {
+    prevCantripRef.current = cantripSer;
+    setCantripEdits(buildCantripEdits(cantripRows));
+  }
+  function updateCantrip(
+    idx: number,
+    field: keyof CantripEditRow,
+    value: string,
+  ) {
+    setCantripEdits((prev) =>
+      prev.map((r, i) => (i === idx ? { ...r, [field]: value } : r)),
+    );
+  }
+
   const lineage = str(c.lineage);
-  const speciesText =
-    (str(c.species) ?? "") + (lineage ? ` (${lineage})` : "");
+  const speciesText = (str(c.species) ?? "") + (lineage ? ` (${lineage})` : "");
 
   return (
     <div className="sheet-container">
@@ -209,10 +258,14 @@ function Page1({
         <Field id="subclass" value={str(c.subclass)} />
         <Field id="level" value={num(c.level)} />
         <Field id="size" value={str(c.size) ?? "Medium"} />
-        <Field id="proficiency-bonus" value={signed(num(c.proficiency_bonus))} />
+        <Field
+          id="proficiency-bonus"
+          value={signed(num(c.proficiency_bonus))}
+        />
 
         {/* Combat */}
         <Field id="armor-class" value={ac} />
+        {bestAcUsesShield && <Field id="shield-marker" value="🛡" />}
         <Field
           id="initiative"
           value={signed(num(combat.initiative_bonus) ?? num(combat.initiative))}
@@ -228,10 +281,7 @@ function Page1({
           }
         />
         <Field id="hp_max" value={num(hp.maximum) ?? num(combat.hp)} />
-        <Field
-          id="hit_dice"
-          value={str(hitDice.total) ?? num(hitDice.total)}
-        />
+        <Field id="hit_dice" value={str(hitDice.total) ?? num(hitDice.total)} />
         <Field id="passive-perception" value={passive} />
 
         {/* Ability blocks */}
@@ -287,79 +337,92 @@ function Page1({
           name="Charisma"
           abilities={abilities}
           skills={skills}
-          skillKeys={[
-            "deception",
-            "intimidation",
-            "performance",
-            "persuasion",
-          ]}
+          skillKeys={["deception", "intimidation", "performance", "persuasion"]}
         />
 
         {/* Weapons & damage cantrips: 6 rows */}
         {Array.from({ length: 6 }).map((_, i) => {
-          const top = 272 + i * 26;
-          let name = "";
-          let atk = "";
-          let dmg = "";
-          let extra = "";
-          if (i < attacks.length) {
-            const w = attacks[i];
-            name = str(w.name) ?? "";
-            atk = str(w.attack_bonus_display) ?? signed(num(w.attack_bonus));
-            const damage = str(w.damage) ?? "";
-            const dtype = str(w.damage_type) ?? "";
-            dmg = `${damage} ${dtype}`.trim();
-            const props = arr<string>(w.properties);
-            extra = props.length ? props.join(", ") : "";
-          } else {
-            const cIdx = i - attacks.length;
-            if (cIdx < cantripRows.length) {
-              const cn = cantripRows[cIdx];
-              name = str(cn.name) ?? "";
-              atk = str(cn.atk_display) ?? "";
-              const damage = str(cn.damage) ?? "";
-              const dtype = str(cn.damage_type) ?? "";
-              dmg = `${damage} ${dtype}`.trim();
-              extra = str(cn.notes) ?? "";
-            }
+          const top = 274 + i * 26;
+          if (i < attackEdits.length) {
+            const ae = attackEdits[i];
+            return (
+              <div key={i}>
+                <EditableBoxField
+                  style={{ top, left: 307, width: 152, height: 22, fontSize: 7, textAlign: "left" }}
+                  value={ae.name}
+                  onCommit={(v) => updateAttack(i, "name", v)}
+                />
+                <EditableBoxField
+                  style={{ top, left: 448, width: 70, height: 22, fontSize: 7 }}
+                  value={ae.atk}
+                  onCommit={(v) => updateAttack(i, "atk", v)}
+                />
+                <EditableBoxField
+                  style={{ top, left: 520, width: 128, height: 22, fontSize: 7, textAlign: "left" }}
+                  value={ae.dmg}
+                  onCommit={(v) => updateAttack(i, "dmg", v)}
+                />
+                <EditableBoxField
+                  style={{ top, left: 627, width: 165, height: 22, fontSize: 7, textAlign: "left" }}
+                  value={ae.extra}
+                  onCommit={(v) => updateAttack(i, "extra", v)}
+                />
+              </div>
+            );
+          }
+          const cIdx = i - attacks.length;
+          if (cIdx < cantripEdits.length) {
+            const cr = cantripEdits[cIdx];
+            return (
+              <div key={i}>
+                <EditableBoxField
+                  style={{ top, left: 307, width: 152, height: 22, fontSize: 7, textAlign: "left" }}
+                  value={cr.name}
+                  onCommit={(v) => updateCantrip(cIdx, "name", v)}
+                />
+                <EditableBoxField
+                  style={{ top, left: 448, width: 70, height: 22, fontSize: 7 }}
+                  value={cr.atk}
+                  onCommit={(v) => updateCantrip(cIdx, "atk", v)}
+                />
+                <EditableBoxField
+                  style={{ top, left: 520, width: 128, height: 22, fontSize: 7, textAlign: "left" }}
+                  value={cr.dmg}
+                  onCommit={(v) => updateCantrip(cIdx, "dmg", v)}
+                />
+                <EditableBoxField
+                  style={{ top, left: 628, width: 163, height: 22, fontSize: 7, textAlign: "left" }}
+                  value={cr.extra}
+                  onCommit={(v) => updateCantrip(cIdx, "extra", v)}
+                />
+              </div>
+            );
           }
           return (
             <div key={i}>
-              <BoxField
-                style={{ top, left: 307, width: 152, height: 22, fontSize: 8, textAlign: "left" }}
-                value={name}
-              />
-              <BoxField
-                style={{ top, left: 448, width: 70, height: 22, fontSize: 8 }}
-                value={atk}
-              />
-              <BoxField
-                style={{ top, left: 520, width: 128, height: 22, fontSize: 8, textAlign: "left" }}
-                value={dmg}
-              />
-              <BoxField
-                style={{ top, left: 666, width: 126, height: 22, fontSize: 8, textAlign: "left" }}
-                value={extra}
-              />
+              <BoxField style={{ top, left: 307, width: 152, height: 22, fontSize: 7, textAlign: "left" }} value="" />
+              <BoxField style={{ top, left: 448, width: 70, height: 22, fontSize: 7 }} value="" />
+              <BoxField style={{ top, left: 520, width: 128, height: 22, fontSize: 7, textAlign: "left" }} value="" />
+              <BoxField style={{ top, left: 628, width: 163, height: 22, fontSize: 7, textAlign: "left" }} value="" />
             </div>
           );
         })}
 
         {/* Armor proficiency checkboxes */}
         <Check
-          style={{ top: 878, left: 75 }}
+          style={{ top: 876, left: 76 }}
           checked={armorProfs.includes("Light armor")}
         />
         <Check
-          style={{ top: 878, left: 122 }}
+          style={{ top: 876, left: 123 }}
           checked={armorProfs.includes("Medium armor")}
         />
         <Check
-          style={{ top: 878, left: 182 }}
+          style={{ top: 876, left: 183 }}
           checked={armorProfs.includes("Heavy armor")}
         />
         <Check
-          style={{ top: 878, left: 233 }}
+          style={{ top: 876, left: 234 }}
           checked={armorProfs.includes("Shields")}
         />
 
@@ -395,9 +458,9 @@ function Page1({
         />
 
         {/* Features columns */}
-        <FeatureColumn
+        <EditableFeatureColumn
           style={{
-            top: 473,
+            top: 476,
             left: 306,
             width: 490,
             height: 285,
@@ -408,13 +471,13 @@ function Page1({
           titleSize={7}
           bodySize={6}
         />
-        <FeatureColumn
+        <EditableFeatureColumn
           style={{ top: 806, left: 306, width: 227, height: 200 }}
           features={speciesFeatures}
           titleSize={7}
           bodySize={6}
         />
-        <FeatureColumn
+        <EditableFeatureColumn
           style={{ top: 806, left: 558, width: 238, height: 200 }}
           features={featFeatures}
           titleSize={7}
@@ -464,7 +527,7 @@ function BoxField({
 }) {
   const merged: React.CSSProperties = {
     position: "absolute",
-    fontFamily: "'Segoe UI', sans-serif",
+    fontFamily: "'Inter', sans-serif",
     textAlign: "center",
     padding: 2,
     color: "#000",
@@ -480,6 +543,44 @@ function BoxField({
   if (typeof merged.width === "number") merged.width = `${merged.width}px`;
   if (typeof merged.height === "number") merged.height = `${merged.height}px`;
   return <div style={merged}>{value ?? ""}</div>;
+}
+
+function EditableBoxField({
+  style,
+  value,
+  onCommit,
+}: {
+  style: React.CSSProperties;
+  value: string;
+  onCommit: (v: string) => void;
+}) {
+  const merged: React.CSSProperties = {
+    position: "absolute",
+    fontFamily: "'Inter', sans-serif",
+    textAlign: "center",
+    padding: 2,
+    color: "#000",
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    outline: "none",
+    ...style,
+  };
+  if (typeof merged.fontSize === "number") merged.fontSize = `${merged.fontSize}pt`;
+  if (typeof merged.top === "number") merged.top = `${merged.top}px`;
+  if (typeof merged.left === "number") merged.left = `${merged.left}px`;
+  if (typeof merged.width === "number") merged.width = `${merged.width}px`;
+  if (typeof merged.height === "number") merged.height = `${merged.height}px`;
+  return (
+    <div
+      contentEditable
+      suppressContentEditableWarning
+      onBlur={(e) => onCommit(e.currentTarget.textContent ?? "")}
+      style={merged}
+      className="feature-inline-field"
+    >
+      {value}
+    </div>
+  );
 }
 
 function Check({
@@ -502,7 +603,7 @@ function Check({
   };
   if (typeof merged.top === "number") merged.top = `${merged.top}px`;
   if (typeof merged.left === "number") merged.left = `${merged.left}px`;
-  return <div style={merged}>{checked ? "✓" : ""}</div>;
+  return <div style={merged}>{checked ? "●" : ""}</div>;
 }
 
 // ---------- Ability block ----------
@@ -534,23 +635,23 @@ function AbilityBlock({
     <div className={`ab ab-${id}`}>
       <div
         className="abs-field"
-        style={{ top: 37, left: 65, width: 40, height: 30, fontSize: "11pt" }}
+        style={{ top: 40, left: 65, width: 40, height: 30, fontSize: "11pt" }}
       >
         {score ?? ""}
       </div>
       <div
         className="abs-field"
         style={{
-          top: 33,
+          top: 29,
           left: 17,
           width: 50,
-          height: 25,
+          height: 28,
           fontSize: "16pt",
         }}
       >
         {signed(modifier)}
       </div>
-      <Check style={{ top: 98, left: 8, width: 12 }} checked={saveProf} />
+      <Check style={{ top: 96, left: 8, width: 12 }} checked={saveProf} />
       <div
         className="abs-field"
         style={{ top: 93, left: 22, width: 20, fontSize: "9pt" }}
@@ -564,7 +665,7 @@ function AbilityBlock({
         return (
           <div key={key}>
             <Check
-              style={{ top: 118 + 7 + i * 19, left: 9, width: 12 }}
+              style={{ top: 123 + i * 19, left: 8, width: 12 }}
               checked={prof}
             />
             <div
@@ -619,14 +720,14 @@ function FeatureColumn({
             style={{
               marginBottom: 4,
               breakInside: "avoid",
-              fontFamily: "'Segoe UI', sans-serif",
+              fontFamily: "'Inter', sans-serif",
             }}
           >
             <div
               style={{
                 fontSize: `${titleSize}pt`,
                 fontWeight: "bold",
-                lineHeight: 1.1,
+                lineHeight: 1.2,
               }}
             >
               {name}
@@ -643,6 +744,133 @@ function FeatureColumn({
           </div>
         );
       })}
+    </div>
+  );
+}
+
+function EditableFeatureColumn({
+  style,
+  features: initialFeatures,
+  titleSize,
+  bodySize,
+}: {
+  style: React.CSSProperties;
+  features: Row[];
+  titleSize: number;
+  bodySize: number;
+}) {
+  const toEditable = (rows: Row[]): EditableRow[] =>
+    rows.map((f, i) => ({
+      id: `f-init-${i}`,
+      name: str(f.name) ?? "",
+      description: str(f.description) ?? "",
+    }));
+
+  const [rows, setRows] = useState<EditableRow[]>(() =>
+    toEditable(initialFeatures),
+  );
+  const prevRef = useRef(JSON.stringify(initialFeatures));
+
+  const serialised = JSON.stringify(initialFeatures);
+  if (prevRef.current !== serialised) {
+    prevRef.current = serialised;
+    setRows(toEditable(initialFeatures));
+  }
+
+  const merged: React.CSSProperties = {
+    position: "absolute",
+    color: "#000",
+    overflow: "visible",
+    ...style,
+  };
+  if (typeof merged.top === "number") merged.top = `${merged.top}px`;
+  if (typeof merged.left === "number") merged.left = `${merged.left}px`;
+  if (typeof merged.width === "number") merged.width = `${merged.width}px`;
+  if (typeof merged.height === "number") merged.height = `${merged.height}px`;
+
+  function updateRow(id: string, field: "name" | "description", value: string) {
+    setRows((prev) =>
+      prev.map((r) => (r.id === id ? { ...r, [field]: value } : r)),
+    );
+  }
+
+  function removeRow(id: string) {
+    setRows((prev) => prev.filter((r) => r.id !== id));
+  }
+
+  function addRow() {
+    const newRow: EditableRow = {
+      id: `f-new-${Date.now()}`,
+      name: "New Feature",
+      description: "",
+    };
+    setRows((prev) => [...prev, newRow]);
+  }
+
+  return (
+    <div style={merged}>
+      {rows.map((f) => (
+        <div
+          key={f.id}
+          style={{
+            marginBottom: 4,
+            breakInside: "avoid",
+            fontFamily: "'Inter', sans-serif",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "baseline", gap: 2 }}>
+            <div
+              contentEditable
+              suppressContentEditableWarning
+              onBlur={(e) =>
+                updateRow(f.id, "name", e.currentTarget.textContent ?? "")
+              }
+              style={{
+                flex: 1,
+                fontSize: `${titleSize}pt`,
+                fontWeight: "bold",
+                lineHeight: 1.2,
+                outline: "none",
+                minWidth: 0,
+              }}
+              className="feature-inline-field"
+            >
+              {f.name}
+            </div>
+            <button
+              type="button"
+              className="feature-ctrl-btn no-print"
+              title="Remove"
+              onClick={() => removeRow(f.id)}
+            >
+              ×
+            </button>
+          </div>
+          <div
+            contentEditable
+            suppressContentEditableWarning
+            onBlur={(e) =>
+              updateRow(
+                f.id,
+                "description",
+                e.currentTarget.textContent ?? "",
+              )
+            }
+            style={{
+              fontSize: `${bodySize}pt`,
+              lineHeight: 1.1,
+              whiteSpace: "pre-wrap",
+              outline: "none",
+            }}
+            className="feature-inline-field"
+          >
+            {f.description}
+          </div>
+        </div>
+      ))}
+      <button type="button" className="feature-add-btn no-print" onClick={addRow}>
+        + Add Feature
+      </button>
     </div>
   );
 }
@@ -716,7 +944,7 @@ const SHEET_CSS = `
 
 .fld {
   position: absolute;
-  font-family: 'Segoe UI', sans-serif;
+  font-family: 'Inter', sans-serif;
   text-align: center;
   font-size: 11pt;
   padding: 2px;
@@ -726,39 +954,171 @@ const SHEET_CSS = `
 }
 
 /* Field positions — mirror character_sheet_pdf.html exactly. */
-.fld-character-name { top: 21px; left: 32px; width: 290px; height: 20px; font-size: 14pt; font-weight: 600; text-align: left; }
-.fld-class          { top: 51px; left: 200px; width: 127px; height: 20px; text-align: left; }
-.fld-subclass       { top: 81px; left: 200px; width: 127px; height: 20px; text-align: left; }
-.fld-background     { top: 51px; left: 32px;  width: 150px; height: 20px; text-align: left; }
-.fld-species        { top: 81px; left: 32px;  width: 150px; height: 20px; text-align: left; }
-.fld-level          { top: 38px; left: 358px; width: 30px;  height: 20px; font-size: 14pt; }
-.fld-size           { top: 181px; left: 589px; width: 48px; height: 20px; font-size: 9pt; }
-.fld-passive-perception { top: 181px; left: 718px; width: 48px; height: 20px; font-size: 9pt; }
+.fld-character-name {
+    top: 16px;
+    left: 33px;
+    width: 290px;
+    height: 30px;
+    font-size: 11pt;
+    font-weight: 600;
+    text-align: left;
+}
+.fld-class {
+    top: 50px;
+    left: 200px;
+    width: 127px;
+    height: 20px;
+    font-size: 9pt;
+    text-align: left;
+}
+.fld-subclass {
+    top: 80px;
+    left: 200px;
+    width: 127px;
+    height: 20px;
+    font-size: 9pt;
+    text-align: left;
+}
+.fld-background {
+    top: 50px;
+    left: 32px;
+    width: 150px;
+    height: 20px;
+    font-size: 9pt;
+    text-align: left;
+}
+.fld-species {
+    top: 80px;
+    left: 32px;
+    width: 150px;
+    height: 20px;
+    font-size: 9pt;
+    text-align: left;
+}
+.fld-level {
+    top: 36px;
+    left: 358px;
+    width: 30px;
+    height: 24px;
+    font-size: 14pt;
+}
+.fld-size {
+    top: 180px;
+    left: 589px;
+    width: 48px;
+    height: 20px;
+    font-size: 9pt;
+}
+.fld-passive-perception {
+    top: 180px;
+    left: 716px;
+    width: 48px;
+    height: 29px;
+    font-size: 9pt;
+}
 
-.fld-armor-class       { top: 56px;  left: 445px; width: 30px; height: 20px; font-size: 14pt; }
-.fld-initiative        { top: 181px; left: 339px; width: 30px; height: 20px; }
-.fld-speed             { top: 181px; left: 453px; width: 60px; height: 20px; }
-.fld-hp_max            { top: 79px;  left: 595px; width: 60px; height: 20px; }
-.fld-hit_dice          { top: 79px;  left: 665px; width: 56px; height: 20px; }
-.fld-proficiency-bonus { top: 196px; left: 58px;  width: 30px; height: 20px; font-size: 16pt; }
+.fld-armor-class {
+    top: 48px;
+    left: 444px;
+    width: 30px;
+    height: 30px;
+    font-size: 14pt;
+}
+
+.fld-shield-marker     { top: 74px;  left: 440px; width: 40px; height: 14px; font-size: 9pt; color: #555; }
+.fld-initiative {
+    top: 178px;
+    left: 339px;
+    width: 30px;
+    height: 20px;
+}
+.fld-speed {
+    top: 178px;
+    left: 453px;
+    width: 60px;
+    height: 25px;
+}
+.fld-hp_max {
+    top: 75px;
+    left: 607px;
+    width: 50px;
+    height: 20px;
+}
+.fld-hit_dice {
+    top: 75px;
+    left: 672px;
+    width: 50px;
+    height: 20px;
+}
+.fld-proficiency-bonus {
+    top: 186px;
+    left: 59px;
+    width: 30px;
+    height: 33px;
+    font-size: 16pt;
+}
 
 .ab { position: absolute; }
 .ab-ability-str { top: 257px; left: 12px; }
 .ab-ability-dex { top: 418px; left: 12px; }
 .ab-ability-con { top: 617px; left: 12px; }
-.ab-ability-int { top: 151px; left: 156px; }
-.ab-ability-wis { top: 389px; left: 156px; }
-.ab-ability-cha { top: 626px; left: 156px; }
+.ab-ability-int { top: 151px; left: 157px; }
+.ab-ability-wis { top: 389px; left: 157px; }
+.ab-ability-cha { top: 626px; left: 157px; }
 
 .abs-field {
   position: absolute;
-  font-family: 'Segoe UI', sans-serif;
+  font-family: 'Inter', sans-serif;
   text-align: center;
   padding: 2px;
   color: #000;
   white-space: nowrap;
   overflow: hidden;
 }
+
+/* ----- editable feature controls ----- */
+.feature-ctrl-btn {
+  background: #dc2626;
+  border: none;
+  cursor: pointer;
+  padding: 0 3px;
+  font-size: 6pt;
+  color: #fff;
+  vertical-align: middle;
+  border-radius: 2px;
+  font-weight: bold;
+}
+.feature-ctrl-btn:hover { background: #b91c1c; }
+
+.feature-inline-field {
+  cursor: text;
+  border-radius: 2px;
+}
+.feature-inline-field:hover {
+  background: rgba(0,0,0,0.04);
+}
+.feature-inline-field:focus {
+  background: rgba(37,99,235,0.06);
+  box-shadow: inset 0 -1px 0 rgba(37,99,235,0.4);
+}
+
+.feature-add-btn {
+  display: block;
+  margin-top: 6px;
+  font-size: 7pt;
+  font-family: 'Inter', sans-serif;
+  background: hsl(var(--primary));
+  border: none;
+  border-radius: 3px;
+  padding: 2px 8px;
+  cursor: pointer;
+  color: hsl(var(--primary-foreground));
+  width: 100%;
+  text-align: center;
+  font-weight: 600;
+  opacity: 0.85;
+}
+.feature-add-btn:hover { opacity: 1; }
 
 @media print {
   .no-print { display: none !important; }

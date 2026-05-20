@@ -28,6 +28,7 @@ ORDINAL_TO_INT: Dict[str, int] = {
 _DAMAGE_DICE_RE = re.compile(r'(\d+d\d+)\s+(\w+)\s+damage', re.IGNORECASE)
 _SPELL_ATTACK_RE = re.compile(r'make\s+a\s+(melee|ranged)\s+spell\s+attack', re.IGNORECASE)
 _SAVING_THROW_RE = re.compile(r'succeed\s+on\s+an?\s+(\w+)\s+saving\s+throw', re.IGNORECASE)
+_SAVE_FAIL_RE = re.compile(r'saving throw or ([^.;]+)', re.IGNORECASE)
 
 _DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 _SPELL_CLASS_LISTS = _DATA_DIR / "spells" / "class_lists"
@@ -82,16 +83,25 @@ def build_damage_cantrip_rows(character_data: Dict[str, Any]) -> List[Dict[str, 
             atk_display = f"+{bonus}" if bonus >= 0 else str(bonus)
         elif save_match:
             dc = spell_stats.get("spell_save_dc", 0)
-            atk_display = f"DC {dc}"
+            ability = save_match.group(1)[:3].upper()  # "Wisdom" → "WIS"
+            atk_display = f"{ability} {dc}"
         else:
             atk_display = ""
+
+        range_text = cantrip.get("range", "").replace(" feet", "ft").replace(" foot", "ft")
+        raw_components = cantrip.get("components", [])
+        if isinstance(raw_components, str):
+            comp_text = raw_components
+        else:
+            comp_text = ", ".join(c for c in raw_components if c) if raw_components else ""
+        notes = f"{range_text} | {comp_text}" if (range_text and comp_text) else (range_text or comp_text)
 
         rows.append({
             "name": cantrip.get("name", ""),
             "atk_display": atk_display,
             "damage": damage,
             "damage_type": damage_type,
-            "notes": cantrip.get("source", ""),
+            "notes": notes,
         })
 
     return rows
