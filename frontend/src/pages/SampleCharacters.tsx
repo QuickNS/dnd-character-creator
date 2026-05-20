@@ -66,7 +66,7 @@ export function SampleCharacters() {
     });
     queryClient.removeQueries({ queryKey: ["character"] });
     queryClient.removeQueries({ queryKey: ["wizard"] });
-    navigate("/sheet");
+    navigate("/wizard/complete");
   }
 
   return (

@@ -227,7 +227,7 @@ export function WizardLayout() {
             {sidebarPanel}
           </aside>
         )}
-        <aside className="hidden lg:block border-l border-border bg-card/30">
+        <aside className={`hidden lg:block border-l border-border bg-card/30 ${stepId === 'complete' ? 'invisible' : ''}`}>
           <div className="sticky top-0 p-6 min-h-[100dvh]">
             {sidebarPanel}
           </div>
