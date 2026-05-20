@@ -96,6 +96,18 @@ function parentKeyVariants(key: string): string[] {
   return Array.from(new Set([key, snake, titleSpaces]));
 }
 
+const CLASS_FEAT_ASI_OPTION_KEY_RE = /^(class_feat_\d+)_(asi_option|ability_plus_2|abilities_plus_1)$/;
+const ASI_PLUS_TWO_OPTION = "+2 to one ability";
+const ASI_PLUS_ONE_TWO_OPTION = "+1 to two abilities";
+const ASI_ABILITIES = [
+  "Strength",
+  "Dexterity",
+  "Constitution",
+  "Intelligence",
+  "Wisdom",
+  "Charisma",
+];
+
 function featureLevelEntries(
   featuresByLevel: SubclassDetail["features_by_level"],
 ): Array<{ level: string; features: SubclassFeatureEntry[] }> {
@@ -450,6 +462,13 @@ export function ClassStep() {
     ?.slice()
     .sort()
     .join(",") ?? "";
+  const classFeatChoicesKey = Object.entries(choicesMade)
+    .filter(([k]) => k.startsWith("class_feat_"))
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([k, v]) =>
+      `${k}:${Array.isArray(v) ? v.slice().sort().join("|") : String(v)}`,
+    )
+    .join(";");
 
   const previewQuery = useQuery({
     // Key on the four fields that actually change what class features are
@@ -457,7 +476,7 @@ export function ClassStep() {
     // so picking a spell/mastery/invocation doesn't force a reload of the
     // class preview. skill_choices IS included because expertise-picker options
     // depend on the character's skill proficiencies.
-    queryKey: ["character", "preview-step", "class", selectedClass, clampLevel(activeRow.level), selectedSubclass, skillChoicesKey],
+    queryKey: ["character", "preview-step", "class", selectedClass, clampLevel(activeRow.level), selectedSubclass, skillChoicesKey, classFeatChoicesKey],
     queryFn: () => api.character.previewStep(previewChoices, "class"),
     enabled: !!selectedClass,
     placeholderData: keepPreviousData,
@@ -1470,6 +1489,44 @@ function ClassDetail({
 }) {
   const nestedChoices =
     (previewData["nested_choices"] as PreviewChoice[] | undefined) ?? [];
+  const asiChoiceGroups = useMemo(() => {
+    const grouped = new Map<string, {
+      slotKey: string;
+      slotLevel: number;
+      asiOptionChoice?: PreviewChoice;
+      plusTwoChoice?: PreviewChoice;
+      plusOneChoice?: PreviewChoice;
+    }>();
+    for (const choice of nestedChoices) {
+      const key = choice.choice_key ?? choice.feature_name ?? choice.name ?? "";
+      const match = key.match(CLASS_FEAT_ASI_OPTION_KEY_RE);
+      if (!match) continue;
+      const slotKey = match[1];
+      const kind = match[2];
+      const slotLevel = Number(slotKey.replace("class_feat_", "")) || 0;
+      const current = grouped.get(slotKey) ?? { slotKey, slotLevel };
+      if (kind === "asi_option") current.asiOptionChoice = choice;
+      if (kind === "ability_plus_2") current.plusTwoChoice = choice;
+      if (kind === "abilities_plus_1") current.plusOneChoice = choice;
+      grouped.set(slotKey, current);
+    }
+    return Array.from(grouped.values())
+      .filter((group) => Boolean(group.asiOptionChoice))
+      .sort((a, b) => a.slotLevel - b.slotLevel);
+  }, [nestedChoices]);
+  const asiChoiceKeys = useMemo(() => {
+    const keys = new Set<string>();
+    for (const group of asiChoiceGroups) {
+      keys.add(`${group.slotKey}_asi_option`);
+      keys.add(`${group.slotKey}_ability_plus_2`);
+      keys.add(`${group.slotKey}_abilities_plus_1`);
+    }
+    return keys;
+  }, [asiChoiceGroups]);
+  const displayNestedChoices = nestedChoices.filter((choice) => {
+    const key = choice.choice_key ?? choice.feature_name ?? choice.name ?? "";
+    return !asiChoiceKeys.has(key);
+  });
 
   return (
     <div className="space-y-6">
@@ -1599,7 +1656,17 @@ function ClassDetail({
           </div>
 
           <div className="space-y-4">
-          {nestedChoices.map((choice, idx) => {
+          {asiChoiceGroups.map((group) => (
+            <ClassFeatAsiPicker
+              key={`${group.slotKey}_asi`}
+              slotKey={group.slotKey}
+              slotLevel={group.slotLevel}
+              asiOptionChoice={group.asiOptionChoice}
+              plusTwoChoice={group.plusTwoChoice}
+              plusOneChoice={group.plusOneChoice}
+            />
+          ))}
+          {displayNestedChoices.map((choice, idx) => {
             const key =
               choice.choice_key ??
               choice.feature_name ??
@@ -1642,5 +1709,143 @@ function ClassDetail({
         </section>
       )}
     </div>
+  );
+}
+
+function ClassFeatAsiPicker({
+  slotKey,
+  slotLevel,
+  asiOptionChoice,
+}: {
+  slotKey: string;
+  slotLevel: number;
+  asiOptionChoice?: PreviewChoice;
+  plusTwoChoice?: PreviewChoice;
+  plusOneChoice?: PreviewChoice;
+}) {
+  const choicesMade = useCharacterStore((s) => s.choicesMade);
+  const setChoice = useCharacterStore((s) => s.setChoice);
+  const clearChoice = useCharacterStore((s) => s.clearChoice);
+
+  const asiOptionKey = asiOptionChoice?.choice_key ?? `${slotKey}_asi_option`;
+  const plusTwoKey = `${slotKey}_ability_plus_2`;
+  const plusOneKey = `${slotKey}_abilities_plus_1`;
+  const selectedOption =
+    typeof choicesMade[asiOptionKey] === "string"
+      ? (choicesMade[asiOptionKey] as string)
+      : "";
+  const selectedPlusTwo =
+    typeof choicesMade[plusTwoKey] === "string"
+      ? (choicesMade[plusTwoKey] as string)
+      : "";
+  const selectedPlusOne = Array.isArray(choicesMade[plusOneKey])
+    ? (choicesMade[plusOneKey] as string[]).filter((v): v is string => typeof v === "string")
+    : [];
+  const remaining =
+    selectedOption === ASI_PLUS_TWO_OPTION
+      ? (selectedPlusTwo ? 0 : 1)
+      : selectedOption === ASI_PLUS_ONE_TWO_OPTION
+        ? Math.max(2 - selectedPlusOne.length, 0)
+        : 2;
+
+  function setAsiOption(option: string) {
+    setChoice(asiOptionKey, option);
+    if (option === ASI_PLUS_TWO_OPTION) {
+      clearChoice(plusOneKey);
+    } else if (option === ASI_PLUS_ONE_TWO_OPTION) {
+      clearChoice(plusTwoKey);
+    }
+  }
+
+  function toggleAbility(ability: string) {
+    if (selectedOption === ASI_PLUS_TWO_OPTION) {
+      setChoice(plusTwoKey, ability);
+      return;
+    }
+    if (selectedOption !== ASI_PLUS_ONE_TWO_OPTION) return;
+
+    const picked = new Set(selectedPlusOne);
+    if (picked.has(ability)) {
+      picked.delete(ability);
+    } else if (picked.size < 2) {
+      picked.add(ability);
+    }
+    setChoice(plusOneKey, Array.from(picked));
+  }
+
+  return (
+    <fieldset className="overflow-hidden rounded-2xl border border-border/80 bg-gradient-to-br from-card via-card to-secondary/30 shadow-sm">
+      <div className="border-b border-border/70 px-5 py-4 sm:px-6">
+        <legend className="font-semibold text-lg text-foreground">
+          Ability Score Improvement (Level {slotLevel})
+        </legend>
+        <p className="mt-1 text-sm text-muted-foreground">
+          {asiOptionChoice?.description || "Choose +2 to one ability or +1 to two different abilities."}{" "}
+          <span className={cn(
+            "font-medium",
+            remaining === 0 ? "text-green-600 dark:text-green-400" : "text-muted-foreground",
+          )}>
+            {remaining} remaining.
+          </span>
+        </p>
+      </div>
+
+      <div className="space-y-4 px-5 py-5 sm:px-6">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          {[ASI_PLUS_TWO_OPTION, ASI_PLUS_ONE_TWO_OPTION].map((option) => {
+            const isSelected = selectedOption === option;
+            return (
+              <button
+                key={option}
+                type="button"
+                onClick={() => setAsiOption(option)}
+                aria-pressed={isSelected}
+                className={cn(
+                  "rounded-lg border px-4 py-3 text-left text-sm transition-all duration-200",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                  isSelected
+                    ? "border-primary bg-muted/60 text-foreground shadow-sm ring-1 ring-primary/20"
+                    : "border-border bg-background/70 hover:border-primary/40 hover:bg-secondary/50",
+                )}
+              >
+                {option}
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+          {ASI_ABILITIES.map((ability) => {
+            const isSelected =
+              selectedOption === ASI_PLUS_TWO_OPTION
+                ? selectedPlusTwo === ability
+                : selectedPlusOne.includes(ability);
+            const disabled =
+              selectedOption === ASI_PLUS_ONE_TWO_OPTION &&
+              !isSelected &&
+              selectedPlusOne.length >= 2;
+            return (
+              <button
+                key={`${slotKey}-${ability}`}
+                type="button"
+                onClick={() => toggleAbility(ability)}
+                disabled={!selectedOption || disabled}
+                aria-pressed={isSelected}
+                className={cn(
+                  "rounded-lg border px-3 py-2 text-sm transition-all duration-200",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                  isSelected
+                    ? "border-primary bg-muted/60 text-foreground shadow-sm ring-1 ring-primary/20"
+                    : "border-border bg-background/75 text-foreground hover:border-primary/40 hover:bg-secondary/50",
+                  (!selectedOption || disabled) && "cursor-not-allowed opacity-50",
+                )}
+              >
+                {ability}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </fieldset>
   );
 }

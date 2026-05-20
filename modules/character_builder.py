@@ -2740,6 +2740,34 @@ class CharacterBuilder:
             if selected_feat:
                 feat_data = self._load_feat_data(selected_feat)
                 if feat_data and "choice_effects" in feat_data:
+                    sub_choices = feat_data.get("choices", [])
+                    sub_choice_def = (
+                        next(
+                            (
+                                item
+                                for item in sub_choices
+                                if isinstance(item, dict)
+                                and item.get("name") == sub_choice_name
+                            ),
+                            None,
+                        )
+                        if isinstance(sub_choices, list)
+                        else None
+                    )
+                    if isinstance(sub_choice_def, dict):
+                        depends_on = sub_choice_def.get("depends_on")
+                        depends_on_value = sub_choice_def.get("depends_on_value")
+                        if depends_on and depends_on_value is not None:
+                            dep_key = f"{parent_key}_{depends_on}"
+                            dep_value = self.character_data["choices_made"].get(dep_key)
+                            if dep_value is not None:
+                                matches = (
+                                    depends_on_value in dep_value
+                                    if isinstance(dep_value, list)
+                                    else dep_value == depends_on_value
+                                )
+                                if not matches:
+                                    return True
                     choice_effect_map = feat_data["choice_effects"].get(sub_choice_name, {})
                     values = (
                         [choice_value] if isinstance(choice_value, str)
@@ -6734,7 +6762,12 @@ class CharacterBuilder:
                     "level": slot_level,
                     "feature_name": sub_key,
                     "choice_key": sub_key,
-                    "depends_on": parent_key,
+                    "depends_on": (
+                        f"{parent_key}_{sub_item['depends_on']}"
+                        if sub_item.get("depends_on")
+                        else parent_key
+                    ),
+                    "depends_on_value": sub_item.get("depends_on_value"),
                     "option_descriptions": {},
                 }
                 choices.append(sub_choice)

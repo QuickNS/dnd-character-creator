@@ -929,6 +929,25 @@ class TestCharacterBuild:
         assert isinstance(data.get("available_subclasses"), list)
         assert len(data["available_subclasses"]) > 0
 
+    def test_preview_class_asi_nested_choices_include_dependency_metadata(self, client):
+        choices = self._basics_for_preview()
+        choices["classes"] = [{"class_name": "Fighter", "level": 4}]
+        choices["class_feat_4"] = "Ability Score Improvement"
+        data = self._preview_class(client, choices, target_class="Fighter", target_level=4)
+
+        nested_by_key = {
+            c.get("choice_key"): c
+            for c in data["nested_choices"]
+            if c.get("choice_key")
+        }
+        assert "class_feat_4_asi_option" in nested_by_key
+        assert "class_feat_4_ability_plus_2" in nested_by_key
+        assert "class_feat_4_abilities_plus_1" in nested_by_key
+        assert nested_by_key["class_feat_4_ability_plus_2"]["depends_on"] == "class_feat_4_asi_option"
+        assert nested_by_key["class_feat_4_ability_plus_2"]["depends_on_value"] == "+2 to one ability"
+        assert nested_by_key["class_feat_4_abilities_plus_1"]["depends_on"] == "class_feat_4_asi_option"
+        assert nested_by_key["class_feat_4_abilities_plus_1"]["depends_on_value"] == "+1 to two abilities"
+
     def test_preview_species_step(self, client):
         r = client.post(
             "/api/v1/character/preview-step",
