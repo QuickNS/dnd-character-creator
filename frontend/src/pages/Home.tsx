@@ -45,12 +45,13 @@ export function Home() {
     ? summarizeChoices(choicesMade)
     : "";
 
-  function applyChoices(choices: Record<string, unknown>) {
+  function applyChoices(choices: Record<string, unknown>, navigateToSheet = false) {
     // Replace persisted store state directly so the import lands atomically
     // without firing per-key cascade invalidation.
     useCharacterStore.setState({ choicesMade: choices, currentStepId: null });
     queryClient.removeQueries({ queryKey: ["character"] });
     queryClient.removeQueries({ queryKey: ["wizard"] });
+    if (navigateToSheet) navigate("/sheet");
   }
 
   function extractChoices(parsed: unknown): Record<string, unknown> {
@@ -476,8 +477,8 @@ export function Home() {
                     key={c.id}
                     role="button"
                     tabIndex={0}
-                    onClick={() => applyChoices(c.choices)}
-                    onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && applyChoices(c.choices)}
+                    onClick={() => applyChoices(c.choices, true)}
+                    onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && applyChoices(c.choices, true)}
                     className="rounded-md border border-dashed border-border bg-secondary/20 px-3 py-2.5 flex items-center gap-3 cursor-pointer hover:border-primary/50 hover:bg-secondary/40 transition-colors focus:outline-none focus:ring-2 focus:ring-primary/50"
                   >
                     <img
