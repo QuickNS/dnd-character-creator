@@ -1,5 +1,6 @@
 import { keepPreviousData, useMutation, useQuery } from "@tanstack/react-query";
-import { Check, Loader2 } from "lucide-react";
+import { Check, ChevronDown, ChevronUp, Loader2 } from "lucide-react";
+import { useState } from "react";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { useCharacterStore } from "@/store/characterStore";
@@ -10,9 +11,12 @@ interface LanguageOptions {
   available_languages?: string[];
   selection_count?: number;
   selected_languages?: string[];
+  all_rare_languages?: string[];
+  selected_rare_languages?: string[];
 }
 
 const LANGUAGES_KEY = "languages";
+const RARE_LANGUAGES_KEY = "rare_languages";
 
 export function LanguagesStep() {
   const choicesMade = useCharacterStore((s) => s.choicesMade);
@@ -20,6 +24,11 @@ export function LanguagesStep() {
   const rawSelectedLanguages = Array.isArray(choicesMade[LANGUAGES_KEY])
     ? (choicesMade[LANGUAGES_KEY] as string[])
     : [];
+  const rawSelectedRareLanguages = Array.isArray(choicesMade[RARE_LANGUAGES_KEY])
+    ? (choicesMade[RARE_LANGUAGES_KEY] as string[])
+    : [];
+
+  const [rareExpanded, setRareExpanded] = useState(false);
 
   const previewQuery = useQuery({
     queryKey: ["character", "preview-step", "languages", choicesMade],
@@ -33,9 +42,13 @@ export function LanguagesStep() {
   const rareBase = data.rare_base_languages ?? [];
   const available = data.available_languages ?? [];
   const selectionCount = data.selection_count ?? 2;
+  const allRare = data.all_rare_languages ?? [];
   const selected = Array.from(
     new Set(rawSelectedLanguages.filter((lang) => available.includes(lang))),
   ).slice(0, selectionCount);
+  const selectedRare = Array.from(
+    new Set(rawSelectedRareLanguages.filter((lang) => allRare.includes(lang))),
+  );
 
   const randomLanguages = useMutation({
     mutationFn: () => api.character.randomLanguages(choicesMade),
@@ -49,6 +62,13 @@ export function LanguagesStep() {
     if (set.has(lang)) set.delete(lang);
     else if (set.size < selectionCount) set.add(lang);
     setChoice(LANGUAGES_KEY, Array.from(set));
+  }
+
+  function toggleRare(lang: string) {
+    const set = new Set(selectedRare);
+    if (set.has(lang)) set.delete(lang);
+    else set.add(lang);
+    setChoice(RARE_LANGUAGES_KEY, Array.from(set));
   }
 
   // Show spinner while fetching and no data yet; keepPreviousData means isLoading
@@ -198,6 +218,91 @@ export function LanguagesStep() {
           </>
         )}
       </section>
+
+      {allRare.length > 0 && (
+        <section>
+          <button
+            type="button"
+            onClick={() => setRareExpanded((v) => !v)}
+            className="flex w-full items-center justify-between gap-2 text-left"
+            aria-expanded={rareExpanded}
+          >
+            <div>
+              <h3 className="font-semibold text-lg">
+                Rare Languages{" "}
+                <span className="text-sm font-normal text-muted-foreground">
+                  (optional)
+                </span>
+              </h3>
+              <p className="mt-0.5 text-sm text-muted-foreground">
+                Uncommon languages not normally offered as standard picks.
+                {selectedRare.length > 0 && (
+                  <span className="ml-1 font-medium text-amber-600 dark:text-amber-400">
+                    {selectedRare.length} selected
+                  </span>
+                )}
+              </p>
+            </div>
+            {rareExpanded ? (
+              <ChevronUp className="h-4 w-4 shrink-0 text-muted-foreground" />
+            ) : (
+              <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+            )}
+          </button>
+
+          {rareExpanded && (
+            <div className="mt-4">
+              {selectedRare.length > 0 && (
+                <div className="mb-3 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setChoice(RARE_LANGUAGES_KEY, [])}
+                    className={cn(
+                      "inline-flex h-9 items-center justify-center rounded-md px-3 text-xs font-medium",
+                      "hover:bg-secondary hover:text-foreground transition-colors",
+                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                    )}
+                  >
+                    Clear rare
+                  </button>
+                </div>
+              )}
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+                {allRare.map((lang) => {
+                  const isSelected = selectedRare.includes(lang);
+                  return (
+                    <button
+                      key={lang}
+                      type="button"
+                      onClick={() => toggleRare(lang)}
+                      aria-pressed={isSelected}
+                      className={cn(
+                        "rounded-md border px-3 py-2 text-sm transition-colors",
+                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                        isSelected
+                          ? "border-amber-500 bg-amber-500/10 ring-2 ring-amber-500/20 text-amber-700 dark:text-amber-400"
+                          : "border-border hover:bg-secondary/40 hover:border-amber-500/40",
+                      )}
+                    >
+                      <span className="flex items-center justify-between gap-2">
+                        <span>{lang}</span>
+                        {isSelected && (
+                          <span
+                            className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-amber-500 bg-background text-amber-600 dark:text-amber-400"
+                            aria-hidden="true"
+                          >
+                            <Check className="h-3 w-3" />
+                          </span>
+                        )}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </section>
+      )}
     </div>
   );
 }

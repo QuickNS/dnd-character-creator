@@ -2491,6 +2491,39 @@ class CharacterBuilder:
                 self.character_data["choices_made"][choice_key] = normalized_choices
             return True
 
+        # Optional rare language picks (do not count against standard selection_count)
+        elif choice_key_lower == "rare_languages":
+            if isinstance(choice_value, list):
+                # Clear previously user-selected rare languages before applying new ones
+                lang_sources = self.character_data["proficiency_sources"]["languages"]
+                old_rare_user_langs = [
+                    l for l, src in lang_sources.items() if src == "rare_user_choice"
+                ]
+                for lang in old_rare_user_langs:
+                    self.character_data["proficiencies"]["languages"] = [
+                        l for l in self.character_data["proficiencies"]["languages"] if l != lang
+                    ]
+                    lang_sources.pop(lang, None)
+
+                language_options = self.get_language_options()
+                available_rare = set(language_options["all_rare_languages"])
+                normalized_rare = []
+                for lang in choice_value:
+                    if (
+                        isinstance(lang, str)
+                        and lang in available_rare
+                        and lang not in normalized_rare
+                    ):
+                        normalized_rare.append(lang)
+
+                # Add new rare language selections
+                for lang in normalized_rare:
+                    if lang not in self.character_data["proficiencies"]["languages"]:
+                        self.character_data["proficiencies"]["languages"].append(lang)
+                        self.character_data["proficiency_sources"]["languages"][lang] = "rare_user_choice"
+                self.character_data["choices_made"]["rare_languages"] = normalized_rare
+            return True
+
         # Skills
         elif choice_key_lower in ["skill_choices", "skills"]:
             if isinstance(choice_value, list):
@@ -5935,6 +5968,8 @@ class CharacterBuilder:
                 - available_languages: languages available for the 2-language standard selection
                 - selection_count: required number of selected languages
                 - selected_languages: current user-selected standard languages
+                - all_rare_languages: full rare language list minus already-known rare languages
+                - selected_rare_languages: current user-selected optional rare languages
         """
         self._ensure_base_language()
         language_sources = self.character_data["proficiency_sources"]["languages"]
@@ -5942,13 +5977,16 @@ class CharacterBuilder:
         selected_languages = self.character_data["choices_made"].get("languages", [])
         if not isinstance(selected_languages, list):
             selected_languages = []
+        selected_rare_languages = self.character_data["choices_made"].get("rare_languages", [])
+        if not isinstance(selected_rare_languages, list):
+            selected_rare_languages = []
 
         rare_set = set(self.RARE_LANGUAGE_OPTIONS)
 
         base_languages = {self.BASE_LANGUAGE}
         rare_base_languages = set()
         for lang in known_languages:
-            if language_sources.get(lang) != "user_choice":
+            if language_sources.get(lang) != "user_choice" and language_sources.get(lang) != "rare_user_choice":
                 if lang in rare_set:
                     rare_base_languages.add(lang)
                 else:
@@ -5958,6 +5996,10 @@ class CharacterBuilder:
             lang for lang in self.STANDARD_LANGUAGE_OPTIONS if lang not in base_languages
         ]
 
+        # Exclude feature-granted rare languages from the selectable list
+        # (user-selected rare languages remain in the list so the UI can toggle them)
+        all_rare_languages = sorted(rare_set - rare_base_languages)
+
         return {
             "base_languages": sorted(base_languages),
             "rare_base_languages": sorted(rare_base_languages),
@@ -5965,6 +6007,10 @@ class CharacterBuilder:
             "selection_count": self.REQUIRED_LANGUAGE_SELECTION_COUNT,
             "selected_languages": [
                 lang for lang in selected_languages if lang in self.STANDARD_LANGUAGE_OPTIONS
+            ],
+            "all_rare_languages": all_rare_languages,
+            "selected_rare_languages": [
+                lang for lang in selected_rare_languages if lang in rare_set
             ],
         }
 
