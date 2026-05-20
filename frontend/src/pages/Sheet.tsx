@@ -832,11 +832,12 @@ function Spells({ c }: { c: Char }) {
   const saveDC = num(stats.spell_save_dc);
   const attackBonus = num(stats.spell_attack_bonus);
   const castingMod = num(stats.spellcasting_modifier);
+  const cantripsAlwaysPrepared = num(stats.cantrips_always_prepared) ?? 0;
+  const cantripsToChoose = num(stats.cantrips_to_prepare);
   const cantripsPrepared =
     num(stats.cantrips_always_prepared) !== undefined ||
-    num(stats.cantrips_to_prepare) !== undefined
-      ? (num(stats.cantrips_always_prepared) ?? 0) +
-        (num(stats.cantrips_to_prepare) ?? 0)
+    cantripsToChoose !== undefined
+      ? cantripsAlwaysPrepared + (cantripsToChoose ?? 0)
       : undefined;
   const maxCantrips = num(stats.max_cantrips_prepared);
   const spellsPreparedTotal = num(stats.spells_prepared);
@@ -876,18 +877,18 @@ function Spells({ c }: { c: Char }) {
                   value={effectiveCasterLevel}
                 />
               )}
-              {maxCantrips !== undefined && (
-                <Stat
-                  label="Cantrips Known"
-                  value={`${cantripsPrepared ?? 0} / ${maxCantrips}`}
-                />
-              )}
+              {maxCantrips !== undefined && (() => {
+                const cantripsDisplay = cantripsAlwaysPrepared > 0
+                  ? `${cantripsToChoose ?? 0} / ${maxCantrips} (+${cantripsAlwaysPrepared})`
+                  : `${cantripsPrepared ?? 0} / ${maxCantrips}`;
+                return <Stat label="Cantrips Known" value={cantripsDisplay} />;
+              })()}
               {maxSpells !== undefined && (() => {
                 const alwaysPreparedCount = num(stats.spells_always_prepared) ?? 0;
-                const userPrepared = (spellsPrepared ?? 0) - alwaysPreparedCount;
+                const userPrepared = (spellsPreparedTotal ?? 0) - alwaysPreparedCount;
                 const preparedDisplay = alwaysPreparedCount > 0
                   ? `${userPrepared} / ${maxSpells} (+${alwaysPreparedCount})`
-                  : `${spellsPrepared ?? 0} / ${maxSpells}`;
+                  : `${spellsPreparedTotal ?? 0} / ${maxSpells}`;
                 return (
                   <Stat
                     label="Prepared Spells"
