@@ -409,7 +409,13 @@ export const SAMPLE_CHARACTERS: SampleCharacter[] = [
     flavor: "By the time you hear the arrow, she's already gone.",
     choices: {
       character_name: "Senna Nightbough",
-      classes: [{ class_name: "Ranger", level: 3, subclass: "Gloom Stalker" }],
+      classes: [
+        {
+          class_name: "Ranger",
+          level: 3,
+          subclass: "Gloom Stalker",
+        },
+      ],
       class: "Ranger",
       level: 3,
       subclass: "Gloom Stalker",
@@ -425,7 +431,10 @@ export const SAMPLE_CHARACTERS: SampleCharacter[] = [
         Wisdom: 14,
         Charisma: 10,
       },
-      background_bonuses: { Dexterity: 2, Wisdom: 1 },
+      background_bonuses: {
+        Dexterity: 2,
+        Wisdom: 1,
+      },
       skill_choices: ["Perception", "Stealth", "Survival"],
       fighting_style: "Archery",
       spell_selections: {
@@ -440,11 +449,16 @@ export const SAMPLE_CHARACTERS: SampleCharacter[] = [
         background_cantrips: [],
         background_spells: [],
       },
-      languages: ["Sylvan", "Goblin"],
+      languages: ["Halfling", "Dwarvish"],
       equipment_selections: {
         class_equipment: "option_a",
-        background_equipment: "option_a",
+        background_equipment: "option_b",
       },
+      deft_explorer_expertise: "Stealth",
+      deft_explorer_languages: ["Elvish", "Draconic"],
+      background_skill_replacement: ["Nature", "Animal Handling"],
+      "Elven Lineage": "Wisdom",
+      "Keen Senses": "Insight",
     },
   },
   {

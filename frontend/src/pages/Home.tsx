@@ -54,7 +54,7 @@ export function Home() {
     useCharacterStore.setState({ choicesMade: choices, currentStepId: null });
     queryClient.removeQueries({ queryKey: ["character"] });
     queryClient.removeQueries({ queryKey: ["wizard"] });
-    if (navigateToSheet) navigate("/sheet");
+    if (navigateToSheet) navigate("/wizard/complete");
   }
 
   function extractChoices(parsed: unknown): Record<string, unknown> {
