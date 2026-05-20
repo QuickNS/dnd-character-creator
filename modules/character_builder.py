@@ -6293,12 +6293,13 @@ class CharacterBuilder:
                 if isinstance(choices_data, list):
                     # Multiple choices
                     for idx, choice_item in enumerate(choices_data):
-                        choice_name_suffix = choice_item.get(
-                            "name", f"Choice {idx + 1}"
+                        raw_name = choice_item.get("name", f"choice_{idx}")
+                        choice_name_suffix = (
+                            choice_item.get("display_name")
+                            or choice_item.get("label")
+                            or raw_name.replace("_", " ").title()
                         )
-                        feature_key = (
-                            f"{feature_name}_{choice_item.get('name', f'choice_{idx}')}"
-                        )
+                        feature_key = f"{feature_name}_{raw_name}"
 
                         # For subclass features, prefix with 'subclass_'
                         if subclass_data:
@@ -6315,7 +6316,7 @@ class CharacterBuilder:
                             "required": not choice_item.get("optional", False),
                             "level": level,
                             "feature_name": feature_key,
-                            "choice_key": choice_item.get("name", feature_key),
+                            "choice_key": raw_name,
                             "option_descriptions": get_option_descriptions(
                                 feature_data, choice_item, class_data, subclass_data
                             ),
