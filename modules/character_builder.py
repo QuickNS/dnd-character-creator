@@ -95,6 +95,18 @@ class CharacterBuilder:
         "Halfling",
         "Orc",
     ]
+    RARE_LANGUAGE_OPTIONS = [
+        "Abyssal",
+        "Celestial",
+        "Deep Speech",
+        "Druidic",
+        "Giant Owl",
+        "Gnoll",
+        "Primordial",
+        "Sylvan",
+        "Thieves' Cant",
+        "Undercommon",
+    ]
     REQUIRED_LANGUAGE_SELECTION_COUNT = 2
 
     def __init__(self, data_dir: str = None):
@@ -630,6 +642,10 @@ class CharacterBuilder:
         if isinstance(trait_data, dict) and "choices" in trait_data:
             # Look up the choice from choices_made
             choice_config = trait_data["choices"]
+            # Normalize: when choices is a list, use the first item for display
+            # (multi-choice features show each choice by its own choice_key)
+            if isinstance(choice_config, list):
+                choice_config = choice_config[0] if choice_config else {}
             choice_key = choice_config.get("name", trait_name.lower().replace(" ", "_"))
 
             # Check various possible choice keys (including species_trait_ prefix)
@@ -1196,7 +1212,18 @@ class CharacterBuilder:
             self.character_data["monk_dexterous_attacks"] = True
 
         elif effect_type == "grant_language":
-            languages = effect.get("languages", [])
+            # Resolve languages from a choice key if specified, otherwise use direct list
+            if "from_choice" in effect:
+                choice_key = effect["from_choice"]
+                chosen = self.character_data.get("choices_made", {}).get(choice_key)
+                if isinstance(chosen, list):
+                    languages = chosen
+                elif isinstance(chosen, str) and chosen:
+                    languages = [chosen]
+                else:
+                    languages = []
+            else:
+                languages = effect.get("languages", [])
             for lang in languages:
                 if lang not in self.character_data["proficiencies"]["languages"]:
                     self.character_data["proficiencies"]["languages"].append(lang)
@@ -3752,6 +3779,11 @@ class CharacterBuilder:
                             and "from_choice" in effect
                         ):
                             self._apply_effect(effect, feature_name, "class")
+                        elif (
+                            effect.get("type") == "grant_language"
+                            and "from_choice" in effect
+                        ):
+                            self._apply_effect(effect, feature_name, "class")
 
     # ==================== Calculation Methods ====================
 
@@ -5889,7 +5921,8 @@ class CharacterBuilder:
 
         Returns:
             dict with keys:
-                - base_languages: languages already known excluding user-picked standard selections
+                - base_languages: standard languages already known (excl. user-picked standard)
+                - rare_base_languages: rare languages already known via class/species/feature grants
                 - available_languages: languages available for the 2-language standard selection
                 - selection_count: required number of selected languages
                 - selected_languages: current user-selected standard languages
@@ -5901,10 +5934,16 @@ class CharacterBuilder:
         if not isinstance(selected_languages, list):
             selected_languages = []
 
+        rare_set = set(self.RARE_LANGUAGE_OPTIONS)
+
         base_languages = {self.BASE_LANGUAGE}
+        rare_base_languages = set()
         for lang in known_languages:
             if language_sources.get(lang) != "user_choice":
-                base_languages.add(lang)
+                if lang in rare_set:
+                    rare_base_languages.add(lang)
+                else:
+                    base_languages.add(lang)
 
         available_languages = [
             lang for lang in self.STANDARD_LANGUAGE_OPTIONS if lang not in base_languages
@@ -5912,6 +5951,7 @@ class CharacterBuilder:
 
         return {
             "base_languages": sorted(base_languages),
+            "rare_base_languages": sorted(rare_base_languages),
             "available_languages": available_languages,
             "selection_count": self.REQUIRED_LANGUAGE_SELECTION_COUNT,
             "selected_languages": [
