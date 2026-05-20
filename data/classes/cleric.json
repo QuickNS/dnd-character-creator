@@ -489,7 +489,17 @@
       "Cleric Subclass": "Choose your Divine Domain subclass."
     },
     "4": {
-      "Ability Score Improvement": "Increase one ability score by 2, or increase two ability scores by 1."
+      "Ability Score Improvement": {
+        "description": "Increase one ability score by 2, or increase two ability scores by 1.",
+        "choices": {
+          "name": "class_feat_4",
+          "source": {
+            "type": "external",
+            "file": "general_feats.json",
+            "list": "general_feats"
+          }
+        }
+      }
     },
     "5": {
       "Sear Undead": "When you Turn Undead, affected undead also take 2d8 + Cleric level Radiant damage."
@@ -513,7 +523,17 @@
       }
     },
     "8": {
-      "Ability Score Improvement": "Increase one ability score by 2, or increase two ability scores by 1."
+      "Ability Score Improvement": {
+        "description": "Increase one ability score by 2, or increase two ability scores by 1.",
+        "choices": {
+          "name": "class_feat_8",
+          "source": {
+            "type": "external",
+            "file": "general_feats.json",
+            "list": "general_feats"
+          }
+        }
+      }
     },
     "9": {},
     "10": {
@@ -521,7 +541,17 @@
     },
     "11": {},
     "12": {
-      "Ability Score Improvement": "Increase one ability score by 2, or increase two ability scores by 1."
+      "Ability Score Improvement": {
+        "description": "Increase one ability score by 2, or increase two ability scores by 1.",
+        "choices": {
+          "name": "class_feat_12",
+          "source": {
+            "type": "external",
+            "file": "general_feats.json",
+            "list": "general_feats"
+          }
+        }
+      }
     },
     "13": {},
     "14": {
@@ -529,7 +559,17 @@
     },
     "15": {},
     "16": {
-      "Ability Score Improvement": "Increase one ability score by 2, or increase two ability scores by 1."
+      "Ability Score Improvement": {
+        "description": "Increase one ability score by 2, or increase two ability scores by 1.",
+        "choices": {
+          "name": "class_feat_16",
+          "source": {
+            "type": "external",
+            "file": "general_feats.json",
+            "list": "general_feats"
+          }
+        }
+      }
     },
     "17": {
       "Subclass Feature": "Gain a feature from your Divine Domain subclass."

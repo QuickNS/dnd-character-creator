@@ -139,10 +139,15 @@
           "type": "select_multiple",
           "count": 2,
           "name": "rogue_expertise_skills_1",
-          "source": {"type": "proficient_skills"}
+          "source": {
+            "type": "proficient_skills"
+          }
         },
         "effects": [
-          {"type": "grant_skill_expertise", "from_choice": "rogue_expertise_skills_1"}
+          {
+            "type": "grant_skill_expertise",
+            "from_choice": "rogue_expertise_skills_1"
+          }
         ]
       },
       "Sneak Attack": "Once per turn, deal extra 1d6 damage with Finesse/Ranged weapon if you have Advantage or ally within 5 feet of target. The extra damage's type is the same as the weapon's type.",
@@ -181,7 +186,17 @@
       "Steady Aim": "As a Bonus Action, give yourself Advantage on your next attack roll on the current turn. You can use this only if you haven't moved, and your Speed becomes 0 until the end of the turn."
     },
     "4": {
-      "Ability Score Improvement": "Gain Ability Score Improvement feat or another feat of your choice."
+      "Ability Score Improvement": {
+        "description": "Gain Ability Score Improvement feat or another feat of your choice.",
+        "choices": {
+          "name": "class_feat_4",
+          "source": {
+            "type": "external",
+            "file": "general_feats.json",
+            "list": "general_feats"
+          }
+        }
+      }
     },
     "5": {
       "Cunning Strike": "When you deal Sneak Attack damage, you can add one Cunning Strike effect by foregoing Sneak Attack dice. DC equals 8 + Dexterity modifier + Proficiency Bonus. Options: Poison (1d6, Con save or Poisoned 1 min, requires Poisoner's Kit), Trip (1d6, Dex save or Prone if Large or smaller), Withdraw (1d6, move half speed without provoking).",
@@ -194,10 +209,15 @@
           "type": "select_multiple",
           "count": 2,
           "name": "rogue_expertise_skills_6",
-          "source": {"type": "proficient_skills"}
+          "source": {
+            "type": "proficient_skills"
+          }
         },
         "effects": [
-          {"type": "grant_skill_expertise", "from_choice": "rogue_expertise_skills_6"}
+          {
+            "type": "grant_skill_expertise",
+            "from_choice": "rogue_expertise_skills_6"
+          }
         ]
       }
     },
@@ -206,19 +226,49 @@
       "Reliable Talent": "Whenever you make an ability check that uses one of your skill or tool proficiencies, you can treat a d20 roll of 9 or lower as a 10."
     },
     "8": {
-      "Ability Score Improvement": "Gain Ability Score Improvement feat or another feat of your choice."
+      "Ability Score Improvement": {
+        "description": "Gain Ability Score Improvement feat or another feat of your choice.",
+        "choices": {
+          "name": "class_feat_8",
+          "source": {
+            "type": "external",
+            "file": "general_feats.json",
+            "list": "general_feats"
+          }
+        }
+      }
     },
     "9": {
       "Subclass Feature": "Gain feature from your archetype."
     },
     "10": {
-      "Ability Score Improvement": "Gain Ability Score Improvement feat or another feat of your choice."
+      "Ability Score Improvement": {
+        "description": "Gain Ability Score Improvement feat or another feat of your choice.",
+        "choices": {
+          "name": "class_feat_10",
+          "source": {
+            "type": "external",
+            "file": "general_feats.json",
+            "list": "general_feats"
+          }
+        }
+      }
     },
     "11": {
       "Improved Cunning Strike": "You can use up to two Cunning Strike effects when you deal Sneak Attack damage, paying the die cost for each effect."
     },
     "12": {
-      "Ability Score Improvement": "Gain Ability Score Improvement feat or another feat of your choice."
+      "Ability Score Improvement": {
+        "description": "Gain Ability Score Improvement feat or another feat of your choice.",
+        "choices": {
+          "name": "class_feat_12",
+          "source": {
+            "type": "external",
+            "file": "general_feats.json",
+            "list": "general_feats"
+          }
+        }
+      }
     },
     "13": {
       "Subclass Feature": "Gain feature from your archetype."
@@ -241,7 +291,17 @@
       }
     },
     "16": {
-      "Ability Score Improvement": "Gain Ability Score Improvement feat or another feat of your choice."
+      "Ability Score Improvement": {
+        "description": "Gain Ability Score Improvement feat or another feat of your choice.",
+        "choices": {
+          "name": "class_feat_16",
+          "source": {
+            "type": "external",
+            "file": "general_feats.json",
+            "list": "general_feats"
+          }
+        }
+      }
     },
     "17": {
       "Subclass Feature": "Gain capstone feature from your archetype."

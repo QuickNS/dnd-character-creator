@@ -153,7 +153,17 @@
       "Monk Subclass": "Choose a Monk subclass: Warrior of Mercy, Warrior of Shadow, Warrior of the Elements, or Warrior of the Open Hand."
     },
     "4": {
-      "Ability Score Improvement": "Increase one ability score by 2, or increase two ability scores by 1, to a maximum of 20. Alternatively, choose a feat.",
+      "Ability Score Improvement": {
+        "description": "Increase one ability score by 2, or increase two ability scores by 1, to a maximum of 20. Alternatively, choose a feat.",
+        "choices": {
+          "name": "class_feat_4",
+          "source": {
+            "type": "external",
+            "file": "general_feats.json",
+            "list": "general_feats"
+          }
+        }
+      },
       "Slow Fall": "You can take a Reaction when you fall to reduce any damage you take from the fall by an amount equal to five times your Monk level."
     },
     "5": {
@@ -177,7 +187,17 @@
       "Evasion": "When you are subjected to an effect that allows you to make a Dexterity saving throw to take only half damage, you instead take no damage if you succeed on the saving throw and only half damage if you fail. You don't benefit from this feature if you have the Incapacitated condition."
     },
     "8": {
-      "Ability Score Improvement": "Increase one ability score by 2, or increase two ability scores by 1, to a maximum of 20. Alternatively, choose a feat."
+      "Ability Score Improvement": {
+        "description": "Increase one ability score by 2, or increase two ability scores by 1, to a maximum of 20. Alternatively, choose a feat.",
+        "choices": {
+          "name": "class_feat_8",
+          "source": {
+            "type": "external",
+            "file": "general_feats.json",
+            "list": "general_feats"
+          }
+        }
+      }
     },
     "9": {
       "Acrobatic Movement": "While you aren't wearing armor or wielding a Shield, you gain the ability to move along vertical surfaces and across liquids on your turn without falling during the movement."
@@ -199,7 +219,17 @@
       }
     },
     "12": {
-      "Ability Score Improvement": "Increase one ability score by 2, or increase two ability scores by 1, to a maximum of 20. Alternatively, choose a feat."
+      "Ability Score Improvement": {
+        "description": "Increase one ability score by 2, or increase two ability scores by 1, to a maximum of 20. Alternatively, choose a feat.",
+        "choices": {
+          "name": "class_feat_12",
+          "source": {
+            "type": "external",
+            "file": "general_feats.json",
+            "list": "general_feats"
+          }
+        }
+      }
     },
     "13": {
       "Deflect Energy": "You can now use your Deflect Attacks feature against attacks that deal any damage type, not just Bludgeoning, Piercing, or Slashing."
@@ -236,7 +266,17 @@
       "Perfect Focus": "When you roll Initiative and don't use Uncanny Metabolism, you regain expended Focus Points until you have 4 if you have 3 or fewer."
     },
     "16": {
-      "Ability Score Improvement": "Increase one ability score by 2, or increase two ability scores by 1, to a maximum of 20. Alternatively, choose a feat."
+      "Ability Score Improvement": {
+        "description": "Increase one ability score by 2, or increase two ability scores by 1, to a maximum of 20. Alternatively, choose a feat.",
+        "choices": {
+          "name": "class_feat_16",
+          "source": {
+            "type": "external",
+            "file": "general_feats.json",
+            "list": "general_feats"
+          }
+        }
+      }
     },
     "18": {
       "Superior Defense": "At the start of your turn, you can expend 3 Focus Points to bolster yourself against harm for 1 minute or until you have the Incapacitated condition. During that time, you have Resistance to all damage except Force damage.",

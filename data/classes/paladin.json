@@ -442,7 +442,17 @@
       "Paladin Subclass": "You gain a Paladin Subclass of your choice: Oath of Devotion, Oath of Glory, Oath of the Ancients, or Oath of Vengeance."
     },
     "4": {
-      "Ability Score Improvement": "You gain the Ability Score Improvement feat or another feat of your choice."
+      "Ability Score Improvement": {
+        "description": "You gain the Ability Score Improvement feat or another feat of your choice.",
+        "choices": {
+          "name": "class_feat_4",
+          "source": {
+            "type": "external",
+            "file": "general_feats.json",
+            "list": "general_feats"
+          }
+        }
+      }
     },
     "5": {
       "Extra Attack": "You can attack twice instead of once whenever you take the Attack action on your turn.",
@@ -464,7 +474,17 @@
       "Subclass Feature": "You gain a feature from your sacred oath."
     },
     "8": {
-      "Ability Score Improvement": "You gain the Ability Score Improvement feat or another feat of your choice."
+      "Ability Score Improvement": {
+        "description": "You gain the Ability Score Improvement feat or another feat of your choice.",
+        "choices": {
+          "name": "class_feat_8",
+          "source": {
+            "type": "external",
+            "file": "general_feats.json",
+            "list": "general_feats"
+          }
+        }
+      }
     },
     "9": {
       "Abjure Foes": "As a Magic action, expend one use of Channel Divinity. Target a number of creatures equal to your Charisma modifier (minimum of one) within 60 feet. Each must succeed on a Wisdom saving throw or have the Frightened condition for 1 minute or until it takes any damage. While Frightened this way, can only do one of: move, take an action, or take a Bonus Action."
@@ -476,7 +496,17 @@
       "Radiant Strikes": "Your strikes carry supernatural power. When you hit a target with an attack roll using a Melee weapon or an Unarmed Strike, the target takes an extra 1d8 Radiant damage."
     },
     "12": {
-      "Ability Score Improvement": "You gain the Ability Score Improvement feat or another feat of your choice."
+      "Ability Score Improvement": {
+        "description": "You gain the Ability Score Improvement feat or another feat of your choice.",
+        "choices": {
+          "name": "class_feat_12",
+          "source": {
+            "type": "external",
+            "file": "general_feats.json",
+            "list": "general_feats"
+          }
+        }
+      }
     },
     "14": {
       "Restoring Touch": "When you use Lay On Hands on a creature, you can also remove one or more of the following conditions: Blinded, Charmed, Deafened, Frightened, Paralyzed, or Stunned. You must expend 5 Hit Points from the healing pool for each condition you remove; those points don't also restore Hit Points."
@@ -485,7 +515,17 @@
       "Subclass Feature": "You gain a feature from your sacred oath."
     },
     "16": {
-      "Ability Score Improvement": "You gain the Ability Score Improvement feat or another feat of your choice."
+      "Ability Score Improvement": {
+        "description": "You gain the Ability Score Improvement feat or another feat of your choice.",
+        "choices": {
+          "name": "class_feat_16",
+          "source": {
+            "type": "external",
+            "file": "general_feats.json",
+            "list": "general_feats"
+          }
+        }
+      }
     },
     "18": {
       "Aura Expansion": "Your Aura of Protection is now a 30-foot Emanation."

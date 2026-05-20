@@ -574,7 +574,17 @@
       "Ranger Subclass": "You gain a Ranger Subclass of your choice. The Beast Master, Fey Wanderer, Gloom Stalker, and Hunter subclasses are detailed after this class's description."
     },
     "4": {
-      "Ability Score Improvement": "You gain the Ability Score Improvement feat or another feat of your choice for which you qualify. You gain this feature again at Ranger levels 8, 12, and 16."
+      "Ability Score Improvement": {
+        "description": "You gain the Ability Score Improvement feat or another feat of your choice for which you qualify. You gain this feature again at Ranger levels 8, 12, and 16.",
+        "choices": {
+          "name": "class_feat_4",
+          "source": {
+            "type": "external",
+            "file": "general_feats.json",
+            "list": "general_feats"
+          }
+        }
+      }
     },
     "5": {
       "Extra Attack": "You can attack twice instead of once whenever you take the Attack action on your turn."
@@ -594,7 +604,17 @@
       "Subclass Feature": "You gain a feature from your Ranger subclass."
     },
     "8": {
-      "Ability Score Improvement": "You gain the Ability Score Improvement feat or another feat of your choice for which you qualify."
+      "Ability Score Improvement": {
+        "description": "You gain the Ability Score Improvement feat or another feat of your choice for which you qualify.",
+        "choices": {
+          "name": "class_feat_8",
+          "source": {
+            "type": "external",
+            "file": "general_feats.json",
+            "list": "general_feats"
+          }
+        }
+      }
     },
     "9": {
       "Expertise": {
@@ -623,7 +643,17 @@
       "Subclass Feature": "You gain a feature from your Ranger subclass."
     },
     "12": {
-      "Ability Score Improvement": "You gain the Ability Score Improvement feat or another feat of your choice for which you qualify."
+      "Ability Score Improvement": {
+        "description": "You gain the Ability Score Improvement feat or another feat of your choice for which you qualify.",
+        "choices": {
+          "name": "class_feat_12",
+          "source": {
+            "type": "external",
+            "file": "general_feats.json",
+            "list": "general_feats"
+          }
+        }
+      }
     },
     "13": {
       "Relentless Hunter": "Taking damage can't break your Concentration on Hunter's Mark."
@@ -635,7 +665,17 @@
       "Subclass Feature": "You gain a feature from your Ranger subclass."
     },
     "16": {
-      "Ability Score Improvement": "You gain the Ability Score Improvement feat or another feat of your choice for which you qualify."
+      "Ability Score Improvement": {
+        "description": "You gain the Ability Score Improvement feat or another feat of your choice for which you qualify.",
+        "choices": {
+          "name": "class_feat_16",
+          "source": {
+            "type": "external",
+            "file": "general_feats.json",
+            "list": "general_feats"
+          }
+        }
+      }
     },
     "17": {
       "Precise Hunter": "You have Advantage on attack rolls against the creature currently marked by your Hunter's Mark."

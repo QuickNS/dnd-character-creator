@@ -23,6 +23,7 @@ Usage:
 """
 
 import json
+import re
 import random
 from pathlib import Path
 from typing import Dict, List, Any, Optional, Tuple
@@ -53,6 +54,13 @@ def _humanize(snake: str) -> str:
         (w[0].upper() + w[1:]) if w and w[0].isalpha() else w
         for w in snake.split("_")
     )
+
+
+# Regex patterns for class-level feat slot keys (e.g. "class_feat_4") and
+# their sub-choice keys (e.g. "class_feat_4_ability_plus_2").  Defined once
+# here so all callers share the same compiled pattern.
+_CLASS_FEAT_SLOT_RE = re.compile(r"^class_feat_\d+$")
+_CLASS_FEAT_SUB_RE = re.compile(r"^(class_feat_\d+)_(.+)$")
 
 
 class CharacterBuilder:
@@ -351,6 +359,16 @@ class CharacterBuilder:
                 return general_data["general_feats"][feat_name]
         
         return None
+
+    @staticmethod
+    def _class_feat_slot_level(slot_key: str) -> int:
+        """Extract the numeric level from a class-level feat slot key.
+
+        For example, ``"class_feat_4"`` → ``4``.  Returns ``0`` if the key
+        does not match the expected pattern.
+        """
+        m = re.search(r"class_feat_(\d+)", slot_key)
+        return int(m.group(1)) if m else 0
 
     # ==================== Species/Lineage Methods ====================
 
@@ -2713,6 +2731,26 @@ class CharacterBuilder:
         elif choice_key_lower == "equipment_selections":
             return self._process_equipment_selections(choice_value)
 
+        # Class-level feat sub-choices: keys like "class_feat_4_ability_plus_2"
+        # These apply choice_effects from the previously-selected class-level feat.
+        elif (m := _CLASS_FEAT_SUB_RE.match(choice_key)):
+            parent_key = m.group(1)      # e.g. "class_feat_4"
+            sub_choice_name = m.group(2)  # e.g. "ability_plus_2"
+            selected_feat = self.character_data["choices_made"].get(parent_key)
+            if selected_feat:
+                feat_data = self._load_feat_data(selected_feat)
+                if feat_data and "choice_effects" in feat_data:
+                    choice_effect_map = feat_data["choice_effects"].get(sub_choice_name, {})
+                    values = (
+                        [choice_value] if isinstance(choice_value, str)
+                        else (choice_value if isinstance(choice_value, list) else [])
+                    )
+                    for val in values:
+                        if val in choice_effect_map:
+                            for effect in choice_effect_map[val]:
+                                self._apply_effect(effect, selected_feat, "feat")
+            return True
+
         # Generic choice - might be class feature choice
         # Try to find and apply effects from class/subclass data
         else:
@@ -2956,6 +2994,74 @@ class CharacterBuilder:
                                     print(
                                         f"WARNING: Failed to load external file {external_file}: {e}"
                                     )
+
+                # NEW: Match by choices.name for structured choice features
+                # (e.g. ASI stored as {"description": ..., "choices": {"name": "class_feat_4", ...}})
+                elif (
+                    isinstance(feature_data, dict)
+                    and isinstance(feature_data.get("choices"), dict)
+                    and feature_data["choices"].get("name") == choice_key
+                ):
+                    choices_config = feature_data["choices"]
+                    source_config = choices_config.get("source", {})
+
+                    if source_config.get("type") == "external" and isinstance(choice_value, str):
+                        # Use _load_feat_data to generically load from any feat file
+                        # (general_feats.json or origin_feats.json).
+                        feat_data_loaded = self._load_feat_data(choice_value)
+                        if feat_data_loaded is not None:
+                            feat_name = choice_value
+
+                            # Extract slot level from choice_key (e.g. "class_feat_4" -> 4)
+                            slot_level = self._class_feat_slot_level(choice_key)
+
+                            # Clear any previously picked feat for this slot
+                            old_feat_entry = next(
+                                (f for f in self.character_data["features"]["feats"]
+                                 if f.get("slot") == choice_key),
+                                None,
+                            )
+                            if old_feat_entry:
+                                old_feat_name = old_feat_entry["name"]
+                                self.character_data["features"]["feats"] = [
+                                    f for f in self.character_data["features"]["feats"]
+                                    if f.get("slot") != choice_key
+                                ]
+                                # Revert applied effects from old feat in this slot
+                                self.applied_effects = [
+                                    e for e in self.applied_effects
+                                    if not (
+                                        e.get("source_type") == "feat"
+                                        and e.get("source") == old_feat_name
+                                        and e.get("slot") == choice_key
+                                    )
+                                ]
+
+                            # Build feat description
+                            description = feat_data_loaded.get("description", "")
+                            benefits = feat_data_loaded.get("benefits", [])
+                            if benefits:
+                                description += self._format_benefits(benefits)
+
+                            # Add feat to features["feats"] (tagged with slot)
+                            already_in_slot = any(
+                                f.get("slot") == choice_key
+                                for f in self.character_data["features"]["feats"]
+                            )
+                            if not already_in_slot:
+                                self.character_data["features"]["feats"].append({
+                                    "name": feat_name,
+                                    "description": description,
+                                    "source": "class",
+                                    "level": slot_level,
+                                    "slot": choice_key,
+                                })
+
+                            # Apply any direct effects from the feat
+                            for feat_effect in feat_data_loaded.get("effects", []):
+                                self._apply_effect(feat_effect, feat_name, "feat")
+
+                            return
 
         # Fallback: Search for the choice in class data structures (internal references)
         # Common patterns: 'divine_orders', 'fighting_styles', etc.
@@ -3770,9 +3876,18 @@ class CharacterBuilder:
 
         # Second pass: apply remaining choices (class-specific features, etc.)
         # Skip species_skill_replacements — it needs a late pass after trait effects.
-        for key, value in working_choices.items():
-            if key not in order and key not in ("species_skill_replacements", "classes"):
-                self.apply_choice(key, value)
+        # Sort so that class_feat_N parent keys are processed before their sub-choices
+        # (class_feat_N_<sub>) so the sub-choice handler can look up the parent.
+        remaining_keys = [
+            k for k in working_choices
+            if k not in order and k not in ("species_skill_replacements", "classes")
+        ]
+        # Sort so parent feat-slot keys (class_feat_N, key=0) come before their
+        # sub-choice keys (class_feat_N_*, key=1).  Python's sort is stable and
+        # ascending, so 0 < 1 means parents are processed first.
+        remaining_keys.sort(key=lambda k: (1 if _CLASS_FEAT_SUB_RE.match(k) else 0))
+        for key in remaining_keys:
+            self.apply_choice(key, working_choices[key])
 
         # Apply explicit classes payload after single-class setup so we can
         # include additional class tracks without breaking existing flows.
@@ -6313,6 +6428,9 @@ class CharacterBuilder:
             choices, choices_made, class_data, character, class_name
         )
 
+        # 4) Inject sub-choices for any already-selected class-level feats
+        self._add_class_level_feat_sub_choices(choices, choices_made, character)
+
         return {
             "features_by_level": all_features_by_level,
             "choices": choices,
@@ -6560,6 +6678,66 @@ class CharacterBuilder:
                                         ),
                                     }
                                     choices.append(choice)
+
+    def _add_class_level_feat_sub_choices(
+        self,
+        choices: List[Dict],
+        choices_made: Dict[str, Any],
+        character: Dict,
+    ):
+        """
+        After a class-level feat slot (e.g. class_feat_4) is selected, inject
+        the feat's own sub-choices (e.g. which ability to boost for ASI) into
+        the choices list so the UI can present them.
+
+        Scans choices_made for keys matching ``^class_feat_\\d+$``, loads the
+        chosen feat's data, and appends a choice entry for each sub-choice item
+        defined in the feat.  Avoids adding duplicates.
+        """
+        for parent_key, feat_name in choices_made.items():
+            if not _CLASS_FEAT_SLOT_RE.match(parent_key):
+                continue
+            if not isinstance(feat_name, str) or not feat_name:
+                continue
+
+            feat_data = self._load_feat_data(feat_name)
+            if not feat_data:
+                continue
+
+            sub_choice_items = feat_data.get("choices", [])
+            if not isinstance(sub_choice_items, list):
+                continue
+
+            # Extract slot level from parent_key (e.g. "class_feat_4" -> 4)
+            slot_level = self._class_feat_slot_level(parent_key)
+
+            for sub_item in sub_choice_items:
+                if not isinstance(sub_item, dict):
+                    continue
+                sub_item_name = sub_item.get("name", "")
+                if not sub_item_name:
+                    continue
+
+                sub_key = f"{parent_key}_{sub_item_name}"
+
+                # Skip if already in choices list
+                if any(c.get("choice_key") == sub_key for c in choices):
+                    continue
+
+                sub_choice = {
+                    "title": f"{feat_name} \u2014 {_humanize(sub_item_name)} (Level {slot_level})",
+                    "type": "feature",
+                    "description": feat_data.get("description", ""),
+                    "options": resolve_choice_options(sub_item, character),
+                    "count": sub_item.get("count", 1),
+                    "required": not sub_item.get("optional", False),
+                    "level": slot_level,
+                    "feature_name": sub_key,
+                    "choice_key": sub_key,
+                    "depends_on": parent_key,
+                    "option_descriptions": {},
+                }
+                choices.append(sub_choice)
 
     # ==================== Feat Choices ====================
 
