@@ -154,13 +154,13 @@ class TestWarlockBaseClass:
 
     def test_level_3_warlock_subclass_feature_present(self):
         character = build_warlock(3)
-        assert "Warlock Subclass" in _class_feature_names(character)
+        assert "Warlock Subclass" not in _class_feature_names(character)
 
     # --- Level 4: Ability Score Improvement ---
 
     def test_level_4_ability_score_improvement_present(self):
         character = build_warlock(4, "The Fiend")
-        assert "Ability Score Improvement" in _class_feature_names(character)
+        assert "Ability Score Improvement" not in _class_feature_names(character)
 
     # --- Level 9: Contact Patron ---
 

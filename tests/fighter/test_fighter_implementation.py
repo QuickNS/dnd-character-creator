@@ -70,7 +70,7 @@ class TestFighterClass:
         assert "Second Wind" in feature_names
         assert "Weapon Mastery" in feature_names
 
-        # Check Second Wind description includes scaling
+        # Check Second Wind description uses PDF override summary
         second_wind_feature = None
         for feature in class_features:
             if feature.get("name") == "Second Wind":
@@ -78,9 +78,8 @@ class TestFighterClass:
                 break
 
         assert second_wind_feature is not None
-        # Should have scaling resolved in description
         description = second_wind_feature.get("description", "")
-        assert "use this feature 2 times" in description
+        assert "Bonus Action: Regain 1d10+Fighter level HP" in description
 
     def test_level_2_features(self):
         """Test level 2 Fighter features"""
@@ -141,13 +140,7 @@ class TestFighterClass:
     @pytest.mark.parametrize(
         "level,feature_name",
         [
-            (4, "Ability Score Improvement"),
-            (6, "Ability Score Improvement"),
-            (8, "Ability Score Improvement"),
             (11, "Two Extra Attacks"),
-            (12, "Ability Score Improvement"),
-            (14, "Ability Score Improvement"),
-            (16, "Ability Score Improvement"),
             (17, "Action Surge (Two Uses)"),
             (19, "Epic Boon"),
             (20, "Three Extra Attacks"),
@@ -164,6 +157,16 @@ class TestFighterClass:
         feature_names = [f.get("name", "unnamed") for f in class_features]
 
         assert feature_name in feature_names
+
+    @pytest.mark.parametrize("level", [4, 6, 8, 12, 14, 16])
+    def test_ability_score_improvement_hidden_from_class_features(self, level):
+        builder = CharacterBuilder()
+        builder.set_species("Human")
+        builder.set_class("Fighter", level)
+
+        class_features = builder.character_data.get("features", {}).get("class", [])
+        feature_names = [f.get("name", "unnamed") for f in class_features]
+        assert "Ability Score Improvement" not in feature_names
 
     def test_weapon_mastery_choices(self, fighter_builder):
         """Test that weapon mastery includes choice system"""

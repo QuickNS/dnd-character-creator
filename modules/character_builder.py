@@ -150,6 +150,7 @@ class CharacterBuilder:
 
         # Spell definitions cache
         self._spell_definitions_cache = {}
+        self._feature_overrides_cache: Optional[Dict[str, Any]] = None
 
         # D&D 2024 skill to ability mappings for calculations
         self.skill_abilities = {
@@ -322,6 +323,25 @@ class CharacterBuilder:
         filename = background_name.lower().replace(" ", "_")
         file_path = self.data_dir / "backgrounds" / f"{filename}.json"
         return self._load_json_file(file_path)
+
+    def _load_feature_overrides(self) -> Dict[str, Any]:
+        """Load per-class feature overrides for PDF-friendly display."""
+        if self._feature_overrides_cache is None:
+            overrides_file = self.data_dir / "feature_override.json"
+            loaded = self._load_json_file(overrides_file)
+            self._feature_overrides_cache = loaded if isinstance(loaded, dict) else {}
+        return self._feature_overrides_cache
+
+    def _get_class_feature_override(self, feature_name: str) -> Dict[str, Any]:
+        """Get class feature override config for the current class."""
+        class_name = self.character_data.get("class")
+        if not isinstance(class_name, str) or not isinstance(feature_name, str):
+            return {}
+        class_overrides = self._load_feature_overrides().get(class_name, {})
+        if not isinstance(class_overrides, dict):
+            return {}
+        override = class_overrides.get(feature_name, {})
+        return override if isinstance(override, dict) else {}
 
     @staticmethod
     def _format_benefits(benefits: list) -> str:
@@ -645,12 +665,34 @@ class CharacterBuilder:
                     resolved = self._extract_parenthetical(choice_value)
                     description = description.replace(f"{{{var_name}}}", resolved)
 
+        if source == "class":
+            override = self._get_class_feature_override(trait_name)
+            if override.get("hidden") is True:
+                return
+
+            pdf_summary = override.get("pdf_summary")
+            if isinstance(pdf_summary, str) and pdf_summary.strip():
+                description = pdf_summary.strip()
+
+            normalized_trait_name = trait_name.strip().lower()
+            class_name = self.character_data.get("class")
+            if isinstance(class_name, str):
+                subclass_placeholder = f"{class_name.strip().lower()} subclass"
+                if normalized_trait_name == subclass_placeholder:
+                    return
+            if normalized_trait_name == "ability score improvement":
+                return
+
         # Skip features that are just choice placeholders
         # (e.g. "Choose a subclass") and should be skipped. Use a length threshold to
         # avoid skipping meaningful feature descriptions that happen to start with "Choose"
         # (e.g. Fiendish Resilience: "Choose one damage type when you finish a Short Rest...").
         CHOICE_PLACEHOLDER_MAX_LENGTH = 100
-        if isinstance(description, str) and description.lower().startswith("choose") and len(description) < CHOICE_PLACEHOLDER_MAX_LENGTH:
+        if (
+            isinstance(description, str)
+            and description.lower().startswith("choose")
+            and len(description) < CHOICE_PLACEHOLDER_MAX_LENGTH
+        ):
             return
 
         # Map source to feature category and get descriptive source name

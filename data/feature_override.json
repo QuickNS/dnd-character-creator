@@ -1,0 +1,24 @@
+{
+  "Fighter": {
+    "Second Wind": {
+      "pdf_summary": "Bonus Action: Regain 1d10+Fighter level HP (2/SR, 3/SR at level 4)"
+    },
+    "Action Surge": {
+      "pdf_summary": "Once per SR, take one additional Action on your turn"
+    },
+    "Fighter Subclass": {
+      "hidden": true
+    },
+    "Ability Score Improvement": {
+      "hidden": true
+    }
+  },
+  "Wizard": {
+    "Wizard Subclass": {
+      "hidden": true
+    },
+    "Ability Score Improvement": {
+      "hidden": true
+    }
+  }
+}
