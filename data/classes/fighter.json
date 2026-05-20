@@ -187,20 +187,50 @@
     },
     "4": {
       "Weapon Mastery": "You can use the mastery properties of one additional kind of weapon.",
-      "Ability Score Improvement": "Increase one ability score by 2, or increase two ability scores by 1."
+      "Ability Score Improvement": {
+        "description": "Increase one ability score by 2, or increase two ability scores by 1.",
+        "choices": {
+          "name": "class_feat_4",
+          "source": {
+            "type": "external",
+            "file": "general_feats.json",
+            "list": "general_feats"
+          }
+        }
+      }
     },
     "5": {
       "Extra Attack": "You can attack twice instead of once whenever you take the Attack action on your turn.",
       "Tactical Shift": "Whenever you activate your Second Wind with a Bonus Action, you can move up to half your Speed without provoking Opportunity Attacks."
     },
     "6": {
-      "Ability Score Improvement": "Increase one ability score by 2, or increase two ability scores by 1."
+      "Ability Score Improvement": {
+        "description": "Increase one ability score by 2, or increase two ability scores by 1.",
+        "choices": {
+          "name": "class_feat_6",
+          "source": {
+            "type": "external",
+            "file": "general_feats.json",
+            "list": "general_feats"
+          }
+        }
+      }
     },
     "7": {
       "Subclass Feature": "Gain a feature from your Martial Archetype subclass."
     },
     "8": {
-      "Ability Score Improvement": "Increase one ability score by 2, or increase two ability scores by 1."
+      "Ability Score Improvement": {
+        "description": "Increase one ability score by 2, or increase two ability scores by 1.",
+        "choices": {
+          "name": "class_feat_8",
+          "source": {
+            "type": "external",
+            "file": "general_feats.json",
+            "list": "general_feats"
+          }
+        }
+      }
     },
     "9": {
       "Indomitable": {
@@ -232,21 +262,51 @@
       "Two Extra Attacks": "You can attack three times instead of once whenever you take the Attack action on your turn."
     },
     "12": {
-      "Ability Score Improvement": "Increase one ability score by 2, or increase two ability scores by 1."
+      "Ability Score Improvement": {
+        "description": "Increase one ability score by 2, or increase two ability scores by 1.",
+        "choices": {
+          "name": "class_feat_12",
+          "source": {
+            "type": "external",
+            "file": "general_feats.json",
+            "list": "general_feats"
+          }
+        }
+      }
     },
     "13": {
       "Indomitable (Two Uses)": "You can use Indomitable twice before a Long Rest.",
       "Studied Attacks": "You study your opponents and learn from each attack you make. If you make an attack roll against a creature and miss, you have Advantage on your next attack roll against that creature before the end of your next turn."
     },
     "14": {
-      "Ability Score Improvement": "Increase one ability score by 2, or increase two ability scores by 1."
+      "Ability Score Improvement": {
+        "description": "Increase one ability score by 2, or increase two ability scores by 1.",
+        "choices": {
+          "name": "class_feat_14",
+          "source": {
+            "type": "external",
+            "file": "general_feats.json",
+            "list": "general_feats"
+          }
+        }
+      }
     },
     "15": {
       "Subclass Feature": "Gain a feature from your Martial Archetype subclass."
     },
     "16": {
       "Weapon Mastery": "You can use the mastery properties of one additional kind of weapon.",
-      "Ability Score Improvement": "Increase one ability score by 2, or increase two ability scores by 1."
+      "Ability Score Improvement": {
+        "description": "Increase one ability score by 2, or increase two ability scores by 1.",
+        "choices": {
+          "name": "class_feat_16",
+          "source": {
+            "type": "external",
+            "file": "general_feats.json",
+            "list": "general_feats"
+          }
+        }
+      }
     },
     "17": {
       "Action Surge (Two Uses)": "You can use Action Surge twice before a rest but only once on a turn.",

@@ -241,13 +241,33 @@
       "Warlock Subclass": "You gain a Warlock Subclass of your choice, which represents the entity with which you've made a pact. The Archfey Patron, Celestial Patron, Fiend Patron, and Great Old One Patron subclasses are detailed in the Player's Handbook. For the rest of your career, you gain each of your subclass's features that are of your Warlock level or lower."
     },
     "4": {
-      "Ability Score Improvement": "You gain the Ability Score Improvement feat or another feat of your choice for which you qualify. You gain this feature again at Warlock levels 8, 12, and 16."
+      "Ability Score Improvement": {
+        "description": "You gain the Ability Score Improvement feat or another feat of your choice for which you qualify. You gain this feature again at Warlock levels 8, 12, and 16.",
+        "choices": {
+          "name": "class_feat_4",
+          "source": {
+            "type": "external",
+            "file": "general_feats.json",
+            "list": "general_feats"
+          }
+        }
+      }
     },
     "6": {
       "Subclass Feature": "You gain a feature from your Warlock subclass."
     },
     "8": {
-      "Ability Score Improvement": "You gain the Ability Score Improvement feat or another feat of your choice for which you qualify."
+      "Ability Score Improvement": {
+        "description": "You gain the Ability Score Improvement feat or another feat of your choice for which you qualify.",
+        "choices": {
+          "name": "class_feat_8",
+          "source": {
+            "type": "external",
+            "file": "general_feats.json",
+            "list": "general_feats"
+          }
+        }
+      }
     },
     "9": {
       "Contact Patron": {
@@ -268,7 +288,17 @@
       "Mystic Arcanum": "Your patron grants you a magical secret called an arcanum. Choose one level 6 Warlock spell as this arcanum. You can cast your arcanum spell once without expending a spell slot, and you must finish a Long Rest before you can cast it in this way again. You gain another Warlock spell of your choice that can be cast in this way when you reach Warlock levels 13 (level 7 spell), 15 (level 8 spell), and 17 (level 9 spell). You regain all uses of your Mystic Arcanum when you finish a Long Rest. Whenever you gain a Warlock level, you can replace one of your arcanum spells with another Warlock spell of the same level."
     },
     "12": {
-      "Ability Score Improvement": "You gain the Ability Score Improvement feat or another feat of your choice for which you qualify."
+      "Ability Score Improvement": {
+        "description": "You gain the Ability Score Improvement feat or another feat of your choice for which you qualify.",
+        "choices": {
+          "name": "class_feat_12",
+          "source": {
+            "type": "external",
+            "file": "general_feats.json",
+            "list": "general_feats"
+          }
+        }
+      }
     },
     "13": {
       "Mystic Arcanum": "You gain a level 7 Warlock spell as an additional arcanum."
@@ -280,7 +310,17 @@
       "Mystic Arcanum": "You gain a level 8 Warlock spell as an additional arcanum."
     },
     "16": {
-      "Ability Score Improvement": "You gain the Ability Score Improvement feat or another feat of your choice for which you qualify."
+      "Ability Score Improvement": {
+        "description": "You gain the Ability Score Improvement feat or another feat of your choice for which you qualify.",
+        "choices": {
+          "name": "class_feat_16",
+          "source": {
+            "type": "external",
+            "file": "general_feats.json",
+            "list": "general_feats"
+          }
+        }
+      }
     },
     "17": {
       "Mystic Arcanum": "You gain a level 9 Warlock spell as an additional arcanum."

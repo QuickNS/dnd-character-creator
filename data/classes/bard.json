@@ -366,7 +366,17 @@
       "Bard Subclass": "Choose your Bard College subclass."
     },
     "4": {
-      "Ability Score Improvement": "Increase one ability score by 2, or increase two ability scores by 1."
+      "Ability Score Improvement": {
+        "description": "Increase one ability score by 2, or increase two ability scores by 1.",
+        "choices": {
+          "name": "class_feat_4",
+          "source": {
+            "type": "external",
+            "file": "general_feats.json",
+            "list": "general_feats"
+          }
+        }
+      }
     },
     "5": {
       "Font of Inspiration": "Regain all expended uses of Bardic Inspiration on Short or Long Rest. Can expend a spell slot to regain one use."
@@ -378,7 +388,17 @@
       "Countercharm": "When you or a creature within 30 feet fails a save against Charmed or Frightened, use Reaction to reroll with Advantage."
     },
     "8": {
-      "Ability Score Improvement": "Increase one ability score by 2, or increase two ability scores by 1."
+      "Ability Score Improvement": {
+        "description": "Increase one ability score by 2, or increase two ability scores by 1.",
+        "choices": {
+          "name": "class_feat_8",
+          "source": {
+            "type": "external",
+            "file": "general_feats.json",
+            "list": "general_feats"
+          }
+        }
+      }
     },
     "9": {
       "Expertise": "Gain Expertise in two more skill proficiencies of your choice."
@@ -388,7 +408,17 @@
     },
     "11": {},
     "12": {
-      "Ability Score Improvement": "Increase one ability score by 2, or increase two ability scores by 1."
+      "Ability Score Improvement": {
+        "description": "Increase one ability score by 2, or increase two ability scores by 1.",
+        "choices": {
+          "name": "class_feat_12",
+          "source": {
+            "type": "external",
+            "file": "general_feats.json",
+            "list": "general_feats"
+          }
+        }
+      }
     },
     "13": {},
     "14": {
@@ -396,7 +426,17 @@
     },
     "15": {},
     "16": {
-      "Ability Score Improvement": "Increase one ability score by 2, or increase two ability scores by 1."
+      "Ability Score Improvement": {
+        "description": "Increase one ability score by 2, or increase two ability scores by 1.",
+        "choices": {
+          "name": "class_feat_16",
+          "source": {
+            "type": "external",
+            "file": "general_feats.json",
+            "list": "general_feats"
+          }
+        }
+      }
     },
     "17": {},
     "18": {

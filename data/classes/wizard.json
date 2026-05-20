@@ -115,7 +115,17 @@
       "Wizard Subclass": "You gain a Wizard subclass of your choice. A subclass is a specialization that grants you features at certain Wizard levels."
     },
     "4": {
-      "Ability Score Improvement": "You gain the Ability Score Improvement feat or another feat of your choice for which you qualify."
+      "Ability Score Improvement": {
+        "description": "You gain the Ability Score Improvement feat or another feat of your choice for which you qualify.",
+        "choices": {
+          "name": "class_feat_4",
+          "source": {
+            "type": "external",
+            "file": "general_feats.json",
+            "list": "general_feats"
+          }
+        }
+      }
     },
     "5": {
       "Memorize Spell": "Whenever you finish a Short Rest, you can study your spellbook and replace one of the level 1+ Wizard spells you have prepared for your Spellcasting feature with another level 1+ spell from the book."
@@ -125,7 +135,17 @@
     },
     "7": {},
     "8": {
-      "Ability Score Improvement": "You gain the Ability Score Improvement feat or another feat of your choice for which you qualify."
+      "Ability Score Improvement": {
+        "description": "You gain the Ability Score Improvement feat or another feat of your choice for which you qualify.",
+        "choices": {
+          "name": "class_feat_8",
+          "source": {
+            "type": "external",
+            "file": "general_feats.json",
+            "list": "general_feats"
+          }
+        }
+      }
     },
     "9": {},
     "10": {
@@ -133,7 +153,17 @@
     },
     "11": {},
     "12": {
-      "Ability Score Improvement": "You gain the Ability Score Improvement feat or another feat of your choice for which you qualify."
+      "Ability Score Improvement": {
+        "description": "You gain the Ability Score Improvement feat or another feat of your choice for which you qualify.",
+        "choices": {
+          "name": "class_feat_12",
+          "source": {
+            "type": "external",
+            "file": "general_feats.json",
+            "list": "general_feats"
+          }
+        }
+      }
     },
     "13": {},
     "14": {
@@ -141,7 +171,17 @@
     },
     "15": {},
     "16": {
-      "Ability Score Improvement": "You gain the Ability Score Improvement feat or another feat of your choice for which you qualify."
+      "Ability Score Improvement": {
+        "description": "You gain the Ability Score Improvement feat or another feat of your choice for which you qualify.",
+        "choices": {
+          "name": "class_feat_16",
+          "source": {
+            "type": "external",
+            "file": "general_feats.json",
+            "list": "general_feats"
+          }
+        }
+      }
     },
     "17": {},
     "18": {

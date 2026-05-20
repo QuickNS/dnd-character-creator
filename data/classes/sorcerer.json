@@ -399,7 +399,17 @@
       "Sorcerer Subclass": "You gain a Sorcerer Subclass of your choice."
     },
     "4": {
-      "Ability Score Improvement": "You gain the Ability Score Improvement feat or another feat of your choice for which you qualify."
+      "Ability Score Improvement": {
+        "description": "You gain the Ability Score Improvement feat or another feat of your choice for which you qualify.",
+        "choices": {
+          "name": "class_feat_4",
+          "source": {
+            "type": "external",
+            "file": "general_feats.json",
+            "list": "general_feats"
+          }
+        }
+      }
     },
     "5": {
       "Sorcerous Restoration": "When you finish a Short Rest, you can regain expended Sorcery Points, but no more than a number equal to half your Sorcerer level (round down). Once you use this feature, you can't do so again until you finish a Long Rest."
@@ -411,19 +421,49 @@
       "Sorcery Incarnate": "If you have no uses of Innate Sorcery left, you can use it if you spend 2 Sorcery Points when you take the Bonus Action to activate it.\n\nIn addition, while your Innate Sorcery feature is active, you can use up to two of your Metamagic options on each spell you cast."
     },
     "8": {
-      "Ability Score Improvement": "You gain the Ability Score Improvement feat or another feat of your choice for which you qualify."
+      "Ability Score Improvement": {
+        "description": "You gain the Ability Score Improvement feat or another feat of your choice for which you qualify.",
+        "choices": {
+          "name": "class_feat_8",
+          "source": {
+            "type": "external",
+            "file": "general_feats.json",
+            "list": "general_feats"
+          }
+        }
+      }
     },
     "10": {
       "Metamagic": "You gain two additional Metamagic options of your choice."
     },
     "12": {
-      "Ability Score Improvement": "You gain the Ability Score Improvement feat or another feat of your choice for which you qualify."
+      "Ability Score Improvement": {
+        "description": "You gain the Ability Score Improvement feat or another feat of your choice for which you qualify.",
+        "choices": {
+          "name": "class_feat_12",
+          "source": {
+            "type": "external",
+            "file": "general_feats.json",
+            "list": "general_feats"
+          }
+        }
+      }
     },
     "14": {
       "Subclass Feature": "You gain a feature from your Sorcerer subclass."
     },
     "16": {
-      "Ability Score Improvement": "You gain the Ability Score Improvement feat or another feat of your choice for which you qualify."
+      "Ability Score Improvement": {
+        "description": "You gain the Ability Score Improvement feat or another feat of your choice for which you qualify.",
+        "choices": {
+          "name": "class_feat_16",
+          "source": {
+            "type": "external",
+            "file": "general_feats.json",
+            "list": "general_feats"
+          }
+        }
+      }
     },
     "17": {
       "Metamagic": "You gain two additional Metamagic options of your choice."

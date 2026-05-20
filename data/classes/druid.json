@@ -476,7 +476,17 @@
       "Druid Subclass": "Choose your Druid Circle subclass."
     },
     "4": {
-      "Ability Score Improvement": "Increase one ability score by 2, or increase two ability scores by 1."
+      "Ability Score Improvement": {
+        "description": "Increase one ability score by 2, or increase two ability scores by 1.",
+        "choices": {
+          "name": "class_feat_4",
+          "source": {
+            "type": "external",
+            "file": "general_feats.json",
+            "list": "general_feats"
+          }
+        }
+      }
     },
     "5": {
       "Wild Resurgence": "Once on each of your turns, if you have no uses of Wild Shape left, you can give yourself one use by expending a spell slot (no action required). In addition, you can expend one use of Wild Shape (no action required) to give yourself a level 1 spell slot, but you can't do so again until you finish a Long Rest."
@@ -500,7 +510,17 @@
       }
     },
     "8": {
-      "Ability Score Improvement": "Increase one ability score by 2, or increase two ability scores by 1."
+      "Ability Score Improvement": {
+        "description": "Increase one ability score by 2, or increase two ability scores by 1.",
+        "choices": {
+          "name": "class_feat_8",
+          "source": {
+            "type": "external",
+            "file": "general_feats.json",
+            "list": "general_feats"
+          }
+        }
+      }
     },
     "9": {},
     "10": {
@@ -508,7 +528,17 @@
     },
     "11": {},
     "12": {
-      "Ability Score Improvement": "Increase one ability score by 2, or increase two ability scores by 1."
+      "Ability Score Improvement": {
+        "description": "Increase one ability score by 2, or increase two ability scores by 1.",
+        "choices": {
+          "name": "class_feat_12",
+          "source": {
+            "type": "external",
+            "file": "general_feats.json",
+            "list": "general_feats"
+          }
+        }
+      }
     },
     "13": {},
     "14": {
@@ -518,7 +548,17 @@
       "Improved Elemental Fury": "The option you chose for Elemental Fury grows more powerful. The effects are updated automatically based on your level."
     },
     "16": {
-      "Ability Score Improvement": "Increase one ability score by 2, or increase two ability scores by 1."
+      "Ability Score Improvement": {
+        "description": "Increase one ability score by 2, or increase two ability scores by 1.",
+        "choices": {
+          "name": "class_feat_16",
+          "source": {
+            "type": "external",
+            "file": "general_feats.json",
+            "list": "general_feats"
+          }
+        }
+      }
     },
     "17": {},
     "18": {
