@@ -1,3 +1,8 @@
+import { useQueries } from "@tanstack/react-query";
+import { Check, Info } from "lucide-react";
+import { api, type SpellDefinition } from "@/lib/api";
+import { cn } from "@/lib/utils";
+import { useCharacterStore } from "@/store/characterStore";
 import { ChoiceList } from "./ChoiceList";
 
 /**
@@ -14,6 +19,7 @@ interface FeatChoice {
   count?: number;
   choices_made_key?: string;
   feature_name?: string;
+  choice_category?: string;
 }
 
 interface FeatChoicesData {
@@ -32,6 +38,8 @@ interface Props {
    * shown grayed out and disabled so the player can see duplicates at a glance.
    */
   grantedProficiencies?: string[];
+  onInspectSpell?: (spell: SpellDefinition) => void;
+  inspectedSpellName?: string;
 }
 
 /** Returns true for choice types that deal in skill or tool proficiencies. */
@@ -43,7 +51,179 @@ function isProficiencyChoice(choice: FeatChoice): boolean {
   return keywords.includes("skill") || keywords.includes("tool");
 }
 
-export function FeatChoicesPicker({ data, heading, grantedProficiencies }: Props) {
+function isSpellChoice(choice: FeatChoice): boolean {
+  return choice.choice_category === "spells";
+}
+
+function normalizeSpellOptions(options: Array<unknown>): string[] {
+  return options
+    .filter((option): option is string => typeof option === "string")
+    .filter((option) => option.length > 0);
+}
+
+function spellHasConcentration(spell: SpellDefinition): boolean {
+  const duration = (spell.duration ?? "").toLowerCase();
+  return duration.includes("concentration");
+}
+
+function SpellChoiceList({
+  choiceKey,
+  title,
+  description,
+  options,
+  count = 1,
+  onInspectSpell,
+  inspectedSpellName,
+}: {
+  choiceKey: string;
+  title: string;
+  description?: string;
+  options: string[];
+  count?: number;
+  onInspectSpell?: (spell: SpellDefinition) => void;
+  inspectedSpellName?: string;
+}) {
+  const value = useCharacterStore((s) => s.choicesMade[choiceKey]);
+  const setChoice = useCharacterStore((s) => s.setChoice);
+  const isMulti = count > 1;
+
+  const selected = new Set<string>(
+    isMulti
+      ? Array.isArray(value)
+        ? (value as string[])
+        : []
+      : typeof value === "string" && value
+        ? [value]
+        : [],
+  );
+
+  const spellDefinitionQueries = useQueries({
+    queries: options.map((name) => ({
+      queryKey: ["catalog", "spell-definition", name],
+      queryFn: () => api.catalog.getSpellDefinition(name),
+    })),
+  });
+
+  const spellByName = new Map(
+    options.map((name, index) => [name, spellDefinitionQueries[index]?.data]),
+  );
+
+  function toggle(name: string) {
+    if (!isMulti) {
+      setChoice(choiceKey, name);
+      return;
+    }
+
+    const next = new Set(selected);
+    if (next.has(name)) {
+      next.delete(name);
+    } else {
+      if (next.size >= count) return;
+      next.add(name);
+    }
+    setChoice(choiceKey, Array.from(next));
+  }
+
+  return (
+    <fieldset className="rounded-xl border border-border/70 bg-card/70 p-4 shadow-sm sm:p-5">
+      <legend className="px-0 text-base font-semibold text-foreground">{title}</legend>
+      {description && (
+        <p className="mt-1 mb-4 max-w-3xl text-sm text-muted-foreground">
+          {description}
+        </p>
+      )}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        {options.map((name) => {
+          const isSelected = selected.has(name);
+          const spell = spellByName.get(name);
+          const isInspected = inspectedSpellName === name;
+          const atLimit = isMulti && !isSelected && selected.size >= count;
+
+          return (
+            <div
+              key={name}
+              className={cn(
+                "flex items-stretch gap-1 rounded-lg border text-left text-sm transition-all duration-200",
+                isSelected
+                  ? "border-primary bg-muted/60 shadow-sm ring-1 ring-primary/20"
+                  : isInspected
+                    ? "border-muted-foreground/40 bg-secondary/60 ring-1 ring-muted-foreground/20"
+                    : "border-border bg-background/70 hover:border-primary/30 hover:bg-secondary/60",
+                atLimit && "cursor-not-allowed opacity-50",
+              )}
+            >
+              <button
+                type="button"
+                onClick={() => {
+                  if (!atLimit) toggle(name);
+                }}
+                disabled={atLimit}
+                aria-pressed={isSelected}
+                className={cn(
+                  "flex flex-1 items-center justify-between gap-3 rounded-l-lg px-3 py-2 text-left",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                )}
+              >
+                <span className="min-w-0">
+                  <span className="flex flex-wrap items-center gap-3">
+                    <span>{name}</span>
+                    {spell && spellHasConcentration(spell) && (
+                      <span className="shrink-0 rounded bg-amber-600/80 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
+                        C
+                      </span>
+                    )}
+                  </span>
+                  {spell?.school && (
+                    <span className="mt-1 text-xs text-muted-foreground">
+                      {spell.school}
+                    </span>
+                  )}
+                </span>
+                <span
+                  className={cn(
+                    "inline-flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full border",
+                    isSelected
+                      ? "border-primary bg-background text-primary"
+                      : "border-border bg-background text-transparent",
+                  )}
+                >
+                  <Check className="h-3 w-3" />
+                </span>
+              </button>
+              {onInspectSpell && spell && (
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onInspectSpell(spell);
+                  }}
+                  aria-label="View spell details"
+                  aria-pressed={isInspected}
+                  className={cn(
+                    "flex flex-shrink-0 items-center justify-center rounded-r-lg p-1 px-2 text-muted-foreground transition-colors",
+                    "hover:bg-muted hover:text-foreground",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                    isInspected && "text-primary",
+                  )}
+                >
+                  <Info className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </fieldset>
+  );
+}
+
+export function FeatChoicesPicker({
+  data,
+  heading,
+  grantedProficiencies,
+  onInspectSpell,
+  inspectedSpellName,
+}: Props) {
   if (!data || !data.feat_name) return null;
   const choices = data.choices ?? [];
 
@@ -73,6 +253,23 @@ export function FeatChoicesPicker({ data, heading, grantedProficiencies }: Props
           `feat_${data.feat_name}_${choice.feature_name ?? idx}`;
         const opts = (choice.options ?? []) as Array<unknown>;
         if (opts.length === 0) return null;
+
+        const spellOptions = normalizeSpellOptions(opts);
+        if (isSpellChoice(choice) && spellOptions.length === opts.length) {
+          return (
+            <SpellChoiceList
+              key={key}
+              choiceKey={key}
+              title={choice.title ?? key}
+              description={choice.description}
+              options={spellOptions}
+              count={choice.count ?? 1}
+              onInspectSpell={onInspectSpell}
+              inspectedSpellName={inspectedSpellName}
+            />
+          );
+        }
+
         const disabledOptions =
           grantedProficiencies && isProficiencyChoice(choice)
             ? grantedProficiencies
