@@ -135,13 +135,13 @@ export function ClassAdvancedChoices({
   const isLoading =
     (!spellsQ.error &&
       !spellsData &&
-      (spellsQ.fetchStatus === "fetching" || Boolean(spellsQ.data))) ||
+      spellsQ.fetchStatus === "fetching") ||
     (!masteryQ.error &&
       !masteryData &&
-      (masteryQ.fetchStatus === "fetching" || Boolean(masteryQ.data))) ||
+      masteryQ.fetchStatus === "fetching") ||
     (!invocationsQ.error &&
       !invocationsData &&
-      (invocationsQ.fetchStatus === "fetching" || Boolean(invocationsQ.data)));
+      invocationsQ.fetchStatus === "fetching");
   if (!anyVisible && !isLoading) return null;
 
   return (
