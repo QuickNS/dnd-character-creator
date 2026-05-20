@@ -190,7 +190,7 @@ function Page1({ c, damageCantrips }: { c: Char; damageCantrips: Row[] }) {
   const ac =
     num(combat.armor_class) ??
     (bestAcOption !== null ? num(bestAcOption.ac) : undefined);
-  const bestAcUsesShield = Boolean(bestAcOption?.shield);
+  const bestAcUsesShield = Boolean(combat.uses_shield);
 
   const perception = rec(skills.perception);
   const perceptionMod = num(perception.modifier) ?? num(perception.bonus) ?? 0;
@@ -265,7 +265,7 @@ function Page1({ c, damageCantrips }: { c: Char; damageCantrips: Row[] }) {
 
         {/* Combat */}
         <Field id="armor-class" value={ac} />
-        {bestAcUsesShield && <Field id="shield-marker" value="🛡" />}
+        {bestAcUsesShield && <Check style={{ top: 94, left: 453 }} checked={true} />}
         <Field
           id="initiative"
           value={signed(num(combat.initiative_bonus) ?? num(combat.initiative))}
@@ -1025,7 +1025,6 @@ const SHEET_CSS = `
     font-size: 14pt;
 }
 
-.fld-shield-marker     { top: 74px;  left: 440px; width: 40px; height: 14px; font-size: 9pt; color: #555; }
 .fld-initiative {
     top: 178px;
     left: 339px;

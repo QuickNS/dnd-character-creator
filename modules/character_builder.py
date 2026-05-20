@@ -5073,8 +5073,10 @@ class CharacterBuilder:
         )
         perception_proficient = "Perception" in skill_proficiencies
 
+        best_option = ac_options[0] if ac_options else {}
         return {
             "armor_class": armor_ac,
+            "uses_shield": bool(best_option.get("shield", False)),
             "initiative": dex_modifier,  # For backward compatibility
             "initiative_bonus": dex_modifier,
             "speed": speed,
