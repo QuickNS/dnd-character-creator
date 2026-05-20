@@ -89,6 +89,36 @@ class TestClassFeatEffectsApplied:
         # DEX: 13 + 2(ASI) = 15
         assert dex_score == 15
 
+    def test_asi_plus_1_to_two_abilities_applied_via_class_feat(self):
+        builder = CharacterBuilder()
+        builder.apply_choices({
+            **BASE_CHOICES,
+            "class": "Fighter",
+            "level": 4,
+            "class_feat_4": "Ability Score Improvement",
+            "class_feat_4_asi_option": "+1 to two abilities",
+            "class_feat_4_abilities_plus_1": ["Dexterity", "Wisdom"],
+        })
+        char = builder.to_character()
+        assert char["abilities"]["dexterity"]["score"] == 14
+        assert char["abilities"]["wisdom"]["score"] == 13
+
+    def test_asi_stale_opposite_branch_values_are_ignored(self):
+        builder = CharacterBuilder()
+        builder.apply_choices({
+            **BASE_CHOICES,
+            "class": "Fighter",
+            "level": 4,
+            "class_feat_4": "Ability Score Improvement",
+            "class_feat_4_asi_option": "+2 to one ability",
+            "class_feat_4_ability_plus_2": "Strength",
+            "class_feat_4_abilities_plus_1": ["Dexterity", "Wisdom"],
+        })
+        char = builder.to_character()
+        assert char["abilities"]["strength"]["score"] == 19
+        assert char["abilities"]["dexterity"]["score"] == 13
+        assert char["abilities"]["wisdom"]["score"] == 12
+
 
 class TestClassFeatSubChoicesInNestedChoices:
     """When a class-level feat is selected, sub-choices appear in get_class_features_and_choices()."""
@@ -105,3 +135,8 @@ class TestClassFeatSubChoicesInNestedChoices:
         keys = [c.get("choice_key") for c in data["choices"]]
         # ASI sub-choices should now appear
         assert any(k and k.startswith("class_feat_4_") for k in keys)
+        by_key = {c.get("choice_key"): c for c in data["choices"]}
+        assert by_key["class_feat_4_ability_plus_2"]["depends_on"] == "class_feat_4_asi_option"
+        assert by_key["class_feat_4_ability_plus_2"]["depends_on_value"] == "+2 to one ability"
+        assert by_key["class_feat_4_abilities_plus_1"]["depends_on"] == "class_feat_4_asi_option"
+        assert by_key["class_feat_4_abilities_plus_1"]["depends_on_value"] == "+1 to two abilities"
