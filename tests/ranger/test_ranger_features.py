@@ -18,7 +18,13 @@ def build_ranger(level, subclass):
     return builder.to_character()
 
 
-def build_ranger_with_choices(level, deft_explorer_expertise=None, expertise_skills=None):
+def build_ranger_with_choices(
+    level,
+    deft_explorer_expertise=None,
+    expertise_skills=None,
+    fighting_style="Archery",
+    druidic_warrior_cantrips=None,
+):
     """Build a Ranger via apply_choices so expertise selections are honored."""
     builder = CharacterBuilder()
     choices = {
@@ -28,7 +34,7 @@ def build_ranger_with_choices(level, deft_explorer_expertise=None, expertise_ski
         "species": "Human",
         "background": "Soldier",
         "skill_choices": ["Stealth", "Perception", "Survival"],
-        "fighting_style": "Archery",
+        "fighting_style": fighting_style,
         "ability_scores": {
             "Strength": 10,
             "Dexterity": 15,
@@ -48,6 +54,8 @@ def build_ranger_with_choices(level, deft_explorer_expertise=None, expertise_ski
         choices["deft_explorer_expertise"] = deft_explorer_expertise
     if expertise_skills is not None:
         choices["expertise_skills"] = expertise_skills
+    if druidic_warrior_cantrips is not None:
+        choices["Druidic Warrior_bonus_cantrip"] = druidic_warrior_cantrips
 
     builder.apply_choices(choices)
     return builder
@@ -236,6 +244,39 @@ class TestRangerExpertiseChoices:
         assert "Perception" in character.get("skill_expertise", [])
         assert character["skills"]["stealth"]["expertise"] is True
         assert character["skills"]["perception"]["expertise"] is True
+
+
+class TestRangerDruidicWarrior:
+    """Tests for Ranger Druidic Warrior fighting style option."""
+
+    def test_level_2_fighting_style_options_include_druidic_warrior(self):
+        builder = build_ranger_with_choices(2)
+        features = builder.get_class_features_and_choices()
+        fighting_style_choice = next(
+            (c for c in features["choices"] if c.get("choice_key") == "fighting_style"),
+            None,
+        )
+        druidic_cantrip_choice = next(
+            (c for c in features["choices"] if c.get("feature_name") == "Druidic Warrior_bonus_cantrip"),
+            None,
+        )
+
+        assert fighting_style_choice is not None
+        assert "Druidic Warrior" in fighting_style_choice["options"]
+        assert druidic_cantrip_choice is not None
+        assert druidic_cantrip_choice["count"] == 2
+
+    def test_druidic_warrior_grants_druidic_and_two_druid_cantrips(self):
+        character = build_ranger_with_choices(
+            2,
+            fighting_style="Druidic Warrior",
+            druidic_warrior_cantrips=["Guidance", "Shillelagh"],
+        ).to_character()
+
+        assert "Druidic" in character["proficiencies"]["languages"]
+        always_prepared = character["spells"]["always_prepared"]
+        assert "Guidance" in always_prepared
+        assert "Shillelagh" in always_prepared
 
 
 # ---------------------------------------------------------------------------
