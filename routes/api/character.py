@@ -264,7 +264,17 @@ def _normalize_choices_for_builder(
 
     # Normalise singular API key → plural internal key expected by CharacterBuilder.
     if "background_skill_replacement" in normalized and "background_skill_replacements" not in normalized:
-        normalized["background_skill_replacements"] = normalized.pop("background_skill_replacement")
+        replacement_value = normalized.pop("background_skill_replacement")
+        if isinstance(replacement_value, str):
+            replacement_value = [replacement_value] if replacement_value else []
+        normalized["background_skill_replacements"] = replacement_value
+
+    # Normalise singular API key → plural internal key expected by CharacterBuilder.
+    if "species_skill_replacement" in normalized and "species_skill_replacements" not in normalized:
+        replacement_value = normalized.pop("species_skill_replacement")
+        if isinstance(replacement_value, str):
+            replacement_value = [replacement_value] if replacement_value else []
+        normalized["species_skill_replacements"] = replacement_value
 
     classes = normalized.get("classes")
     if classes is None:
