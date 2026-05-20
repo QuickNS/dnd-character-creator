@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
-import { AlertCircle, CheckCircle2, ChevronRight, Circle } from "lucide-react";
+import { AlertCircle, CheckCircle2, ChevronRight, Circle, Loader2 } from "lucide-react";
 import { api, type WizardStep } from "@/lib/api";
 import { useCharacterStore } from "@/store/characterStore";
 import { Button } from "@/components/ui/button";
@@ -137,88 +137,85 @@ export function SummaryStep({ steps }: Props) {
 
   return (
     <div className="space-y-8">
-      {/* Step header */}
-      <header className="mb-8">
-        <h1 className="font-display text-3xl md:text-4xl text-primary mb-2">
-          Character Summary
-        </h1>
-        <p className="text-base text-muted-foreground max-w-3xl">
-          Review your character and head to the full sheet when you're ready.
-        </p>
-      </header>
-
       {/* Validation */}
-      <section className="rounded-md border border-border bg-card/50 p-4">
-        <h2 className="font-display text-2xl text-foreground mb-2">
-          Completion checklist
-        </h2>
-        {validateQuery.isLoading && (
-          <p className="text-xs text-muted-foreground">Checking…</p>
-        )}
-        {validateQuery.error && (
-          <p className="text-xs text-destructive">
-            {String(validateQuery.error)}
-          </p>
-        )}
-        {!validateQuery.isLoading && !validateQuery.error && (
-          <>
-            {allComplete ? (
-              <div className="flex items-center gap-2 rounded-md bg-green-500/10 border border-green-500/30 p-3 mb-4">
-                <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400 flex-shrink-0" />
-                <p className="text-sm font-semibold text-green-700 dark:text-green-400">All required choices made. Ready to play.</p>
-              </div>
-            ) : (
-              <>
-                {incomplete.length > 0 && (
-                  <div className="rounded-md bg-destructive/10 border border-destructive/20 p-4 mb-4">
-                    <div className="flex items-start gap-2">
-                      <AlertCircle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
-                      <div>
-                        <h4 className="font-semibold text-destructive mb-1">
-                          Incomplete selections
-                        </h4>
-                        <p className="text-sm text-muted-foreground">
-                          {incomplete.length} step{incomplete.length === 1 ? "" : "s"} still need attention.
-                        </p>
+      <section className="info-panel">
+        <div className="info-panel-header">
+          <p className="info-panel-kicker">Completion checklist</p>
+        </div>
+        <div className="info-panel-body">
+          {validateQuery.isLoading && (
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span className="text-xs">Checking…</span>
+            </div>
+          )}
+          {validateQuery.error && (
+            <p className="text-xs text-destructive">
+              {String(validateQuery.error)}
+            </p>
+          )}
+          {!validateQuery.isLoading && !validateQuery.error && (
+            <>
+              {allComplete ? (
+                <div className="flex items-center gap-2 rounded-md bg-green-500/10 border border-green-500/30 p-3 mb-4">
+                  <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400 flex-shrink-0" />
+                  <p className="text-sm font-semibold text-green-700 dark:text-green-400">All required choices made. Ready to play.</p>
+                </div>
+              ) : (
+                <>
+                  {incomplete.length > 0 && (
+                    <div className="rounded-md bg-destructive/10 border border-destructive/20 p-4 mb-4">
+                      <div className="flex items-start gap-2">
+                        <AlertCircle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
+                        <div>
+                          <h4 className="font-semibold text-destructive mb-1">
+                            Incomplete selections
+                          </h4>
+                          <p className="text-sm text-muted-foreground">
+                            {incomplete.length} step{incomplete.length === 1 ? "" : "s"} still need attention.
+                          </p>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
-              </>
-            )}
-            <ul className="mt-3 space-y-1 text-sm">
-              {statuses.map((s) => {
-                const label = stepLabel.get(s.step) ?? s.step;
-                return (
-                  <li key={s.step} className="flex items-start gap-2">
-                    {s.complete ? (
-                      <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
-                    ) : (
-                      <Circle className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
-                    )}
-                    <div className="flex-1">
-                      <Link
-                        to={`/wizard/${s.step}`}
-                        className={
-                          s.complete
-                            ? "text-foreground hover:text-primary"
-                            : "text-foreground hover:text-primary underline"
-                        }
-                      >
-                        {label}
-                      </Link>
-                      {!s.complete && s.missing.length > 0 && (
-                        <span className="ml-2 text-xs text-muted-foreground">
-                          missing: {s.missing.join(", ")}
-                        </span>
+                  )}
+                </>
+              )}
+              <ul className="mt-3 space-y-1.5 text-sm">
+                {statuses.map((s) => {
+                  const label = stepLabel.get(s.step) ?? s.step;
+                  return (
+                    <li key={s.step} className="flex items-start gap-2">
+                      {s.complete ? (
+                        <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
+                      ) : (
+                        <Circle className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
                       )}
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          </>
-        )}
+                      <div className="flex-1">
+                        <Link
+                          to={`/wizard/${s.step}`}
+                          className={
+                            s.complete
+                              ? "text-foreground hover:text-primary"
+                              : "text-foreground hover:text-primary underline"
+                          }
+                        >
+                          {label}
+                        </Link>
+                        {!s.complete && s.missing.length > 0 && (
+                          <ul className="mt-0.5 space-y-0.5">
+                            {s.missing.map((m) => (
+                              <li key={m} className="text-xs text-muted-foreground ml-1">• {m}</li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            </>
+          )}
+        </div>
       </section>
 
       {/* Build error */}
@@ -237,121 +234,135 @@ export function SummaryStep({ steps }: Props) {
 
       {/* Character preview */}
       {!buildError && (
-        <section className="rounded-md border border-border bg-card/50 p-4">
-          <h2 className="font-display text-2xl text-foreground mb-3">
-            Character preview
-          </h2>
-
-          <div className="mb-4">
-            <div className="font-display text-3xl text-foreground">{name}</div>
-            <div className="text-sm text-muted-foreground">
-              {level !== undefined ? `Level ${level}` : "Level —"}{" "}
-              {cls ?? "—"}
-              {sub ? ` (${sub})` : ""} · {species ?? "—"}
-              {lineage ? ` (${lineage})` : ""}
-              {bg ? ` · ${bg}` : ""}
-              {alignment ? ` · ${alignment}` : ""}
+        <section className="info-panel">
+          <div className="info-panel-header">
+            <p className="info-panel-kicker">Character preview</p>
+            <div className="mt-2">
+              <div className="font-display text-2xl text-foreground">{name}</div>
+              <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 mt-1 text-sm text-muted-foreground">
+                {level !== undefined && <span>Level {level}</span>}
+                {cls && <><span aria-hidden>·</span><span>{cls}</span></>}
+                {sub && <span className="text-muted-foreground/70">({sub})</span>}
+                {species && <><span aria-hidden>·</span><span>{species}</span></>}
+                {lineage && <span className="text-muted-foreground/70">({lineage})</span>}
+                {bg && <><span aria-hidden>·</span><span>{bg}</span></>}
+                {alignment && <><span aria-hidden>·</span><span>{alignment}</span></>}
+              </div>
             </div>
           </div>
+          <div className="info-panel-body space-y-5">
+            {buildQuery.isLoading && !buildQuery.data ? (
+              <div className="flex items-center justify-center gap-2 text-muted-foreground py-6">
+                <Loader2 className="h-5 w-5 animate-spin" />
+                <span className="text-sm">Building character…</span>
+              </div>
+            ) : (
+              <>
+                <dl className="grid grid-cols-2 sm:grid-cols-3 gap-y-4 gap-x-6 text-sm">
+                  <Stat label="HP" value={hpMax} />
+                  <Stat label="AC" value={topAc} />
+                  <Stat
+                    label="Speed"
+                    value={speed !== undefined ? `${speed} ft` : undefined}
+                  />
+                  <Stat label="Initiative" value={signed(init)} />
+                  <Stat label="Prof. Bonus" value={signed(pb)} />
+                  <Stat label="Passive Perc." value={passive} />
+                </dl>
 
-          <dl className="grid grid-cols-2 sm:grid-cols-3 gap-y-3 gap-x-6 text-sm mb-4">
-            <Stat label="HP" value={hpMax} />
-            <Stat label="AC" value={topAc} />
-            <Stat
-              label="Speed"
-              value={speed !== undefined ? `${speed} ft` : undefined}
-            />
-            <Stat label="Initiative" value={signed(init)} />
-            <Stat label="Prof. Bonus" value={signed(pb)} />
-            <Stat label="Passive Perc." value={passive} />
-          </dl>
-
-          <div className="grid grid-cols-6 gap-2 mb-4">
-            {abilityOrder.map((a) => {
-              const v = abilityRow(a);
-              return (
-                <div
-                  key={a}
-                  className="rounded border border-border bg-background/40 p-2 text-center"
-                >
-                  <div className="text-[10px] uppercase text-muted-foreground">
-                    {a.slice(0, 3)}
-                  </div>
-                  <div className="text-lg font-semibold">
-                    {v.score ?? "—"}
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    {signed(v.mod)}
-                  </div>
+                <div className="grid grid-cols-6 gap-2">
+                  {abilityOrder.map((a) => {
+                    const v = abilityRow(a);
+                    return (
+                      <div key={a} className="info-panel-block text-center">
+                        <div className="text-[10px] uppercase text-muted-foreground">
+                          {a.slice(0, 3)}
+                        </div>
+                        <div className="text-lg font-semibold mt-0.5">
+                          {v.score ?? "—"}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {signed(v.mod)}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-              );
-            })}
-          </div>
 
-          {languages.length > 0 && (
-            <div className="text-sm mb-3">
-              <span className="text-xs uppercase tracking-widest text-muted-foreground mr-2">
-                Languages
-              </span>
-              {languages.join(", ")}
-            </div>
-          )}
-
-          {features.length > 0 && (
-            <details className="rounded border border-border bg-background/40 p-2">
-              <summary className="cursor-pointer text-xs uppercase tracking-widest text-muted-foreground">
-                Features ({features.length})
-              </summary>
-              <ul className="mt-2 space-y-1 text-sm">
-                {features.slice(0, 30).map((f, i) => {
-                  const fname = str(f.name) ?? str(f.feature) ?? "Feature";
-                  const source = str(f.source);
-                  return (
-                    <li key={i} className="flex justify-between gap-3">
-                      <span>{fname}</span>
-                      {source && (
-                        <span className="text-xs text-muted-foreground">
-                          {source}
-                        </span>
-                      )}
-                    </li>
-                  );
-                })}
-                {features.length > 30 && (
-                  <li className="text-xs text-muted-foreground">
-                    + {features.length - 30} more…
-                  </li>
+                {languages.length > 0 && (
+                  <div className="text-sm">
+                    <span className="text-xs uppercase tracking-widest text-muted-foreground mr-2">
+                      Languages
+                    </span>
+                    {languages.join(", ")}
+                  </div>
                 )}
-              </ul>
-            </details>
-          )}
+
+                {features.length > 0 && (
+                  <details className="info-panel-block">
+                    <summary className="cursor-pointer select-none text-xs uppercase tracking-widest text-muted-foreground">
+                      Features ({features.length})
+                    </summary>
+                    <ul className="mt-3 space-y-1 text-sm">
+                      {features.slice(0, 30).map((f, i) => {
+                        const fname = str(f.name) ?? str(f.feature) ?? "Feature";
+                        const source = str(f.source);
+                        return (
+                          <li key={i} className="flex justify-between gap-3">
+                            <span>{fname}</span>
+                            {source && (
+                              <span className="text-xs text-muted-foreground">
+                                {source}
+                              </span>
+                            )}
+                          </li>
+                        );
+                      })}
+                      {features.length > 30 && (
+                        <li className="text-xs text-muted-foreground">
+                          + {features.length - 30} more…
+                        </li>
+                      )}
+                    </ul>
+                  </details>
+                )}
+              </>
+            )}
+          </div>
         </section>
       )}
 
       {/* Actions */}
-      <section className="rounded-md border border-border bg-card/50 p-4">
-        <h2 className="font-display text-2xl text-foreground mb-3">Next steps</h2>
-        <div className="flex flex-wrap gap-3">
-          <Button asChild>
+      <section className="space-y-4">
+        <div className="rounded-xl border border-primary/30 bg-primary/5 p-6 text-center">
+          <h2 className="font-display text-2xl text-foreground mb-1">Ready to play?</h2>
+          <p className="text-sm text-muted-foreground mb-5">
+            {allComplete
+              ? "Your character is complete and ready to play."
+              : "You can view your sheet and finish filling in details there."}
+          </p>
+          <Button size="lg" asChild>
             <Link to="/sheet">
-              View full character sheet <ChevronRight className="h-4 w-4 ml-1" />
+              View character sheet <ChevronRight className="h-4 w-4 ml-1" />
             </Link>
           </Button>
-          <Button variant="outline" onClick={handleExport}>
+        </div>
+        <div className="flex flex-wrap gap-3">
+          <Button variant="outline" size="sm" onClick={handleExport}>
             Download choices (JSON)
           </Button>
           <Button
             variant="outline"
+            size="sm"
             onClick={handleExportFull}
             disabled={!buildQuery.data || !!buildError}
           >
             Download character (JSON)
           </Button>
         </div>
-        <p className="mt-3 text-xs text-muted-foreground">
+        <p className="text-xs text-muted-foreground">
           Your progress is saved automatically in this browser. Use{" "}
-          <strong>Start over</strong> in the sidebar to begin a new
-          character.
+          <strong>Start over</strong> in the sidebar to begin a new character.
         </p>
       </section>
     </div>
