@@ -55,6 +55,11 @@ def resolve_choice_options(
     elif source_type == "fixed_list":
         # Direct option list
         return source.get("options", [])
+    elif source_type == "fixed_list_intersect_proficiencies":
+        # Filter fixed options to skills the character is currently proficient in
+        fixed_options = source.get("options", [])
+        proficient = set(character.get("proficiencies", {}).get("skills", []))
+        return [option for option in fixed_options if option in proficient]
     elif source_type == "proficient_skills":
         # Skills the character is currently proficient in
         return list(character.get("proficiencies", {}).get("skills", []))
