@@ -95,6 +95,10 @@ class CharacterBuilder:
         "Halfling",
         "Orc",
     ]
+    # Rare languages used for in-memory classification in get_language_options().
+    # This list mirrors the "rare" array in data/languages.json, which is the
+    # authoritative source for the choice-picker UI. Keep both in sync when adding
+    # new rare languages.
     RARE_LANGUAGE_OPTIONS = [
         "Abyssal",
         "Celestial",
@@ -642,8 +646,13 @@ class CharacterBuilder:
         if isinstance(trait_data, dict) and "choices" in trait_data:
             # Look up the choice from choices_made
             choice_config = trait_data["choices"]
-            # Normalize: when choices is a list, use the first item for display
-            # (multi-choice features show each choice by its own choice_key)
+            # When choices is a list (multiple independent choice pickers per feature,
+            # e.g. Deft Explorer which has both an expertise picker and a language picker),
+            # use the first item for the display-name lookup. Each choice in the list
+            # carries its own `name` key (choice_key) and is processed separately by
+            # get_class_features_and_choices / _process_level_features. Using the first
+            # item here prevents an AttributeError while still showing the primary
+            # (first) selection in the feature's display name.
             if isinstance(choice_config, list):
                 choice_config = choice_config[0] if choice_config else {}
             choice_key = choice_config.get("name", trait_name.lower().replace(" ", "_"))
