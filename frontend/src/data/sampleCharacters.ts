@@ -252,7 +252,13 @@ export const SAMPLE_CHARACTERS: SampleCharacter[] = [
     flavor: "A scarred veteran who turns every duel into a chess match.",
     choices: {
       character_name: "Valdris Ashenbrow",
-      classes: [{ class_name: "Fighter", level: 3, subclass: "Battle Master" }],
+      classes: [
+        {
+          class_name: "Fighter",
+          level: 3,
+          subclass: "Battle Master",
+        },
+      ],
       class: "Fighter",
       level: 3,
       subclass: "Battle Master",
@@ -267,14 +273,21 @@ export const SAMPLE_CHARACTERS: SampleCharacter[] = [
         Wisdom: 12,
         Charisma: 10,
       },
-      background_bonuses: { Strength: 2, Constitution: 1 },
+      background_bonuses: {
+        Strength: 2,
+        Constitution: 1,
+      },
       skill_choices: ["Athletics", "Intimidation"],
       fighting_style: "Dueling",
       languages: ["Elvish", "Dwarvish"],
       equipment_selections: {
         class_equipment: "option_a",
-        background_equipment: "option_a",
+        background_equipment: "option_b",
       },
+      maneuvers: ["Rally", "Riposte", "Trip Attack"],
+      background_skill_replacement: ["Acrobatics", "Perception"],
+      Skillful: "Investigation",
+      Versatile: "Lucky",
     },
   },
   {
@@ -288,7 +301,13 @@ export const SAMPLE_CHARACTERS: SampleCharacter[] = [
     flavor: "He heals with one hand and silences with the other.",
     choices: {
       character_name: "Scale-of-Jade",
-      classes: [{ class_name: "Monk", level: 3, subclass: "Warrior of Mercy" }],
+      classes: [
+        {
+          class_name: "Monk",
+          level: 3,
+          subclass: "Warrior of Mercy",
+        },
+      ],
       class: "Monk",
       level: 3,
       subclass: "Warrior of Mercy",
@@ -303,13 +322,19 @@ export const SAMPLE_CHARACTERS: SampleCharacter[] = [
         Wisdom: 14,
         Charisma: 10,
       },
-      background_bonuses: { Dexterity: 2, Wisdom: 1 },
+      background_bonuses: {
+        Dexterity: 2,
+        Wisdom: 1,
+      },
       skill_choices: ["Acrobatics", "Insight"],
-      languages: ["Celestial", "Elvish"],
+      languages: ["Dwarvish", "Draconic"],
       equipment_selections: {
         class_equipment: "option_a",
-        background_equipment: "option_a",
+        background_equipment: "option_b",
       },
+      tool_choices: "Woodcarver's Tools",
+      background_skill_replacement: "Athletics",
+      "Draconic Ancestry": "Silver (Cold)",
     },
   },
   {
@@ -325,7 +350,11 @@ export const SAMPLE_CHARACTERS: SampleCharacter[] = [
     choices: {
       character_name: "Seraphel Ashveil",
       classes: [
-        { class_name: "Paladin", level: 3, subclass: "Oath of Vengeance" },
+        {
+          class_name: "Paladin",
+          level: 3,
+          subclass: "Oath of Vengeance",
+        },
       ],
       class: "Paladin",
       level: 3,
@@ -342,14 +371,16 @@ export const SAMPLE_CHARACTERS: SampleCharacter[] = [
         Wisdom: 12,
         Charisma: 14,
       },
-      background_bonuses: { Strength: 2, Charisma: 1 },
+      background_bonuses: {
+        Strength: 2,
+        Charisma: 1,
+      },
       skill_choices: ["Athletics", "Persuasion"],
       fighting_style: "Dueling",
       spell_selections: {
         cantrips: [],
         spells: [
           "Bless",
-          "Divine Smite",
           "Detect Evil and Good",
           "Branding Smite",
           "Find Steed",
@@ -357,11 +388,13 @@ export const SAMPLE_CHARACTERS: SampleCharacter[] = [
         background_cantrips: [],
         background_spells: [],
       },
-      languages: ["Celestial", "Elvish"],
+      languages: ["Common Sign Language", "Gnomish"],
       equipment_selections: {
         class_equipment: "option_a",
-        background_equipment: "option_a",
+        background_equipment: "option_b",
       },
+      background_skill_replacement: "Insight",
+      "Fiendish Legacy": "Charisma",
     },
   },
   {
@@ -424,7 +457,13 @@ export const SAMPLE_CHARACTERS: SampleCharacter[] = [
     flavor: "She was never in the room. That's what makes it so unsettling.",
     choices: {
       character_name: "Zara'lyn",
-      classes: [{ class_name: "Rogue", level: 3, subclass: "Assassin" }],
+      classes: [
+        {
+          class_name: "Rogue",
+          level: 3,
+          subclass: "Assassin",
+        },
+      ],
       class: "Rogue",
       level: 3,
       subclass: "Assassin",
@@ -440,13 +479,20 @@ export const SAMPLE_CHARACTERS: SampleCharacter[] = [
         Wisdom: 10,
         Charisma: 12,
       },
-      background_bonuses: { Dexterity: 2, Intelligence: 1 },
+      background_bonuses: {
+        Dexterity: 2,
+        Intelligence: 1,
+      },
       skill_choices: ["Stealth", "Deception", "Perception", "Sleight of Hand"],
-      languages: ["Undercommon", "Goblin"],
+      languages: ["Orc", "Elvish"],
       equipment_selections: {
         class_equipment: "option_a",
-        background_equipment: "option_a",
+        background_equipment: "option_b",
       },
+      rogue_expertise_skills_1: ["Stealth", "Perception"],
+      background_skill_replacement: ["Insight", "Investigation"],
+      "Elven Lineage": "Intelligence",
+      "Keen Senses": "Survival",
     },
   },
   {
@@ -461,7 +507,11 @@ export const SAMPLE_CHARACTERS: SampleCharacter[] = [
     choices: {
       character_name: "Seraphine Dusk",
       classes: [
-        { class_name: "Sorcerer", level: 3, subclass: "Draconic Sorcery" },
+        {
+          class_name: "Sorcerer",
+          level: 3,
+          subclass: "Draconic Sorcery",
+        },
       ],
       class: "Sorcerer",
       level: 3,
@@ -477,26 +527,30 @@ export const SAMPLE_CHARACTERS: SampleCharacter[] = [
         Wisdom: 12,
         Charisma: 15,
       },
-      background_bonuses: { Charisma: 2, Constitution: 1 },
+      background_bonuses: {
+        Charisma: 2,
+        Constitution: 1,
+      },
       skill_choices: ["Arcana", "Persuasion"],
       draconic_ancestry: "Gold",
       spell_selections: {
         cantrips: ["Fire Bolt", "Chill Touch", "Mage Hand"],
-        spells: [
-          "Chromatic Orb",
-          "Burning Hands",
-          "False Life",
-          "Dragon's Breath",
-          "Blur",
-        ],
+        spells: ["Burning Hands", "False Life", "Blur"],
         background_cantrips: [],
         background_spells: [],
       },
-      languages: ["Celestial", "Draconic"],
+      languages: ["Elvish", "Draconic"],
       equipment_selections: {
         class_equipment: "option_a",
-        background_equipment: "option_a",
+        background_equipment: "option_b",
       },
+      metamagic: ["Quickened Spell", "Distant Spell"],
+      background_skill_replacement: "Deception",
+      feat_Skilled_skills_or_tools: [
+        "Intimidation",
+        "Perception",
+        "Performance",
+      ],
     },
   },
   {
@@ -539,7 +593,7 @@ export const SAMPLE_CHARACTERS: SampleCharacter[] = [
         background_cantrips: [],
         background_spells: [],
       },
-      languages: ["Abyssal", "Infernal"],
+      languages: ["Orc", "Draconic"],
       equipment_selections: {
         class_equipment: "option_a",
         background_equipment: "option_a",
@@ -558,7 +612,13 @@ export const SAMPLE_CHARACTERS: SampleCharacter[] = [
       "Small, meticulous, and capable of erasing a village with a gesture.",
     choices: {
       character_name: "Pip Runebright",
-      classes: [{ class_name: "Wizard", level: 3, subclass: "Evoker" }],
+      classes: [
+        {
+          class_name: "Wizard",
+          level: 3,
+          subclass: "Evoker",
+        },
+      ],
       class: "Wizard",
       level: 3,
       subclass: "Evoker",
@@ -573,7 +633,10 @@ export const SAMPLE_CHARACTERS: SampleCharacter[] = [
         Wisdom: 12,
         Charisma: 10,
       },
-      background_bonuses: { Intelligence: 2, Constitution: 1 },
+      background_bonuses: {
+        Intelligence: 2,
+        Constitution: 1,
+      },
       skill_choices: ["Arcana", "History"],
       spell_selections: {
         cantrips: ["Fire Bolt", "Acid Splash", "Mage Hand"],
@@ -588,11 +651,13 @@ export const SAMPLE_CHARACTERS: SampleCharacter[] = [
         background_cantrips: [],
         background_spells: [],
       },
-      languages: ["Elvish", "Draconic"],
       equipment_selections: {
         class_equipment: "option_a",
-        background_equipment: "option_a",
+        background_equipment: "option_b",
       },
+      lineage: "Forest Gnome",
+      "Gnomish Lineage": "Intelligence",
+      languages: ["Gnomish", "Goblin"],
     },
   },
 ];

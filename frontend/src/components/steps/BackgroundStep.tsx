@@ -109,7 +109,7 @@ export function BackgroundStep() {
       ...alreadyChosenReplacements,
       ...(skillReplacement?.options ?? []),
     ]),
-  );
+  ).sort((a, b) => a.localeCompare(b));
   const hasSkillReplacementChoice =
     neededSkillReplacements > 0 || alreadyChosenReplacements.length > 0;
   const skillReplacementCount =

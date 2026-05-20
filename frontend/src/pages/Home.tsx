@@ -10,6 +10,9 @@ import { summarizeChoices } from "@/lib/persistence";
 import { useIsDark } from "@/hooks/useIsDark";
 import { SAMPLE_CHARACTERS } from "@/data/sampleCharacters";
 
+const BUG_REPORT_URL =
+  "https://github.com/QuickNS/dnd-character-creator/issues/new?labels=bug";
+
 export function Home() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -175,7 +178,15 @@ export function Home() {
   return (
     <main className="min-h-dvh bg-background text-foreground font-sans overflow-x-hidden">
       {/* ── Theme toggle ─────────────────────────────────────────── */}
-      <div className="fixed top-4 right-4 z-20">
+      <div className="fixed top-4 right-4 z-20 flex items-center gap-2">
+        <a
+          href={BUG_REPORT_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center rounded-md border border-border bg-background px-3 py-2 text-sm font-medium text-muted-foreground shadow-sm hover:bg-secondary hover:text-foreground transition-colors"
+        >
+          Bug Report
+        </a>
         <ThemeToggle />
       </div>
 
@@ -221,6 +232,10 @@ export function Home() {
               Every hero begins with a single choice. Build your champion with
               the full&nbsp;D&amp;D&nbsp;2024 rules — choose your lineage,
               master your class, and shape a destiny worthy of the annals.
+            </p>
+            <p className="text-sm text-muted-foreground/90 leading-relaxed">
+              This site is a work in progress, and a few rough edges are expected.
+              If you spot a bug, please collaborate with us by sending a quick report.
             </p>
           </div>
           <div className="flex flex-wrap gap-3 justify-center">

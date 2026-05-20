@@ -437,9 +437,7 @@
         "effects": [
           {
             "type": "grant_skill_expertise",
-            "skills": [
-              "__deft_explorer_expertise__"
-            ]
+            "from_choice": "deft_explorer_expertise"
           }
         ]
       },
@@ -498,9 +496,7 @@
         "effects": [
           {
             "type": "grant_skill_expertise",
-            "skills": [
-              "__expertise_skills__"
-            ]
+            "from_choice": "expertise_skills"
           }
         ]
       }

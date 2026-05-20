@@ -6,6 +6,9 @@ import { useIsDark } from "@/hooks/useIsDark";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
 
+const BUG_REPORT_URL =
+  "https://github.com/QuickNS/dnd-character-creator/issues/new?labels=bug";
+
 // `to_character()` is too sprawling to fully type at the boundary.
 // We treat it as a loose record and narrow only where we read.
 type Char = Record<string, unknown>;
@@ -134,6 +137,15 @@ function Shell({ children }: { children: React.ReactNode }) {
               <Link to="/">← Home</Link>
             </Button>
             <div className="flex items-center gap-3">
+              <Button asChild variant="outline" size="sm">
+                <a
+                  href={BUG_REPORT_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Bug Report
+                </a>
+              </Button>
               <Button asChild variant="outline" size="sm">
                 <Link to="/sheet/pdf">Printable Sheet</Link>
               </Button>
@@ -870,12 +882,19 @@ function Spells({ c }: { c: Char }) {
                   value={`${cantripsPrepared ?? 0} / ${maxCantrips}`}
                 />
               )}
-              {maxSpells !== undefined && (
-                <Stat
-                  label="Prepared Spells"
-                  value={preparedSpellsDisplay ?? "—"}
-                />
-              )}
+              {maxSpells !== undefined && (() => {
+                const alwaysPreparedCount = num(stats.spells_always_prepared) ?? 0;
+                const userPrepared = (spellsPrepared ?? 0) - alwaysPreparedCount;
+                const preparedDisplay = alwaysPreparedCount > 0
+                  ? `${userPrepared} / ${maxSpells} (+${alwaysPreparedCount})`
+                  : `${spellsPrepared ?? 0} / ${maxSpells}`;
+                return (
+                  <Stat
+                    label="Prepared Spells"
+                    value={preparedDisplay}
+                  />
+                );
+              })()}
               {ritual && <Stat label="Ritual Casting" value="Yes" />}
             </dl>
 
@@ -971,11 +990,6 @@ function Spells({ c }: { c: Char }) {
                           key={`${name}-${i}`}
                           className="rounded border border-border bg-background/40 p-3"
                         >
-                          {sp.concentration === true && (
-                            <div className="mb-2 rounded bg-amber-600/20 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-400 border border-amber-600/40">
-                              ✦ Concentration
-                            </div>
-                          )}
                           <div className="flex flex-wrap items-center gap-3 font-semibold text-foreground">
                             <span>{name}</span>
                             {sp.concentration === true && (
@@ -984,8 +998,8 @@ function Spells({ c }: { c: Char }) {
                               </span>
                             )}
                             {sp.always_prepared === true && (
-                              <span className="rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300">
-                                ALWAYS PREPARED
+                              <span className="shrink-0 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2 py-0.5 text-[11px] uppercase tracking-wide text-emerald-700 dark:text-emerald-300">
+                                Always Prepared
                               </span>
                             )}
                           </div>
@@ -1051,7 +1065,7 @@ function Features({ c }: { c: Char }) {
                       </div>
                       {str(f.description) && (
                         <div
-                          className="feature-description text-xs text-muted-foreground mt-1"
+                          className="feature-description text-sm text-muted-foreground mt-1"
                           dangerouslySetInnerHTML={{
                             __html: str(f.description) as string,
                           }}

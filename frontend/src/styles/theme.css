@@ -115,7 +115,7 @@
   }
 
   .feature-description table {
-    @apply w-full mt-2 border-collapse text-lg;
+    @apply w-full mt-2 border-collapse;
   }
   .feature-description th,
   .feature-description td {

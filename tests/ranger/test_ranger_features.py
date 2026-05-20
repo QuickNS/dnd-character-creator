@@ -18,6 +18,41 @@ def build_ranger(level, subclass):
     return builder.to_character()
 
 
+def build_ranger_with_choices(level, deft_explorer_expertise=None, expertise_skills=None):
+    """Build a Ranger via apply_choices so expertise selections are honored."""
+    builder = CharacterBuilder()
+    choices = {
+        "character_name": "Test Ranger",
+        "level": level,
+        "class": "Ranger",
+        "species": "Human",
+        "background": "Soldier",
+        "skill_choices": ["Stealth", "Perception", "Survival"],
+        "fighting_style": "Archery",
+        "ability_scores": {
+            "Strength": 10,
+            "Dexterity": 15,
+            "Constitution": 14,
+            "Intelligence": 10,
+            "Wisdom": 14,
+            "Charisma": 8,
+        },
+        "background_bonuses": {"Strength": 2, "Constitution": 1},
+    }
+    if level >= 3:
+        choices["subclass"] = "Hunter"
+        choices["hunters_prey"] = "Colossus Slayer"
+    if level >= 7:
+        choices["defensive_tactics"] = "Escape the Horde"
+    if deft_explorer_expertise is not None:
+        choices["deft_explorer_expertise"] = deft_explorer_expertise
+    if expertise_skills is not None:
+        choices["expertise_skills"] = expertise_skills
+
+    builder.apply_choices(choices)
+    return builder
+
+
 # ---------------------------------------------------------------------------
 # Base class features (use Hunter as default subclass)
 # ---------------------------------------------------------------------------
@@ -154,6 +189,53 @@ class TestRangerBaseFeatures:
             f for f in character["features"]["class"] if f["name"] == "Foe Slayer"
         )
         assert "d10" in feature["description"]
+
+
+class TestRangerExpertiseChoices:
+    """Regression tests for Issue #114 Ranger expertise choices."""
+
+    def test_level_2_has_deft_explorer_expertise_choice(self):
+        builder = build_ranger_with_choices(2)
+        features = builder.get_class_features_and_choices()
+
+        deft_choice = next(
+            (c for c in features["choices"] if c.get("choice_key") == "deft_explorer_expertise"),
+            None,
+        )
+        assert deft_choice is not None
+        assert deft_choice["count"] == 1
+
+    def test_level_2_deft_explorer_choice_applies_expertise(self):
+        character = build_ranger_with_choices(
+            2,
+            deft_explorer_expertise="Stealth",
+        ).to_character()
+
+        assert "Stealth" in character.get("skill_expertise", [])
+        assert character["skills"]["stealth"]["expertise"] is True
+
+    def test_level_9_has_expertise_choice_for_two_skills(self):
+        builder = build_ranger_with_choices(9)
+        features = builder.get_class_features_and_choices()
+
+        expertise_choice = next(
+            (c for c in features["choices"] if c.get("choice_key") == "expertise_skills"),
+            None,
+        )
+        assert expertise_choice is not None
+        assert expertise_choice["count"] == 2
+
+    def test_level_9_expertise_choices_apply_to_both_selected_skills(self):
+        character = build_ranger_with_choices(
+            9,
+            deft_explorer_expertise="Athletics",
+            expertise_skills=["Stealth", "Perception"],
+        ).to_character()
+
+        assert "Stealth" in character.get("skill_expertise", [])
+        assert "Perception" in character.get("skill_expertise", [])
+        assert character["skills"]["stealth"]["expertise"] is True
+        assert character["skills"]["perception"]["expertise"] is True
 
 
 # ---------------------------------------------------------------------------

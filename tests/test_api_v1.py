@@ -557,6 +557,22 @@ class TestCharacterBuild:
         new_shape_character = new_shape_response.get_json()["character"]
         assert new_shape_character["spell_slots"] == legacy_character["spell_slots"]
 
+    def test_single_class_full_caster_has_effective_caster_level(
+        self, client, dwarf_cleric_choices
+    ):
+        """A single-class full caster should report effective_caster_level equal to its class level."""
+        r = client.post(
+            "/api/v1/character/build",
+            json={"choices_made": dwarf_cleric_choices},
+        )
+        assert r.status_code == 200
+        char = r.get_json()["character"]
+        stats = char["spellcasting_stats"]
+        expected_level = dwarf_cleric_choices["level"]
+        assert stats.get("effective_caster_level") == expected_level, (
+            f"Expected effective_caster_level={expected_level}, got {stats.get('effective_caster_level')}"
+        )
+
     def test_validate_complete(self, client, dwarf_cleric_choices):
         r = client.post(
             "/api/v1/character/validate",

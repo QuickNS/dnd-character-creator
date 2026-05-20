@@ -3309,6 +3309,19 @@ class CharacterBuilder:
             "notes": [],
         }
         if not is_multiclass:
+            # For a single-class character, still compute effective_caster_level
+            if rows:
+                row = rows[0]
+                class_level = max(1, int(row.get("level", 1)))
+                spellcasting_source, _, _ = self._resolve_row_spellcasting_source(row)
+                progression = self._infer_spellcasting_progression(spellcasting_source)
+                if progression == "full":
+                    result["effective_caster_level"] = class_level
+                elif progression == "half":
+                    result["effective_caster_level"] = (class_level + 1) // 2
+                elif progression == "third":
+                    result["effective_caster_level"] = class_level // 3
+                # pact and none leave effective_caster_level as 0
             return result
 
         effective_caster_level = 0

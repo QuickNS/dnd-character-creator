@@ -1,12 +1,15 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Outlet, Link, useNavigate, useParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ChevronLeft, ChevronRight, Home as HomeIcon, RotateCcw } from "lucide-react";
+import { Bug, ChevronLeft, ChevronRight, Home as HomeIcon, RotateCcw } from "lucide-react";
 import { api } from "@/lib/api";
 import { useCharacterStore } from "@/store/characterStore";
 import { StepSidebar } from "@/components/wizard/StepSidebar";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+
+const BUG_REPORT_URL =
+  "https://github.com/QuickNS/dnd-character-creator/issues/new?labels=bug";
 
 export function WizardLayout() {
   const navigate = useNavigate();
@@ -87,13 +90,24 @@ export function WizardLayout() {
     <div className="min-h-dvh bg-background text-foreground font-sans">
       <div className="sticky top-0 z-20 border-b border-border bg-background/95 backdrop-blur-sm md:hidden">
         <div className="flex items-center justify-between px-4 py-3">
-          <Link
-            to="/"
-            className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
-          >
-            <HomeIcon className="h-4 w-4" aria-hidden="true" />
-            Home
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link
+              to="/"
+              className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
+            >
+              <HomeIcon className="h-4 w-4" aria-hidden="true" />
+              Home
+            </Link>
+            <a
+              href={BUG_REPORT_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-md px-2 py-2 text-xs text-muted-foreground hover:bg-secondary/60 hover:text-foreground transition-colors"
+            >
+              <Bug className="h-4 w-4" aria-hidden="true" />
+              Report bug
+            </a>
+          </div>
           <div className="flex items-center gap-2">
             <button
               type="button"
@@ -159,22 +173,45 @@ export function WizardLayout() {
           {/* ── Home button — bottom of sidebar ───────────────── */}
           <div className="border-t border-border p-3">
             {sidebarCollapsed ? (
-              <Link
-                to="/"
-                aria-label="Return to home page"
-                title="Return to home page"
-                className="flex h-9 w-9 mx-auto items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
-              >
-                <HomeIcon className="h-4 w-4" aria-hidden="true" />
-              </Link>
+              <div className="flex flex-col items-center gap-2">
+                <Link
+                  to="/"
+                  aria-label="Return to home page"
+                  title="Return to home page"
+                  className="flex h-9 w-9 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
+                >
+                  <HomeIcon className="h-4 w-4" aria-hidden="true" />
+                </Link>
+                <a
+                  href={BUG_REPORT_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Report a bug"
+                  title="Report a bug"
+                  className="flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-secondary/60 hover:text-foreground transition-colors"
+                >
+                  <Bug className="h-4 w-4" aria-hidden="true" />
+                </a>
+              </div>
             ) : (
-              <Link
-                to="/"
-                className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-border px-5 py-2 text-sm text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
-              >
-                <HomeIcon className="h-4 w-4" aria-hidden="true" />
-                Back to Home
-              </Link>
+              <div className="space-y-2">
+                <Link
+                  to="/"
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-border px-5 py-2 text-sm text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
+                >
+                  <HomeIcon className="h-4 w-4" aria-hidden="true" />
+                  Back to Home
+                </Link>
+                <a
+                  href={BUG_REPORT_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-md px-3 py-2 text-xs text-muted-foreground hover:bg-secondary/60 hover:text-foreground transition-colors"
+                >
+                  <Bug className="h-4 w-4" aria-hidden="true" />
+                  Bug Report
+                </a>
+              </div>
             )}
           </div>
         </aside>

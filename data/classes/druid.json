@@ -445,6 +445,12 @@
             "type": "grant_spell",
             "spell": "Speak with Animals",
             "min_level": 1
+          },
+          {
+            "type": "grant_language",
+            "languages": [
+              "Druidic"
+            ]
           }
         ]
       },
