@@ -58,6 +58,20 @@ def resolve_choice_options(
     elif source_type == "proficient_skills":
         # Skills the character is currently proficient in
         return list(character.get("proficiencies", {}).get("skills", []))
+    elif source_type == "computed":
+        from_value = source.get("from", "")
+        if from_value == "skill_proficiencies":
+            skills = list(character.get("proficiencies", {}).get("skills", []))
+            if not skills and class_data:
+                # Fall back to the class's available skill options when
+                # proficiencies haven't been resolved yet (e.g. during
+                # preview-step before skill choices are submitted).
+                # Filter out "Any" sentinel values used by some classes to
+                # indicate "any skill" — callers expect concrete skill names.
+                skill_options = class_data.get("skill_options", [])
+                if isinstance(skill_options, list):
+                    return [s for s in skill_options if s.lower() != "any"]
+            return skills
 
     return []
 
