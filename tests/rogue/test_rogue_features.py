@@ -421,6 +421,81 @@ class TestRogueEffects:
         languages = character["proficiencies"]["languages"]
         assert "Thieves' Cant" in languages
 
+    def test_thieves_cant_additional_language_choice_in_features(self):
+        """Thieves' Cant exposes a single language choice in class features."""
+        builder = CharacterBuilder()
+        builder.set_species("Human")
+        builder.set_background("Criminal")
+        builder.set_class("Rogue", 1)
+        features = builder.get_class_features_and_choices()
+        lang_choice = next(
+            (c for c in features["choices"] if c.get("choice_key") == "thieves_cant_language"),
+            None,
+        )
+        assert lang_choice is not None
+        assert lang_choice["count"] == 1
+
+    def test_thieves_cant_language_choice_includes_rare_languages(self):
+        """The language choice pool for Thieves' Cant includes rare languages."""
+        builder = CharacterBuilder()
+        builder.set_species("Human")
+        builder.set_background("Criminal")
+        builder.set_class("Rogue", 1)
+        features = builder.get_class_features_and_choices()
+        lang_choice = next(
+            (c for c in features["choices"] if c.get("choice_key") == "thieves_cant_language"),
+            None,
+        )
+        assert lang_choice is not None
+        options = lang_choice["options"]
+        assert "Elvish" in options
+        assert "Abyssal" in options
+        assert "Sylvan" in options
+
+    def test_thieves_cant_additional_language_applied(self):
+        """Chosen Thieves' Cant additional language is added as a proficiency."""
+        builder = CharacterBuilder()
+        builder.apply_choices({
+            "character_name": "Test Rogue",
+            "level": 1,
+            "class": "Rogue",
+            "species": "Human",
+            "background": "Criminal",
+            "skill_choices": ["Stealth", "Perception", "Deception", "Athletics"],
+            "ability_scores": {
+                "Strength": 10, "Dexterity": 15, "Constitution": 14,
+                "Intelligence": 12, "Wisdom": 10, "Charisma": 8,
+            },
+            "background_bonuses": {"Dexterity": 2, "Intelligence": 1},
+            "thieves_cant_language": "Elvish",
+        })
+        character = builder.to_character()
+        languages = character["proficiencies"]["languages"]
+        assert "Thieves' Cant" in languages
+        assert "Elvish" in languages
+
+    def test_thieves_cant_rare_language_choice_applied(self):
+        """A rare language (e.g. Sylvan) can be selected as the Thieves' Cant additional language."""
+        builder = CharacterBuilder()
+        builder.apply_choices({
+            "character_name": "Test Rogue",
+            "level": 1,
+            "class": "Rogue",
+            "species": "Human",
+            "background": "Criminal",
+            "skill_choices": ["Stealth", "Perception", "Deception", "Athletics"],
+            "ability_scores": {
+                "Strength": 10, "Dexterity": 15, "Constitution": 14,
+                "Intelligence": 12, "Wisdom": 10, "Charisma": 8,
+            },
+            "background_bonuses": {"Dexterity": 2, "Intelligence": 1},
+            "thieves_cant_language": "Sylvan",
+        })
+        character = builder.to_character()
+        languages = character["proficiencies"]["languages"]
+        assert "Thieves' Cant" in languages
+        assert "Sylvan" in languages
+
     def test_assassin_tool_proficiency(self):
         """Assassin grants Disguise Kit and Poisoner's Kit."""
         character = build_rogue(3, "Assassin")

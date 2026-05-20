@@ -160,8 +160,11 @@
                       "type": "string"
                     },
                     "choices": {
-                      "type": "object",
-                      "description": "For features with choices (see Choice Reference System)"
+                      "description": "For features with choices (see Choice Reference System). Can be a single choice object or an array of choice objects.",
+                      "oneOf": [
+                        {"type": "object"},
+                        {"type": "array", "items": {"type": "object"}}
+                      ]
                     }
                   }
                 }

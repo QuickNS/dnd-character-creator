@@ -522,19 +522,35 @@
     "2": {
       "Deft Explorer": {
         "description": "Thanks to your travels, you gain the following benefits. Expertise: Choose one of your skill proficiencies with which you lack Expertise. You gain Expertise in that skill. Languages: You know two languages of your choice.",
-        "choices": {
-          "type": "select_single",
-          "count": 1,
-          "name": "deft_explorer_expertise",
-          "source": {
-            "type": "computed",
-            "from": "skill_proficiencies"
+        "choices": [
+          {
+            "type": "select_single",
+            "count": 1,
+            "name": "deft_explorer_expertise",
+            "source": {
+              "type": "computed",
+              "from": "skill_proficiencies"
+            }
+          },
+          {
+            "type": "select_multiple",
+            "count": 2,
+            "name": "deft_explorer_languages",
+            "source": {
+              "type": "external",
+              "file": "languages.json",
+              "list": "all"
+            }
           }
-        },
+        ],
         "effects": [
           {
             "type": "grant_skill_expertise",
             "from_choice": "deft_explorer_expertise"
+          },
+          {
+            "type": "grant_language",
+            "from_choice": "deft_explorer_languages"
           }
         ]
       },
