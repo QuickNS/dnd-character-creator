@@ -223,6 +223,44 @@ class TestWizardBaseClass:
         character = build_wizard_with_choices(2)
         assert character.get("skill_expertise", []) == []
 
+    def test_scholar_choice_options_limited_to_proficient_skills(self):
+        """Scholar picker options must only include skills the wizard is proficient in."""
+        builder = CharacterBuilder()
+        builder.apply_choices(
+            {
+                "character_name": "Scholar Test Wizard",
+                "level": 2,
+                "class": "Wizard",
+                "species": "Human",
+                "background": "Sage",
+                "skill_choices": ["Arcana", "History"],
+                "ability_scores": {
+                    "Strength": 8,
+                    "Dexterity": 14,
+                    "Constitution": 13,
+                    "Intelligence": 15,
+                    "Wisdom": 12,
+                    "Charisma": 10,
+                },
+                "background_bonuses": {"Intelligence": 2, "Constitution": 1},
+            }
+        )
+        features = builder.get_class_features_and_choices()
+        scholar_choice = next(
+            (
+                c
+                for c in features["choices"]
+                if c.get("choice_key") == "wizard_scholar_skill"
+            ),
+            None,
+        )
+        assert scholar_choice is not None, "Scholar choice picker not found"
+
+        character = builder.to_character()
+        proficient_skills = set(character["proficiencies"]["skills"])
+        assert set(scholar_choice["options"]) == {"Arcana", "History"}
+        assert set(scholar_choice["options"]) <= proficient_skills
+
     @pytest.mark.parametrize(
         "level,expected_features",
         [

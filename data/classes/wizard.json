@@ -92,7 +92,7 @@
           "count": 1,
           "name": "wizard_scholar_skill",
           "source": {
-            "type": "fixed_list",
+            "type": "fixed_list_intersect_proficiencies",
             "options": [
               "Arcana",
               "History",
