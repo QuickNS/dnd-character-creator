@@ -287,11 +287,27 @@ class CharacterBuilder:
     def _load_subclass_data(
         self, class_name: str, subclass_name: str
     ) -> Optional[Dict[str, Any]]:
-        """Load subclass data from JSON file."""
+        """Load subclass data from JSON file.
+
+        First tries the canonical filename derived from the subclass name.
+        If that file doesn't exist, scans every JSON in the class folder and
+        returns the first whose "name" field matches (case-insensitive).  This
+        handles cases where file names differ from the subclass's display name
+        (e.g. evocation.json whose "name" is "Evoker").
+        """
         class_folder = class_name.lower().replace(" ", "_")
+        subclass_dir = self.data_dir / "subclasses" / class_folder
         filename = subclass_name.lower().replace(" ", "_").replace(":", "-")
-        file_path = self.data_dir / "subclasses" / class_folder / f"{filename}.json"
-        return self._load_json_file(file_path)
+        file_path = subclass_dir / f"{filename}.json"
+        if file_path.exists():
+            return self._load_json_file(file_path)
+        # Fallback: scan folder and match by the "name" field
+        if subclass_dir.exists():
+            for json_file in sorted(subclass_dir.glob("*.json")):
+                data = self._load_json_file(json_file)
+                if data and data.get("name", "").lower() == subclass_name.lower():
+                    return data
+        return None
 
     def _load_background_data(self, background_name: str) -> Optional[Dict[str, Any]]:
         """Load background data from JSON file."""
@@ -5027,12 +5043,9 @@ class CharacterBuilder:
             )
         max_hp = hp_breakdown["total_hp"]
 
-        # Calculate AC (basic calculation - can be enhanced)
-        base_ac = 10 + dex_modifier
-
-        # Apply armor if any
-        equipment.get("armor", [])
-        armor_ac = base_ac  # Start with unarmored AC
+        # Calculate AC using the full options system (handles armor, shield, effects)
+        ac_options = self.calculate_ac_options()
+        armor_ac = ac_options[0]["ac"] if ac_options else (10 + dex_modifier)
 
         # Speed (default 30, can be modified by species/features)
         speed = self.character_data.get("speed", 30)
@@ -5060,8 +5073,10 @@ class CharacterBuilder:
         )
         perception_proficient = "Perception" in skill_proficiencies
 
+        best_option = ac_options[0] if ac_options else {}
         return {
             "armor_class": armor_ac,
+            "uses_shield": bool(best_option.get("shield", False)),
             "initiative": dex_modifier,  # For backward compatibility
             "initiative_bonus": dex_modifier,
             "speed": speed,

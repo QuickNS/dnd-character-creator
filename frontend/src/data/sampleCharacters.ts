@@ -191,6 +191,7 @@ export const SAMPLE_CHARACTERS: SampleCharacter[] = [
     classKey: "druid",
     flavor: "The forest doesn't fear her. The forest is her.",
     choices: {
+      character_name: "Sylara Dawnwhisper",
       classes: [
         {
           class_name: "Druid",
