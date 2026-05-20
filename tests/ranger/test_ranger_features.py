@@ -286,6 +286,12 @@ class TestRangerDruidicWarrior:
         assert "Druidic Warrior" in fighting_style_choice["options"]
         assert druidic_cantrip_choice is not None
         assert druidic_cantrip_choice["count"] == 2
+        # depends_on must match the choice_key used in choicesMade so the UI
+        # correctly shows/hides the cantrip picker (regression for depends_on bug)
+        assert druidic_cantrip_choice.get("depends_on") == "fighting_style", (
+            f"depends_on should be 'fighting_style', got {druidic_cantrip_choice.get('depends_on')!r}"
+        )
+        assert druidic_cantrip_choice.get("depends_on_value") == "Druidic Warrior"
 
     def test_druidic_warrior_grants_druidic_and_two_druid_cantrips(self):
         character = build_ranger_with_choices(

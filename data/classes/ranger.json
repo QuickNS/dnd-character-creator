@@ -498,7 +498,8 @@
           "count": 2,
           "spell_list": "Druid",
           "counts_against_limit": false,
-          "category": "always_prepared"
+          "category": "always_prepared",
+          "depends_on": "fighting_style"
         }
       ]
     }

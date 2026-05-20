@@ -6462,10 +6462,18 @@ class CharacterBuilder:
                                 # Create unique feature name based on the option that grants it
                                 bonus_feature_name = f"{option_name}_bonus_cantrip"
 
-                                # Derive parent choice key (e.g., "divine_order" from "Divine Order" or "divine_orders")
-                                choice_key = data_key.rstrip(
-                                    "s"
-                                )  # Remove trailing 's' (e.g., divine_orders -> divine_order)
+                                # Derive parent choice key.
+                                # Prefer an explicit "depends_on" field on the effect (e.g., "fighting_style").
+                                # Fall back to stripping the "_options" suffix when present
+                                # (e.g., "fighting_style_options" → "fighting_style"), or
+                                # stripping a trailing "s" for simple plural keys
+                                # (e.g., "divine_orders" → "divine_order").
+                                if effect.get("depends_on"):
+                                    choice_key = effect["depends_on"]
+                                elif data_key.endswith("_options"):
+                                    choice_key = data_key[: -len("_options")]
+                                else:
+                                    choice_key = data_key.rstrip("s")
 
                                 # Only add if not already in choices
                                 if not any(
