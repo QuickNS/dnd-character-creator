@@ -213,6 +213,42 @@ class TestRangerExpertiseChoices:
         assert deft_choice is not None
         assert deft_choice["count"] == 1
 
+    def test_level_2_deft_explorer_expertise_options_match_proficient_skills(self):
+        """Expertise picker options must equal the character's proficient skills (not empty)."""
+        builder = build_ranger_with_choices(2)
+        features = builder.get_class_features_and_choices()
+
+        deft_choice = next(
+            (c for c in features["choices"] if c.get("choice_key") == "deft_explorer_expertise"),
+            None,
+        )
+        assert deft_choice is not None, "deft_explorer_expertise choice not found"
+        char = builder.to_character()
+        proficient_skills = set(char["proficiencies"]["skills"])
+        assert len(proficient_skills) > 0, "Test setup must produce at least one proficient skill"
+        assert len(deft_choice["options"]) > 0, "Expertise options must not be empty"
+        assert set(deft_choice["options"]) == proficient_skills
+
+    def test_level_2_deft_explorer_expertise_options_fallback_when_no_proficiencies(self):
+        """When no proficiencies are resolved yet, options fall back to class skill options."""
+        builder = CharacterBuilder()
+        builder.apply_choices({
+            "character_name": "Test",
+            "level": 2,
+            "class": "Ranger",
+            "ability_scores": {
+                "Strength": 10, "Dexterity": 15, "Constitution": 14,
+                "Intelligence": 10, "Wisdom": 14, "Charisma": 8,
+            },
+        })
+        features = builder.get_class_features_and_choices()
+        deft_choice = next(
+            (c for c in features["choices"] if c.get("choice_key") == "deft_explorer_expertise"),
+            None,
+        )
+        assert deft_choice is not None
+        assert len(deft_choice["options"]) > 0, "Fallback must produce non-empty options"
+
     def test_level_2_deft_explorer_choice_applies_expertise(self):
         character = build_ranger_with_choices(
             2,
