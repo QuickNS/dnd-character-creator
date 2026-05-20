@@ -43,9 +43,13 @@ def test_feature_override_pdf_summary_replaces_description():
     assert second_wind["description"] == expected_summary
 
 
-def test_feature_override_hidden_suppresses_class_feature():
+def test_feature_override_hidden_suppresses_class_feature(monkeypatch):
     builder = CharacterBuilder()
-    builder._feature_overrides_cache = {"Fighter": {"Weapon Mastery": {"hidden": True}}}
+    monkeypatch.setattr(
+        builder,
+        "_load_feature_overrides",
+        lambda: {"Fighter": {"Weapon Mastery": {"hidden": True}}},
+    )
     assert builder.set_class("Fighter", 1) is True
 
     assert "Weapon Mastery" not in _class_feature_names(builder)

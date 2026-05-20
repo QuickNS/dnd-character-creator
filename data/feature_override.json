@@ -1,10 +1,10 @@
 {
   "Fighter": {
     "Second Wind": {
-      "pdf_summary": "Bonus Action: Regain 1d10+Fighter level HP (2/SR, 3/SR at level 4)"
+      "pdf_summary": "Bonus Action: Regain 1d10+Fighter level HP (2/Short Rest, 3/Short Rest at level 4)"
     },
     "Action Surge": {
-      "pdf_summary": "Once per SR, take one additional Action on your turn"
+      "pdf_summary": "Once per Short Rest, take one additional Action on your turn"
     },
     "Fighter Subclass": {
       "hidden": true

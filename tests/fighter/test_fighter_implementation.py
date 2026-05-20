@@ -164,7 +164,7 @@ class TestFighterClass:
         builder.set_species("Human")
         builder.set_class("Fighter", level)
 
-        class_features = builder.character_data.get("features", {}).get("class", [])
+        class_features = builder.to_character().get("features", {}).get("class", [])
         feature_names = [f.get("name", "unnamed") for f in class_features]
         assert "Ability Score Improvement" not in feature_names
 
