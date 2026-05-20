@@ -141,3 +141,105 @@ class TestGetLanguageOptionsRareBaseLanguages:
         assert "Gnomish" in opts["base_languages"]
         # Should not be offered again
         assert "Gnomish" not in opts["available_languages"]
+
+
+class TestGetLanguageOptionsAllRareLanguages:
+    """Tests for all_rare_languages and rare_languages choice in get_language_options."""
+
+    def test_returns_all_rare_languages_key(self):
+        """get_language_options always returns an all_rare_languages key."""
+        builder = CharacterBuilder()
+        builder.set_species("Human")
+        builder.set_background("Acolyte")
+        builder.set_class("Fighter", 1)
+        opts = builder.get_language_options()
+        assert "all_rare_languages" in opts
+
+    def test_all_rare_languages_contains_full_rare_set_for_fighter(self):
+        """A Fighter with no rare-language grants gets the full RARE_LANGUAGE_OPTIONS list."""
+        builder = CharacterBuilder()
+        builder.set_species("Human")
+        builder.set_background("Acolyte")
+        builder.set_class("Fighter", 1)
+        opts = builder.get_language_options()
+        for lang in CharacterBuilder.RARE_LANGUAGE_OPTIONS:
+            assert lang in opts["all_rare_languages"]
+
+    def test_all_rare_languages_excludes_already_known_rare(self):
+        """Rare languages already granted (e.g. Thieves' Cant) are not offered in all_rare_languages."""
+        builder = CharacterBuilder()
+        builder.set_species("Human")
+        builder.set_background("Criminal")
+        builder.set_class("Rogue", 1)
+        opts = builder.get_language_options()
+        # Thieves' Cant is already granted by Rogue, so not in selectable rare list
+        assert "Thieves' Cant" not in opts["all_rare_languages"]
+
+    def test_rare_languages_choice_adds_to_proficiencies(self):
+        """Applying rare_languages choice adds them to the character's language proficiencies."""
+        builder = CharacterBuilder()
+        builder.set_species("Human")
+        builder.set_background("Acolyte")
+        builder.set_class("Fighter", 1)
+        builder.apply_choices({"rare_languages": ["Sylvan", "Abyssal"]})
+        character = builder.to_character()
+        assert "Sylvan" in character["languages"]
+        assert "Abyssal" in character["languages"]
+
+    def test_rare_languages_does_not_count_against_standard_selection(self):
+        """Selecting rare languages leaves standard selection_count unchanged."""
+        builder = CharacterBuilder()
+        builder.set_species("Human")
+        builder.set_background("Acolyte")
+        builder.set_class("Fighter", 1)
+        builder.apply_choices({
+            "languages": ["Elvish", "Dwarvish"],
+            "rare_languages": ["Sylvan"],
+        })
+        opts = builder.get_language_options()
+        assert opts["selection_count"] == 2
+        assert set(opts["selected_languages"]) == {"Elvish", "Dwarvish"}
+
+    def test_selected_rare_languages_key_returned(self):
+        """get_language_options returns selected_rare_languages reflecting current rare picks."""
+        builder = CharacterBuilder()
+        builder.set_species("Human")
+        builder.set_background("Acolyte")
+        builder.set_class("Fighter", 1)
+        builder.apply_choices({"rare_languages": ["Celestial"]})
+        opts = builder.get_language_options()
+        assert "selected_rare_languages" in opts
+        assert "Celestial" in opts["selected_rare_languages"]
+
+    def test_rare_languages_choice_not_in_all_rare_languages_if_already_granted(self):
+        """Feature-granted rare languages (e.g. Thieves' Cant) are not in all_rare_languages."""
+        builder = CharacterBuilder()
+        builder.set_species("Human")
+        builder.set_background("Criminal")
+        builder.set_class("Rogue", 1)
+        opts = builder.get_language_options()
+        # Thieves' Cant is feature-granted, so must not be in the selectable rare pool
+        assert "Thieves' Cant" not in opts["all_rare_languages"]
+
+    def test_rare_languages_invalid_language_ignored(self):
+        """Non-rare (standard) and unknown languages are ignored in rare_languages choice."""
+        builder = CharacterBuilder()
+        builder.set_species("Human")
+        builder.set_background("Acolyte")
+        builder.set_class("Fighter", 1)
+        builder.apply_choices({"rare_languages": ["Elvish", "FakeLang"]})
+        opts = builder.get_language_options()
+        assert "Elvish" not in opts["selected_rare_languages"]
+        assert "FakeLang" not in opts["selected_rare_languages"]
+
+    def test_rare_languages_cleared_on_reapply(self):
+        """Reapplying rare_languages replaces the previous selection."""
+        builder = CharacterBuilder()
+        builder.set_species("Human")
+        builder.set_background("Acolyte")
+        builder.set_class("Fighter", 1)
+        builder.apply_choices({"rare_languages": ["Sylvan"]})
+        builder.apply_choices({"rare_languages": ["Abyssal"]})
+        opts = builder.get_language_options()
+        assert "Abyssal" in opts["selected_rare_languages"]
+        assert "Sylvan" not in opts["selected_rare_languages"]
