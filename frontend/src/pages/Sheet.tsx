@@ -28,6 +28,10 @@ function signed(v: number | undefined): string {
   if (v === undefined) return "—";
   return v >= 0 ? `+${v}` : String(v);
 }
+function slotLevelLabel(level: string): string {
+  const numeric = level.match(/\d+/)?.[0];
+  return numeric ? `Level ${numeric}` : `Level ${level}`;
+}
 
 export function Sheet() {
   const choicesMade = useCharacterStore((s) => s.choicesMade);
@@ -793,7 +797,11 @@ function Spells({ c }: { c: Char }) {
   const slots = rec(c.spell_slots);
   const stats = rec(c.spellcasting_stats);
   const hasSpellcasting = stats.has_spellcasting === true;
-  const effectiveCasterLevel = num(stats.effective_caster_level);
+  const effectiveCasterLevelFromStats = num(stats.effective_caster_level);
+  const effectiveCasterLevel =
+    effectiveCasterLevelFromStats && effectiveCasterLevelFromStats > 0
+      ? effectiveCasterLevelFromStats
+      : (num(c.level) ?? effectiveCasterLevelFromStats);
   const statsPactMagicSlots = arr<Record<string, unknown>>(stats.pact_magic_slots);
   const topLevelPactMagicSlots = arr<Record<string, unknown>>(c.pact_magic_slots);
   const pactMagicSlots =
@@ -819,8 +827,19 @@ function Spells({ c }: { c: Char }) {
         (num(stats.cantrips_to_prepare) ?? 0)
       : undefined;
   const maxCantrips = num(stats.max_cantrips_prepared);
-  const spellsPrepared = num(stats.spells_prepared);
-  const maxSpells = num(stats.max_spells_prepared);
+  const spellsPreparedTotal = num(stats.spells_prepared);
+  const spellsAlwaysPrepared = num(stats.spells_always_prepared) ?? 0;
+  const spellsPreparedToChoose =
+    spellsPreparedTotal !== undefined
+      ? Math.max(0, spellsPreparedTotal - spellsAlwaysPrepared)
+      : undefined;
+  const maxSpells = num(stats.max_spells_to_prepare) ?? num(stats.max_spells_prepared);
+  const preparedSpellsDisplay =
+    maxSpells !== undefined
+      ? `${spellsPreparedToChoose ?? 0} / ${maxSpells}${
+          spellsAlwaysPrepared > 0 ? ` (+${spellsAlwaysPrepared})` : ""
+        }`
+      : undefined;
   const ritual = stats.ritual_casting === true;
 
   return (
@@ -854,7 +873,7 @@ function Spells({ c }: { c: Char }) {
               {maxSpells !== undefined && (
                 <Stat
                   label="Prepared Spells"
-                  value={`${spellsPrepared ?? 0} / ${maxSpells}`}
+                  value={preparedSpellsDisplay ?? "—"}
                 />
               )}
               {ritual && <Stat label="Ritual Casting" value="Yes" />}
@@ -871,7 +890,8 @@ function Spells({ c }: { c: Char }) {
                       key={lvl}
                       className="rounded bg-primary px-2 py-0.5 text-xs font-semibold text-primary-foreground"
                     >
-                      Level {lvl}: {String(n)} {Number(n) === 1 ? "slot" : "slots"}
+                      {slotLevelLabel(lvl)}: {String(n)}{" "}
+                      {Number(n) === 1 ? "slot" : "slots"}
                     </span>
                   ))}
                 </div>
@@ -961,6 +981,11 @@ function Spells({ c }: { c: Char }) {
                             {sp.concentration === true && (
                               <span className="shrink-0 rounded bg-amber-600/80 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
                                 C
+                              </span>
+                            )}
+                            {sp.always_prepared === true && (
+                              <span className="rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300">
+                                ALWAYS PREPARED
                               </span>
                             )}
                           </div>
