@@ -1,8 +1,10 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
-import { AlertCircle, CheckCircle2, ChevronRight, Circle, Loader2 } from "lucide-react";
+import { AlertCircle, BookmarkCheck, CheckCircle2, ChevronRight, Circle, Download, Loader2, Save } from "lucide-react";
 import { api, type WizardStep } from "@/lib/api";
 import { useCharacterStore } from "@/store/characterStore";
+import { useRosterStore } from "@/store/rosterStore";
 import { Button } from "@/components/ui/button";
 
 interface Props {
@@ -56,6 +58,9 @@ function safeFilename(name: string): string {
 
 export function SummaryStep({ steps }: Props) {
   const choicesMade = useCharacterStore((s) => s.choicesMade);
+  const saveCurrent = useRosterStore((s) => s.saveCurrent);
+  const [savedFlash, setSavedFlash] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const validateQuery = useQuery({
     queryKey: ["character", "validate", choicesMade],
@@ -120,6 +125,24 @@ export function SummaryStep({ steps }: Props) {
   const languages = arr<string>(character.languages);
   const features = arr<Record<string, unknown>>(character.features);
 
+  function handleSave() {
+    setSaveError(null);
+    const characterName =
+      typeof choicesMade.character_name === "string"
+        ? choicesMade.character_name
+        : name;
+    saveCurrent(choicesMade, characterName)
+      .then((entry) => {
+        setSavedFlash(`Saved "${entry.name}" to your roster.`);
+        window.setTimeout(() => setSavedFlash(null), 3000);
+      })
+      .catch((err: unknown) => {
+        setSaveError(
+          err instanceof Error ? err.message : "Failed to save character.",
+        );
+      });
+  }
+
   function handleExport() {
     const baseName = safeFilename(name);
     downloadJson(`${baseName}-choices.json`, {
@@ -127,12 +150,6 @@ export function SummaryStep({ steps }: Props) {
       exported_at: new Date().toISOString(),
       choices_made: choicesMade,
     });
-  }
-
-  function handleExportFull() {
-    if (!buildQuery.data) return;
-    const baseName = safeFilename(name);
-    downloadJson(`${baseName}-character.json`, buildQuery.data);
   }
 
   return (
@@ -347,23 +364,36 @@ export function SummaryStep({ steps }: Props) {
             </Link>
           </Button>
         </div>
-        <div className="flex flex-wrap gap-3">
-          <Button variant="outline" size="sm" onClick={handleExport}>
-            Download choices (JSON)
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleExportFull}
-            disabled={!buildQuery.data || !!buildError}
-          >
-            Download character (JSON)
-          </Button>
+        <div className="info-panel">
+          <div className="info-panel-header">
+            <p className="info-panel-kicker">Save &amp; Export</p>
+          </div>
+          <div className="info-panel-body space-y-4">
+            <div className="flex items-start gap-3">
+              <Button variant="outline" size="sm" className="shrink-0 w-44 justify-start" onClick={handleSave}>
+                {savedFlash ? (
+                  <><BookmarkCheck className="h-4 w-4 mr-1.5 text-green-600" />Saved!</>
+                ) : (
+                  <><Save className="h-4 w-4 mr-1.5" />Save to roster</>
+                )}
+              </Button>
+              <p className="text-xs text-muted-foreground pt-1.5">
+                Saves this character to your local browser roster so you can load it again from the home page.
+              </p>
+            </div>
+            {saveError && (
+              <p className="text-xs text-destructive">{saveError}</p>
+            )}
+            <div className="flex items-start gap-3">
+              <Button variant="outline" size="sm" className="shrink-0 w-44 justify-start" onClick={handleExport}>
+                <Download className="h-4 w-4 mr-1.5" />Download character
+              </Button>
+              <p className="text-xs text-muted-foreground pt-1.5">
+                Downloads your choices as a JSON file. You can re-import it later from the home page to restore this character.
+              </p>
+            </div>
+          </div>
         </div>
-        <p className="text-xs text-muted-foreground">
-          Your progress is saved automatically in this browser. Use{" "}
-          <strong>Start over</strong> in the sidebar to begin a new character.
-        </p>
       </section>
     </div>
   );
