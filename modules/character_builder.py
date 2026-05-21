@@ -3199,9 +3199,6 @@ class CharacterBuilder:
             )
             return
 
-        # Normalize choice key for lookup
-        choice_key.lower().replace(" ", "_")
-
         # First, check if there's a feature with choices that references an external file
         features_by_level = source_data.get("features_by_level", {})
         for level_features in features_by_level.values():
@@ -3221,8 +3218,6 @@ class CharacterBuilder:
 
                         if external_file and external_list:
                             # Load external data file
-                            import json
-
                             external_path = self.data_dir / external_file
                             if external_path.exists():
                                 try:
@@ -3259,7 +3254,31 @@ class CharacterBuilder:
                     source_config = choices_config.get("source", {})
 
                     if source_config.get("type") == "external" and isinstance(choice_value, str):
-                        # Use _load_feat_data to generically load from any feat file
+                        # FIX: First, try loading from the actual external file specified in
+                        # source_config (e.g. fighting_styles.json). This handles choices like
+                        # "fighting_style" whose options live in an external reference file and
+                        # are NOT feat entries.
+                        external_file = source_config.get("file")
+                        external_list = source_config.get("list")
+                        if external_file and external_list:
+                            external_path = self.data_dir / external_file
+                            if external_path.exists():
+                                try:
+                                    with open(external_path, "r") as f:
+                                        external_data = json.load(f)
+                                    options_list = external_data.get(external_list, {})
+                                    if choice_value in options_list:
+                                        option_data = options_list[choice_value]
+                                        if isinstance(option_data, dict) and "effects" in option_data:
+                                            for effect in option_data["effects"]:
+                                                self._apply_effect(effect, choice_value, "class_choice")
+                                            return
+                                except (KeyError, json.JSONDecodeError, IOError) as e:
+                                    print(
+                                        f"WARNING: Failed to load external file {external_file}: {e}"
+                                    )
+
+                        # Fallback: use _load_feat_data to generically load from any feat file
                         # (general_feats.json or origin_feats.json).
                         feat_data_loaded = self._load_feat_data(choice_value)
                         if feat_data_loaded is not None:
