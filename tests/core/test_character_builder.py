@@ -76,6 +76,33 @@ def test_proficiencies_system(character_builder):
     assert "Constitution" in saving_throws
 
 
+def test_unknown_ability_bonus_with_minimum_does_not_crash():
+    """Unknown ability bonus entries should be ignored safely."""
+    builder = CharacterBuilder()
+    builder.apply_choices({
+        "character_name": "Unknown Ability Bonus",
+        "level": 1,
+        "species": "Human",
+        "class": "Fighter",
+        "background": "Soldier",
+        "ability_scores": {
+            "Strength": 15, "Dexterity": 14, "Constitution": 13,
+            "Intelligence": 10, "Wisdom": 12, "Charisma": 8,
+        },
+        "background_bonuses": {"Strength": 2, "Constitution": 1},
+    })
+    baseline_strength = builder.to_character()["abilities"]["strength"]["score"]
+
+    builder.character_data.setdefault("ability_bonuses", []).append({
+        "ability": "NotAStat",
+        "value": 0,
+        "minimum": 1,
+    })
+
+    character = builder.to_character()
+    assert character["abilities"]["strength"]["score"] == baseline_strength
+
+
 def test_paladin_recommended_ability_scores(character_builder):
     """Test that Paladin uses predefined standard_array_assignment when 'recommended' is selected"""
     # Set up a basic Paladin

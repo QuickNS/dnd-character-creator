@@ -99,7 +99,13 @@
             ]
           }
         }
-      ]
+      ],
+      "choice_effects": {
+        "ability": {
+          "Strength": [{"type": "ability_bonus", "ability": "Strength", "value": 1}],
+          "Dexterity": [{"type": "ability_bonus", "ability": "Dexterity", "value": 1}]
+        }
+      }
     },
     "Charger": {
       "description": "You have trained to charge headlong into battle, gaining the following benefits:",
@@ -123,7 +129,13 @@
             ]
           }
         }
-      ]
+      ],
+      "choice_effects": {
+        "ability": {
+          "Strength": [{"type": "ability_bonus", "ability": "Strength", "value": 1}],
+          "Dexterity": [{"type": "ability_bonus", "ability": "Dexterity", "value": 1}]
+        }
+      }
     },
     "Chef": {
       "description": "Time spent mastering the culinary arts has paid off, granting you the following benefits:",
@@ -151,7 +163,13 @@
       ],
       "effects": [
         {"type": "grant_tool_proficiency", "tools": ["Cook's Utensils"]}
-      ]
+      ],
+      "choice_effects": {
+        "ability": {
+          "Constitution": [{"type": "ability_bonus", "ability": "Constitution", "value": 1}],
+          "Wisdom": [{"type": "ability_bonus", "ability": "Wisdom", "value": 1}]
+        }
+      }
     },
     "Crossbow Expert": {
       "description": "Thanks to extensive practice with crossbows, you gain the following benefits:",
@@ -190,7 +208,13 @@
             ]
           }
         }
-      ]
+      ],
+      "choice_effects": {
+        "ability": {
+          "Strength": [{"type": "ability_bonus", "ability": "Strength", "value": 1}],
+          "Constitution": [{"type": "ability_bonus", "ability": "Constitution", "value": 1}]
+        }
+      }
     },
     "Defensive Duelist": {
       "description": "You've learned to deftly parry attacks while wielding a Finesse weapon, gaining the following benefits:",
@@ -267,7 +291,14 @@
             ]
           }
         }
-      ]
+      ],
+      "choice_effects": {
+        "ability": {
+          "Intelligence": [{"type": "ability_bonus", "ability": "Intelligence", "value": 1}],
+          "Wisdom": [{"type": "ability_bonus", "ability": "Wisdom", "value": 1}],
+          "Charisma": [{"type": "ability_bonus", "ability": "Charisma", "value": 1}]
+        }
+      }
     },
     "Fey Touched": {
       "description": "Your exposure to the Feywild's magic has changed you, granting you the following benefits:",
@@ -323,7 +354,14 @@
           "spell": "Misty Step",
           "level": 2
         }
-      ]
+      ],
+      "choice_effects": {
+        "ability": {
+          "Intelligence": [{"type": "ability_bonus", "ability": "Intelligence", "value": 1}],
+          "Wisdom": [{"type": "ability_bonus", "ability": "Wisdom", "value": 1}],
+          "Charisma": [{"type": "ability_bonus", "ability": "Charisma", "value": 1}]
+        }
+      }
     },
     "Grappler": {
       "description": "You're an accomplished wrestler, granting you the following benefits:",
@@ -348,7 +386,13 @@
             ]
           }
         }
-      ]
+      ],
+      "choice_effects": {
+        "ability": {
+          "Strength": [{"type": "ability_bonus", "ability": "Strength", "value": 1}],
+          "Dexterity": [{"type": "ability_bonus", "ability": "Dexterity", "value": 1}]
+        }
+      }
     },
     "Great Weapon Master": {
       "description": "You've learned to use the weight and momentum of a weapon to your advantage. You gain the following benefits:",
@@ -387,7 +431,13 @@
           "type": "grant_armor_proficiency",
           "proficiencies": ["Heavy armor"]
         }
-      ]
+      ],
+      "choice_effects": {
+        "ability": {
+          "Constitution": [{"type": "ability_bonus", "ability": "Constitution", "value": 1}],
+          "Strength": [{"type": "ability_bonus", "ability": "Strength", "value": 1}]
+        }
+      }
     },
     "Heavy Armor Master": {
       "description": "You can use your armor to deflect strikes that would kill others, gaining the following benefits:",
@@ -410,7 +460,13 @@
             ]
           }
         }
-      ]
+      ],
+      "choice_effects": {
+        "ability": {
+          "Constitution": [{"type": "ability_bonus", "ability": "Constitution", "value": 1}],
+          "Strength": [{"type": "ability_bonus", "ability": "Strength", "value": 1}]
+        }
+      }
     },
     "Inspiring Leader": {
       "description": "You can spend 10 minutes inspiring your companions, shoring up their resolve to fight. You gain the following benefits:",
@@ -433,7 +489,13 @@
             ]
           }
         }
-      ]
+      ],
+      "choice_effects": {
+        "ability": {
+          "Wisdom": [{"type": "ability_bonus", "ability": "Wisdom", "value": 1}],
+          "Charisma": [{"type": "ability_bonus", "ability": "Charisma", "value": 1}]
+        }
+      }
     },
     "Keen Mind": {
       "description": "You have a mind that can track time, direction, and detail with uncanny precision. You gain the following benefits:",
@@ -492,7 +554,13 @@
           "type": "grant_armor_proficiency",
           "proficiencies": ["Light armor", "Shields"]
         }
-      ]
+      ],
+      "choice_effects": {
+        "ability": {
+          "Strength": [{"type": "ability_bonus", "ability": "Strength", "value": 1}],
+          "Dexterity": [{"type": "ability_bonus", "ability": "Dexterity", "value": 1}]
+        }
+      }
     },
     "Lucky": {
       "description": "You have inexplicable luck that can kick in at just the right moment. You have a number of Luck Points equal to your Proficiency Bonus. You can spend the points on the following benefits:",
@@ -527,7 +595,13 @@
             ]
           }
         }
-      ]
+      ],
+      "choice_effects": {
+        "ability": {
+          "Strength": [{"type": "ability_bonus", "ability": "Strength", "value": 1}],
+          "Dexterity": [{"type": "ability_bonus", "ability": "Dexterity", "value": 1}]
+        }
+      }
     },
     "Martial Weapon Training": {
       "description": "You have practiced extensively with a variety of weapons, gaining the following benefits:",
@@ -556,7 +630,13 @@
           "type": "grant_weapon_proficiency",
           "proficiencies": ["Martial weapons"]
         }
-      ]
+      ],
+      "choice_effects": {
+        "ability": {
+          "Strength": [{"type": "ability_bonus", "ability": "Strength", "value": 1}],
+          "Dexterity": [{"type": "ability_bonus", "ability": "Dexterity", "value": 1}]
+        }
+      }
     },
     "Medium Armor Master": {
       "description": "You have practiced moving in medium armor, gaining the following benefits:",
@@ -579,7 +659,13 @@
             ]
           }
         }
-      ]
+      ],
+      "choice_effects": {
+        "ability": {
+          "Strength": [{"type": "ability_bonus", "ability": "Strength", "value": 1}],
+          "Dexterity": [{"type": "ability_bonus", "ability": "Dexterity", "value": 1}]
+        }
+      }
     },
     "Moderately Armored": {
       "description": "You have trained to master the use of medium armor, gaining the following benefits:",
@@ -608,7 +694,13 @@
           "type": "grant_armor_proficiency",
           "proficiencies": ["Medium armor"]
         }
-      ]
+      ],
+      "choice_effects": {
+        "ability": {
+          "Strength": [{"type": "ability_bonus", "ability": "Strength", "value": 1}],
+          "Dexterity": [{"type": "ability_bonus", "ability": "Dexterity", "value": 1}]
+        }
+      }
     },
     "Mounted Combatant": {
       "description": "You are a dangerous foe to face while mounted, gaining the following benefits:",
@@ -634,7 +726,14 @@
             ]
           }
         }
-      ]
+      ],
+      "choice_effects": {
+        "ability": {
+          "Strength": [{"type": "ability_bonus", "ability": "Strength", "value": 1}],
+          "Dexterity": [{"type": "ability_bonus", "ability": "Dexterity", "value": 1}],
+          "Wisdom": [{"type": "ability_bonus", "ability": "Wisdom", "value": 1}]
+        }
+      }
     },
     "Observant": {
       "description": "Quick to notice details of your environment, you gain the following benefits:",
@@ -705,7 +804,13 @@
             ]
           }
         }
-      ]
+      ],
+      "choice_effects": {
+        "ability": {
+          "Strength": [{"type": "ability_bonus", "ability": "Strength", "value": 1}],
+          "Dexterity": [{"type": "ability_bonus", "ability": "Dexterity", "value": 1}]
+        }
+      }
     },
     "Poisoner": {
       "description": "You can prepare and deliver deadly poisons, granting you the following benefits:",
@@ -732,7 +837,13 @@
       ],
       "effects": [
         {"type": "grant_tool_proficiency", "tools": ["Poisoner's Kit"]}
-      ]
+      ],
+      "choice_effects": {
+        "ability": {
+          "Dexterity": [{"type": "ability_bonus", "ability": "Dexterity", "value": 1}],
+          "Intelligence": [{"type": "ability_bonus", "ability": "Intelligence", "value": 1}]
+        }
+      }
     },
     "Polearm Master": {
       "description": "You've trained extensively with pole weapons. You gain the following benefits:",
@@ -822,7 +933,14 @@
             ]
           }
         }
-      ]
+      ],
+      "choice_effects": {
+        "ability": {
+          "Intelligence": [{"type": "ability_bonus", "ability": "Intelligence", "value": 1}],
+          "Wisdom": [{"type": "ability_bonus", "ability": "Wisdom", "value": 1}],
+          "Charisma": [{"type": "ability_bonus", "ability": "Charisma", "value": 1}]
+        }
+      }
     },
     "Sentinel": {
       "description": "You've mastered techniques to take advantage of every drop in any enemy's guard. You gain the following benefits:",
@@ -881,7 +999,14 @@
           "spell": "Invisibility",
           "level": 2
         }
-      ]
+      ],
+      "choice_effects": {
+        "ability": {
+          "Intelligence": [{"type": "ability_bonus", "ability": "Intelligence", "value": 1}],
+          "Wisdom": [{"type": "ability_bonus", "ability": "Wisdom", "value": 1}],
+          "Charisma": [{"type": "ability_bonus", "ability": "Charisma", "value": 1}]
+        }
+      }
     },
     "Sharpshooter": {
       "description": "You've mastered ranged weapons and can make shots that others find impossible. You gain the following benefits:",
@@ -1077,7 +1202,13 @@
             ]
           }
         }
-      ]
+      ],
+      "choice_effects": {
+        "ability": {
+          "Strength": [{"type": "ability_bonus", "ability": "Strength", "value": 1}],
+          "Dexterity": [{"type": "ability_bonus", "ability": "Dexterity", "value": 1}]
+        }
+      }
     },
     "Speedy": {
       "description": "You are uncommonly swift, gaining the following benefits:",
@@ -1108,7 +1239,13 @@
           "type": "increase_speed",
           "value": 10
         }
-      ]
+      ],
+      "choice_effects": {
+        "ability": {
+          "Dexterity": [{"type": "ability_bonus", "ability": "Dexterity", "value": 1}],
+          "Constitution": [{"type": "ability_bonus", "ability": "Constitution", "value": 1}]
+        }
+      }
     },
     "Spell Sniper": {
       "description": "You have learned techniques to enhance your attacks with certain kinds of spells, gaining the following benefits:",
@@ -1134,7 +1271,14 @@
             ]
           }
         }
-      ]
+      ],
+      "choice_effects": {
+        "ability": {
+          "Intelligence": [{"type": "ability_bonus", "ability": "Intelligence", "value": 1}],
+          "Wisdom": [{"type": "ability_bonus", "ability": "Wisdom", "value": 1}],
+          "Charisma": [{"type": "ability_bonus", "ability": "Charisma", "value": 1}]
+        }
+      }
     },
     "Telekinetic": {
       "description": "You learn to move things with your mind, granting you the following benefits:",
@@ -1165,7 +1309,14 @@
           "type": "grant_cantrip",
           "spell": "Mage Hand"
         }
-      ]
+      ],
+      "choice_effects": {
+        "ability": {
+          "Intelligence": [{"type": "ability_bonus", "ability": "Intelligence", "value": 1}],
+          "Wisdom": [{"type": "ability_bonus", "ability": "Wisdom", "value": 1}],
+          "Charisma": [{"type": "ability_bonus", "ability": "Charisma", "value": 1}]
+        }
+      }
     },
     "Telepathic": {
       "description": "You awaken the ability to mentally connect with others, granting you the following benefits:",
@@ -1197,7 +1348,14 @@
           "spell": "Detect Thoughts",
           "level": 2
         }
-      ]
+      ],
+      "choice_effects": {
+        "ability": {
+          "Intelligence": [{"type": "ability_bonus", "ability": "Intelligence", "value": 1}],
+          "Wisdom": [{"type": "ability_bonus", "ability": "Wisdom", "value": 1}],
+          "Charisma": [{"type": "ability_bonus", "ability": "Charisma", "value": 1}]
+        }
+      }
     },
     "War Caster": {
       "description": "You've practiced casting spells in the midst of combat, learning techniques that grant you advantages. You gain the following benefits:",
@@ -1231,7 +1389,13 @@
             ]
           }
         }
-      ]
+      ],
+      "choice_effects": {
+        "ability": {
+          "Strength": [{"type": "ability_bonus", "ability": "Strength", "value": 1}],
+          "Dexterity": [{"type": "ability_bonus", "ability": "Dexterity", "value": 1}]
+        }
+      }
     }
   }
 }

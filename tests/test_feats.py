@@ -30,6 +30,15 @@ ALL_GENERAL_FEATS = [
     "War Caster", "Weapon Master",
 ]
 
+ABILITY_CHOICE_GENERAL_FEATS = [
+    "Athlete", "Charger", "Chef", "Crusher", "Elemental Adept", "Fey Touched",
+    "Grappler", "Heavily Armored", "Heavy Armor Master", "Inspiring Leader",
+    "Lightly Armored", "Mage Slayer", "Martial Weapon Training", "Medium Armor Master",
+    "Moderately Armored", "Mounted Combatant", "Piercer", "Poisoner", "Ritual Caster",
+    "Shadow Touched", "Slasher", "Speedy", "Spell Sniper", "Telekinetic", "Telepathic",
+    "Weapon Master",
+]
+
 REQUIRED_FEAT_FIELDS = ["description", "benefits", "category", "prerequisite", "source"]
 
 
@@ -108,6 +117,22 @@ class TestGeneralFeatsData:
     def test_general_feats_source(self, general_feats, feat_name):
         """All general feats must have source 'Player's Handbook 2024'."""
         assert general_feats[feat_name]["source"] == "Player's Handbook 2024"
+
+    @pytest.mark.parametrize("feat_name", ABILITY_CHOICE_GENERAL_FEATS)
+    def test_ability_choice_feats_have_ability_bonus_choice_effects(
+        self, general_feats, feat_name
+    ):
+        """Ability-choice feats must map each option to a +1 ability_bonus effect."""
+        feat = general_feats[feat_name]
+        ability_choice = next(c for c in feat["choices"] if c.get("name") == "ability")
+        options = ability_choice["source"]["options"]
+        ability_effects = feat["choice_effects"]["ability"]
+
+        for ability in options:
+            assert ability in ability_effects
+            assert ability_effects[ability] == [
+                {"type": "ability_bonus", "ability": ability, "value": 1}
+            ]
 
 
 class TestFeatSourceConsistency:
@@ -1141,6 +1166,34 @@ class TestResilientFeatEffects:
         assert char["abilities"]["strength"]["saving_throw_proficient"] is False
 
 
+class TestChefFeatAbilityChoice:
+    """Chef should apply +1 to the chosen ability via choice_effects."""
+
+    def _build_chef(self, feat_choices):
+        builder = CharacterBuilder()
+        builder.apply_choices({
+            "character_name": "Chef Test",
+            "level": 4,
+            "species": "Human",
+            "class": "Fighter",
+            "background": "Soldier",
+            "ability_scores": {
+                "Strength": 15, "Dexterity": 14, "Constitution": 13,
+                "Intelligence": 10, "Wisdom": 12, "Charisma": 8
+            },
+            "background_bonuses": {"Strength": 2, "Constitution": 1},
+        })
+        builder.apply_feat_choices(feat_choices, feat_name="Chef")
+        return builder.to_character()
+
+    def test_chef_constitution_choice_increases_constitution(self):
+        char_with = self._build_chef({"ability": "Constitution"})
+        char_without = self._build_chef({})
+        assert char_with["abilities"]["constitution"]["score"] == (
+            char_without["abilities"]["constitution"]["score"] + 1
+        )
+
+
 class TestSkillExpertFeatEffects:
     """Skill Expert: +1 ability, skill proficiency, skill expertise via choice_effects."""
 
@@ -1264,4 +1317,3 @@ class TestObservantFeatEffects:
         skill_choice = next(c for c in choices if c["name"] == "keen_observer_skill")
         options = skill_choice["source"]["options"]
         assert set(options) == {"Insight", "Investigation", "Perception"}
-
