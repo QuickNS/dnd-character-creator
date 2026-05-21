@@ -249,7 +249,7 @@ def test_archery_via_normalized_key():
             "Wisdom": 12,
             "Charisma": 8,
         },
-        "fighting_style": "Archery",  # normalized wizard key
+        "fighting_style": "Archery",
         "subclass": "Champion",
     })
     builder.character_data["equipment"] = {
@@ -308,7 +308,7 @@ def test_defense_via_normalized_key():
             "Wisdom": 12,
             "Charisma": 8,
         },
-        "fighting_style": "Defense",  # normalized wizard key
+        "fighting_style": "Defense",
     })
 
     defense_effects = [
@@ -338,7 +338,7 @@ def test_dueling_via_normalized_key():
             "Wisdom": 12,
             "Charisma": 8,
         },
-        "fighting_style": "Dueling",  # normalized wizard key
+        "fighting_style": "Dueling",
         "subclass": "Champion",
     })
     builder.character_data["equipment"] = {
@@ -385,7 +385,7 @@ def test_great_weapon_fighting_via_normalized_key():
             "Wisdom": 12,
             "Charisma": 10,
         },
-        "fighting_style": "Great Weapon Fighting",  # normalized wizard key
+        "fighting_style": "Great Weapon Fighting",
         "equipment_selections": {"class_equipment": "option_a"},
     })
 
@@ -435,7 +435,7 @@ def test_two_weapon_fighting_via_normalized_key():
             "Wisdom": 12,
             "Charisma": 10,
         },
-        "fighting_style": "Two-Weapon Fighting",  # normalized wizard key
+        "fighting_style": "Two-Weapon Fighting",
         "equipment_selections": {"class_equipment": "option_b"},
     })
 
@@ -465,7 +465,7 @@ def test_unarmed_fighting_via_normalized_key():
             "Wisdom": 12,
             "Charisma": 8,
         },
-        "fighting_style": "Unarmed Fighting",  # normalized wizard key
+        "fighting_style": "Unarmed Fighting",
     })
 
     weapon_data = builder.calculate_weapon_attacks()

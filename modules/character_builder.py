@@ -3218,8 +3218,6 @@ class CharacterBuilder:
 
                         if external_file and external_list:
                             # Load external data file
-                            import json
-
                             external_path = self.data_dir / external_file
                             if external_path.exists():
                                 try:
@@ -3263,12 +3261,11 @@ class CharacterBuilder:
                         external_file = source_config.get("file")
                         external_list = source_config.get("list")
                         if external_file and external_list:
-                            import json as _json
                             external_path = self.data_dir / external_file
                             if external_path.exists():
                                 try:
                                     with open(external_path, "r") as f:
-                                        external_data = _json.load(f)
+                                        external_data = json.load(f)
                                     options_list = external_data.get(external_list, {})
                                     if choice_value in options_list:
                                         option_data = options_list[choice_value]
@@ -3276,7 +3273,7 @@ class CharacterBuilder:
                                             for effect in option_data["effects"]:
                                                 self._apply_effect(effect, choice_value, "class_choice")
                                             return
-                                except (KeyError, _json.JSONDecodeError, IOError) as e:
+                                except (KeyError, json.JSONDecodeError, IOError) as e:
                                     print(
                                         f"WARNING: Failed to load external file {external_file}: {e}"
                                     )
