@@ -727,6 +727,11 @@ export function AbilitiesStep() {
         </div>
       </section>
 
+      <BackgroundAsiPicker
+        asi={asi}
+        hasBackground={!!choicesMade["background"]}
+      />
+
       {/* ── Additional modifiers (optional) ───────────────────────────── */}
       <section className="overflow-hidden rounded-2xl border border-border/80 bg-gradient-to-br from-card via-card to-secondary/40 shadow-sm">
         <div className="border-b border-border/70 px-5 py-4 sm:px-6">
@@ -799,10 +804,6 @@ export function AbilitiesStep() {
         </div>
       </section>
 
-      <BackgroundAsiPicker
-        asi={asi}
-        hasBackground={!!choicesMade["background"]}
-      />
     </div>
   );
 }

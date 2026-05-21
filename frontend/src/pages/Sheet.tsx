@@ -6,6 +6,7 @@ import { useIsDark } from "@/hooks/useIsDark";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { useBugReportUrl } from "@/hooks/useBugReportUrl";
+import { Download } from "lucide-react";
 
 // `to_character()` is too sprawling to fully type at the boundary.
 // We treat it as a loose record and narrow only where we read.
@@ -32,6 +33,18 @@ function signed(v: number | undefined): string {
 function slotLevelLabel(level: string): string {
   const numeric = level.match(/\d+/)?.[0];
   return numeric ? `Level ${numeric}` : `Level ${level}`;
+}
+
+function downloadJson(filename: string, data: unknown) {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 export function Sheet() {
@@ -68,7 +81,7 @@ export function Sheet() {
 
   const c = (buildQuery.data ?? {}) as Char;
   return (
-    <Shell>
+    <Shell debugData={c}>
       <Header c={c} />
       <CoreStats c={c} />
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6 lg:items-stretch">
@@ -92,7 +105,7 @@ export function Sheet() {
   );
 }
 
-function Shell({ children }: { children: React.ReactNode }) {
+function Shell({ children, debugData }: { children: React.ReactNode; debugData?: unknown }) {
   const isDark = useIsDark();
   const bugReportUrl = useBugReportUrl();
   const choicesMade = useCharacterStore((s) => s.choicesMade);
@@ -145,6 +158,23 @@ function Shell({ children }: { children: React.ReactNode }) {
                   Bug Report
                 </a>
               </Button>
+              {import.meta.env.DEV && debugData != null && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="border-amber-500 text-amber-700 hover:bg-amber-50 print:hidden"
+                  onClick={() => {
+                    const name = typeof (debugData as Record<string, unknown>).name === "string"
+                      ? (debugData as Record<string, unknown>).name as string
+                      : "character";
+                    const filename = `${name.trim().toLowerCase().replace(/[^a-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "") || "character"}-debug.json`;
+                    downloadJson(filename, debugData);
+                  }}
+                >
+                  <Download className="w-3 h-3 mr-1" />
+                  Debug JSON
+                </Button>
+              )}
               <Button asChild variant="outline" size="sm">
                 <Link to="/sheet/pdf">Printable Sheet</Link>
               </Button>

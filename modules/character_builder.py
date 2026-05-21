@@ -7562,6 +7562,9 @@ class CharacterBuilder:
                                 feature_data, choice_item, class_data, subclass_data
                             ),
                         }
+                        _cat = self._get_choice_category(choice_item)
+                        if _cat:
+                            choice["choice_category"] = _cat
 
                         # Skip subclass-related features in class-only context
                         if (
@@ -7596,6 +7599,9 @@ class CharacterBuilder:
                             feature_data, choices_data, class_data, subclass_data
                         ),
                     }
+                    _cat = self._get_choice_category(choices_data)
+                    if _cat:
+                        choice["choice_category"] = _cat
 
                     # Skip subclass-related features in class-only context
                     if (
@@ -7834,7 +7840,7 @@ class CharacterBuilder:
                 sub_choice = {
                     "title": f"{feat_name} \u2014 {_humanize(sub_item_name)} (Level {slot_level})",
                     "type": "feature",
-                    "description": feat_data.get("description", ""),
+                    "description": sub_item.get("description") or feat_data.get("description", ""),
                     "options": resolve_choice_options(sub_item, character),
                     "count": sub_item.get("count", 1),
                     "required": not sub_item.get("optional", False),
@@ -8071,7 +8077,7 @@ class CharacterBuilder:
             choice = {
                 "title": f"{feat_name} — {_humanize(choice_name)}",
                 "type": "feature",
-                "description": feat_data.get("description", ""),
+                "description": choice_item.get("description") or feat_data.get("description", ""),
                 "options": options,
                 "count": choice_item.get("count", 1),
                 "required": True,
@@ -8143,7 +8149,7 @@ class CharacterBuilder:
             choice = {
                 "title": f"{feat_name} — {_humanize(choice_name)}",
                 "type": "feature",
-                "description": feat_data.get("description", ""),
+                "description": choice_item.get("description") or feat_data.get("description", ""),
                 "options": options,
                 "count": choice_item.get("count", 1),
                 "required": True,
@@ -8174,6 +8180,8 @@ class CharacterBuilder:
         source_file = source.get("file", "")
         if isinstance(source_file, str) and source_file.startswith("spells/"):
             return "spells"
+        if source_file == "languages.json":
+            return "languages"
         return None
 
     def clear_pending_species_feat(self) -> None:

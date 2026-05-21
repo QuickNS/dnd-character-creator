@@ -9,6 +9,7 @@
       "choices": [
         {
           "type": "select_single",
+          "description": "Choose how to improve your ability scores.",
           "name": "asi_option",
           "source": {
             "type": "fixed_list",
@@ -20,6 +21,7 @@
         },
         {
           "type": "select_single",
+          "description": "Choose which ability score to increase by 2.",
           "name": "ability_plus_2",
           "depends_on": "asi_option",
           "depends_on_value": "+2 to one ability",
@@ -31,6 +33,7 @@
         },
         {
           "type": "select_multiple",
+          "description": "Choose two ability scores to each increase by 1.",
           "count": 2,
           "name": "abilities_plus_1",
           "depends_on": "asi_option",
@@ -267,6 +270,7 @@
       "choices": [
         {
           "type": "select_single",
+          "description": "Increase your Intelligence, Wisdom, or Charisma score by 1, to a maximum of 20.",
           "name": "ability",
           "source": {
             "type": "fixed_list",
@@ -279,6 +283,7 @@
         },
         {
           "type": "select_single",
+          "description": "Choose one damage type. Spells you cast that deal this damage type ignore Resistance, and you can treat any 1 on a damage die as a 2.",
           "name": "damage_type",
           "source": {
             "type": "fixed_list",
@@ -312,6 +317,7 @@
       "choices": [
         {
           "type": "select_single",
+          "description": "Increase your Intelligence, Wisdom, or Charisma score by 1, to a maximum of 20.",
           "name": "ability",
           "source": {
             "type": "fixed_list",
@@ -324,6 +330,7 @@
         },
         {
           "type": "select_single",
+          "description": "Choose one 1st-level spell from the Divination or Enchantment school of magic. You always have it prepared and can cast it once per Long Rest without a spell slot.",
           "name": "fey_touched_spell",
           "source": {
             "type": "fixed_list",
@@ -748,6 +755,7 @@
       "choices": [
         {
           "type": "select_single",
+          "description": "Increase your Intelligence or Wisdom score by 1, to a maximum of 20.",
           "name": "ability",
           "source": {
             "type": "fixed_list",
@@ -759,6 +767,7 @@
         },
         {
           "type": "select_single",
+          "description": "Choose one of these skills. You gain proficiency in it if you lack it, or Expertise if you already have proficiency.",
           "name": "keen_observer_skill",
           "source": {
             "type": "fixed_list",
@@ -965,6 +974,7 @@
       "choices": [
         {
           "type": "select_single",
+          "description": "Increase your Intelligence, Wisdom, or Charisma score by 1, to a maximum of 20.",
           "name": "ability",
           "source": {
             "type": "fixed_list",
@@ -977,6 +987,7 @@
         },
         {
           "type": "select_single",
+          "description": "Choose one 1st-level spell from the Illusion or Necromancy school of magic. You always have it prepared and can cast it once per Long Rest without a spell slot.",
           "name": "shadow_touched_spell",
           "source": {
             "type": "fixed_list",
@@ -1046,6 +1057,7 @@
       "choices": [
         {
           "type": "select_single",
+          "description": "Increase one ability score of your choice by 1, to a maximum of 20.",
           "name": "ability",
           "source": {
             "type": "fixed_list",
@@ -1061,6 +1073,7 @@
         },
         {
           "type": "select_single",
+          "description": "You gain proficiency in one skill of your choice.",
           "name": "skill_proficiency",
           "source": {
             "type": "fixed_list",
@@ -1088,6 +1101,7 @@
         },
         {
           "type": "select_single",
+          "description": "Choose one skill in which you have proficiency. You gain Expertise in that skill.",
           "name": "skill_expertise",
           "source": {
             "type": "fixed_list",

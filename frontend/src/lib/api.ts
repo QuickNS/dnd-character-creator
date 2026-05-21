@@ -295,8 +295,14 @@ export const ChoicesMadeSchema = z.object({
   fighting_style: z.string().optional(),
   maneuvers: z.array(z.string()).optional(),
   equipment_selections: z.record(z.string()).optional(),
-  background_skill_replacement: z.array(z.string()).optional(),
-  species_skill_replacement: z.array(z.string()).optional(),
+  background_skill_replacement: z.preprocess(
+    (v) => (typeof v === "string" ? (v ? [v] : []) : v),
+    z.array(z.string()).optional(),
+  ),
+  species_skill_replacement: z.preprocess(
+    (v) => (typeof v === "string" ? (v ? [v] : []) : v),
+    z.array(z.string()).optional(),
+  ),
   species_trait_choices: z.record(z.string()).optional(),
   spell_selections: SpellSelectionsSchema.optional(),
 }).catchall(z.unknown());

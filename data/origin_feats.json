@@ -78,6 +78,7 @@
       "choices": [
         {
           "type": "select_multiple",
+          "description": "Choose two cantrips from the Cleric spell list.",
           "count": 2,
           "name": "cantrips",
           "source": {
@@ -88,6 +89,7 @@
         },
         {
           "type": "select_single",
+          "description": "Choose one 1st-level spell from the Cleric spell list. You can cast it once per Long Rest without a spell slot, and also using any spell slots you have.",
           "name": "1st_level_spell",
           "source": {
             "type": "external",
@@ -115,6 +117,7 @@
       "choices": [
         {
           "type": "select_multiple",
+          "description": "Choose two cantrips from the Druid spell list.",
           "count": 2,
           "name": "cantrips",
           "source": {
@@ -125,6 +128,7 @@
         },
         {
           "type": "select_single",
+          "description": "Choose one 1st-level spell from the Druid spell list. You can cast it once per Long Rest without a spell slot, and also using any spell slots you have.",
           "name": "1st_level_spell",
           "source": {
             "type": "external",
@@ -152,6 +156,7 @@
       "choices": [
         {
           "type": "select_multiple",
+          "description": "Choose two cantrips from the Wizard spell list.",
           "count": 2,
           "name": "cantrips",
           "source": {
@@ -162,6 +167,7 @@
         },
         {
           "type": "select_single",
+          "description": "Choose one 1st-level spell from the Wizard spell list. You can cast it once per Long Rest without a spell slot, and also using any spell slots you have.",
           "name": "1st_level_spell",
           "source": {
             "type": "external",

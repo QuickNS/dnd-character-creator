@@ -339,7 +339,7 @@ export function ChoiceList({
               {optionBadges[selectedOption.value]}
             </span>
           )}
-          {(disabledOptions ?? []).length > 0 && (
+          {alreadyGranted.size > 0 && (
             <div className="text-xs text-muted-foreground">
               Disabled options are marked as unavailable because they are already granted.
             </div>
