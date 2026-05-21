@@ -1,0 +1,49 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "D&D 2024 Species Variant (Lineage)",
+  "description": "Schema for files in data/species_variants/ (also called lineages). A variant layers additional traits on a parent species; the parent's name is recorded in parent_species and resolved by the data loader.",
+  "type": "object",
+  "required": ["name", "parent_species", "traits"],
+  "properties": {
+    "name": { "type": "string" },
+    "parent_species": { "type": "string" },
+    "description": { "type": "string" },
+    "darkvision": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Variant-level override of darkvision range. Prefer the grant_darkvision effect on a trait."
+    },
+    "speed": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "traits": {
+      "type": "object",
+      "additionalProperties": { "$ref": "_shared/trait_entry.json" }
+    },
+    "spells_by_level": {
+      "type": "object",
+      "description": "Legacy convenience map (cantrip/3/5/...). Canonical grant is grant_cantrip/grant_spell effects inside the trait.",
+      "patternProperties": {
+        "^(cantrip|[1-9]|1[0-9]|20)$": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "cantrip_replacement": {
+      "type": "string",
+      "description": "Class spell list from which the variant's cantrip may be swapped on long rest (e.g. High Elf -> Wizard)."
+    },
+    "spellcasting_ability_choice": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["Intelligence", "Wisdom", "Charisma"]
+      },
+      "description": "If present, player chooses one of these abilities as the spellcasting ability for variant-granted spells."
+    }
+  },
+  "additionalProperties": false
+}

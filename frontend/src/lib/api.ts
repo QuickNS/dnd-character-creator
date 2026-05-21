@@ -13,6 +13,28 @@ export interface ClassAllocation {
   subclass?: string;
 }
 
+export type AbilityName =
+  | "Strength"
+  | "Dexterity"
+  | "Constitution"
+  | "Intelligence"
+  | "Wisdom"
+  | "Charisma";
+
+/** All six ability scores must be present; unset abilities should be 0. */
+export type AbilityModifierMap = Record<AbilityName, number>;
+
+/** Loose spell selection storage. Keys are spell-list buckets the wizard
+ * tracks (`cantrips`, `spells`, `background_cantrips`, `background_spells`,
+ * etc.); the backend resolves the canonical shape. */
+export interface SpellSelections {
+  cantrips?: string[];
+  spells?: string[];
+  background_cantrips?: string[];
+  background_spells?: string[];
+  [bucket: string]: string[] | undefined;
+}
+
 export interface ChoicesMade {
   character_name?: string;
   level?: number;
@@ -24,22 +46,26 @@ export interface ChoicesMade {
   lineage?: string;
   ability_scores_method?: "standard_array" | "point_buy" | "manual" | "roll" | "recommended";
   ability_scores?: Record<string, number>;
-  additional_ability_modifiers?: Record<string, number>;
+  additional_ability_modifiers?: AbilityModifierMap;
   background_bonuses?: Record<string, number>;
   skill_choices?: string[];
   tool_choices?: string[];
-  spells?: string[];
-  cantrips?: string[];
   languages?: string[];
   fighting_style?: string;
   maneuvers?: string[];
   equipment_selections?: Record<string, string>;
-  languages_chosen?: string[];
   background_skill_replacement?: string[];
   species_skill_replacement?: string[];
+  /** Nested species trait picks, keyed by trait name (e.g. `"Draconic Ancestry": "Red"`). */
   species_trait_choices?: Record<string, string>;
-  species_feat_choices?: Record<string, string>;
-  origin_feat?: string;
+  /** Class spell / cantrip selections (see `SpellSelections`). */
+  spell_selections?: SpellSelections;
+  /**
+   * Catch-all for dynamic per-feat / per-choice keys (e.g.
+   * `feat_Skilled_skills_or_tools`, `class_choice_*`, ad-hoc trait picks
+   * the wizard hasn't yet promoted to a nested home). Treated as opaque
+   * by the frontend; the backend resolves and normalizes them.
+   */
   [key: string]: unknown;
 }
 
@@ -354,7 +380,14 @@ export const api = {
         body: JSON.stringify({ choices_made: choices, view }),
       }),
 
-    randomLanguages: (choices: ChoicesMade): Promise<string[]> =>
+    /**
+     * Ask the backend for a SUGGESTED random language set for the current
+     * choices. This is a read-only suggestion — the server does NOT persist
+     * the result. Callers should render it as a default the user can accept
+     * or override; commit happens only when the user writes back through
+     * `setChoice("languages", ...)`.
+     */
+    suggestRandomLanguages: (choices: ChoicesMade): Promise<string[]> =>
       apiFetch<{ languages: string[] }>("/character/random-languages", {
         method: "POST",
         body: JSON.stringify({ choices_made: choices }),

@@ -124,10 +124,138 @@ A feature value can be:
 | `classes` | array | ✅ |
 | `source` | string | ✅ |
 
+## The 5 valid `effects`-array authoring locations
+
+Every `effects` array in `data/` must appear in one of exactly **five** locations. This catalogue is the authoring contract; the runtime dispatcher counterpart is the **One Dispatcher Rule** in [.github/instructions/effects-system.instructions.md](./effects-system.instructions.md). Canonical wording lives in the `resolve_effects_for_choice` docstring in [modules/character_builder.py](../../modules/character_builder.py).
+
+Every effect — regardless of which location below — is applied exclusively through `CharacterBuilder._apply_effect()`. The columns below name the **entry point** that hands the effect to the dispatcher so a contributor can trace JSON → handler.
+
+### Location 1 — Top-level of a feat
+
+Files: [data/general_feats.json](../../data/general_feats.json), [data/origin_feats.json](../../data/origin_feats.json). Entry point: feat loaders in [modules/feature_manager.py](../../modules/feature_manager.py).
+
+```json
+{
+  "Tough": {
+    "effects": [
+      {"type": "bonus_hp", "value": 2, "scaling": "per_level"}
+    ]
+  }
+}
+```
+
+### Location 2 — Inside a class / subclass / species feature
+
+Path: `features_by_level.<lvl>.<feature_name>.effects` (or, for species, `traits.<name>.effects`). Entry point: `_apply_trait_effects` during the feature walk.
+
+```json
+"features_by_level": {
+  "1": {
+    "Unarmored Defense": {
+      "description": "AC = 10 + DEX + CON.",
+      "effects": [
+        {"type": "alternative_ac", "formula": "10 + DEX + CON"}
+      ]
+    }
+  }
+}
+```
+
+### Location 3 — Inside `choice_effects` keyed by chosen option
+
+The chosen option value is the key; its value is an effects array (or a list of them). Entry point: `_apply_species_choice_effects` (and the equivalent feat path).
+
+```json
+"choice_effects": {
+  "Fire": [{"type": "grant_damage_resistance", "damage_type": "Fire"}],
+  "Cold": [{"type": "grant_damage_resistance", "damage_type": "Cold"}]
+}
+```
+
+### Location 4 — Inside a `choices` object on a feature
+
+Effects attached to a sub-choice option, resolved at character-build time. Entry point: `resolve_effects_for_choice` → `_apply_effect`.
+
+```json
+"choices": {
+  "type": "skill",
+  "count": 1,
+  "options": {
+    "Stealth": {"effects": [{"type": "grant_skill_expertise", "skills": ["Stealth"]}]}
+  }
+}
+```
+
+### Location 5 — Inside a `source: "external"` file
+
+The feature declares `choices.source` pointing at an external catalogue file; the chosen option's effects live in that file. [data/fighting_styles.json](../../data/fighting_styles.json) is the canonical example; future maneuvers and metamagic catalogues follow the same pattern. Entry point: `resolve_effects_for_choice` (external branch) → `_apply_effect`.
+
+```json
+// feature in a class file:
+"Fighting Style": {
+  "choices": {
+    "source": {"type": "external", "file": "fighting_styles.json", "list": "fighting_styles"}
+  }
+}
+
+// data/fighting_styles.json:
+{
+  "fighting_styles": {
+    "Defense": {
+      "effects": [{"type": "bonus_ac", "value": 1, "condition": "wearing armor"}]
+    }
+  }
+}
+```
+
+### Rule
+
+Anything outside these five locations is invalid authoring. If a new mechanical surface (e.g. metamagic, maneuvers) needs effects, model it on Location 5 — a `source: "external"` catalogue file — rather than inventing a sixth location.
+
 ## Validation
 
 ```bash
-python validate_data.py          # Validate all files
+python validate_data.py          # Validate every file under data/
 ```
 
-The validator checks classes and subclasses against their JSON schemas and reports compliance with ✅/❌ indicators.
+The validator walks `data/`, dispatches each file to the schema named in the `CATEGORIES` manifest at the top of [validate_data.py](../../validate_data.py), and exits non-zero on the first failure. It also **refuses to run** if any JSON file under `data/` is not covered by the manifest (and is not in `EXCLUDED_FILES`) — this is the gate that keeps new categories from landing without a schema.
+
+## Schema coverage
+
+Every category under `data/` has a schema in [models/](../../models/). Shared subschemas live in [models/_shared/](../../models/_shared/) and are referenced from entity schemas via relative `$ref` (e.g. `"$ref": "_shared/effect.json"`).
+
+| Category               | Schema                                                                                      | applyTo glob                              |
+|------------------------|---------------------------------------------------------------------------------------------|-------------------------------------------|
+| classes                | [models/class_schema.json](../../models/class_schema.json)                                   | `data/classes/*.json`                     |
+| subclasses             | [models/subclass_schema.json](../../models/subclass_schema.json)                             | `data/subclasses/*/*.json`                |
+| species                | [models/species_schema.json](../../models/species_schema.json)                               | `data/species/*.json`                     |
+| species_variants       | [models/species_variant_schema.json](../../models/species_variant_schema.json)               | `data/species_variants/*.json`            |
+| backgrounds            | [models/background_schema.json](../../models/background_schema.json)                         | `data/backgrounds/*.json`                 |
+| origin_feats           | [models/feat_schema.json](../../models/feat_schema.json)                                     | `data/origin_feats.json`                  |
+| general_feats          | [models/feat_schema.json](../../models/feat_schema.json)                                     | `data/general_feats.json`                 |
+| spell definitions      | [models/spell_schema.json](../../models/spell_schema.json)                                   | `data/spells/definitions/*.json`          |
+| spell class lists      | [models/spell_class_list_schema.json](../../models/spell_class_list_schema.json)             | `data/spells/class_lists/*.json`          |
+| weapons                | [models/weapon_schema.json](../../models/weapon_schema.json)                                 | `data/equipment/weapons.json`             |
+| armor                  | [models/armor_schema.json](../../models/armor_schema.json)                                   | `data/equipment/armor.json`               |
+| weapon masteries       | [models/weapon_mastery_schema.json](../../models/weapon_mastery_schema.json)                 | `data/equipment/weapon_masteries.json`    |
+| adventuring gear       | [models/adventuring_gear_schema.json](../../models/adventuring_gear_schema.json)             | `data/equipment/adventuring_gear.json`    |
+| fighting styles        | [models/fighting_style_schema.json](../../models/fighting_style_schema.json)                 | `data/fighting_styles.json`               |
+| eldritch invocations   | [models/eldritch_invocation_schema.json](../../models/eldritch_invocation_schema.json)       | `data/eldritch_invocations.json`          |
+| languages              | [models/languages_schema.json](../../models/languages_schema.json)                           | `data/languages.json`                     |
+| feature override       | [models/feature_override_schema.json](../../models/feature_override_schema.json)             | `data/feature_override.json`              |
+| trait patterns         | [models/trait_patterns_schema.json](../../models/trait_patterns_schema.json)                 | `data/trait_patterns.json`                |
+
+### Shared subschemas
+
+| Subschema                                              | Used by                                                                                  |
+|--------------------------------------------------------|------------------------------------------------------------------------------------------|
+| [models/_shared/effect.json](../../models/_shared/effect.json)               | species, species_variants, backgrounds, feat (general/origin), fighting_styles, eldritch_invocations, trait_entry, choice_effects |
+| [models/_shared/choice.json](../../models/_shared/choice.json)               | species (via trait_entry), feat, eldritch_invocations                                    |
+| [models/_shared/choice_effects.json](../../models/_shared/choice_effects.json) | species (via trait_entry), feat, eldritch_invocations                                  |
+| [models/_shared/trait_entry.json](../../models/_shared/trait_entry.json)     | species, species_variants                                                                |
+
+Phase 3 deliberately leaves `effect.type` open (any string). Phase 5 (audit item `D6-4`) ratchets it to a closed enum — when that happens, only `models/_shared/effect.json` needs editing.
+
+### Rule
+
+**Every new category under `data/` requires a schema in `models/` and an entry in the `CATEGORIES` manifest in [validate_data.py](../../validate_data.py) before the first data file lands.** `validate_data.py` will refuse to run otherwise.

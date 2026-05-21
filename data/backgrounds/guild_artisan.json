@@ -9,7 +9,6 @@
   "feat": "Crafter",
   "skill_proficiencies": ["Insight", "Persuasion"],
   "tool_proficiencies": ["Artisan's Tools"],
-  "languages": 2,
   "starting_equipment": {
     "option_a": {
       "items": [

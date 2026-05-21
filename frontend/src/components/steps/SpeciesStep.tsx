@@ -541,6 +541,7 @@ function SpeciesDetail({
             <ChoiceList
               key={traitName}
               choiceKey={traitName}
+              parentKey="species_trait_choices"
               title={traitName}
               description={choice.description}
               options={choice.options ?? []}

@@ -9,7 +9,6 @@
   "feat": "Tough",
   "skill_proficiencies": ["Animal Handling", "Survival"],
   "tool_proficiencies": ["Carpenter's Tools", "Vehicles (Land)"],
-  "languages": 2,
   "starting_equipment": {
     "option_a": {
       "items": [

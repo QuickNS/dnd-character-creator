@@ -134,3 +134,27 @@ Use `additional_choices_by_level` for features that grant more options at higher
 3. Dynamic resolution based on `depends_on` previous choice
 4. Restrictions filter available options (e.g., spell school restrictions)
 5. `select_or_replace` allows swapping existing choices at level-up
+
+## Storage shape: grouped choices MUST be nested
+
+Grouped choice payloads in `choices_made` are **nested objects keyed by group name**, never flat top-level keys (audit P0-1). The canonical nested keys are:
+
+- `species_trait_choices` — `{ "<Trait Name>": "<picked value>", ... }`
+- `spell_selections` — `{ "cantrips": [...], "spells": [...], ... }`
+- `weapon_mastery_selections`, `eldritch_invocation_selections`, etc.
+
+Do **not** write trait, spell, or other grouped picks as flat top-level keys (e.g. `choices_made["Draconic Ancestry"] = "Red (Fire)"`). Flat shapes silently collide with other top-level keys, drift from the typed `ChoicesMade` interface, and bypass the canonical reader.
+
+```jsonc
+// ❌ Forbidden — flat top-level trait keys
+{ "species": "Dragonborn", "Draconic Ancestry": "Red (Fire)" }
+
+// ✅ Canonical — nested under species_trait_choices
+{
+  "species": "Dragonborn",
+  "species_trait_choices": { "Draconic Ancestry": "Red (Fire)" }
+}
+```
+
+For backwards compatibility with saved characters, `CharacterBuilder.apply_choices` lifts legacy flat trait keys into `species_trait_choices` via `_normalize_species_trait_choices`. New writers (frontend, tests, exporters) MUST emit the nested shape directly.
+

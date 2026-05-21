@@ -33,6 +33,7 @@ from .ability_scores import AbilityScores
 from .feature_manager import FeatureManager
 from .hp_calculator import HPCalculator
 from .variant_manager import VariantManager
+from . import strict_mode
 
 # Import choice resolver for feature processing
 import sys
@@ -244,11 +245,31 @@ class CharacterBuilder:
             "immunities": [],
             "condition_immunities": [],
             "save_advantages": [],  # [{"abilities": [...], "display": "...", "condition": "..."}]
+            # ===== Phase 6 structured bonus fields =====
+            # These are the *sole* inputs to calculation methods for the
+            # corresponding effect types. The dispatcher ``_apply_effect``
+            # populates them; calculation methods (``calculate_weapon_attacks``,
+            # ``calculate_ac_options``, ``_extract_hp_bonuses``, etc.) read only
+            # from these structured fields and never re-walk ``applied_effects``.
+            "damage_bonuses": [],            # bonus_damage  (Dueling, Thrown Weapon Fighting, ...)
+            "attack_bonuses": [],            # bonus_attack  (Archery fighting style, ...)
+            "ac_bonuses": [],                # bonus_ac      (Defense fighting style, ...)
+            "hp_bonuses": [],                # bonus_hp      (Tough feat, Hill Dwarf, ...)
+            "alternative_ac_options": [],    # alternative_ac (Monk/Barbarian Unarmored Defense)
+            "fighting_style_flags": {
+                "great_weapon_fighting": [],         # list of source names
+                "two_weapon_fighting_modifier": [],  # list of source names
+                "unarmed_fighting": [],              # list of source names
+            },
             "equipment": None,  # Will be initialized when equipment_selections are processed
             "step": "species",  # Track current step
         }
 
-        # Track applied effects
+        # ``applied_effects`` is the AUDIT LOG of every effect application.
+        # It is **append-only inside ``_apply_effect``** and **read-only outside**
+        # of ``_apply_effect`` / ``to_character()``'s export path. Calculation
+        # methods must read structured bonus fields above instead — never this
+        # list. See Phase 6 of docs/AUDIT_FIX_PLAN_2026-05.md.
         self.applied_effects = []
         self._ensure_base_language()
 
@@ -597,11 +618,9 @@ class CharacterBuilder:
 
         # Clear applied effects from species and lineage source
         if hasattr(self, "applied_effects"):
-            self.applied_effects = [
-                e
-                for e in self.applied_effects
-                if e.get("source_type") not in ["species", "species_choice", "lineage", "lineage_choice"]
-            ]
+            self._filter_applied_effects(
+                lambda e: e.get("source_type") in ["species", "species_choice", "lineage", "lineage_choice"]
+            )
 
         # Clear species/lineage spells from always_prepared
         always_prepared = self.character_data["spells"]["always_prepared"]
@@ -666,9 +685,9 @@ class CharacterBuilder:
 
         # Clear applied effects from lineage source
         if hasattr(self, "applied_effects"):
-            self.applied_effects = [
-                e for e in self.applied_effects if e.get("source_type") not in ["lineage", "lineage_choice"]
-            ]
+            self._filter_applied_effects(
+                lambda e: e.get("source_type") in ["lineage", "lineage_choice"]
+            )
 
         # Clear lineage spells from always_prepared
         always_prepared = self.character_data["spells"]["always_prepared"]
@@ -795,8 +814,27 @@ class CharacterBuilder:
     def _apply_trait_effects(
         self, trait_name: str, trait_data: Any, source: str, level: int = None
     ):
-        """
-        Apply effects from a trait.
+        """Apply effects from a single trait/feature (Locations 1 + 2).
+
+        This method covers two of the five effect-authoring locations
+        documented in ``.github/instructions/data-schemas.instructions.md``:
+
+          * **Location 1** — top-level feat ``effects`` array (when invoked
+            via the feat-walk path).
+          * **Location 2** — class/subclass/species feature ``effects`` array
+            (the common case).
+
+        After Phase 6 this is a **thin wrapper around ``_apply_effect``**:
+        it resolves description/scaling/choice substitutions, builds the
+        feature entry, then funnels every effect through the single
+        ``_apply_effect`` dispatcher. Choice-driven effects (Locations 4 + 5)
+        are *not* handled here — they flow through
+        ``resolve_effects_for_choice`` → ``_apply_effect`` via
+        ``_apply_choice_effects``. Species ``choice_effects`` (Location 3)
+        flow through ``_apply_species_choice_effects`` → ``_apply_effect``.
+        The One Dispatcher Rule: every effect, regardless of authoring
+        location, lands in ``character_data`` exclusively through
+        ``_apply_effect``.
 
         Args:
             trait_name: Name of the trait
@@ -898,18 +936,32 @@ class CharacterBuilder:
                 choice_config = choice_config[0] if choice_config else {}
             choice_key = choice_config.get("name", trait_name.lower().replace(" ", "_"))
 
-            # Check various possible choice keys (including species_trait_ prefix)
+            # Check various possible choice keys (including species_trait_ prefix).
+            # Canonical: nested ``choices_made["species_trait_choices"]`` (P0-1).
             choice_value = None
-            for possible_key in [
-                choice_key,
-                trait_name,
-                trait_name.lower().replace(" ", "_"),
-                f"species_trait_{trait_name}",
-                f"species_trait_{trait_name.replace(' ', '_')}",
-            ]:
-                if possible_key in self.character_data["choices_made"]:
-                    choice_value = self.character_data["choices_made"][possible_key]
-                    break
+            nested_traits = self.character_data["choices_made"].get(
+                "species_trait_choices"
+            )
+            if isinstance(nested_traits, dict):
+                for nested_key in [
+                    choice_key,
+                    trait_name,
+                    trait_name.lower().replace(" ", "_"),
+                ]:
+                    if nested_key in nested_traits:
+                        choice_value = nested_traits[nested_key]
+                        break
+            if choice_value is None:
+                for possible_key in [
+                    choice_key,
+                    trait_name,
+                    trait_name.lower().replace(" ", "_"),
+                    f"species_trait_{trait_name}",
+                    f"species_trait_{trait_name.replace(' ', '_')}",
+                ]:
+                    if possible_key in self.character_data["choices_made"]:
+                        choice_value = self.character_data["choices_made"][possible_key]
+                        break
 
             # Append choice to display name
             if choice_value:
@@ -1116,10 +1168,23 @@ class CharacterBuilder:
 
     def _resolve_choice_value(self, choice_name: str) -> Optional[str]:
         """
-        Look up a choice value from choices_made, trying common key variants
-        (e.g., 'Draconic Ancestry', 'species_trait_Draconic Ancestry').
+        Look up a choice value from choices_made.
+
+        Canonical storage for species trait picks is the nested
+        ``choices_made["species_trait_choices"]`` object (audit P0-1). That
+        nested map is consulted first. The remaining flat / prefixed key
+        variants are kept as a backwards-compat fallback for saved characters
+        and for in-flight callers that still write flat top-level keys; the
+        ``apply_choices()`` normalizer lifts those into the nested object.
         """
         choices_made = self.character_data.get("choices_made", {})
+        nested_traits = choices_made.get("species_trait_choices")
+        if isinstance(nested_traits, dict):
+            if choice_name in nested_traits:
+                return nested_traits[choice_name]
+            snake = choice_name.lower().replace(" ", "_")
+            if snake in nested_traits:
+                return nested_traits[snake]
         for key in [
             choice_name,
             f"species_trait_{choice_name}",
@@ -1127,6 +1192,7 @@ class CharacterBuilder:
             f"species_trait_{choice_name.lower().replace(' ', '_')}",
         ]:
             if key in choices_made:
+                strict_mode.warn_choice_fallback(choice_name, key)
                 return choices_made[key]
         return None
 
@@ -1170,6 +1236,7 @@ class CharacterBuilder:
         """
 
         effect_type = effect.get("type")
+        strict_mode.check_effect_type(effect_type, source_name)
 
         def _resolve_choice_reference(ref: str):
             # Only handles ${cantrips[0]}, ${cantrips[1]}, ${1st_level_spell}, etc.
@@ -1490,9 +1557,87 @@ class CharacterBuilder:
                     self.character_data["proficiency_sources"]["saving_throws"][ability] = source_name
 
         elif effect_type == "alternative_ac":
-            # Store alternative AC formulas (e.g., Monk/Barbarian Unarmored Defense)
-            # These are processed in calculate_ac_options()
-            pass  # Tracked via applied_effects
+            # Monk/Barbarian Unarmored Defense and similar formulas.
+            # Stored on a structured field that ``calculate_ac_options``
+            # consumes directly. (Audit log still receives the entry via the
+            # tail of ``_apply_effect``.)
+            entry = {
+                "base": effect.get("base", 10),
+                "modifiers": list(effect.get("modifiers", [])),
+                "condition": effect.get("condition", ""),
+                "source": source_name,
+                "source_type": source_type,
+            }
+            # Idempotent: do not double-store an identical entry from the
+            # same source.
+            existing = self.character_data["alternative_ac_options"]
+            if not any(
+                e["source"] == entry["source"]
+                and e["base"] == entry["base"]
+                and e["modifiers"] == entry["modifiers"]
+                and e.get("condition", "") == entry["condition"]
+                for e in existing
+            ):
+                existing.append(entry)
+
+        elif effect_type == "bonus_damage":
+            # Fighting styles (Dueling, Thrown Weapon Fighting), feats, etc.
+            entry = {
+                "value": effect.get("value", 0),
+                "condition": effect.get("condition", ""),
+                "weapon_property": effect.get("weapon_property"),
+                "damage_type": effect.get("damage_type"),
+                "source": source_name,
+                "source_type": source_type,
+                "source_class_name": source_class_name,
+            }
+            self.character_data["damage_bonuses"].append(entry)
+
+        elif effect_type == "bonus_attack":
+            entry = {
+                "value": effect.get("value", 0),
+                "weapon_property": effect.get("weapon_property"),
+                "condition": effect.get("condition", ""),
+                "source": source_name,
+                "source_type": source_type,
+                "source_class_name": source_class_name,
+            }
+            self.character_data["attack_bonuses"].append(entry)
+
+        elif effect_type == "bonus_ac":
+            entry = {
+                "value": effect.get("value", 0),
+                "condition": effect.get("condition", ""),
+                "source": source_name,
+                "source_type": source_type,
+                "source_class_name": source_class_name,
+            }
+            self.character_data["ac_bonuses"].append(entry)
+
+        elif effect_type == "bonus_hp":
+            entry = {
+                "value": effect.get("value", 0),
+                "scaling": effect.get("scaling"),
+                "source": source_name,
+                "source_type": source_type,
+                "source_class_name": source_class_name,
+            }
+            self.character_data["hp_bonuses"].append(entry)
+
+        elif effect_type == "great_weapon_fighting":
+            flags = self.character_data["fighting_style_flags"]["great_weapon_fighting"]
+            if source_name not in flags:
+                flags.append(source_name)
+
+        elif effect_type == "two_weapon_fighting_modifier":
+            flags = self.character_data["fighting_style_flags"]["two_weapon_fighting_modifier"]
+            if source_name not in flags:
+                flags.append(source_name)
+
+        elif effect_type == "unarmed_fighting":
+            flags = self.character_data["fighting_style_flags"]["unarmed_fighting"]
+            if source_name not in flags:
+                flags.append(source_name)
 
         elif effect_type == "set_martial_arts_die":
             # Monk: resolve the correct Martial Arts die for the current level
@@ -1574,7 +1719,8 @@ class CharacterBuilder:
                     else:
                         self.character_data.pop("pending_species_feat", None)
 
-        # Track applied effect
+        # Track applied effect — AUDIT LOG ONLY. See class-level docstring on
+        # ``applied_effects`` for the contract.
         tracked: Dict[str, Any] = {
             "type": effect_type,
             "source": source_name,
@@ -1584,6 +1730,108 @@ class CharacterBuilder:
         if source_class_name:
             tracked["source_class_name"] = source_class_name
         self.applied_effects.append(tracked)
+
+    # ------------------------------------------------------------------
+    # Phase 6: applied_effects pruning + structured-bonus invariance
+    # ------------------------------------------------------------------
+
+    def _rebuild_structured_bonuses(self) -> None:
+        """Rebuild structured bonus fields from the current ``applied_effects``.
+
+        Called by ``_filter_applied_effects`` after the audit log has been
+        pruned (e.g. on class/subclass/lineage change, or after replacing a
+        feat in a class slot). This is the *only* path by which structured
+        bonus fields are derived from ``applied_effects``; calculation
+        methods never re-derive them and never read ``applied_effects``
+        directly.
+        """
+        self.character_data["damage_bonuses"] = []
+        self.character_data["attack_bonuses"] = []
+        self.character_data["ac_bonuses"] = []
+        self.character_data["hp_bonuses"] = []
+        self.character_data["alternative_ac_options"] = []
+        self.character_data["fighting_style_flags"] = {
+            "great_weapon_fighting": [],
+            "two_weapon_fighting_modifier": [],
+            "unarmed_fighting": [],
+        }
+
+        for tracked in self.applied_effects:
+            effect = tracked.get("effect", {})
+            etype = effect.get("type") or tracked.get("type")
+            source = tracked.get("source", "Unknown")
+            stype = tracked.get("source_type", "")
+            sclass = tracked.get("source_class_name")
+
+            if etype == "bonus_damage":
+                self.character_data["damage_bonuses"].append({
+                    "value": effect.get("value", 0),
+                    "condition": effect.get("condition", ""),
+                    "weapon_property": effect.get("weapon_property"),
+                    "damage_type": effect.get("damage_type"),
+                    "source": source,
+                    "source_type": stype,
+                    "source_class_name": sclass,
+                })
+            elif etype == "bonus_attack":
+                self.character_data["attack_bonuses"].append({
+                    "value": effect.get("value", 0),
+                    "weapon_property": effect.get("weapon_property"),
+                    "condition": effect.get("condition", ""),
+                    "source": source,
+                    "source_type": stype,
+                    "source_class_name": sclass,
+                })
+            elif etype == "bonus_ac":
+                self.character_data["ac_bonuses"].append({
+                    "value": effect.get("value", 0),
+                    "condition": effect.get("condition", ""),
+                    "source": source,
+                    "source_type": stype,
+                    "source_class_name": sclass,
+                })
+            elif etype == "bonus_hp":
+                self.character_data["hp_bonuses"].append({
+                    "value": effect.get("value", 0),
+                    "scaling": effect.get("scaling"),
+                    "source": source,
+                    "source_type": stype,
+                    "source_class_name": sclass,
+                })
+            elif etype == "alternative_ac":
+                self.character_data["alternative_ac_options"].append({
+                    "base": effect.get("base", 10),
+                    "modifiers": list(effect.get("modifiers", [])),
+                    "condition": effect.get("condition", ""),
+                    "source": source,
+                    "source_type": stype,
+                })
+            elif etype == "great_weapon_fighting":
+                flags = self.character_data["fighting_style_flags"]["great_weapon_fighting"]
+                if source not in flags:
+                    flags.append(source)
+            elif etype == "two_weapon_fighting_modifier":
+                flags = self.character_data["fighting_style_flags"]["two_weapon_fighting_modifier"]
+                if source not in flags:
+                    flags.append(source)
+            elif etype == "unarmed_fighting":
+                flags = self.character_data["fighting_style_flags"]["unarmed_fighting"]
+                if source not in flags:
+                    flags.append(source)
+
+    def _filter_applied_effects(self, predicate) -> None:
+        """Drop applied effects matching *predicate* and rebuild structured fields.
+
+        *predicate* is called with each ``applied_effects`` entry; entries for
+        which it returns ``True`` are removed. After pruning, structured bonus
+        fields are rebuilt from the surviving audit-log entries. This is the
+        single chokepoint through which ``applied_effects`` is mutated outside
+        of ``_apply_effect``.
+        """
+        self.applied_effects = [
+            e for e in self.applied_effects if not predicate(e)
+        ]
+        self._rebuild_structured_bonuses()
 
     # ==================== Class/Subclass Methods ====================
 
@@ -1698,11 +1946,9 @@ class CharacterBuilder:
 
         # Clear applied effects from class source
         if hasattr(self, "applied_effects"):
-            self.applied_effects = [
-                e
-                for e in self.applied_effects
-                if e.get("source_type") not in ["class", "class_choice"]
-            ]
+            self._filter_applied_effects(
+                lambda e: e.get("source_type") in ["class", "class_choice"]
+            )
 
     def _clear_subclass_features(self):
         """Clear all subclass-related features and effects before re-applying."""
@@ -1711,9 +1957,9 @@ class CharacterBuilder:
 
         # Clear applied effects from subclass source
         if hasattr(self, "applied_effects"):
-            self.applied_effects = [
-                e for e in self.applied_effects if e.get("source_type") != "subclass"
-            ]
+            self._filter_applied_effects(
+                lambda e: e.get("source_type") == "subclass"
+            )
 
         # Clear subclass spells from prepared cantrips and spells
         spell_metadata = self.character_data.get("spell_metadata", {})
@@ -1810,23 +2056,9 @@ class CharacterBuilder:
         # Features by level
         features_by_level = class_data.get("features_by_level", {})
 
-        # Ensure features_by_level is a dict
-        if not isinstance(features_by_level, dict):
-            print(
-                f"Warning: features_by_level is not a dict for class {class_data.get('name')}: {type(features_by_level)}"
-            )
-            return
-
+        # Shape validated at load time by modules.data_loader.
         for feat_level in range(1, level + 1):
             level_features = features_by_level.get(str(feat_level), {})
-
-            # Ensure level_features is a dict
-            if not isinstance(level_features, dict):
-                print(
-                    f"Warning: level_features at level {feat_level} is not a dict: {type(level_features)}"
-                )
-                continue
-
             for feature_name, feature_data in level_features.items():
                 self._apply_trait_effects(
                     feature_name, feature_data, "class", feat_level
@@ -1836,23 +2068,10 @@ class CharacterBuilder:
         """Apply subclass features up to the specified level."""
         features_by_level = subclass_data.get("features_by_level", {})
 
-        # Ensure features_by_level is a dict
-        if not isinstance(features_by_level, dict):
-            print(
-                f"Warning: features_by_level is not a dict for subclass {subclass_data.get('name')}: {type(features_by_level)}"
-            )
-            return
-
+        # Shape validated at load time by modules.data_loader.
         for feat_level_str, level_features in features_by_level.items():
             feat_level = int(feat_level_str)
             if feat_level <= level:
-                # Ensure level_features is a dict
-                if not isinstance(level_features, dict):
-                    print(
-                        f"Warning: level_features at level {feat_level_str} is not a dict: {type(level_features)}"
-                    )
-                    continue
-
                 for feature_name, feature_data in level_features.items():
                     self._apply_trait_effects(
                         feature_name, feature_data, "subclass", feat_level
@@ -1955,10 +2174,9 @@ class CharacterBuilder:
 
             # Clear applied effects that originated from the previous background's feat
             if hasattr(self, "applied_effects"):
-                self.applied_effects = [
-                    e for e in self.applied_effects
-                    if not (e.get("source_type") == "feat" and e.get("source") == prev_feat_name)
-                ]
+                self._filter_applied_effects(
+                    lambda e: e.get("source_type") == "feat" and e.get("source") == prev_feat_name
+                )
 
     def set_background(self, background_name: str) -> bool:
         """
@@ -2390,18 +2608,15 @@ class CharacterBuilder:
         proficiencies = self.character_data.get("proficiencies", {}).get("armor", [])
 
         # Check for bonus_ac effects (e.g., Defense fighting style)
+        # Phase 6: read from structured field, not applied_effects.
         ac_bonus = 0
         ac_bonus_sources = []
-        if hasattr(self, "applied_effects"):
-            for effect_wrapper in self.applied_effects:
-                if effect_wrapper.get("type") == "bonus_ac":
-                    effect = effect_wrapper.get("effect", {})
-                    effect.get("condition", "")
-                    # Check if condition is met (we'll verify wearing armor per option)
-                    # For now, just track the bonus
-                    ac_bonus += effect.get("value", 0)
-                    source_name = effect_wrapper.get("source", "Unknown")
-                    ac_bonus_sources.append(source_name)
+        for entry in self.character_data.get("ac_bonuses", []):
+            # Condition checking is done per option (e.g. "wearing armor" only
+            # applies when armor is equipped). For now we accumulate the raw
+            # bonus value and the calling code applies it only to armored options.
+            ac_bonus += entry.get("value", 0)
+            ac_bonus_sources.append(entry.get("source", "Unknown"))
 
         # Handle case where equipment is None (like in tests)
         if equipment is None:
@@ -2419,31 +2634,29 @@ class CharacterBuilder:
             ]
 
             # Check for alternative AC formulas (e.g., Monk/Barbarian Unarmored Defense)
-            if hasattr(self, "applied_effects"):
-                for effect_wrapper in self.applied_effects:
-                    if effect_wrapper.get("type") == "alternative_ac":
-                        effect = effect_wrapper.get("effect", {})
-                        base = effect.get("base", 10)
-                        modifiers = effect.get("modifiers", [])
+            # Phase 6: read from structured field, not applied_effects.
+            for alt_entry in self.character_data.get("alternative_ac_options", []):
+                base = alt_entry.get("base", 10)
+                modifiers = alt_entry.get("modifiers", [])
 
-                        alt_ac = base
-                        formula_desc = [str(base)]
-                        for mod_ability in modifiers:
-                            mod_val = abilities.get(mod_ability.lower(), {}).get("modifier", 0)
-                            alt_ac += mod_val
-                            ability_short = mod_ability[:3].capitalize()
-                            formula_desc.append(f"{ability_short} modifier ({mod_val})")
+                alt_ac = base
+                formula_desc = [str(base)]
+                for mod_ability in modifiers:
+                    mod_val = abilities.get(mod_ability.lower(), {}).get("modifier", 0)
+                    alt_ac += mod_val
+                    ability_short = mod_ability[:3].capitalize()
+                    formula_desc.append(f"{ability_short} modifier ({mod_val})")
 
-                        source_name = effect_wrapper.get("source", "Unarmored Defense")
-                        alt_option = {
-                            "ac": alt_ac,
-                            "armor": None,
-                            "shield": False,
-                            "formula": " + ".join(formula_desc),
-                            "notes": [source_name],
-                            "equipped_armor": None,
-                        }
-                        ac_options.append(alt_option)
+                source_name = alt_entry.get("source", "Unarmored Defense")
+                alt_option = {
+                    "ac": alt_ac,
+                    "armor": None,
+                    "shield": False,
+                    "formula": " + ".join(formula_desc),
+                    "notes": [source_name],
+                    "equipped_armor": None,
+                }
+                ac_options.append(alt_option)
 
             ac_options.sort(key=lambda x: x["ac"], reverse=True)
             return ac_options
@@ -2493,44 +2706,42 @@ class CharacterBuilder:
         ac_options.append(unarmored_option)
 
         # Check for alternative AC formulas (e.g., Monk/Barbarian Unarmored Defense)
-        if hasattr(self, "applied_effects"):
-            for effect_wrapper in self.applied_effects:
-                if effect_wrapper.get("type") == "alternative_ac":
-                    effect = effect_wrapper.get("effect", {})
-                    base = effect.get("base", 10)
-                    modifiers = effect.get("modifiers", [])
-                    condition = effect.get("condition", "")
+        # Phase 6: read from structured field, not applied_effects.
+        for alt_entry in self.character_data.get("alternative_ac_options", []):
+            base = alt_entry.get("base", 10)
+            modifiers = alt_entry.get("modifiers", [])
+            condition = alt_entry.get("condition", "")
 
-                    # Calculate AC from modifiers
-                    alt_ac = base
-                    formula_desc = [str(base)]
-                    for mod_ability in modifiers:
-                        mod_val = abilities.get(mod_ability.lower(), {}).get("modifier", 0)
-                        alt_ac += mod_val
-                        ability_short = mod_ability[:3].capitalize()
-                        formula_desc.append(f"{ability_short} modifier ({mod_val})")
+            # Calculate AC from modifiers
+            alt_ac = base
+            formula_desc = [str(base)]
+            for mod_ability in modifiers:
+                mod_val = abilities.get(mod_ability.lower(), {}).get("modifier", 0)
+                alt_ac += mod_val
+                ability_short = mod_ability[:3].capitalize()
+                formula_desc.append(f"{ability_short} modifier ({mod_val})")
 
-                    # Determine if shield is allowed
-                    allow_shield = "no_shield" not in condition
-                    alt_shield_bonus = 2 if has_shield and allow_shield and "Shields" in proficiencies else 0
-                    alt_total = alt_ac + alt_shield_bonus
+            # Determine if shield is allowed
+            allow_shield = "no_shield" not in condition
+            alt_shield_bonus = 2 if has_shield and allow_shield and "Shields" in proficiencies else 0
+            alt_total = alt_ac + alt_shield_bonus
 
-                    alt_formula_parts = [" + ".join(formula_desc)]
-                    if alt_shield_bonus:
-                        alt_formula_parts.append(f"Shield ({alt_shield_bonus})")
+            alt_formula_parts = [" + ".join(formula_desc)]
+            if alt_shield_bonus:
+                alt_formula_parts.append(f"Shield ({alt_shield_bonus})")
 
-                    source_name = effect_wrapper.get("source", "Unarmored Defense")
-                    alt_option = {
-                        "ac": alt_total,
-                        "armor": None,
-                        "shield": has_shield and allow_shield,
-                        "formula": " + ".join(alt_formula_parts),
-                        "notes": [source_name],
-                        "equipped_armor": None,
-                    }
+            source_name = alt_entry.get("source", "Unarmored Defense")
+            alt_option = {
+                "ac": alt_total,
+                "armor": None,
+                "shield": has_shield and allow_shield,
+                "formula": " + ".join(alt_formula_parts),
+                "notes": [source_name],
+                "equipped_armor": None,
+            }
 
-                    # Replace default unarmored if this is better
-                    ac_options.append(alt_option)
+            # Replace default unarmored if this is better
+            ac_options.append(alt_option)
 
         # Add notes for unproficient equipment
         for option in ac_options:
@@ -2667,6 +2878,18 @@ class CharacterBuilder:
         elif choice_key_lower in ["elven lineage", "gnomish lineage"]:
             # Species trait choice for spellcasting ability (INT/WIS/CHA)
             self.character_data["spellcasting_ability"] = choice_value
+            return True
+        elif choice_key_lower == "species_trait_choices":
+            # Canonical nested storage for species (and lineage) trait picks.
+            # The dict has already been recorded at choices_made["species_trait_choices"]
+            # at the top of this function. Dispatch each trait → value to apply_choice
+            # so trait-level side effects (e.g. Elven Lineage → spellcasting_ability,
+            # Draconic Ancestry → damage_type substitutions, choice-effect grants)
+            # still fire. Per-trait flat keys written during dispatch are normalized
+            # back into the nested object at the end of apply_choices().
+            if isinstance(choice_value, dict):
+                for trait_name, trait_value in choice_value.items():
+                    self.apply_choice(trait_name, trait_value)
             return True
         elif choice_key_lower == "class":
             return self.set_class(choice_value, self.character_data.get("level", 1))
@@ -3182,16 +3405,149 @@ class CharacterBuilder:
                             feature["description"] = choice_description
                         return
 
+    # ------------------------------------------------------------------
+    # Phase 6: unified choice → effects resolver
+    # ------------------------------------------------------------------
+
+    def resolve_effects_for_choice(
+        self,
+        choice_key: str,
+        choice_value: Any,
+        source_data: Dict[str, Any],
+    ) -> List[Tuple[Dict[str, Any], str, str]]:
+        """Resolve a single class/subclass choice to its effects.
+
+        Returns a flat list of ``(effect, source_label, source_type)`` triples
+        covering the *choice-driven* effect-authoring locations (see
+        ``.github/instructions/data-schemas.instructions.md`` for the catalogue
+        of 5 authoring locations):
+
+          * Location 4 — inside a ``choices`` object on a feature.
+          * Location 5 — an external file referenced via
+            ``choices.source.type == "external"`` (e.g. fighting styles).
+          * Internal-list fallback — a sibling dict on ``source_data`` whose
+            value contains ``effects`` (e.g. ``divine_orders``).
+
+        Locations 1, 2, 3 are *not* the responsibility of this method:
+          * Location 1 (top-level feat ``effects``) — handled by feat loaders.
+          * Location 2 (class feature ``effects``) — handled by
+            ``_apply_trait_effects`` during the feature walk.
+          * Location 3 (``choice_effects``) — handled by
+            ``_apply_species_choice_effects``.
+
+        The caller is responsible for invoking ``_apply_effect`` on each
+        returned triple; this method performs **lookup only** and never
+        mutates character state. That guarantees the "one dispatcher"
+        invariant: every effect — regardless of where it was authored —
+        reaches ``character_data`` exclusively through ``_apply_effect``.
+        """
+        if not isinstance(source_data, dict):
+            return []
+
+        results: List[Tuple[Dict[str, Any], str, str]] = []
+
+        def _load_external(file_name: str, list_name: str, key: Any):
+            """Load and return the option-data dict for ``key`` from an external file."""
+            if not file_name or not list_name or not isinstance(key, str):
+                return None
+            external_path = self.data_dir / file_name
+            if not external_path.exists():
+                return None
+            try:
+                with open(external_path, "r") as f:
+                    external_data = json.load(f)
+            except (json.JSONDecodeError, IOError) as e:
+                print(f"WARNING: Failed to load external file {file_name}: {e}")
+                return None
+            options_list = external_data.get(list_name, {})
+            if not isinstance(options_list, dict):
+                return None
+            return options_list.get(key)
+
+        def _harvest(option_data: Any, src_label: str) -> bool:
+            if not isinstance(option_data, dict):
+                return False
+            effects = option_data.get("effects")
+            if not isinstance(effects, list):
+                return False
+            for effect in effects:
+                if isinstance(effect, dict):
+                    results.append((effect, src_label, "class_choice"))
+            return True
+
+        # ---------------- Location 5 / 4 : feature.choices.source ----------------
+        features_by_level = source_data.get("features_by_level", {})
+        for level_features in features_by_level.values():
+            if not isinstance(level_features, dict):
+                continue
+            for feature_name, feature_data in level_features.items():
+                if not isinstance(feature_data, dict):
+                    continue
+
+                choices_config = feature_data.get("choices")
+                # ``choices`` may be a dict OR a list of dicts (some features
+                # pose several independent choices). Normalise to a list.
+                if isinstance(choices_config, dict):
+                    choices_list = [choices_config]
+                elif isinstance(choices_config, list):
+                    choices_list = [c for c in choices_config if isinstance(c, dict)]
+                else:
+                    choices_list = []
+
+                matches_by_feature_name = feature_name == choice_key
+                matches_by_choice_name = any(
+                    c.get("name") == choice_key for c in choices_list
+                )
+
+                if not (matches_by_feature_name or matches_by_choice_name):
+                    continue
+
+                for choice_cfg in choices_list:
+                    source_config = choice_cfg.get("source", {})
+                    if source_config.get("type") == "external":
+                        option_data = _load_external(
+                            source_config.get("file"),
+                            source_config.get("list"),
+                            choice_value,
+                        )
+                        if _harvest(option_data, str(choice_value)):
+                            return results
+                    elif source_config.get("type") == "internal":
+                        # Location 4: ``choices.source.list`` names a sibling
+                        # list on the feature or trait.
+                        internal_list_name = source_config.get("list", "")
+                        if internal_list_name:
+                            internal_list = feature_data.get(internal_list_name, {})
+                            option_data = internal_list.get(choice_value) if isinstance(internal_list, dict) else None
+                            if _harvest(option_data, str(choice_value)):
+                                return results
+
+        # ---------------- Internal-list sibling fallback ----------------
+        # Some class data files keep option dicts at the top level alongside
+        # ``features_by_level`` (e.g. ``divine_orders``). Walk those.
+        if isinstance(choice_value, str):
+            for _, data_value in source_data.items():
+                if not isinstance(data_value, dict):
+                    continue
+                option_data = data_value.get(choice_value)
+                if _harvest(option_data, choice_value):
+                    return results
+
+        return results
+
     def _apply_choice_effects(
         self, choice_key: str, choice_value: Any, source_data: Dict[str, Any]
     ):
-        """
-        Look up and apply effects from a choice made in class/subclass features.
+        """Thin wrapper: resolve effects for a class/subclass choice and apply them.
 
-        Args:
-            choice_key: The choice identifier (e.g., 'Divine Order', 'divine_order')
-            choice_value: The chosen value (e.g., 'Thaumaturge')
-            source_data: Class or subclass data to search for effects
+        After Phase 6 this is the *only* place outside ``_apply_trait_effects``
+        that funnels choice-driven effects into ``_apply_effect``. It also
+        handles the side-band feat-loading path (when a class feat slot is
+        filled by a feat name from ``general_feats.json`` / ``origin_feats.json``)
+        because that path also creates a ``features.feats`` entry, not just
+        effects.
+
+        The lookup itself lives in ``resolve_effects_for_choice``.
         """
         if not isinstance(source_data, dict):
             print(
@@ -3199,156 +3555,91 @@ class CharacterBuilder:
             )
             return
 
-        # First, check if there's a feature with choices that references an external file
+        # 1) Primary path: resolve via the unified resolver.
+        triples = self.resolve_effects_for_choice(choice_key, choice_value, source_data)
+        if triples:
+            for effect, src_label, src_type in triples:
+                self._apply_effect(effect, src_label, src_type)
+            return
+
+        # 2) Feat-slot fallback. Some "fighting_style"-style choice slots are
+        # also used to pick FEATS by name (general_feats.json / origin_feats.json);
+        # in that case the chosen value is a feat name and we must (a) add a
+        # feat entry and (b) apply the feat's direct effects via ``_apply_effect``.
+        if not isinstance(choice_value, str):
+            return
+
         features_by_level = source_data.get("features_by_level", {})
         for level_features in features_by_level.values():
             if not isinstance(level_features, dict):
                 continue
-
             for feature_name, feature_data in level_features.items():
-                # Check if this feature matches our choice key
-                if feature_name == choice_key and isinstance(feature_data, dict):
-                    choices_config = feature_data.get("choices", {})
-                    source_config = choices_config.get("source", {})
+                if not isinstance(feature_data, dict):
+                    continue
+                choices_config = feature_data.get("choices")
+                if not isinstance(choices_config, dict):
+                    continue
+                if choices_config.get("name") != choice_key:
+                    continue
 
-                    # Handle external source
-                    if source_config.get("type") == "external":
-                        external_file = source_config.get("file")
-                        external_list = source_config.get("list")
-
-                        if external_file and external_list:
-                            # Load external data file
-                            external_path = self.data_dir / external_file
-                            if external_path.exists():
-                                try:
-                                    with open(external_path, "r") as f:
-                                        external_data = json.load(f)
-
-                                    # Look for the choice value in the external list
-                                    options_list = external_data.get(external_list, {})
-                                    if choice_value in options_list:
-                                        option_data = options_list[choice_value]
-                                        if (
-                                            isinstance(option_data, dict)
-                                            and "effects" in option_data
-                                        ):
-                                            # Apply each effect
-                                            for effect in option_data["effects"]:
-                                                self._apply_effect(
-                                                    effect, choice_value, "class_choice"
-                                                )
-                                            return
-                                except (json.JSONDecodeError, IOError) as e:
-                                    print(
-                                        f"WARNING: Failed to load external file {external_file}: {e}"
-                                    )
-
-                # NEW: Match by choices.name for structured choice features
-                # (e.g. ASI stored as {"description": ..., "choices": {"name": "class_feat_4", ...}})
-                elif (
-                    isinstance(feature_data, dict)
-                    and isinstance(feature_data.get("choices"), dict)
-                    and feature_data["choices"].get("name") == choice_key
-                ):
-                    choices_config = feature_data["choices"]
-                    source_config = choices_config.get("source", {})
-
-                    if source_config.get("type") == "external" and isinstance(choice_value, str):
-                        # FIX: First, try loading from the actual external file specified in
-                        # source_config (e.g. fighting_styles.json). This handles choices like
-                        # "fighting_style" whose options live in an external reference file and
-                        # are NOT feat entries.
-                        external_file = source_config.get("file")
-                        external_list = source_config.get("list")
-                        if external_file and external_list:
-                            external_path = self.data_dir / external_file
-                            if external_path.exists():
-                                try:
-                                    with open(external_path, "r") as f:
-                                        external_data = json.load(f)
-                                    options_list = external_data.get(external_list, {})
-                                    if choice_value in options_list:
-                                        option_data = options_list[choice_value]
-                                        if isinstance(option_data, dict) and "effects" in option_data:
-                                            for effect in option_data["effects"]:
-                                                self._apply_effect(effect, choice_value, "class_choice")
-                                            return
-                                except (KeyError, json.JSONDecodeError, IOError) as e:
-                                    print(
-                                        f"WARNING: Failed to load external file {external_file}: {e}"
-                                    )
-
-                        # Fallback: use _load_feat_data to generically load from any feat file
-                        # (general_feats.json or origin_feats.json).
-                        feat_data_loaded = self._load_feat_data(choice_value)
-                        if feat_data_loaded is not None:
-                            feat_name = choice_value
-
-                            # Extract slot level from choice_key (e.g. "class_feat_4" -> 4)
-                            slot_level = self._class_feat_slot_level(choice_key)
-
-                            # Clear any previously picked feat for this slot
-                            old_feat_entry = next(
-                                (f for f in self.character_data["features"]["feats"]
-                                 if f.get("slot") == choice_key),
-                                None,
-                            )
-                            if old_feat_entry:
-                                old_feat_name = old_feat_entry["name"]
-                                self.character_data["features"]["feats"] = [
-                                    f for f in self.character_data["features"]["feats"]
-                                    if f.get("slot") != choice_key
-                                ]
-                                # Revert applied effects from old feat in this slot
-                                self.applied_effects = [
-                                    e for e in self.applied_effects
-                                    if not (
-                                        e.get("source_type") == "feat"
-                                        and e.get("source") == old_feat_name
-                                        and e.get("slot") == choice_key
-                                    )
-                                ]
-
-                            # Build feat description
-                            description = feat_data_loaded.get("description", "")
-                            benefits = feat_data_loaded.get("benefits", [])
-                            if benefits:
-                                description += self._format_benefits(benefits)
-
-                            # Add feat to features["feats"] (tagged with slot)
-                            already_in_slot = any(
-                                f.get("slot") == choice_key
-                                for f in self.character_data["features"]["feats"]
-                            )
-                            if not already_in_slot:
-                                self.character_data["features"]["feats"].append({
-                                    "name": feat_name,
-                                    "description": description,
-                                    "source": "class",
-                                    "level": slot_level,
-                                    "slot": choice_key,
-                                })
-
-                            # Apply any direct effects from the feat
-                            for feat_effect in feat_data_loaded.get("effects", []):
-                                self._apply_effect(feat_effect, feat_name, "feat")
-
-                            return
-
-        # Fallback: Search for the choice in class data structures (internal references)
-        # Common patterns: 'divine_orders', 'fighting_styles', etc.
-        for data_key, data_value in source_data.items():
-            if not isinstance(data_value, dict):
-                continue
-
-            # Check if this dict contains the chosen value
-            if isinstance(choice_value, str) and choice_value in data_value:
-                option_data = data_value[choice_value]
-                if isinstance(option_data, dict) and "effects" in option_data:
-                    # Apply each effect
-                    for effect in option_data["effects"]:
-                        self._apply_effect(effect, choice_value, "class_choice")
+                feat_data_loaded = self._load_feat_data(choice_value)
+                if feat_data_loaded is None:
                     return
+                feat_name = choice_value
+
+                # Extract slot level from choice_key (e.g. "class_feat_4" -> 4)
+                slot_level = self._class_feat_slot_level(choice_key)
+
+                # Clear any previously picked feat for this slot
+                old_feat_entry = next(
+                    (
+                        f
+                        for f in self.character_data["features"]["feats"]
+                        if f.get("slot") == choice_key
+                    ),
+                    None,
+                )
+                if old_feat_entry:
+                    old_feat_name = old_feat_entry["name"]
+                    self.character_data["features"]["feats"] = [
+                        f
+                        for f in self.character_data["features"]["feats"]
+                        if f.get("slot") != choice_key
+                    ]
+                    self._filter_applied_effects(
+                        lambda e, _name=old_feat_name, _slot=choice_key: (
+                            e.get("source_type") == "feat"
+                            and e.get("source") == _name
+                            and e.get("slot") == _slot
+                        )
+                    )
+
+                # Build feat description
+                description = feat_data_loaded.get("description", "")
+                benefits = feat_data_loaded.get("benefits", [])
+                if benefits:
+                    description += self._format_benefits(benefits)
+
+                already_in_slot = any(
+                    f.get("slot") == choice_key
+                    for f in self.character_data["features"]["feats"]
+                )
+                if not already_in_slot:
+                    self.character_data["features"]["feats"].append(
+                        {
+                            "name": feat_name,
+                            "description": description,
+                            "source": "class",
+                            "level": slot_level,
+                            "slot": choice_key,
+                        }
+                    )
+
+                # Apply the feat's top-level effects (Location 1) via the dispatcher.
+                for feat_effect in feat_data_loaded.get("effects", []):
+                    self._apply_effect(feat_effect, feat_name, "feat")
+
+                return
 
     def _normalize_multiclass_rows(self, rows: Any) -> List[Dict[str, Any]]:
         """Normalize classes rows into a validated internal list."""
@@ -4012,15 +4303,14 @@ class CharacterBuilder:
                         ]
                         self.character_data["proficiency_sources"]["armor"].pop(prof, None)
 
-        # Remove the old effects from applied_effects
-        self.applied_effects = [
-            e for e in self.applied_effects
-            if not (
+        # Remove the old effects from applied_effects (and rebuild structured fields)
+        self._filter_applied_effects(
+            lambda e: (
                 e.get("source_type") == "species_choice"
                 and isinstance(e.get("source"), str)
                 and e["source"].startswith(trait_prefix)
             )
-        ]
+        )
 
     def _apply_species_choice_effects(
         self, choice_key: str, choice_value: Any, source_data: Dict[str, Any]
@@ -4064,6 +4354,89 @@ class CharacterBuilder:
                             effect, f"{trait_name}: {choice_value}", "species_choice"
                         )
                     return
+
+    def _trait_choice_names_for(
+        self, species_name: Optional[str], lineage_name: Optional[str] = None
+    ) -> set:
+        """
+        Return the set of trait names that present a player choice for the
+        given species (and optionally its lineage). Used by the
+        ``species_trait_choices`` normalizer to decide which flat top-level
+        keys in ``choices_made`` should be lifted into the nested object.
+        """
+        names: set = set()
+        if not species_name:
+            return names
+        species_data = self._load_species_data(species_name) or {}
+        for trait_name, trait_data in species_data.get("traits", {}).items():
+            if isinstance(trait_data, dict) and trait_data.get("type") == "choice":
+                names.add(trait_name)
+        if lineage_name:
+            lineage_data = (
+                self._load_lineage_data(species_name, lineage_name) or {}
+            )
+            for trait_name, trait_data in lineage_data.get("traits", {}).items():
+                if isinstance(trait_data, dict) and trait_data.get("type") == "choice":
+                    names.add(trait_name)
+        return names
+
+    def _normalize_species_trait_choices(
+        self,
+        choices: Dict[str, Any],
+        species_name: Optional[str] = None,
+        lineage_name: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """
+        Lift legacy flat top-level trait keys in ``choices`` into the nested
+        ``choices["species_trait_choices"]`` object (audit P0-1).
+
+        Idempotent — calling twice has no further effect. Only keys that match
+        a known trait choice name on the loaded species/lineage are lifted;
+        unrelated top-level keys are left alone.
+
+        When both a flat key and a nested entry exist for the same trait, the
+        existing nested entry wins (keep the canonical value, drop the flat
+        duplicate).
+        """
+        if not isinstance(choices, dict):
+            return choices
+
+        resolved_species = species_name or choices.get("species") or self.character_data.get("species")
+        resolved_lineage = lineage_name or choices.get("lineage") or self.character_data.get("lineage")
+        trait_names = self._trait_choice_names_for(resolved_species, resolved_lineage)
+        if not trait_names:
+            # Nothing to normalize against.
+            return choices
+
+        nested = choices.get("species_trait_choices")
+        if not isinstance(nested, dict):
+            nested = {}
+
+        for trait_name in trait_names:
+            # Lift the canonical flat form: choices["Draconic Ancestry"].
+            if trait_name in choices:
+                if trait_name not in nested:
+                    nested[trait_name] = choices[trait_name]
+                # Drop the flat duplicate either way — nested is canonical.
+                choices.pop(trait_name, None)
+            # Lift the legacy prefixed forms that _resolve_choice_value
+            # would otherwise hit through its fallback variants. Phase 5
+            # makes any such fallback hit fail loud in strict mode; the
+            # normalizer lifting them up-front keeps legacy payloads
+            # round-tripping cleanly without weakening the strict check.
+            for legacy_key in (
+                f"species_trait_{trait_name}",
+                trait_name.lower().replace(" ", "_"),
+                f"species_trait_{trait_name.lower().replace(' ', '_')}",
+            ):
+                if legacy_key in choices:
+                    if trait_name not in nested:
+                        nested[trait_name] = choices[legacy_key]
+                    choices.pop(legacy_key, None)
+
+        if nested:
+            choices["species_trait_choices"] = nested
+        return choices
 
     def apply_choices(self, choices: Dict[str, Any]) -> bool:
         """
@@ -4146,6 +4519,12 @@ class CharacterBuilder:
                     continue
                 self.apply_choice(key, working_choices[key])
 
+        # Now that species (and optionally lineage) are loaded, lift any
+        # legacy flat trait keys in the input into the canonical nested
+        # ``species_trait_choices`` object before the second pass dispatches
+        # them. See ``_normalize_species_trait_choices`` (audit P0-1).
+        self._normalize_species_trait_choices(working_choices)
+
         # Second pass: apply remaining choices (class-specific features, etc.)
         # Skip species_skill_replacements — it needs a late pass after trait effects.
         # Sort so that class_feat_N parent keys are processed before their sub-choices
@@ -4184,6 +4563,20 @@ class CharacterBuilder:
 
         # Resolve any effects that depended on choices made after species was applied
         self._apply_pending_dynamic_effects()
+
+        # Final canonicalization: lift any flat species trait keys recorded in
+        # ``choices_made`` (e.g. as a side effect of dispatching a nested
+        # ``species_trait_choices`` payload through ``apply_choice``) into the
+        # nested object. Idempotent. See audit P0-1.
+        self._normalize_species_trait_choices(self.character_data["choices_made"])
+
+        # Phase 5 (audit P2-6): in strict mode, raise on unknown top-level
+        # choice keys. Allowed keys = the static allowlist + dynamic regex set
+        # + feature/choice names enumerated from currently-loaded data
+        # (class/subclass/species/lineage/background).
+        strict_mode.check_choices_made_keys(
+            self.character_data["choices_made"], self.character_data
+        )
 
         return True
 
@@ -4820,25 +5213,18 @@ class CharacterBuilder:
             attack_bonus = ability_mod + prof_bonus
 
             # Apply bonus_attack effects from features (e.g., Archery fighting style)
-            if hasattr(self, "applied_effects"):
-                for effect_wrapper in self.applied_effects:
-                    if effect_wrapper.get("type") == "bonus_attack":
-                        # Get the actual effect data (nested inside 'effect' key)
-                        effect = effect_wrapper.get("effect", {})
-
-                        # Check if this effect applies to this weapon
-                        weapon_property = effect.get("weapon_property")
-                        if weapon_property:
-                            # Check if weapon matches the property requirement
-                            if weapon_property == "Ranged" and "Ranged" in category:
-                                bonus = effect.get("value", 0)
-                                attack_bonus += bonus
-                            elif weapon_property in properties:
-                                bonus = effect.get("value", 0)
-                                attack_bonus += bonus
-                        else:
-                            # No condition, applies to all weapons
-                            attack_bonus += effect.get("value", 0)
+            # Phase 6: read from structured field, not applied_effects.
+            for entry in self.character_data.get("attack_bonuses", []):
+                weapon_property = entry.get("weapon_property")
+                if weapon_property:
+                    # Check if weapon matches the property requirement
+                    if weapon_property == "Ranged" and "Ranged" in category:
+                        attack_bonus += entry.get("value", 0)
+                    elif weapon_property in properties:
+                        attack_bonus += entry.get("value", 0)
+                else:
+                    # No condition, applies to all weapons
+                    attack_bonus += entry.get("value", 0)
 
             # Calculate damage
             damage_dice = weapon_props.get("damage", "1d4")
@@ -4847,52 +5233,50 @@ class CharacterBuilder:
 
             # Apply bonus_damage effects from features (e.g., Dueling fighting style)
             # Track which bonuses apply (for excluding from dual-wield offhand)
+            # Phase 6: read from structured field, not applied_effects.
             damage_notes = []
             dueling_bonus = 0  # Track Dueling separately for dual-wield exclusion
 
-            if hasattr(self, "applied_effects"):
-                for effect_wrapper in self.applied_effects:
-                    if effect_wrapper.get("type") == "bonus_damage":
-                        effect = effect_wrapper.get("effect", {})
-                        condition = effect.get("condition", "")
+            for entry in self.character_data.get("damage_bonuses", []):
+                condition = entry.get("condition", "")
 
-                        # Check if condition is met for this weapon
-                        applies = False
-                        if condition == "one handed melee weapon":
-                            # Dueling: Check weapon qualifies (one-handed melee)
-                            # Display as if used alone (dual-wielding shown separately)
-                            is_melee = "Ranged" not in category
-                            is_one_handed = "Two-Handed" not in properties
+                # Check if condition is met for this weapon
+                applies = False
+                if condition == "one handed melee weapon":
+                    # Dueling: Check weapon qualifies (one-handed melee)
+                    # Display as if used alone (dual-wielding shown separately)
+                    is_melee = "Ranged" not in category
+                    is_one_handed = "Two-Handed" not in properties
 
-                            if is_melee and is_one_handed:
-                                applies = True
-                                # Track Dueling bonus to exclude from dual-wield damage
-                                dueling_bonus = effect.get("value", 0)
-                        elif condition == "thrown weapon ranged attack":
-                            # Thrown Weapon Fighting: Check if weapon has Thrown property
-                            # The "Thrown" property means it can be used for ranged attacks
-                            # (even if weapon category is "Melee")
-                            # Property appears as "Thrown (range X/Y)" in the list
-                            #
-                            # IMPORTANT: Only apply to pure thrown weapons OR the separate
-                            # throw damage calculation. For melee weapons with Thrown property,
-                            # we'll show separate "throw_damage" field with this bonus.
-                            is_melee = "Melee" in category
-                            has_thrown = any("Thrown" in prop for prop in properties)
+                    if is_melee and is_one_handed:
+                        applies = True
+                        # Track Dueling bonus to exclude from dual-wield damage
+                        dueling_bonus = entry.get("value", 0)
+                elif condition == "thrown weapon ranged attack":
+                    # Thrown Weapon Fighting: Check if weapon has Thrown property
+                    # The "Thrown" property means it can be used for ranged attacks
+                    # (even if weapon category is "Melee")
+                    # Property appears as "Thrown (range X/Y)" in the list
+                    #
+                    # IMPORTANT: Only apply to pure thrown weapons OR the separate
+                    # throw damage calculation. For melee weapons with Thrown property,
+                    # we'll show separate "throw_damage" field with this bonus.
+                    is_melee = "Melee" in category
+                    has_thrown = any("Thrown" in prop for prop in properties)
 
-                            # Only apply to main damage if it's NOT a melee weapon
-                            # (pure thrown weapons without melee option get the bonus on main damage)
-                            if has_thrown and not is_melee:
-                                applies = True
-                        elif not condition:
-                            # No condition, applies to all
-                            applies = True
+                    # Only apply to main damage if it's NOT a melee weapon
+                    # (pure thrown weapons without melee option get the bonus on main damage)
+                    if has_thrown and not is_melee:
+                        applies = True
+                elif not condition:
+                    # No condition, applies to all
+                    applies = True
 
-                        if applies:
-                            bonus_value = effect.get("value", 0)
-                            damage_bonus += bonus_value
-                            source_name = effect_wrapper.get("source", "Unknown")
-                            damage_notes.append(f"+{bonus_value} from {source_name}")
+                if applies:
+                    bonus_value = entry.get("value", 0)
+                    damage_bonus += bonus_value
+                    source_name = entry.get("source", "Unknown")
+                    damage_notes.append(f"+{bonus_value} from {source_name}")
 
             # Format damage string with bonus if non-zero
             if damage_bonus > 0:
@@ -4903,19 +5287,17 @@ class CharacterBuilder:
                 damage_str = damage_dice
 
             # Check for Great Weapon Fighting (affects average damage for Two-Handed/Versatile weapons)
+            # Phase 6: read from structured fighting-style flags.
             has_gwf = False
-            if hasattr(self, "applied_effects"):
-                for effect_wrapper in self.applied_effects:
-                    if effect_wrapper.get("type") == "great_weapon_fighting":
-                        # Check if weapon qualifies (melee with Two-Handed or Versatile)
-                        is_melee = "Ranged" not in category
-                        is_two_handed = "Two-Handed" in properties
-                        is_versatile = any("Versatile" in prop for prop in properties)
+            if self.character_data.get("fighting_style_flags", {}).get("great_weapon_fighting"):
+                # Check if weapon qualifies (melee with Two-Handed or Versatile)
+                is_melee = "Ranged" not in category
+                is_two_handed = "Two-Handed" in properties
+                is_versatile = any("Versatile" in prop for prop in properties)
 
-                        if is_melee and (is_two_handed or is_versatile):
-                            has_gwf = True
-                            damage_notes.append("Can reroll 1s and 2s (GWF)")
-                            break
+                if is_melee and (is_two_handed or is_versatile):
+                    has_gwf = True
+                    damage_notes.append("Can reroll 1s and 2s (GWF)")
 
             # Calculate average damage (adjusted for GWF if applicable)
             avg_damage = self._calculate_average_damage(
@@ -4938,17 +5320,13 @@ class CharacterBuilder:
                 throw_notes = []
 
                 # Check for Thrown Weapon Fighting bonus
-                if hasattr(self, "applied_effects"):
-                    for effect_wrapper in self.applied_effects:
-                        if effect_wrapper.get("type") == "bonus_damage":
-                            effect = effect_wrapper.get("effect", {})
-                            condition = effect.get("condition", "")
-
-                            if condition == "thrown weapon ranged attack":
-                                bonus_value = effect.get("value", 0)
-                                throw_bonus += bonus_value
-                                source_name = effect_wrapper.get("source", "Unknown")
-                                throw_notes.append(f"+{bonus_value} from {source_name}")
+                # Phase 6: read from structured damage_bonuses.
+                for entry in self.character_data.get("damage_bonuses", []):
+                    if entry.get("condition", "") == "thrown weapon ranged attack":
+                        bonus_value = entry.get("value", 0)
+                        throw_bonus += bonus_value
+                        source_name = entry.get("source", "Unknown")
+                        throw_notes.append(f"+{bonus_value} from {source_name}")
 
                 # Format throw damage string
                 if throw_bonus > 0:
@@ -5053,14 +5431,11 @@ class CharacterBuilder:
         # With Martial Arts (Monk): martial_arts_die + max(STR, DEX)
         str_mod = ability_scores.get("strength", {}).get("modifier", 0)
         dex_mod = ability_scores.get("dexterity", {}).get("modifier", 0)
-        has_unarmed_fighting = False
+        # Phase 6: read from structured fighting-style flags.
+        has_unarmed_fighting = bool(
+            self.character_data.get("fighting_style_flags", {}).get("unarmed_fighting")
+        )
         martial_arts_die = self.character_data.get("martial_arts_die")
-
-        if hasattr(self, "applied_effects"):
-            for effect_wrapper in self.applied_effects:
-                if effect_wrapper.get("type") == "unarmed_fighting":
-                    has_unarmed_fighting = True
-                    break
 
         # Determine the damage die and ability modifier for the unarmed strike
         if martial_arts_die:
@@ -5194,12 +5569,10 @@ class CharacterBuilder:
         oh_attack_bonus = weapon2.get("attack_bonus")
 
         # Check for Two-Weapon Fighting style (adds ability mod to offhand)
-        has_two_weapon_fighting = False
-        if hasattr(self, "applied_effects"):
-            for effect_wrapper in self.applied_effects:
-                if effect_wrapper.get("type") == "two_weapon_fighting_modifier":
-                    has_two_weapon_fighting = True
-                    break
+        # Phase 6: read from structured fighting-style flags.
+        has_two_weapon_fighting = bool(
+            self.character_data.get("fighting_style_flags", {}).get("two_weapon_fighting_modifier")
+        )
 
         # Offhand damage:
         # - With Two-Weapon Fighting: add full ability mod
@@ -5511,27 +5884,20 @@ class CharacterBuilder:
         }
 
     def _extract_hp_bonuses(self) -> List[Dict[str, Any]]:
-        """Extract HP bonuses from effects and features."""
+        """Extract HP bonuses from effects and features.
+
+        Phase 6: reads from the structured ``hp_bonuses`` field populated by
+        ``_apply_effect``. Never reads ``applied_effects`` directly.
+        """
         hp_bonuses = []
-
-        # Check effects for HP bonuses
-        if hasattr(self, "applied_effects"):
-            for applied_effect in self.applied_effects:
-                effect = applied_effect["effect"]
-                if effect.get("type") == "bonus_hp":
-                    # Check if it's per-level scaling
-                    scaling = effect.get("scaling")
-                    value = effect.get("value", 0)
-
-                    hp_bonuses.append(
-                        {
-                            "source": applied_effect.get("source", "Unknown"),
-                            "value": value,
-                            "scaling": scaling,
-                            "source_type": applied_effect.get("source_type"),
-                            "source_class_name": applied_effect.get("source_class_name"),
-                        }
-                    )
+        for entry in self.character_data.get("hp_bonuses", []):
+            hp_bonuses.append({
+                "source": entry.get("source", "Unknown"),
+                "value": entry.get("value", 0),
+                "scaling": entry.get("scaling"),
+                "source_type": entry.get("source_type"),
+                "source_class_name": entry.get("source_class_name"),
+            })
 
         return hp_bonuses
 
@@ -5547,6 +5913,21 @@ class CharacterBuilder:
         """
         # Start with base character data
         character_data = deepcopy(self.character_data)
+
+        # Phase 6: the structured bonus fields are *internal* calculation
+        # inputs. They are derived purely from the effects already captured
+        # in ``applied_effects`` (which is exported). Hiding them keeps the
+        # exported sheet stable and avoids leaking calculation scaffolding
+        # into API consumers.
+        for _internal_key in (
+            "damage_bonuses",
+            "attack_bonuses",
+            "ac_bonuses",
+            "hp_bonuses",
+            "alternative_ac_options",
+            "fighting_style_flags",
+        ):
+            character_data.pop(_internal_key, None)
 
         # Late-resolve choice_substitutions placeholders in features.
         # Species traits may have been applied before ancestry choices were stored.
@@ -5855,6 +6236,8 @@ class CharacterBuilder:
                     if effect.get("source_class_name"):
                         applied_effect["source_class_name"] = effect["source_class_name"]
                     self.applied_effects.append(applied_effect)
+        # Rebuild Phase 6 structured bonus fields from the restored audit log.
+        self._rebuild_structured_bonuses()
         self._ensure_base_language()
 
     @classmethod
@@ -6634,6 +7017,7 @@ class CharacterBuilder:
 
             skill_choice = {
                 "choice_key": "skill_choices",
+                "choices_made_key": "skill_choices",
                 "title": "Skill Proficiencies",
                 "type": "skills",
                 "description": f"Choose {class_data['skill_proficiencies_count']} skill proficiencies from the available options.",
@@ -6664,6 +7048,7 @@ class CharacterBuilder:
 
             tool_choice = {
                 "choice_key": "tool_choices",
+                "choices_made_key": "tool_choices",
                 "title": "Tool Proficiency",
                 "type": "tools",
                 "description": f"Choose {tool_count} tool {'proficiency' if tool_count == 1 else 'proficiencies'} from the available options.",
@@ -6787,6 +7172,9 @@ class CharacterBuilder:
                             "level": level,
                             "feature_name": feature_key,
                             "choice_key": raw_name,
+                            # Phase 5 / P1-3: canonical key the frontend MUST write into
+                            # choices_made. Apply_choice dispatches on this exact key.
+                            "choices_made_key": feature_key,
                             "option_descriptions": get_option_descriptions(
                                 feature_data, choice_item, class_data, subclass_data
                             ),
@@ -6818,6 +7206,9 @@ class CharacterBuilder:
                         "level": level,
                         "feature_name": feature_key,
                         "choice_key": choices_data.get("name", feature_key),
+                        # Phase 5 / P1-3: canonical key the frontend MUST write into
+                        # choices_made. Apply_choice dispatches on this exact key.
+                        "choices_made_key": feature_key,
                         "option_descriptions": get_option_descriptions(
                             feature_data, choices_data, class_data, subclass_data
                         ),
@@ -6949,6 +7340,9 @@ class CharacterBuilder:
                                         "required": True,
                                         "level": 1,
                                         "feature_name": bonus_feature_name,
+                                        # Phase 5 / P1-3: canonical key. Nested cantrip
+                                        # picks are stored under this exact key in choices_made.
+                                        "choices_made_key": bonus_feature_name,
                                         "depends_on": choice_key,
                                         "depends_on_value": option_name,
                                         "is_nested": True,
@@ -7064,6 +7458,9 @@ class CharacterBuilder:
                     "level": slot_level,
                     "feature_name": sub_key,
                     "choice_key": sub_key,
+                    # Phase 5 / P1-3: canonical key for class-level feat sub-choices
+                    # (e.g. class_feat_4_ability for an ASI inside a feat slot).
+                    "choices_made_key": sub_key,
                     "depends_on": (
                         f"{parent_key}_{sub_item['depends_on']}"
                         if sub_item.get("depends_on")
@@ -7450,10 +7847,9 @@ class CharacterBuilder:
 
         # Clear any applied effects from this feat's choices
         if hasattr(self, "applied_effects"):
-            self.applied_effects = [
-                e for e in self.applied_effects
-                if not (e.get("source_type") == "feat" and e.get("source") == feat_name)
-            ]
+            self._filter_applied_effects(
+                lambda e: e.get("source_type") == "feat" and e.get("source") == feat_name
+            )
 
     def apply_feat_choices(self, choices: Dict[str, Any], feat_name: Optional[str] = None) -> bool:
         """

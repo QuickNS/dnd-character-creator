@@ -20,6 +20,50 @@ if effect['type'] == 'bonus_hp' and effect.get('scaling') == 'per_level':
     hp_bonus += level * effect['value']
 ```
 
+## One Dispatcher Rule (audit Phase 6)
+
+The effects subsystem has **one** mutation chokepoint and **one** lookup helper for choice-driven effects. Contributors MUST respect both.
+
+1. **`_apply_effect()` is the only mutator.** Every effect — regardless of where it was authored — reaches `character_data` exclusively through `CharacterBuilder._apply_effect()` in [modules/character_builder.py](../../modules/character_builder.py). No other method may mutate character state based on an effect dict.
+2. **Choice-driven effects route through `resolve_effects_for_choice()` first.** Fighting styles, maneuvers, eldritch invocations, future metamagic, and any other player-picked option are resolved by [`resolve_effects_for_choice`](../../modules/character_builder.py) into `(effect, source_label, source_type)` triples. The caller then hands each triple to `_apply_effect`. The resolver performs **lookup only**; it never mutates.
+3. **`applied_effects` is an audit log only.** Calculation methods (`calculate_weapon_attacks`, `calculate_ac_options`, `_extract_hp_bonuses`, etc.) MUST read from the structured bonus fields populated by `_apply_effect` on `character_data` — `damage_bonuses`, `attack_bonuses`, `ac_bonuses`, `hp_bonuses`, `alternative_ac_options`, `fighting_style_flags`. They MUST NOT re-walk `applied_effects` to derive behaviour. The log exists for tests, diffing, and debugging; it is not a calculation input.
+4. **No name-based branching.** Branch on `effect['type']`. Never on feature names, option names, fighting-style names, or species names — those belong in JSON, not in Python.
+5. **New effect types ship in one PR**, with all five pieces together:
+   - enum entry in [models/_shared/effect.json](../../models/_shared/effect.json),
+   - matching string in `KNOWN_EFFECT_TYPES` in [modules/strict_mode.py](../../modules/strict_mode.py),
+   - handler branch in `_apply_effect`,
+   - entry in [docs/FEATURE_EFFECTS.md](../../docs/FEATURE_EFFECTS.md),
+   - at least one test exercising the handler.
+
+The five legitimate JSON authoring locations that feed this dispatcher are catalogued in [.github/instructions/data-schemas.instructions.md](./data-schemas.instructions.md) under **"The 5 valid `effects`-array authoring locations"**.
+
+## Strict Mode & The Closed Enum (audit Phase 5)
+
+The set of valid `effect.type` values is a **closed enum**, duplicated in two
+places that MUST stay in sync:
+
+1. [models/_shared/effect.json](models/_shared/effect.json) — `properties.type.enum`. Gates JSON authoring via `validate_data.py`.
+2. [modules/strict_mode.py](modules/strict_mode.py) — `KNOWN_EFFECT_TYPES` frozenset. Gates runtime dispatch in `_apply_effect`.
+
+The test [tests/core/test_strict_mode.py](tests/core/test_strict_mode.py)::`test_effect_enum_matches_schema` enforces parity — drift fails CI.
+
+### Adding a new effect type (single PR)
+
+1. Add the new type string to the enum in [models/_shared/effect.json](models/_shared/effect.json).
+2. Add the same string to `KNOWN_EFFECT_TYPES` in [modules/strict_mode.py](modules/strict_mode.py).
+3. Implement the handler branch in `CharacterBuilder._apply_effect` ([modules/character_builder.py](modules/character_builder.py)).
+4. Document the type in the table below and in [docs/FEATURE_EFFECTS.md](docs/FEATURE_EFFECTS.md).
+5. Add a test that exercises the handler.
+
+### Strict mode toggle
+
+- Environment variable `DND_STRICT_EFFECTS=1` → strict (raise on unknown effect
+  type, unknown top-level `choices_made` key, non-canonical fallback choice
+  resolution, malformed `features_by_level`).
+- `DND_STRICT_EFFECTS=0` → lenient (warn-only).
+- Default OFF when `FLASK_ENV=production`, ON everywhere else.
+- The pytest suite forces it ON via [conftest.py](conftest.py).
+
 ## Effect JSON Shape
 
 Every effect is an object inside a feature's `effects` array:
@@ -105,8 +149,4 @@ Every effect is an object inside a feature's `effects` array:
 
 ## Adding a New Effect Type
 
-1. Define the JSON shape and add to this table
-2. Add handler in `CharacterBuilder._apply_effect()`
-3. Wire into the relevant calculation method (`calculate_weapon_attacks()`, `calculate_ac_options()`, etc.)
-4. Add to `docs/FEATURE_EFFECTS.md`
-5. Write tests covering at least 2 different sources using the same effect type
+See the **One Dispatcher Rule** above for the full PR checklist. In short: enum + `KNOWN_EFFECT_TYPES` + `_apply_effect` handler (populating the appropriate structured bonus field on `character_data`) + [docs/FEATURE_EFFECTS.md](../../docs/FEATURE_EFFECTS.md) entry + test. Calculation methods read the structured bonus field; they do not re-walk `applied_effects`.

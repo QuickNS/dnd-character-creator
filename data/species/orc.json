@@ -5,7 +5,6 @@
   "size": "Medium",
   "size_description": "about 6-7 feet tall",
   "speed": 30,
-  "darkvision_range": 120,
   "traits": {
     "Adrenaline Rush": "You can take the Dash action as a Bonus Action. When you do so, you gain a number of Temporary Hit Points equal to your Proficiency Bonus. You can use this trait a number of times equal to your Proficiency Bonus, and you regain all expended uses when you finish a Short or Long Rest.",
     "Darkvision": {

@@ -7,9 +7,13 @@ import { useCharacterStore } from "@/store/characterStore";
  * shape. Used for class/subclass skill picks, fighting style choices,
  * species trait choices, etc.
  *
- * Stores selection in `choices_made[choiceKey]`:
+ * Stores selection in `choices_made[choiceKey]` by default:
  *   - count === 1 → single string
  *   - count > 1   → array of strings (length capped at `count`)
+ *
+ * When `parentKey` is provided, the selection is instead stored at
+ * `choices_made[parentKey][choiceKey]` (canonical nested shape — e.g.
+ * `species_trait_choices`). Multi-select is not supported with a parentKey.
  */
 interface Option {
   id?: string;
@@ -20,6 +24,9 @@ interface Option {
 
 interface Props {
   choiceKey: string;
+  /** If set, write/read at `choices_made[parentKey][choiceKey]` instead of
+   * the top level. Single-select only. */
+  parentKey?: string;
   title?: string;
   description?: string;
   options: Array<string | Option>;
@@ -63,6 +70,7 @@ function normalize(opt: string | Option): { value: string; label: string; descri
 
 export function ChoiceList({
   choiceKey,
+  parentKey,
   title,
   description,
   options,
@@ -75,8 +83,26 @@ export function ChoiceList({
   inspectedOption,
   hideOptionDescriptions = false,
 }: Props) {
-  const value = useCharacterStore((s) => s.choicesMade[choiceKey]);
+  const value = useCharacterStore((s) => {
+    if (parentKey) {
+      const parent = s.choicesMade[parentKey];
+      if (parent && typeof parent === "object" && !Array.isArray(parent)) {
+        return (parent as Record<string, unknown>)[choiceKey];
+      }
+      return undefined;
+    }
+    return s.choicesMade[choiceKey];
+  });
   const setChoice = useCharacterStore((s) => s.setChoice);
+  const setNestedChoice = useCharacterStore((s) => s.setNestedChoice);
+
+  function writeValue(next: unknown) {
+    if (parentKey) {
+      setNestedChoice(parentKey, choiceKey, next);
+    } else {
+      setChoice(choiceKey, next);
+    }
+  }
 
   const normalized = options.map((opt) => {
     const n = normalize(opt);
@@ -108,7 +134,7 @@ export function ChoiceList({
 
   function toggle(v: string) {
     if (!isMulti) {
-      setChoice(choiceKey, v);
+      writeValue(v);
       return;
     }
     const next = new Set(selected);
@@ -118,7 +144,7 @@ export function ChoiceList({
       if (next.size >= count) return;
       next.add(v);
     }
-    setChoice(choiceKey, Array.from(next));
+    writeValue(Array.from(next));
   }
 
   const selectedCount = selected.size;
@@ -284,7 +310,7 @@ export function ChoiceList({
         <div className="space-y-3">
           <select
             value={selectedValue}
-            onChange={(event) => setChoice(choiceKey, event.target.value)}
+            onChange={(event) => writeValue(event.target.value)}
             className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             aria-label={title ?? choiceKey}
           >

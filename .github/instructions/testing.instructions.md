@@ -161,3 +161,28 @@ pytest tests/ -k "dwarf"            # Tests matching "dwarf"
 pytest tests/ -m integration        # Only integration tests
 pytest tests/ --tb=short -q         # Compact output
 ```
+
+## Round-Trip Equality Safety Net
+
+`tests/integration/test_rebuild_equality.py` is the parametrized safety net
+for the "wizard = rebuild" architectural guarantee (audit item P0-2). It
+builds every saved sample character, exports `choices_made`, rebuilds a
+fresh `CharacterBuilder` from that export, and asserts both
+`to_character()` dicts are byte-equal under
+`json.dumps(..., sort_keys=True)` after stripping volatile fields.
+
+**Rules for new archetypes:**
+
+- Discovery is by glob (`test_characters/*.json` plus
+  `data/example_complete_character.json`). **Every new character archetype
+  added to `test_characters/` is picked up automatically — do not
+  enumerate fixtures by name.** Drop the JSON in and the parametrized
+  suite will cover it on the next run.
+- If a fixture fails round-trip equality, that is a real defect. Do not
+  weaken the assertion, do not edit the fixture to make it pass, and do
+  not add fields to the volatile-field stripper to silence the failure.
+  Report the defect; let the architect route the fix.
+- The volatile-field stripper (`strip_volatile` in the test module) is
+  intentionally conservative. Only add a key to `_VOLATILE_TOP_LEVEL_KEYS`
+  if you can demonstrate the field is non-deterministic across two builds
+  from the same `choices_made`.

@@ -1,0 +1,94 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "D&D 2024 Background",
+  "description": "Schema for files in data/backgrounds/. Each background grants an ability score increase (total 3 across two or three abilities), an Origin feat, two skill proficiencies, one tool proficiency, and one of two starting equipment packages. Phase 3 keeps this schema permissive about counts; Phase 10 (D6-5) will add strict constraints (skill count == 2, ability score total == 3, origin-feat existence check).",
+  "type": "object",
+  "required": [
+    "name",
+    "description",
+    "ability_score_increase",
+    "feat",
+    "skill_proficiencies",
+    "tool_proficiencies",
+    "starting_equipment"
+  ],
+  "properties": {
+    "name": { "type": "string" },
+    "description": { "type": "string" },
+    "ability_score_increase": {
+      "type": "object",
+      "required": ["total", "options"],
+      "properties": {
+        "total": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "options": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["Strength", "Dexterity", "Constitution", "Intelligence", "Wisdom", "Charisma"]
+          }
+        },
+        "suggested": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "feat": {
+      "type": "string",
+      "description": "Name of the Origin feat granted by this background. Existence-against-origin_feats.json is enforced in Phase 10."
+    },
+    "skill_proficiencies": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "tool_proficiencies": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "starting_equipment": {
+      "type": "object",
+      "required": ["option_a", "option_b"],
+      "properties": {
+        "option_a": {
+          "type": "object",
+          "required": ["items", "gold"],
+          "properties": {
+            "items": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "gold": {
+              "type": "number",
+              "minimum": 0
+            }
+          },
+          "additionalProperties": false
+        },
+        "option_b": {
+          "type": "object",
+          "required": ["gold"],
+          "properties": {
+            "gold": {
+              "type": "number",
+              "minimum": 0
+            },
+            "items": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

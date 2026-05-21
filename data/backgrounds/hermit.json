@@ -9,7 +9,6 @@
   "feat": "Healer",
   "skill_proficiencies": ["Medicine", "Religion"],
   "tool_proficiencies": ["Herbalism Kit"],
-  "languages": 2,
   "starting_equipment": {
     "option_a": {
       "items": [

@@ -451,13 +451,13 @@
         "effects": [
           {
             "type": "grant_spell",
-            "spell": "Power Word: Heal",
+            "spell": "Power Word Heal",
             "min_level": 20,
             "counts_against_limit": false
           },
           {
             "type": "grant_spell",
-            "spell": "Power Word: Kill",
+            "spell": "Power Word Kill",
             "min_level": 20,
             "counts_against_limit": false
           }

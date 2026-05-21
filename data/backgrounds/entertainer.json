@@ -9,7 +9,6 @@
   "feat": "Musician",
   "skill_proficiencies": ["Acrobatics", "Performance"],
   "tool_proficiencies": ["Musical Instrument"],
-  "languages": 2,
   "starting_equipment": {
     "option_a": {
       "items": [
