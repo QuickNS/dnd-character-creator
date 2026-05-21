@@ -124,7 +124,10 @@ class TestGeneralFeatsData:
     ):
         """Ability-choice feats must map each option to a +1 ability_bonus effect."""
         feat = general_feats[feat_name]
-        ability_choice = next(c for c in feat["choices"] if c.get("name") == "ability")
+        ability_choice = next(
+            (c for c in feat["choices"] if c.get("name") == "ability"), None
+        )
+        assert ability_choice is not None, f"{feat_name} is missing ability choice"
         options = ability_choice["source"]["options"]
         ability_effects = feat["choice_effects"]["ability"]
 

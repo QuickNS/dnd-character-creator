@@ -91,7 +91,9 @@ def test_unknown_ability_bonus_with_minimum_does_not_crash():
         },
         "background_bonuses": {"Strength": 2, "Constitution": 1},
     })
-    baseline_strength = builder.to_character()["abilities"]["strength"]["score"]
+    baseline_abilities = {
+        name: data["score"] for name, data in builder.to_character()["abilities"].items()
+    }
 
     builder.character_data.setdefault("ability_bonuses", []).append({
         "ability": "NotAStat",
@@ -100,7 +102,10 @@ def test_unknown_ability_bonus_with_minimum_does_not_crash():
     })
 
     character = builder.to_character()
-    assert character["abilities"]["strength"]["score"] == baseline_strength
+    current_abilities = {
+        name: data["score"] for name, data in character["abilities"].items()
+    }
+    assert current_abilities == baseline_abilities
 
 
 def test_paladin_recommended_ability_scores(character_builder):

@@ -4631,10 +4631,11 @@ class CharacterBuilder:
                 minimum = int(bonus.get("minimum", 0))
             except (TypeError, ValueError):
                 continue
-            if ability in raw_scores and (value != 0 or minimum > 0):
-                raw_scores[ability] = max(raw_scores[ability] + value, minimum)
-                # Cap at 20
-                raw_scores[ability] = min(raw_scores[ability], 20)
+            if ability in raw_scores:
+                if value != 0 or minimum > 0:
+                    raw_scores[ability] = max(raw_scores[ability] + value, minimum)
+                    # Cap at 20
+                    raw_scores[ability] = min(raw_scores[ability], 20)
 
         # Get saving throw proficiencies from class + effects
         class_data = self.character_data.get("class_data")
