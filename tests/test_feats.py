@@ -569,13 +569,16 @@ class TestOriginFeatEffects:
             "level": 5,
             "species": "Human",
             "class": "Fighter",
-            "background": "Criminal",
+            "background": "Criminal",  # Criminal grants the Alert origin feat.
             "ability_scores": {
                 "Strength": 15, "Dexterity": 14, "Constitution": 14,
                 "Intelligence": 10, "Wisdom": 12, "Charisma": 8
             },
             "background_bonuses": {"Strength": 2, "Constitution": 1},
         })
+        feat_names = [feat["name"] for feat in character["features"]["feats"]]
+        assert "Alert" in feat_names
+        # Dex mod (+2) + proficiency bonus at level 5 (+3) = 5.
         assert character["combat"]["initiative"] == 5
         assert character["combat"]["initiative_bonus"] == 5
 
