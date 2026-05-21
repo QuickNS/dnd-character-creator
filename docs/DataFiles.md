@@ -53,6 +53,7 @@ Every class file carries a `multiclassing` object describing what the class gran
   "armor_training": ["Light", "Shields"],
   "weapon_training": [],
   "tool_training": [],
+  "feature_choices": ["Primal Order"],
   "skill_proficiencies": null,
   "saving_throw_proficiencies": [],
   "other_proficiencies": [],
@@ -67,6 +68,7 @@ Every class file carries a `multiclassing` object describing what the class gran
 | `armor_training`              | Armor groups granted (e.g. `"Light"`, `"Medium"`, `"Heavy"`, `"Shields"`).             |
 | `weapon_training`             | Weapon proficiencies granted (e.g. `"Martial"`, named simple weapons).                 |
 | `tool_training`               | Tool proficiencies granted.                                                            |
+| `feature_choices`             | Optional allow-list of level-1 feature choice names that should still appear on secondary rows (e.g. `"Primal Order"`). |
 | `skill_proficiencies`         | `null`, or `{ "count": n, "options": ["Skill", ...] }`. `options` may be `"any"`.      |
 | `saving_throw_proficiencies`  | Always `[]` per D&D 2024 RAW — multiclass never grants save proficiencies. Field is present for schema uniformity. |
 | `other_proficiencies`         | Anything that doesn't fit the buckets above (rare).                                    |

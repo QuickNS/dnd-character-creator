@@ -211,6 +211,7 @@
         "armor_training":             { "type": "array", "items": { "type": "string" } },
         "weapon_training":            { "type": "array", "items": { "type": "string" } },
         "tool_training":              { "type": "array", "items": { "type": "string" } },
+        "feature_choices":            { "type": "array", "items": { "type": "string" } },
         "skill_proficiencies":        {
           "oneOf": [
             { "type": "null" },

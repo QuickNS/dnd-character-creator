@@ -39,16 +39,16 @@ class ChoicesValidationError(ValueError):
 
 # ==================== Multiclass nested-choice filtering ====================
 #
-# Per D&D 2024 multiclassing rules, a secondary class entry grants ONLY the
-# proficiencies listed in that class's `multiclassing` block — it does NOT
-# grant the class's level-1 features (no fighting style, no expertise, no
-# divine/primal order, no level-1 spells/cantrips, no weapon mastery picks,
-# no invocations, etc.). The wizard's level-up step pipeline naively produces
-# every nested choice the class would offer at level 1, so for secondary
-# rows we filter that list down to only:
+# Per D&D 2024 multiclassing rules, a secondary class entry grants proficiencies
+# listed in that class's `multiclassing` block. Some classes also explicitly
+# grant specific level-1 feature pickers on multiclass entry; those can be
+# allow-listed via `multiclassing.feature_choices`. The wizard's level-up step
+# pipeline naively produces every nested choice the class would offer at level 1,
+# so for secondary rows we filter that list down to:
 #   - skill picks (if `multiclassing.skill_proficiencies` is a non-null dict)
 #   - tool picks  (if any `multiclassing.tool_training` entry is a wildcard
 #                  like "Musical Instrument (1 of your choice)")
+#   - explicit feature picks listed in `multiclassing.feature_choices`
 # Subclass selection is handled by `available_subclasses` / `needs_subclass`
 # on the response and is always allowed for any class row.
 
@@ -117,6 +117,11 @@ def _filter_nested_choices_for_secondary_class(
 
     tool_wildcard = _parse_tool_wildcard(multiclass.get("tool_training") or [])
     allow_tool = tool_wildcard is not None
+    allow_feature_choices = {
+        name.strip().lower()
+        for name in (multiclass.get("feature_choices") or [])
+        if isinstance(name, str) and name.strip()
+    }
 
     filtered: List[Dict[str, Any]] = []
     for choice in nested_choices:
@@ -156,8 +161,14 @@ def _filter_nested_choices_for_secondary_class(
                 )
             filtered.append(narrowed)
 
+        elif (
+            str(choice.get("feature_name") or "").strip().lower()
+            in allow_feature_choices
+        ):
+            filtered.append(dict(choice))
+
         # All other categories (fighting style, expertise, spells, cantrips,
-        # divine/primal order, weapon mastery, invocations, etc.) are dropped.
+        # weapon mastery, invocations, etc.) are dropped.
 
     return filtered
 
