@@ -6948,7 +6948,37 @@ class CharacterBuilder:
                                             None,
                                         ),
                                     }
-                                    choices.append(choice)
+                                    insertion_index = len(choices)
+                                    for idx, existing_choice in enumerate(choices):
+                                        existing_choice_key = existing_choice.get(
+                                            "choice_key"
+                                        )
+                                        existing_feature_name = existing_choice.get(
+                                            "feature_name"
+                                        )
+                                        normalized_feature_name = (
+                                            existing_feature_name.lower().replace(
+                                                " ", "_"
+                                            )
+                                            if isinstance(existing_feature_name, str)
+                                            else None
+                                        )
+                                        if choice_key in {
+                                            existing_choice_key,
+                                            existing_feature_name,
+                                            normalized_feature_name,
+                                        }:
+                                            insertion_index = idx + 1
+                                            while insertion_index < len(choices) and (
+                                                choices[insertion_index].get(
+                                                    "depends_on"
+                                                )
+                                                == choice_key
+                                            ):
+                                                insertion_index += 1
+                                            break
+
+                                    choices.insert(insertion_index, choice)
 
     def _add_class_level_feat_sub_choices(
         self,
