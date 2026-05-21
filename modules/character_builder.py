@@ -6843,6 +6843,11 @@ class CharacterBuilder:
         the corresponding bonus cantrip choices to the choices list (hidden by default,
         shown by JavaScript when parent option is selected).
         """
+        def _normalize_choice_identifier(value: Any) -> Optional[str]:
+            if not isinstance(value, str):
+                return None
+            return value.strip().lower().replace(" ", "_")
+
         # First, find the parent choice key from existing choices
         parent_choice_key = None
         for choice in choices:
@@ -6949,31 +6954,35 @@ class CharacterBuilder:
                                         ),
                                     }
                                     insertion_index = len(choices)
+                                    normalized_choice_key = _normalize_choice_identifier(
+                                        choice_key
+                                    )
                                     for idx, existing_choice in enumerate(choices):
-                                        existing_choice_key = existing_choice.get(
-                                            "choice_key"
-                                        )
-                                        existing_feature_name = existing_choice.get(
-                                            "feature_name"
-                                        )
-                                        normalized_feature_name = (
-                                            existing_feature_name.lower().replace(
-                                                " ", "_"
-                                            )
-                                            if isinstance(existing_feature_name, str)
-                                            else None
-                                        )
-                                        if choice_key in {
-                                            existing_choice_key,
-                                            existing_feature_name,
-                                            normalized_feature_name,
-                                        }:
+                                        existing_identifiers = {
+                                            identifier
+                                            for identifier in [
+                                                _normalize_choice_identifier(
+                                                    existing_choice.get("choice_key")
+                                                ),
+                                                _normalize_choice_identifier(
+                                                    existing_choice.get("feature_name")
+                                                ),
+                                            ]
+                                            if identifier is not None
+                                        }
+                                        if (
+                                            normalized_choice_key is not None
+                                            and normalized_choice_key
+                                            in existing_identifiers
+                                        ):
                                             insertion_index = idx + 1
                                             while insertion_index < len(choices) and (
-                                                choices[insertion_index].get(
-                                                    "depends_on"
+                                                _normalize_choice_identifier(
+                                                    choices[insertion_index].get(
+                                                        "depends_on"
+                                                    )
                                                 )
-                                                == choice_key
+                                                == normalized_choice_key
                                             ):
                                                 insertion_index += 1
                                             break

@@ -959,19 +959,37 @@ class TestCharacterBuild:
 
         nested = data["nested_choices"]
         divine_order_index = next(
-            idx
-            for idx, choice in enumerate(nested)
-            if choice.get("choice_key") == "divine_order"
+            (
+                idx
+                for idx, choice in enumerate(nested)
+                if choice.get("choice_key") == "divine_order"
+            ),
+            None,
+        )
+        assert divine_order_index is not None, (
+            "Expected Divine Order choice in nested choices"
         )
         thaumaturge_bonus_cantrip_index = next(
-            idx
-            for idx, choice in enumerate(nested)
-            if choice.get("feature_name") == "Thaumaturge_bonus_cantrip"
+            (
+                idx
+                for idx, choice in enumerate(nested)
+                if choice.get("feature_name") == "Thaumaturge_bonus_cantrip"
+            ),
+            None,
+        )
+        assert thaumaturge_bonus_cantrip_index is not None, (
+            "Expected Thaumaturge bonus cantrip nested choice in nested choices"
         )
         class_feat_4_index = next(
-            idx
-            for idx, choice in enumerate(nested)
-            if choice.get("choice_key") == "class_feat_4"
+            (
+                idx
+                for idx, choice in enumerate(nested)
+                if choice.get("choice_key") == "class_feat_4"
+            ),
+            None,
+        )
+        assert class_feat_4_index is not None, (
+            "Expected class_feat_4 choice in nested choices"
         )
 
         assert divine_order_index < thaumaturge_bonus_cantrip_index < class_feat_4_index
