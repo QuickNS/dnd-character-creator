@@ -3226,7 +3226,16 @@ class CharacterBuilder:
 
                                     # Look for the choice value in the external list
                                     options_list = external_data.get(external_list, {})
-                                    if choice_value in options_list:
+                                    if isinstance(options_list, list):
+                                        if choice_value in options_list:
+                                            effect_type = choices_config.get("effect_type", "grant_language")
+                                            self._apply_effect(
+                                                {"type": effect_type, "languages": [choice_value]},
+                                                choice_value,
+                                                "class_choice",
+                                            )
+                                            return
+                                    elif choice_value in options_list:
                                         option_data = options_list[choice_value]
                                         if (
                                             isinstance(option_data, dict)
@@ -3267,7 +3276,18 @@ class CharacterBuilder:
                                     with open(external_path, "r") as f:
                                         external_data = json.load(f)
                                     options_list = external_data.get(external_list, {})
-                                    if choice_value in options_list:
+                                    if isinstance(options_list, list):
+                                        # Plain list of values (e.g. languages.json "all")
+                                        if choice_value in options_list:
+                                            # Determine effect type from the choices config
+                                            effect_type = choices_config.get("effect_type", "grant_language")
+                                            self._apply_effect(
+                                                {"type": effect_type, "languages": [choice_value]},
+                                                choice_value,
+                                                "class_choice",
+                                            )
+                                            return
+                                    elif choice_value in options_list:
                                         option_data = options_list[choice_value]
                                         if isinstance(option_data, dict) and "effects" in option_data:
                                             for effect in option_data["effects"]:

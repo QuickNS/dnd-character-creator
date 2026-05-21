@@ -508,6 +508,7 @@ export const SAMPLE_CHARACTERS: SampleCharacter[] = [
       background_skill_replacement: ["Insight", "Investigation"],
       "Elven Lineage": "Intelligence",
       "Keen Senses": "Survival",
+      thieves_cant_language: "Sylvan",
     },
   },
   {
