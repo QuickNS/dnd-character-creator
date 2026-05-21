@@ -450,7 +450,7 @@ def test_two_weapon_fighting_via_normalized_key():
 
 
 def test_unarmed_fighting_via_normalized_key():
-    """Regression: Unarmed Fighting via normalized key uses 1d6/1d8 die."""
+    """Regression: Unarmed Fighting via normalized key uses 1d8 die (no weapons equipped)."""
     builder = CharacterBuilder()
     builder.apply_choices({
         "species": "Human",
@@ -468,13 +468,20 @@ def test_unarmed_fighting_via_normalized_key():
         "fighting_style": "Unarmed Fighting",
     })
 
+    # No weapons equipped → Unarmed Fighting gives 1d8
+    builder.character_data["equipment"] = {
+        "weapons": [],
+        "armor": [],
+        "items": [],
+        "gold": 0,
+    }
+
     weapon_data = builder.calculate_weapon_attacks()
     unarmed = next(
         (a for a in weapon_data.get("attacks", []) if a["name"] == "Unarmed Strike"),
         None,
     )
     assert unarmed is not None, "Unarmed Strike attack should exist"
-    # Unarmed Fighting gives 1d6 (no weapon held) or 1d8 (weapon hand free)
-    assert "1d6" in unarmed["damage"] or "1d8" in unarmed["damage"], (
-        f"Unarmed Fighting (normalized key): expected '1d6' or '1d8' die, got '{unarmed['damage']}'"
+    assert "1d8" in unarmed["damage"], (
+        f"Unarmed Fighting (normalized key): expected '1d8' die with no weapons, got '{unarmed['damage']}'"
     )
