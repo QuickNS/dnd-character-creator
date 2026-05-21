@@ -840,7 +840,6 @@ function Spells({ c }: { c: Char }) {
       : undefined;
   const maxCantrips = num(stats.max_cantrips_prepared);
   const spellsPreparedTotal = num(stats.spells_prepared);
-  const spellsAlwaysPrepared = num(stats.spells_always_prepared) ?? 0;
   const maxSpells = num(stats.max_spells_to_prepare) ?? num(stats.max_spells_prepared);
   const ritual = stats.ritual_casting === true;
 
