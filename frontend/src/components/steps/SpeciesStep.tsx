@@ -291,7 +291,7 @@ function SpeciesTraits({ traits }: { traits: Record<string, unknown> }) {
         <Sparkles className="h-3.5 w-3.5" />
         Species traits
       </div>
-      <ul className="mt-2 max-h-[28rem] space-y-3 overflow-y-auto pr-1">
+      <ul className="mt-2 space-y-3">
         {entries.map(([name, value]) => {
           const desc = traitDescription(value);
           return (
