@@ -5,6 +5,8 @@
  * the backend calculates character stats.
  */
 
+import { z } from "zod";
+
 // ========== Types ==========
 
 export interface ClassAllocation {
@@ -37,9 +39,6 @@ export interface SpellSelections {
 
 export interface ChoicesMade {
   character_name?: string;
-  level?: number;
-  class?: string;
-  subclass?: string;
   classes?: ClassAllocation[];
   background?: string;
   species?: string;
@@ -265,6 +264,53 @@ export class ApiError extends Error {
   }
 }
 
+// ========== Zod Schema ==========
+
+const ClassAllocationSchema = z.object({
+  class_name: z.string(),
+  level: z.number().int().min(1).max(20),
+  subclass: z.string().optional(),
+});
+
+const SpellSelectionsSchema = z.object({
+  cantrips: z.array(z.string()).optional(),
+  spells: z.array(z.string()).optional(),
+  background_cantrips: z.array(z.string()).optional(),
+  background_spells: z.array(z.string()).optional(),
+}).catchall(z.array(z.string()).optional());
+
+export const ChoicesMadeSchema = z.object({
+  character_name: z.string().optional(),
+  classes: z.array(ClassAllocationSchema).optional(),
+  background: z.string().optional(),
+  species: z.string().optional(),
+  lineage: z.string().optional(),
+  ability_scores_method: z.enum(["standard_array", "point_buy", "manual", "roll", "recommended"]).optional(),
+  ability_scores: z.record(z.number()).optional(),
+  additional_ability_modifiers: z.record(z.number()).optional(),
+  background_bonuses: z.record(z.number()).optional(),
+  skill_choices: z.array(z.string()).optional(),
+  tool_choices: z.array(z.string()).optional(),
+  languages: z.array(z.string()).optional(),
+  fighting_style: z.string().optional(),
+  maneuvers: z.array(z.string()).optional(),
+  equipment_selections: z.record(z.string()).optional(),
+  background_skill_replacement: z.array(z.string()).optional(),
+  species_skill_replacement: z.array(z.string()).optional(),
+  species_trait_choices: z.record(z.string()).optional(),
+  spell_selections: SpellSelectionsSchema.optional(),
+}).catchall(z.unknown());
+
+/** Dev-mode only: warn about keys in choicesMade that the server did not echo back. */
+function warnStaleChoiceKeys(choicesMade: ChoicesMade, serverChoicesMade: ChoicesMade): void {
+  if (!import.meta.env.DEV) return;
+  for (const key of Object.keys(choicesMade)) {
+    if (!(key in serverChoicesMade)) {
+      console.warn('[round-trip] key in choicesMade not echoed by server:', key);
+    }
+  }
+}
+
 // ========== Configuration ==========
 
 const API_BASE_URL = import.meta.env.DEV
@@ -353,11 +399,16 @@ export const api = {
 
   // Character building
   character: {
-    build: (choices: ChoicesMade): Promise<Character> =>
-      apiFetch<{ character: Character }>("/character/build", {
+    build: (choices: ChoicesMade): Promise<Character> => {
+      const validated = ChoicesMadeSchema.parse(choices);
+      return apiFetch<{ character: Character }>("/character/build", {
         method: "POST",
-        body: JSON.stringify({ choices_made: choices }),
-      }).then((r) => r.character),
+        body: JSON.stringify({ choices_made: validated }),
+      }).then((r) => {
+        warnStaleChoiceKeys(choices, r.character.choices_made ?? {});
+        return r.character;
+      });
+    },
 
     validate: (choices: ChoicesMade): Promise<ValidationResponse> =>
       apiFetch<ValidationResponse>("/character/validate", {
@@ -368,11 +419,13 @@ export const api = {
     previewStep: (
       choices: ChoicesMade,
       step: string,
-    ): Promise<PreviewStepResponse> =>
-      apiFetch<PreviewStepResponse>("/character/preview-step", {
+    ): Promise<PreviewStepResponse> => {
+      const validated = ChoicesMadeSchema.parse(choices);
+      return apiFetch<PreviewStepResponse>("/character/preview-step", {
         method: "POST",
-        body: JSON.stringify({ choices_made: choices, step }),
-      }),
+        body: JSON.stringify({ choices_made: validated, step }),
+      });
+    },
 
     derived: (choices: ChoicesMade, view: string): Promise<DerivedResponse> =>
       apiFetch<DerivedResponse>("/character/derived", {

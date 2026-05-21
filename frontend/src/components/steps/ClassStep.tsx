@@ -418,7 +418,6 @@ function evaluateFeatPrerequisite(
 export function ClassStep() {
   const choicesMade = useCharacterStore((s) => s.choicesMade);
   const setChoice = useCharacterStore((s) => s.setChoice);
-  const clearChoice = useCharacterStore((s) => s.clearChoice);
   const activeClassRowIndex = useCharacterStore((s) => s.activeClassRowIndex);
   const setActiveClassRowIndex = useCharacterStore((s) => s.setActiveClassRowIndex);
 
@@ -426,27 +425,9 @@ export function ClassStep() {
     () => normalizeAllocations(choicesMade.classes),
     [choicesMade.classes],
   );
-  const fallbackClassRow = useMemo<ClassAllocation | null>(() => {
-    const className =
-      typeof choicesMade.class === "string" && choicesMade.class.length > 0
-        ? choicesMade.class
-        : "";
-    if (!className) return null;
-    const subclass =
-      typeof choicesMade.subclass === "string" && choicesMade.subclass.length > 0
-        ? choicesMade.subclass
-        : undefined;
-    return {
-      class_name: className,
-      level: clampLevel(choicesMade.level),
-      ...(subclass ? { subclass } : {}),
-    };
-  }, [choicesMade.class, choicesMade.level, choicesMade.subclass]);
-
   const classAllocations = useMemo(() => {
-    if (storedRows.length > 0) return storedRows;
-    return fallbackClassRow ? [fallbackClassRow] : [];
-  }, [storedRows, fallbackClassRow]);
+    return storedRows;
+  }, [storedRows]);
 
   const { setSidebarPanel } = useWizardSidebarPanel();
   const [infoTarget, setInfoTarget] = useState<ClassInfoTarget>({ kind: "class" });
@@ -459,22 +440,6 @@ export function ClassStep() {
         : [{ class_name: "", level: 1 }];
 
     setChoice("classes", normalized);
-
-    if (normalized.length === 1 && normalized[0].class_name) {
-      const primary = normalized[0];
-      setChoice("class", primary.class_name);
-      setChoice("level", primary.level);
-      if (primary.subclass) {
-        setChoice("subclass", primary.subclass);
-      } else {
-        clearChoice("subclass");
-      }
-      return;
-    }
-
-    clearChoice("class");
-    clearChoice("subclass");
-    clearChoice("level");
   }
 
   useEffect(() => {
@@ -1026,7 +991,7 @@ export function ClassStep() {
           previewData={previewData}
           choicesMade={choicesMade}
           combinedScores={combinedScores}
-          totalLevel={clampLevel(choicesMade.level)}
+          totalLevel={classAllocations.reduce((sum, row) => sum + clampLevel(row.level), 0) || 1}
           featDefinitions={generalFeatDefinitions}
           originFeatDefinitions={originFeatDefinitions}
           selectedClassSummary={detailClass}

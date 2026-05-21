@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { Check, Info, Sparkles, Wand2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
@@ -284,45 +284,6 @@ function SpellPicker({
     if (list.length >= cap) return null;
     return [...list, name];
   }
-
-  useEffect(() => {
-    if (alwaysPreparedNames.size === 0) return;
-
-    const nextCantrips = current.cantrips.filter(
-      (name) => !alwaysPreparedNames.has(name),
-    );
-    const nextSpells = current.spells.filter(
-      (name) => !alwaysPreparedNames.has(name),
-    );
-    const nextBackgroundCantrips = current.background_cantrips.filter(
-      (name) => !alwaysPreparedNames.has(name),
-    );
-    const nextBackgroundSpells = current.background_spells.filter(
-      (name) => !alwaysPreparedNames.has(name),
-    );
-
-    const changed =
-      nextCantrips.length !== current.cantrips.length ||
-      nextSpells.length !== current.spells.length ||
-      nextBackgroundCantrips.length !== current.background_cantrips.length ||
-      nextBackgroundSpells.length !== current.background_spells.length;
-
-    if (!changed) return;
-
-    setChoice("spell_selections", {
-      cantrips: nextCantrips,
-      spells: nextSpells,
-      background_cantrips: nextBackgroundCantrips,
-      background_spells: nextBackgroundSpells,
-    });
-  }, [
-    alwaysPreparedNames,
-    current.background_cantrips,
-    current.background_spells,
-    current.cantrips,
-    current.spells,
-    setChoice,
-  ]);
 
   return (
     <div className="rounded-xl border border-border/70 bg-background/70 p-4 shadow-sm space-y-4 sm:p-5">

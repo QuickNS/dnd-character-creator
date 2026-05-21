@@ -84,6 +84,8 @@ KNOWN_EFFECT_TYPES: frozenset = frozenset({
     "grant_superiority_dice",
     "grant_tool_proficiency",
     "grant_weapon_proficiency",
+    "grant_spell_slots",
+    "grant_weapon_mastery",
     "great_weapon_fighting",
     "increase_speed",
     "monk_dexterous_attacks",

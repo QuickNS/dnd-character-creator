@@ -7,7 +7,7 @@ Features can grant various mechanical benefits through a structured "effects" ar
 
 ### Spellcasting Effects
 
-#### grant_cantrip
+#### grant_cantrip ✅
 Grants a specific cantrip to the character.
 
 ```json
@@ -18,7 +18,7 @@ Grants a specific cantrip to the character.
 }
 ```
 
-#### grant_spell
+#### grant_spell ✅
 Grants a specific spell that's always prepared.
 
 ```json
@@ -30,20 +30,41 @@ Grants a specific spell that's always prepared.
 }
 ```
 
-#### grant_spell_slots
-Grants additional spell slots.
+#### grant_spell_slots ✅
+Grants additional spell slots. Slots are additive — multiple effects stack. Supports two shapes:
 
+Single-level form:
 ```json
 {
   "type": "grant_spell_slots",
-  "level": 1,
+  "slot_level": 1,
   "count": 2
+}
+```
+
+Multi-level form:
+```json
+{
+  "type": "grant_spell_slots",
+  "slots": {"1": 2, "3": 1}
+}
+```
+
+Handler: adds each specified count to `character_data["spells"]["slots"][level]`.
+
+#### grant_weapon_mastery ✅
+Grants mastery in a specific weapon. Appends the weapon name to `character_data["weapon_masteries"]["selected"]` (idempotent).
+
+```json
+{
+  "type": "grant_weapon_mastery",
+  "weapon": "Longsword"
 }
 ```
 
 ### Proficiency Effects
 
-#### grant_weapon_proficiency
+#### grant_weapon_proficiency ✅
 Grants weapon proficiencies.
 
 ```json
@@ -53,7 +74,7 @@ Grants weapon proficiencies.
 }
 ```
 
-#### grant_armor_proficiency
+#### grant_armor_proficiency ✅
 Grants armor proficiencies.
 
 ```json
@@ -63,7 +84,7 @@ Grants armor proficiencies.
 }
 ```
 
-#### grant_skill_proficiency
+#### grant_skill_proficiency ✅
 Grants skill proficiencies.
 
 ```json
@@ -73,7 +94,7 @@ Grants skill proficiencies.
 }
 ```
 
-#### grant_skill_expertise
+#### grant_skill_expertise ✅
 Grants expertise in skills.
 
 ```json
@@ -83,7 +104,7 @@ Grants expertise in skills.
 }
 ```
 
-#### grant_tool_proficiency
+#### grant_tool_proficiency ✅
 Grants tool proficiencies.
 
 ```json
@@ -95,7 +116,7 @@ Grants tool proficiencies.
 
 ### Saving Throw Effects
 
-#### grant_save_advantage
+#### grant_save_advantage ✅
 Grants advantage on saving throws.
 
 ```json
@@ -122,7 +143,7 @@ Grants advantage on saving throws.
 }
 ```
 
-#### grant_save_proficiency
+#### grant_save_proficiency ✅
 Grants proficiency in saving throws.
 
 ```json
@@ -132,7 +153,7 @@ Grants proficiency in saving throws.
 }
 ```
 
-#### grant_origin_feat
+#### grant_origin_feat ✅
 Grants an Origin Feat by name. Loads the feat data, adds it to the character's feats list, and applies any direct effects the feat has (e.g., Tough's `bonus_hp`). Used by the Human Versatile trait.
 
 **Properties:**
@@ -148,9 +169,10 @@ Grants an Origin Feat by name. Loads the feat data, adds it to the character's f
 
 ### Resistance and Immunity Effects
 
-#### grant_damage_resistance
-Grants resistance to a damage type.
+#### grant_damage_resistance ✅
+Grants resistance to one or more damage types. Accepts both singular and plural forms; both are valid in data files.
 
+Singular form (back-compat):
 ```json
 {
   "type": "grant_damage_resistance",
@@ -158,17 +180,25 @@ Grants resistance to a damage type.
 }
 ```
 
-#### grant_damage_immunity
-Grants immunity to a damage type.
-
+Plural form (preferred):
 ```json
 {
-  "type": "grant_damage_immunity",
-  "damage_type": "Fire"
+  "type": "grant_damage_resistance",
+  "damage_types": ["Poison", "Cold"]
 }
 ```
 
-#### grant_condition_immunity
+Dynamic form (damage type resolved from a species/trait choice):
+```json
+{
+  "type": "grant_damage_resistance",
+  "damage_type_from_choice": "Draconic Ancestry"
+}
+```
+
+> **grant_damage_immunity — Removed 2026-05-21:** immunity is runtime/DM-adjudicated in 2024 rules and not a sheet field. Use `grant_damage_resistance` for resistance.
+
+#### grant_condition_immunity ✅
 Grants immunity to a condition.
 
 ```json
@@ -180,7 +210,7 @@ Grants immunity to a condition.
 
 ### Combat Effects
 
-#### alternative_ac
+#### alternative_ac ✅
 Provides an alternative AC calculation formula (e.g., Monk or Barbarian Unarmored Defense). Added as an additional AC option in `calculate_ac_options()`.
 
 **Properties:**
@@ -208,7 +238,7 @@ Provides an alternative AC calculation formula (e.g., Monk or Barbarian Unarmore
 }
 ```
 
-#### bonus_ac
+#### bonus_ac ✅
 Grants a bonus to AC.
 
 **Implementation**: Applied in `calculate_ac_options()`. Only applies to armored AC options (checks if `equipped_armor` is not None).
@@ -222,7 +252,7 @@ Grants a bonus to AC.
 }
 ```
 
-#### bonus_damage
+#### bonus_damage ✅
 Grants a bonus to damage rolls.
 
 **Implementation**: Applied in `calculate_weapon_attacks()`. Checks conditions against weapon properties:
@@ -248,7 +278,7 @@ Grants a bonus to damage rolls.
 }
 ```
 
-#### bonus_attack
+#### bonus_attack ✅
 Grants a bonus to attack rolls.
 
 **Implementation**: Applied in `calculate_weapon_attacks()`. Checks conditions against weapon category or properties:
@@ -265,7 +295,7 @@ Grants a bonus to attack rolls.
 }
 ```
 
-#### great_weapon_fighting
+#### great_weapon_fighting ✅
 Allows rerolling 1s and 2s on damage dice for melee weapons wielded with two hands.
 
 **Implementation**: Applied in `calculate_weapon_attacks()`. Affects average damage calculations for qualifying weapons. Applies to weapons that are:
@@ -283,7 +313,7 @@ Allows rerolling 1s and 2s on damage dice for melee weapons wielded with two han
 - Expected value = `(2 * avg_all + sum(3 to N)) / N`
 - Where `avg_all` is the normal die average `(1 + die_size) / 2`
 
-#### two_weapon_fighting_modifier
+#### two_weapon_fighting_modifier ✅
 Adds ability modifier to offhand attack damage when dual-wielding.
 
 **Implementation**: Applied in `_create_dual_wield_combo()`. When creating combination cards for two light weapons:
@@ -297,7 +327,7 @@ Adds ability modifier to offhand attack damage when dual-wielding.
 }
 ```
 
-#### unarmed_fighting
+#### unarmed_fighting ✅
 Enhances unarmed strikes with improved damage dice and grapple damage.
 
 **Implementation**: Applied in `calculate_weapon_attacks()`. Modifies the Unarmed Strike attack that's always added to all characters:
@@ -316,7 +346,7 @@ Enhances unarmed strikes with improved damage dice and grapple damage.
 
 **Grapple Damage**: At the start of your turn, you can deal 1d4 bludgeoning damage to one creature grappled by you (displayed as a damage note).
 
-#### set_martial_arts_die
+#### set_martial_arts_die ✅
 Sets the Monk's Martial Arts die for unarmed strikes and monk weapons, scaling with level. Also enables using DEX instead of STR for unarmed strike attack and damage rolls (Dexterous Attacks).
 
 **Implementation**: Handler in `_apply_effect()` resolves the correct die for the current character level and stores it in `character_data["martial_arts_die"]`. Applied in `calculate_weapon_attacks()` to override unarmed strike damage with the Martial Arts die, using `max(STR, DEX)` as the modifier.
@@ -340,7 +370,7 @@ Sets the Monk's Martial Arts die for unarmed strikes and monk weapons, scaling w
 }
 ```
 
-#### monk_dexterous_attacks
+#### monk_dexterous_attacks ✅
 Enables using `max(STR, DEX)` for attack and damage rolls of monk weapons (Simple Melee, or Martial Melee with the Light property). Implements the "Dexterous Attacks" part of the Monk's Martial Arts feature.
 
 **Implementation**: Handler in `_apply_effect()` sets `character_data["monk_dexterous_attacks"] = True`. In `calculate_weapon_attacks()`, when this flag is set and the weapon qualifies as a monk weapon, `max(str_mod, dex_mod)` is used instead of `str_mod`.
@@ -358,7 +388,7 @@ Enables using `max(STR, DEX)` for attack and damage rolls of monk weapons (Simpl
 
 ### Ability Score Effects
 
-#### ability_bonus
+#### ability_bonus ✅
 Grants a bonus to ability checks.
 
 ```json
@@ -373,7 +403,7 @@ Grants a bonus to ability checks.
 
 ### Miscellaneous Effects
 
-#### grant_language
+#### grant_language ✅
 Grants language proficiencies.
 
 ```json
@@ -383,7 +413,7 @@ Grants language proficiencies.
 }
 ```
 
-#### increase_speed
+#### increase_speed ✅
 Increases movement speed.
 
 ```json
@@ -393,7 +423,7 @@ Increases movement speed.
 }
 ```
 
-#### grant_darkvision
+#### grant_darkvision ✅
 Grants or improves darkvision.
 
 ```json
@@ -403,7 +433,7 @@ Grants or improves darkvision.
 }
 ```
 
-#### bonus_hp
+#### bonus_hp ✅
 Grants a bonus to hit points.
 
 ```json
@@ -467,6 +497,155 @@ A single feature can grant multiple effects:
   ]
 }
 ```
+
+## Phase 7+ Effect Types
+
+These effect types were added after the initial documentation pass. All are ✅ implemented in `_apply_effect()`.
+
+#### grant_cantrip_choice ✅
+
+Deferred cantrip selection — a no-op in `_apply_effect()` itself. The actual `grant_cantrip` is applied when the player's selection is resolved through the choice system. Present so `strict_mode.check_effect_type()` does not raise an unknown-type warning on data files that carry this type.
+
+```json
+{ "type": "grant_cantrip_choice" }
+```
+
+#### grant_skill_proficiency_or_expertise ✅
+
+D&D 2024 pattern: if the character lacks the skill proficiency, it is granted; if the character already has proficiency, expertise is granted instead.
+
+```json
+{
+  "type": "grant_skill_proficiency_or_expertise",
+  "skills": ["Perception"]
+}
+```
+
+#### grant_spell_at_will ✅
+
+Grants a spell that can be cast at will (no spell slot required). Typical Warlock invocation pattern (e.g. Armor of Shadows → Mage Armor). Recorded in `always_prepared` with `at_will: true`; renderers annotate it "(at will)".
+
+```json
+{
+  "type": "grant_spell_at_will",
+  "spell": "Mage Armor"
+}
+```
+
+#### bonus_spell_damage_ability_mod ✅
+
+Adds a chosen ability's modifier to the damage rolls of a specific spell. Written into `spell_metadata[spell]["damage_bonus"]`. Used by the Agonizing Blast invocation.
+
+```json
+{
+  "type": "bonus_spell_damage_ability_mod",
+  "spell": "Eldritch Blast",
+  "ability": "Charisma"
+}
+```
+
+#### bonus_spell_range ✅
+
+Overrides the displayed range of a specific spell. Written into `spell_metadata[spell]["range_override"]`. Used by the Eldritch Spear invocation.
+
+```json
+{
+  "type": "bonus_spell_range",
+  "spell": "Eldritch Blast",
+  "range": "300 feet"
+}
+```
+
+#### grant_magical_darkness_sight ✅
+
+Grants the ability to see normally in magical darkness up to a given range. Kept distinct from `grant_darkvision` because the rule is specifically about magical darkness. Takes the maximum range if applied multiple times.
+
+```json
+{
+  "type": "grant_magical_darkness_sight",
+  "range": 120
+}
+```
+
+#### grant_maneuver ✅
+
+Records a Battle Master maneuver by name on the character sheet. Idempotent.
+
+```json
+{
+  "type": "grant_maneuver",
+  "maneuver": "Riposte"
+}
+```
+
+#### grant_superiority_dice ✅
+
+Sets the Battle Master's Combat Superiority dice count and die size, resolving per-level scaling from `count_by_level` and `die_by_level` maps against the current character level. Writes `character_data["superiority_dice"]`.
+
+```json
+{
+  "type": "grant_superiority_dice",
+  "count_by_level": { "3": 4, "7": 5, "10": 6, "15": 7, "18": 8 },
+  "die_by_level":   { "3": "d8", "10": "d10", "18": "d12" }
+}
+```
+
+## Effect Authoring Locations
+
+An `effects` array may appear in exactly **five** places in the data files. Each has a distinct dispatcher entry point in `CharacterBuilder`:
+
+| Location | File pattern | Dispatcher entry point |
+|---|---|---|
+| Class feature | `data/classes/<class>.json` → `features_by_level.<level>.<feature_name>.effects` | `apply_choice("class")` → `feature_manager` → `_apply_effect()` |
+| Subclass feature | `data/subclasses/<class>/<subclass>.json` → `features_by_level.<level>.<feature_name>.effects` | `apply_choice("subclass")` → `feature_manager` → `_apply_effect()` |
+| Species trait | `data/species/<species>.json` or `data/species_variants/<variant>.json` → `traits.<trait_name>.effects` | `apply_choice("species")` / `apply_choice("lineage")` → `_apply_effect()` |
+| Background benefit | `data/backgrounds/<bg>.json` → `benefits[].effects` | `apply_choice("background")` → `_apply_effect()` |
+| Feat | `data/origin_feats.json` or `data/general_feats.json` → `feats.<feat_name>.effects` | class feat slot / `grant_origin_feat` effect → `_apply_effect()` |
+
+Fighting styles (`data/fighting_styles.json`) and eldritch invocations (`data/eldritch_invocations.json`) also carry `effects` arrays and follow the same dispatcher path via `apply_choice("fighting_style")` and `apply_choice("eldritch_invocation_selections")` respectively.
+
+## Closed Effect Type Enum
+
+Every valid `effect.type` string accepted by `_apply_effect()`. Using a value not in this list will trigger a `strict_mode` warning (or error in strict mode). To add a new type, implement a handler in `_apply_effect()` and register it with `strict_mode.check_effect_type()` **in the same PR**.
+
+| Effect type | Category | Notes |
+|---|---|---|
+| `grant_cantrip` | Spellcasting | Adds cantrip to `always_prepared` |
+| `grant_cantrip_choice` | Spellcasting | No-op; deferred to choice resolver |
+| `grant_spell` | Spellcasting | Adds always-prepared spell |
+| `grant_spell_at_will` | Spellcasting | Adds at-will spell (no slot) |
+| `grant_spell_slots` | Spellcasting | Adds extra spell slots additively |
+| `grant_weapon_mastery` | Proficiency | Appends to `weapon_masteries.selected` |
+| `grant_weapon_proficiency` | Proficiency | Weapon proficiency list |
+| `grant_armor_proficiency` | Proficiency | Armor proficiency list |
+| `grant_skill_proficiency` | Proficiency | Skill proficiency list |
+| `grant_skill_expertise` | Proficiency | Skill expertise list |
+| `grant_skill_proficiency_or_expertise` | Proficiency | Proficiency or expertise (D&D 2024 pattern) |
+| `grant_tool_proficiency` | Proficiency | Tool proficiency list |
+| `grant_save_proficiency` | Proficiency | Saving throw proficiency list |
+| `grant_language` | Proficiency | Language list |
+| `grant_save_advantage` | Saves | Adds entry to `save_advantages` |
+| `grant_damage_resistance` | Defense | Adds to `resistances` |
+| `grant_condition_immunity` | Defense | Adds to `condition_immunities` |
+| `grant_darkvision` | Senses | Sets `darkvision` to max of current and new |
+| `grant_magical_darkness_sight` | Senses | Distinct from darkvision; magical darkness only |
+| `grant_origin_feat` | Feats | Loads feat data and recursively applies its effects |
+| `grant_maneuver` | Combat | Appends to `maneuvers_known` |
+| `grant_superiority_dice` | Combat | Sets `superiority_dice` with per-level scaling |
+| `alternative_ac` | Combat | Adds formula to `alternative_ac_options` |
+| `bonus_ac` | Combat | Adds entry to `ac_bonuses` |
+| `bonus_damage` | Combat | Adds entry to `damage_bonuses` |
+| `bonus_attack` | Combat | Adds entry to `attack_bonuses` |
+| `bonus_hp` | Combat | Adds entry to `hp_bonuses` |
+| `bonus_spell_damage_ability_mod` | Combat | Writes `spell_metadata[spell]["damage_bonus"]` |
+| `bonus_spell_range` | Combat | Writes `spell_metadata[spell]["range_override"]` |
+| `great_weapon_fighting` | Fighting style | Flag in `fighting_style_flags` |
+| `two_weapon_fighting_modifier` | Fighting style | Flag in `fighting_style_flags` |
+| `unarmed_fighting` | Fighting style | Flag in `fighting_style_flags` |
+| `set_martial_arts_die` | Monk | Sets `martial_arts_die` per level |
+| `monk_dexterous_attacks` | Monk | Sets `monk_dexterous_attacks: true` |
+| `ability_bonus` | Ability scores | Adds entry to `ability_bonuses` |
+| `increase_speed` | Movement | Increments `speed`; `feature_group` prevents double-counting |
 
 ## External Effect References
 

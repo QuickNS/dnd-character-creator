@@ -1001,9 +1001,7 @@
   },
   "speed": 30,
   "speed_bonuses": {},
-  "spell_damage_bonuses": {},
   "spell_metadata": {},
-  "spell_range_overrides": {},
   "spell_selections_needed": {
     "background_cantrips": {
       "count": 0,

@@ -97,3 +97,11 @@ frontend/src/
 3. Read raw choices from / write to `characterStore`.
 4. Render values for the live preview by reading the react-query result of `/api/v1/character/build`.
 5. Update `docs/WizardFlow.md` if step ordering, nesting, or dependencies change.
+
+## Anti-Patterns (forbidden)
+
+- **Dual-writing class allocation**: never write flat `class`/`level`/`subclass` keys. Use `classes[]` only.
+- **Synthesizing choice keys**: never construct `feat_{name}_{index}` or similar. Use `choices_made_key` / `choice_key` from the server response only. If the key is absent, warn and skip.
+- **Filtering server-provided lists client-side**: never remove items from `always_prepared`, `spell_management`, or any server-derived list. Display the server output as-is.
+- **Unvalidated payloads**: all outbound `ChoicesMade` objects must pass `ChoicesMadeSchema` before dispatch. Zod is the enforcement layer.
+- **Calculating D&D stats in TypeScript**: modifiers, AC, HP, proficiency bonus, save DCs are never computed in the frontend.

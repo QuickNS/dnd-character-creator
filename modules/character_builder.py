@@ -264,8 +264,10 @@ class CharacterBuilder:
             "maneuvers_known": [],           # grant_maneuver — Battle Master picks
             "superiority_dice": {},          # grant_superiority_dice — {"count": N, "die": "dX"}
             "magical_darkness_sight": {},    # grant_magical_darkness_sight — {"range": N, "source": ...}
-            "spell_damage_bonuses": {},      # bonus_spell_damage_ability_mod — {spell: {"ability": "Charisma", "source": ...}}
-            "spell_range_overrides": {},     # bonus_spell_range — {spell: {"range": "300 feet", "source": ...}}
+            # NOTE: bonus_spell_damage_ability_mod and bonus_spell_range now write
+            # into spell_metadata[spell_name]["damage_bonus"] and ["range_override"]
+            # respectively (P2-4 consolidation). The separate spell_damage_bonuses /
+            # spell_range_overrides top-level keys are no longer initialised here.
             "equipment": None,  # Will be initialized when equipment_selections are processed
             "step": "species",  # Track current step
         }
@@ -1380,9 +1382,13 @@ class CharacterBuilder:
                 }
 
         elif effect_type == "grant_cantrip_choice":
-            # This effect requires a choice to be made - store for later processing
-            # The choice handling will add the cantrip when the choice is made
-            pass  # Handled by choice resolution system
+            # This branch intentionally does nothing here.  The cantrip choice
+            # is deferred to the choice resolver: when the player selects a
+            # cantrip (via a feat or feature choice), apply_choice() resolves
+            # the name and calls _apply_effect(grant_cantrip).  This branch
+            # must remain so strict_mode.check_effect_type() does not raise an
+            # "unknown effect type" warning for data files that carry this type.
+            pass
 
         elif effect_type == "grant_spell":
             spell_name = effect.get("spell")
@@ -1580,14 +1586,22 @@ class CharacterBuilder:
                 })
 
         elif effect_type == "grant_damage_resistance":
-            damage_type = effect.get("damage_type")
+            # Accept both singular and plural damage type forms:
+            #   {"type": "grant_damage_resistance", "damage_type": "Poison"}
+            #   {"type": "grant_damage_resistance", "damage_types": ["Poison", "Cold"]}
+            # The plural form is the preferred shape; singular is kept for
+            # back-compat with existing data files.
+            damage_types = effect.get("damage_types") or (
+                [effect["damage_type"]] if "damage_type" in effect else []
+            )
             # Support dynamic damage type resolved from a species/trait choice
-            if not damage_type and "damage_type_from_choice" in effect:
+            if not damage_types and "damage_type_from_choice" in effect:
                 choice_value = self._resolve_choice_value(effect["damage_type_from_choice"])
                 if choice_value:
-                    damage_type = self._extract_parenthetical(choice_value)
-            if damage_type and damage_type not in self.character_data["resistances"]:
-                self.character_data["resistances"].append(damage_type)
+                    damage_types = [self._extract_parenthetical(choice_value)]
+            for damage_type in damage_types:
+                if damage_type and damage_type not in self.character_data["resistances"]:
+                    self.character_data["resistances"].append(damage_type)
 
         elif effect_type == "grant_condition_immunity":
             condition = effect.get("condition")
@@ -1835,12 +1849,13 @@ class CharacterBuilder:
 
         elif effect_type == "bonus_spell_damage_ability_mod":
             # Agonizing Blast: add a chosen ability's modifier to the damage
-            # rolls of a specific spell. Per-spell map so the renderer /
-            # `calculate_spellcasting_stats` can annotate the spell.
+            # rolls of a specific spell. Written into spell_metadata[spell]["damage_bonus"]
+            # (P2-4 consolidation) so the renderer / `calculate_spellcasting_stats`
+            # can annotate the spell via a single metadata dict.
             spell_name = effect.get("spell")
             ability = effect.get("ability")
             if isinstance(spell_name, str) and isinstance(ability, str):
-                self.character_data["spell_damage_bonuses"][spell_name] = {
+                self.character_data["spell_metadata"].setdefault(spell_name, {})["damage_bonus"] = {
                     "ability": ability,
                     "source": source_name,
                     "source_type": source_type,
@@ -1848,12 +1863,13 @@ class CharacterBuilder:
 
         elif effect_type == "bonus_spell_range":
             # Eldritch Spear: overrides the displayed range of a specific
-            # spell. `to_character()` consults this map when emitting
-            # `spells_by_level` so the override is visible on the sheet.
+            # spell. Written into spell_metadata[spell]["range_override"]
+            # (P2-4 consolidation). `to_character()` reads from there when
+            # emitting `spells_by_level` so the override is visible on the sheet.
             spell_name = effect.get("spell")
             new_range = effect.get("range")
             if isinstance(spell_name, str) and new_range:
-                self.character_data["spell_range_overrides"][spell_name] = {
+                self.character_data["spell_metadata"].setdefault(spell_name, {})["range_override"] = {
                     "range": new_range,
                     "source": source_name,
                     "source_type": source_type,
@@ -1905,6 +1921,29 @@ class CharacterBuilder:
                     "source": source_name,
                 }
 
+        elif effect_type == "grant_spell_slots":
+            # Grant additional spell slots.  Supports two shapes:
+            #   {"type": "grant_spell_slots", "slots": {"1": 2, "3": 1}}
+            #   {"type": "grant_spell_slots", "slot_level": 1, "count": 2}
+            # Slots are additive — multiple effects of this type stack.
+            slots_map = effect.get("slots") or {}
+            if not slots_map and "slot_level" in effect:
+                slots_map = {str(effect["slot_level"]): effect.get("count", 1)}
+            for lvl, cnt in slots_map.items():
+                key = str(lvl)
+                self.character_data["spells"]["slots"][key] = (
+                    self.character_data["spells"]["slots"].get(key, 0) + int(cnt)
+                )
+
+        elif effect_type == "grant_weapon_mastery":
+            # Grant a specific weapon mastery.
+            # effect shape: {"type": "grant_weapon_mastery", "weapon": "Longsword"}
+            weapon = effect.get("weapon", "")
+            if weapon:
+                selected = self.character_data["weapon_masteries"].setdefault("selected", [])
+                if weapon not in selected:
+                    selected.append(weapon)
+
         # Track applied effect — AUDIT LOG ONLY. See class-level docstring on
         # ``applied_effects`` for the contract.
         tracked: Dict[str, Any] = {
@@ -1945,8 +1984,11 @@ class CharacterBuilder:
         self.character_data["maneuvers_known"] = []
         self.character_data["superiority_dice"] = {}
         self.character_data["magical_darkness_sight"] = {}
-        self.character_data["spell_damage_bonuses"] = {}
-        self.character_data["spell_range_overrides"] = {}
+        # P2-4: damage/range overrides live inside spell_metadata sub-keys;
+        # clear only those sub-keys rather than a separate top-level dict.
+        for meta in self.character_data.get("spell_metadata", {}).values():
+            meta.pop("damage_bonus", None)
+            meta.pop("range_override", None)
 
         for tracked in self.applied_effects:
             effect = tracked.get("effect", {})
@@ -2046,7 +2088,7 @@ class CharacterBuilder:
                 spell_name = effect.get("spell")
                 ability = effect.get("ability")
                 if isinstance(spell_name, str) and isinstance(ability, str):
-                    self.character_data["spell_damage_bonuses"][spell_name] = {
+                    self.character_data["spell_metadata"].setdefault(spell_name, {})["damage_bonus"] = {
                         "ability": ability,
                         "source": source,
                         "source_type": stype,
@@ -2055,7 +2097,7 @@ class CharacterBuilder:
                 spell_name = effect.get("spell")
                 new_range = effect.get("range")
                 if isinstance(spell_name, str) and new_range:
-                    self.character_data["spell_range_overrides"][spell_name] = {
+                    self.character_data["spell_metadata"].setdefault(spell_name, {})["range_override"] = {
                         "range": new_range,
                         "source": source,
                         "source_type": stype,
@@ -2338,6 +2380,29 @@ class CharacterBuilder:
                 ]
                 skill_sources.pop(skill, None)
 
+    def _remove_proficiencies_by_source(self, category: str, source: str) -> None:
+        """Remove all proficiencies in *category* that were granted by *source*.
+
+        Generic helper used by ``_clear_background_features`` to handle the
+        skills, tools, and languages removal loops uniformly. Iterates
+        ``proficiency_sources[category]``, collects every item whose recorded
+        source matches *source*, then removes those items from both
+        ``proficiencies[category]`` and ``proficiency_sources[category]``.
+
+        Categories supported: 'skills', 'tools', 'languages' (any category that
+        shares the same ``proficiencies`` / ``proficiency_sources`` shape).
+        """
+        sources_map = self.character_data["proficiency_sources"].get(category, {})
+        to_remove = [item for item, src in list(sources_map.items()) if src == source]
+        if not to_remove:
+            return
+        self.character_data["proficiencies"][category] = [
+            p for p in self.character_data["proficiencies"].get(category, [])
+            if p not in to_remove
+        ]
+        for item in to_remove:
+            sources_map.pop(item, None)
+
     def _clear_background_features(self):
         """Clear all background-related features and effects before re-applying."""
         prev_bg_data = self.character_data.get("background_data") or {}
@@ -2345,50 +2410,33 @@ class CharacterBuilder:
 
         # Remove skill proficiencies granted by the previous background.
         # Phase 9 (D1-1): skill grants live in the canonical ``effects`` array.
-        prev_skills = self._background_skill_proficiencies(prev_bg_data)
-        self._remove_skills_sourced_from(prev_skills, prev_bg_name)
+        # The generic helper reads proficiency_sources["skills"] to find items
+        # whose source matches the background name, covering both regular grants
+        # and any replacement skills the player chose due to overlap.
+        self._remove_proficiencies_by_source("skills", prev_bg_name)
 
-        # Also remove any replacement skills the player chose due to overlap with
-        # the previous background (tracked in choices_made)
-        prev_replacements = self.character_data["choices_made"].pop(
+        # Also clear any replacement-needed counter
+        self.character_data["choices_made"].pop(
             "background_skill_replacements", []
         )
-        self._remove_skills_sourced_from(prev_replacements, prev_bg_name)
-
-        # Clear replacement-needed counter
         self.character_data["choices_made"].pop(
             "background_skill_replacements_needed", None
         )
 
         # Remove tool proficiencies granted by the previous background's
         # canonical ``effects`` array (Phase 9: tool_proficiencies migrated to
-        # grant_tool_proficiency effects). Older saved data may still carry the
-        # flat ``tool_proficiencies`` key — honor it for back-compat on load.
-        prev_tools: list = []
-        for eff in prev_bg_data.get("effects", []) or []:
-            if isinstance(eff, dict) and eff.get("type") == "grant_tool_proficiency":
-                prev_tools.extend(eff.get("tools", []) or [])
-        prev_tools.extend(prev_bg_data.get("tool_proficiencies", []) or [])
-        tool_sources = self.character_data["proficiency_sources"]["tools"]
-        for tool in prev_tools:
-            if tool_sources.get(tool) == prev_bg_name:
-                self.character_data["proficiencies"]["tools"] = [
-                    t for t in self.character_data["proficiencies"]["tools"] if t != tool
-                ]
-                tool_sources.pop(tool, None)
+        # grant_tool_proficiency effects). The generic helper reads
+        # proficiency_sources["tools"] so both effects-encoded and legacy
+        # flat-key tools are handled uniformly.
+        self._remove_proficiencies_by_source("tools", prev_bg_name)
 
-        # Remove language proficiencies granted by the previous background
+        # Remove language proficiencies granted by the previous background.
+        # Integer ``languages`` values are legacy; clear the choice counter only.
         prev_languages = prev_bg_data.get("languages", [])
-        if isinstance(prev_languages, list):
-            lang_sources = self.character_data["proficiency_sources"]["languages"]
-            for lang in prev_languages:
-                if lang_sources.get(lang) == prev_bg_name:
-                    self.character_data["proficiencies"]["languages"] = [
-                        l for l in self.character_data["proficiencies"]["languages"] if l != lang
-                    ]
-                    lang_sources.pop(lang, None)
-        elif isinstance(prev_languages, int):
+        if isinstance(prev_languages, int):
             self.character_data["choices_made"].pop("language_choices_needed", None)
+        else:
+            self._remove_proficiencies_by_source("languages", prev_bg_name)
 
         # Clear background features list
         self.character_data["features"]["background"] = []
@@ -3313,10 +3361,11 @@ class CharacterBuilder:
 
         # Spells - Legacy handler (cantrip selection removed from creation wizard)
         elif choice_key_lower == "spellcasting":
-            # Old system: cantrips were selected during character creation
-            # New system: cantrips are managed post-creation via "Manage Spells"
-            # This handler is kept for backwards compatibility with old saved characters
-            # but does nothing for new characters
+            # Silently skipped: "spellcasting" is listed in the Pass 1 ordered
+            # key list in apply_choices() so it is consumed before the second
+            # pass.  Old saved characters may carry this key; new characters
+            # never write it.  No action is required here — cantrip selection is
+            # handled post-creation via the spell_selections choice.
             return True
 
         # Spell selections - restore user-selected prepared spells
@@ -3354,9 +3403,11 @@ class CharacterBuilder:
 
         # Weapon Mastery - removed from creation wizard, managed post-creation
         elif choice_key_lower == "weapon mastery":
-            # Weapon masteries are managed post-creation via "Manage Masteries"
-            # This handler is kept for backwards compatibility with old saved characters
-            # but does nothing for new characters
+            # Silently skipped: "weapon mastery" is listed in the Pass 1 ordered
+            # key list in apply_choices() so it is consumed before the second
+            # pass.  Old saved characters may carry this key; new characters
+            # never write it.  No action is required here — mastery selection is
+            # handled post-creation via the weapon_mastery_selections choice.
             return True
 
         # Weapon mastery selections - restore user-selected masteries
@@ -4751,7 +4802,11 @@ class CharacterBuilder:
             and "abilities" not in working_choices
         )
 
-        # First pass: apply ordered choices
+        # ── Pass 1 ──────────────────────────────────────────────────────────
+        # Apply ordered dependency keys (species → class → background →
+        # abilities → spells) to ensure prerequisite state is set before
+        # dependent choices.  The ``order`` list above defines the exact
+        # sequence; keys absent from ``working_choices`` are skipped silently.
         for key in order:
             if key in working_choices:
                 # Skip ability_scores_method if we have explicit ability_scores
@@ -4763,16 +4818,22 @@ class CharacterBuilder:
                     continue
                 self.apply_choice(key, working_choices[key])
 
-        # Now that species (and optionally lineage) are loaded, lift any
-        # legacy flat trait keys in the input into the canonical nested
-        # ``species_trait_choices`` object before the second pass dispatches
-        # them. See ``_normalize_species_trait_choices`` (audit P0-1).
+        # Invariant: species and class must be loaded before remaining choices.
+        assert self.character_data.get("species") or not working_choices.get("species"), \
+            "Pass 1 failed to apply species"
+
+        # ── Normalize block ──────────────────────────────────────────────────
+        # Lift legacy flat species-trait keys into ``species_trait_choices``
+        # now that species (and optionally lineage) are loaded, before the
+        # second pass dispatches them.  See ``_normalize_species_trait_choices``
+        # (audit P0-1).
         self._normalize_species_trait_choices(working_choices)
 
-        # Second pass: apply remaining choices (class-specific features, etc.)
+        # ── Pass 2 ──────────────────────────────────────────────────────────
+        # Apply all remaining keys (feat sub-choices, maneuver picks, etc.).
+        # Parent feat-slot keys are processed before sub-keys so the
+        # sub-choice handler can look up the parent.
         # Skip species_skill_replacements — it needs a late pass after trait effects.
-        # Sort so that class_feat_N parent keys are processed before their sub-choices
-        # (class_feat_N_<sub>) so the sub-choice handler can look up the parent.
         remaining_keys = [
             k for k in working_choices
             if k not in order and k not in ("species_skill_replacements", "classes")
@@ -4784,8 +4845,9 @@ class CharacterBuilder:
         for key in remaining_keys:
             self.apply_choice(key, working_choices[key])
 
-        # Apply explicit classes payload after single-class setup so we can
-        # include additional class tracks without breaking existing flows.
+        # ── Multiclass block ─────────────────────────────────────────────────
+        # Apply additional class tracks and recalculate totals.  Runs after
+        # single-class setup so extra tracks don't break existing flows.
         if class_rows:
             self.character_data["class_breakdown"] = deepcopy(class_rows)
             self.character_data["choices_made"]["classes"] = deepcopy(class_rows)
@@ -4798,14 +4860,26 @@ class CharacterBuilder:
             if class_rows[0].get("subclass"):
                 self.character_data["choices_made"]["subclass"] = class_rows[0]["subclass"]
 
-        # Third pass: apply species skill replacements AFTER all trait choices
-        # are processed (trait effects trigger the overlap detection).
+        # Invariant: level must be set after class application, which implies
+        # calculate_proficiency_bonus() will return > 0.  The full
+        # proficiency_bonus key is only materialised in to_character(), so we
+        # check the level field as the proxy here.
+        if working_choices.get("class") or class_rows:
+            assert self.character_data.get("level", 0) > 0, \
+                "Level not set after class application (proficiency_bonus will be 0)"
+
+        # ── Pass 3 ──────────────────────────────────────────────────────────
+        # Apply species_skill_replacements after trait effects so overlap
+        # detection sees the full proficiency picture.
         if "species_skill_replacements" in choices:
             self.apply_choice(
                 "species_skill_replacements", choices["species_skill_replacements"]
             )
 
-        # Resolve any effects that depended on choices made after species was applied
+        # ── Finalize ────────────────────────────────────────────────────────
+        # Apply pending dynamic effects (e.g. damage_type_from_choice
+        # resolutions that need choices_made to be fully populated), then run
+        # strict-mode validation on the final choices_made dict.
         self._apply_pending_dynamic_effects()
 
         # Final canonicalization: lift any flat species trait keys recorded in
@@ -6333,28 +6407,29 @@ class CharacterBuilder:
 
         character_data["spells_by_level"] = spells_by_level
 
-        # Phase 7 (D0-1): apply per-spell range overrides (e.g. Eldritch
-        # Spear changes Eldritch Blast's range to 300 feet). The override
-        # map is populated by the `bonus_spell_range` handler.
-        range_overrides = character_data.get("spell_range_overrides") or {}
-        if range_overrides:
-            for spell_list in spells_by_level.values():
-                for spell in spell_list:
-                    name = spell.get("name")
-                    if name in range_overrides:
-                        spell["range"] = range_overrides[name]["range"]
-                        spell["range_override_source"] = range_overrides[name]["source"]
+        # Phase 7 (D0-1) / P2-4: apply per-spell range overrides (e.g. Eldritch
+        # Spear changes Eldritch Blast's range to 300 feet). Reads from
+        # spell_metadata[spell]["range_override"] (consolidated in P2-4).
+        spell_meta = character_data.get("spell_metadata") or {}
+        for spell_list in spells_by_level.values():
+            for spell in spell_list:
+                name = spell.get("name")
+                meta = spell_meta.get(name) or {}
+                range_override = meta.get("range_override")
+                if range_override:
+                    spell["range"] = range_override["range"]
+                    spell["range_override_source"] = range_override["source"]
 
-        # Phase 7 (D0-1): annotate per-spell damage bonuses (e.g. Agonizing
-        # Blast adds Charisma to Eldritch Blast damage). The renderer surfaces
-        # the annotation; the structured field stays the source of truth.
-        damage_bonuses = character_data.get("spell_damage_bonuses") or {}
-        if damage_bonuses:
-            for spell_list in spells_by_level.values():
-                for spell in spell_list:
-                    name = spell.get("name")
-                    if name in damage_bonuses:
-                        spell["damage_ability_bonus"] = damage_bonuses[name]
+        # Phase 7 (D0-1) / P2-4: annotate per-spell damage bonuses (e.g. Agonizing
+        # Blast adds Charisma to Eldritch Blast damage). Reads from
+        # spell_metadata[spell]["damage_bonus"] (consolidated in P2-4).
+        for spell_list in spells_by_level.values():
+            for spell in spell_list:
+                name = spell.get("name")
+                meta = spell_meta.get(name) or {}
+                damage_bonus = meta.get("damage_bonus")
+                if damage_bonus:
+                    spell["damage_ability_bonus"] = damage_bonus
 
         # For compatibility with tests: add 'cantrips' and 'level_1' keys to spells
         # 'cantrips' = all level 0 spells, 'level_1' = all level 1 spells

@@ -19,7 +19,8 @@
       "properties": {
         "total": {
           "type": "integer",
-          "minimum": 1
+          "const": 3,
+          "description": "D6-5: Backgrounds must grant exactly 3 ability score points total (2024 rules)."
         },
         "options": {
           "type": "array",
