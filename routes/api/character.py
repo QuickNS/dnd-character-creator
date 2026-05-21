@@ -103,7 +103,9 @@ def _parse_tool_wildcard(tool_training: List[Any]) -> Dict[str, Any] | None:
 def _normalize_choice_token(value: Any) -> str:
     if not isinstance(value, str):
         return ""
-    return re.sub(r"[^a-z0-9]+", "_", value.strip().lower()).strip("_")
+    normalized = re.sub(r"[^a-z0-9]+", "_", value.strip().lower())
+    normalized = re.sub(r"_+", "_", normalized)
+    return normalized.strip("_")
 
 
 def _choice_matches_multiclass_feature_allowlist(
@@ -142,12 +144,13 @@ def _filter_nested_choices_for_secondary_class(
         for entry in feature_choices
         if isinstance(entry, str) and entry.strip()
     }
-    allowed_feature_choice_keys = {
-        _normalize_choice_token(choice.get("choice_key"))
-        for choice in nested_choices
-        if _choice_matches_multiclass_feature_allowlist(choice, allowed_feature_tokens)
-        and _normalize_choice_token(choice.get("choice_key"))
-    }
+    allowed_feature_choice_keys: set[str] = set()
+    for choice in nested_choices:
+        if not _choice_matches_multiclass_feature_allowlist(choice, allowed_feature_tokens):
+            continue
+        normalized_choice_key = _normalize_choice_token(choice.get("choice_key"))
+        if normalized_choice_key:
+            allowed_feature_choice_keys.add(normalized_choice_key)
 
     filtered: List[Dict[str, Any]] = []
     for choice in nested_choices:
