@@ -948,6 +948,52 @@ class TestCharacterBuild:
         assert nested_by_key["class_feat_4_abilities_plus_1"]["depends_on"] == "class_feat_4_asi_option"
         assert nested_by_key["class_feat_4_abilities_plus_1"]["depends_on_value"] == "+1 to two abilities"
 
+    def test_preview_class_cleric_thaumaturge_bonus_cantrip_appears_after_divine_order(
+        self, client
+    ):
+        choices = self._basics_for_preview()
+        choices["classes"] = [{"class_name": "Cleric", "level": 4}]
+        data = self._preview_class(
+            client, choices, target_class="Cleric", target_level=4
+        )
+
+        nested = data["nested_choices"]
+        divine_order_index = next(
+            (
+                idx
+                for idx, choice in enumerate(nested)
+                if choice.get("choice_key") == "divine_order"
+            ),
+            None,
+        )
+        assert divine_order_index is not None, (
+            "Expected Divine Order choice in nested choices"
+        )
+        thaumaturge_bonus_cantrip_index = next(
+            (
+                idx
+                for idx, choice in enumerate(nested)
+                if choice.get("feature_name") == "Thaumaturge_bonus_cantrip"
+            ),
+            None,
+        )
+        assert thaumaturge_bonus_cantrip_index is not None, (
+            "Expected Thaumaturge bonus cantrip nested choice in nested choices"
+        )
+        class_feat_4_index = next(
+            (
+                idx
+                for idx, choice in enumerate(nested)
+                if choice.get("choice_key") == "class_feat_4"
+            ),
+            None,
+        )
+        assert class_feat_4_index is not None, (
+            "Expected class_feat_4 choice in nested choices"
+        )
+
+        assert divine_order_index < thaumaturge_bonus_cantrip_index < class_feat_4_index
+
     def test_preview_species_step(self, client):
         r = client.post(
             "/api/v1/character/preview-step",
