@@ -453,12 +453,9 @@ class TestOriginFeatEffects:
                     "Intelligence": 16, "Wisdom": 10, "Charisma": 10
                 },
                 "background_bonuses": {"Intelligence": 2, "Constitution": 1},
-                "feat_choices": {
-                    "Magic Initiate (Wizard)": {
-                        "cantrips": cantrips,
-                        "spell": spell,
-                    }
-                }
+                # Use namespaced feat-choice keys (the actual format sent by the wizard)
+                "feat_Magic Initiate (Wizard)_cantrips": cantrips,
+                "feat_Magic Initiate (Wizard)_1st_level_spell": spell,
             })
             return builder.to_character()
 
@@ -467,14 +464,59 @@ class TestOriginFeatEffects:
             cantrips = ["Mage Hand", "Prestidigitation"]
             spell = "Shield"
             char = self._build_magic_initiate_wizard(cantrips, spell)
-            # Check cantrips
+            # Check cantrips — must appear with always_prepared=True
             cantrip_entries = [s for s in char["spells"]["cantrips"] if s["source"] == "Magic Initiate (Wizard)"]
+            assert len(cantrip_entries) == 2, "Expected 2 cantrips from Magic Initiate (Wizard)"
             for entry in cantrip_entries:
                 assert entry.get("always_prepared"), f"Cantrip {entry['name']} should be always prepared"
-            # Check spell
+            # Check spell — must appear with always_prepared=True
             spell_entries = [s for s in char["spells"]["level_1"] if s["source"] == "Magic Initiate (Wizard)"]
+            assert len(spell_entries) == 1, "Expected 1 level-1 spell from Magic Initiate (Wizard)"
             for entry in spell_entries:
                 assert entry.get("always_prepared"), f"Spell {entry['name']} should be always prepared"
+
+    class TestFeyTouchedAlwaysPrepared:
+        """Fey Touched: both the fixed Misty Step and the chosen spell are always prepared."""
+
+        def _build_fey_touched(self, extra_spell):
+            builder = CharacterBuilder()
+            builder.apply_choices({
+                "character_name": "FT Test",
+                "level": 4,
+                "species": "Human",
+                "class": "Fighter",
+                "background": "Sage",
+                "ability_scores": {
+                    "Strength": 10, "Dexterity": 10, "Constitution": 10,
+                    "Intelligence": 16, "Wisdom": 10, "Charisma": 10
+                },
+                "background_bonuses": {"Intelligence": 2, "Constitution": 1},
+                "class_feat_4": "Fey Touched",
+                "class_feat_4_1st_level_spell": extra_spell,
+            })
+            return builder.to_character()
+
+        def _find_spell_in_character(self, char, spell_name):
+            """Return the spell entry with the given name from spells_by_level, or None."""
+            for spells in char["spells_by_level"].values():
+                for s in spells:
+                    if s["name"] == spell_name:
+                        return s
+            return None
+
+        def test_misty_step_always_prepared(self):
+            """Misty Step (granted via effect) must be always prepared."""
+            char = self._build_fey_touched("Bless")
+            misty = self._find_spell_in_character(char, "Misty Step")
+            assert misty is not None, "Misty Step should be in the character's spells"
+            assert misty.get("always_prepared"), "Misty Step should be always prepared"
+
+        def test_chosen_spell_always_prepared(self):
+            """The additional chosen spell (e.g. Bless) must also be always prepared."""
+            char = self._build_fey_touched("Bless")
+            bless = self._find_spell_in_character(char, "Bless")
+            assert bless is not None, "Bless should be in the character's spells"
+            assert bless.get("always_prepared"), "Fey Touched chosen spell should be always prepared"
     """Origin feats with effects should have correct definitions."""
 
     def test_tough_has_bonus_hp_effect(self, origin_feats):

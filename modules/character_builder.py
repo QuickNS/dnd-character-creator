@@ -5548,7 +5548,7 @@ class CharacterBuilder:
         # Process spell data for template display
         spells = character_data.get("spells", {})
         spell_slots = spells.get("slots", {})
-        character_data.get("spell_metadata", {})
+        spell_metadata = character_data.get("spell_metadata", {})
 
         # Organize spells by level for display
         spells_by_level = {}
@@ -5577,10 +5577,11 @@ class CharacterBuilder:
             for spell_name, spell_info in prepared.get("cantrips", {}).items():
                 spell_data = self._load_spell_definition(spell_name)
                 if spell_data:
+                    meta = spell_metadata.get(spell_name, {})
                     spell_data.update(
                         {
-                            "source": spell_info.get("source", "Selected"),
-                            "always_prepared": False,
+                            "source": meta.get("source") or spell_info.get("source", "Selected"),
+                            "always_prepared": meta.get("always_prepared", False),
                         }
                     )
                     if 0 not in spells_by_level:
@@ -5591,10 +5592,11 @@ class CharacterBuilder:
             for spell_name, spell_info in prepared.get("spells", {}).items():
                 spell_data = self._load_spell_definition(spell_name)
                 if spell_data:
+                    meta = spell_metadata.get(spell_name, {})
                     spell_data.update(
                         {
-                            "source": spell_info.get("source", "Selected"),
-                            "always_prepared": False,
+                            "source": meta.get("source") or spell_info.get("source", "Selected"),
+                            "always_prepared": meta.get("always_prepared", False),
                         }
                     )
                     level = spell_data.get("level", 1)
