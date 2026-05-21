@@ -13,12 +13,18 @@
       "Wisdom": 2
     }
   },
-  "feat": "Healer",
-  "skill_proficiencies": [
-    "Medicine",
-    "Religion"
-  ],
   "effects": [
+    {
+      "type": "grant_skill_proficiency",
+      "skills": [
+        "Medicine",
+        "Religion"
+      ]
+    },
+    {
+      "type": "grant_origin_feat",
+      "feat": "Healer"
+    },
     {
       "type": "grant_tool_proficiency",
       "tools": [

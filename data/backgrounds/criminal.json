@@ -13,12 +13,18 @@
       "Intelligence": 1
     }
   },
-  "feat": "Alert",
-  "skill_proficiencies": [
-    "Deception",
-    "Stealth"
-  ],
   "effects": [
+    {
+      "type": "grant_skill_proficiency",
+      "skills": [
+        "Deception",
+        "Stealth"
+      ]
+    },
+    {
+      "type": "grant_origin_feat",
+      "feat": "Alert"
+    },
     {
       "type": "grant_tool_proficiency",
       "tools": [

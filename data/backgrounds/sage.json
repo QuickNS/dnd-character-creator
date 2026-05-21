@@ -13,12 +13,18 @@
       "Intelligence": 2
     }
   },
-  "feat": "Magic Initiate (Wizard)",
-  "skill_proficiencies": [
-    "Arcana",
-    "History"
-  ],
   "effects": [
+    {
+      "type": "grant_skill_proficiency",
+      "skills": [
+        "Arcana",
+        "History"
+      ]
+    },
+    {
+      "type": "grant_origin_feat",
+      "feat": "Magic Initiate (Wizard)"
+    },
     {
       "type": "grant_tool_proficiency",
       "tools": [

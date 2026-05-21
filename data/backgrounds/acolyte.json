@@ -13,12 +13,18 @@
       "Wisdom": 2
     }
   },
-  "feat": "Magic Initiate (Cleric)",
-  "skill_proficiencies": [
-    "Insight",
-    "Religion"
-  ],
   "effects": [
+    {
+      "type": "grant_skill_proficiency",
+      "skills": [
+        "Insight",
+        "Religion"
+      ]
+    },
+    {
+      "type": "grant_origin_feat",
+      "feat": "Magic Initiate (Cleric)"
+    },
     {
       "type": "grant_tool_proficiency",
       "tools": [

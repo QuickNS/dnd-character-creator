@@ -1,14 +1,12 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "D&D 2024 Background",
-  "description": "Schema for files in data/backgrounds/. Each background grants an ability score increase (total 3 across two or three abilities), an Origin feat, two skill proficiencies, one tool proficiency, and one of two starting equipment packages. Phase 3 keeps this schema permissive about counts; Phase 10 (D6-5) will add strict constraints (skill count == 2, ability score total == 3, origin-feat existence check).",
+  "description": "Schema for files in data/backgrounds/. Each background grants an ability score increase (total 3 across two or three abilities), an Origin feat, two skill proficiencies, one tool proficiency, and one of two starting equipment packages. Phase 9 (D1-1) canonicalized every mechanical grant onto the ``effects`` array — flat top-level fields ``feat``, ``skill_proficiencies``, and ``tool_proficiencies`` are no longer recognized. The origin feat is encoded as ``{type: grant_origin_feat, feat: \"<feat name>\"}``, skill proficiencies as ``{type: grant_skill_proficiency, skills: [...]}``, and tool proficiencies as ``{type: grant_tool_proficiency, tools: [...]}``. ``ability_score_increase`` and ``starting_equipment`` remain structural metadata for the wizard. Phase 10 (D6-5) will add strict count/existence constraints on top of this canonical surface.",
   "type": "object",
   "required": [
     "name",
     "description",
     "ability_score_increase",
-    "feat",
-    "skill_proficiencies",
     "effects",
     "starting_equipment"
   ],
@@ -40,17 +38,9 @@
       },
       "additionalProperties": false
     },
-    "feat": {
-      "type": "string",
-      "description": "Name of the Origin feat granted by this background. Existence-against-origin_feats.json is enforced in Phase 10."
-    },
-    "skill_proficiencies": {
-      "type": "array",
-      "items": { "type": "string" }
-    },
     "effects": {
       "type": "array",
-      "description": "Mechanical grants from the background (tool proficiencies, etc.). Each entry must conform to the shared effect schema. Phase 9 (D1-1) canonicalized the background mechanical surface onto this array — flat top-level fields like tool_proficiencies are no longer recognized.",
+      "description": "All mechanical grants from the background (origin feat, skill proficiencies, tool proficiencies, etc.). Each entry must conform to the shared effect schema. Phase 9 (D1-1) canonicalized the entire background mechanical surface onto this array — flat top-level fields like ``feat``, ``skill_proficiencies``, and ``tool_proficiencies`` are no longer recognized.",
       "items": { "$ref": "_shared/effect.json" }
     },
     "starting_equipment": {

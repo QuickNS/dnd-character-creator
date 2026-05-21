@@ -13,12 +13,18 @@
       "Wisdom": 2
     }
   },
-  "feat": "Tough",
-  "skill_proficiencies": [
-    "Animal Handling",
-    "Survival"
-  ],
   "effects": [
+    {
+      "type": "grant_skill_proficiency",
+      "skills": [
+        "Animal Handling",
+        "Survival"
+      ]
+    },
+    {
+      "type": "grant_origin_feat",
+      "feat": "Tough"
+    },
     {
       "type": "grant_tool_proficiency",
       "tools": [

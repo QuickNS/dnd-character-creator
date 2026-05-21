@@ -13,12 +13,18 @@
       "Charisma": 2
     }
   },
-  "feat": "Lucky",
-  "skill_proficiencies": [
-    "Animal Handling",
-    "Persuasion"
-  ],
   "effects": [
+    {
+      "type": "grant_skill_proficiency",
+      "skills": [
+        "Animal Handling",
+        "Persuasion"
+      ]
+    },
+    {
+      "type": "grant_origin_feat",
+      "feat": "Lucky"
+    },
     {
       "type": "grant_tool_proficiency",
       "tools": [

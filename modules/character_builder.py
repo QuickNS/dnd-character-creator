@@ -351,6 +351,52 @@ class CharacterBuilder:
         return self._load_json_file(file_path)
 
     @staticmethod
+    def _background_feat_name(background_data: Optional[Dict[str, Any]]) -> Optional[str]:
+        """Return the origin feat granted by *background_data*, or None.
+
+        Phase 9 (D1-1) canonicalized background mechanical grants onto the
+        ``effects`` array. The feat is encoded as a ``grant_origin_feat``
+        entry with an explicit ``feat`` field. This helper is the single
+        chokepoint every consumer (clearing, prereq lookup, Magic Initiate
+        detection, feat-choices UI) uses to discover the granted feat name
+        without re-reading the deprecated flat ``feat`` top-level key.
+        """
+        if not isinstance(background_data, dict):
+            return None
+        for effect in background_data.get("effects", []) or []:
+            if (
+                isinstance(effect, dict)
+                and effect.get("type") == "grant_origin_feat"
+            ):
+                feat = effect.get("feat")
+                if isinstance(feat, str) and feat:
+                    return feat
+        return None
+
+    @staticmethod
+    def _background_skill_proficiencies(
+        background_data: Optional[Dict[str, Any]],
+    ) -> List[str]:
+        """Return the skill proficiencies granted by *background_data*.
+
+        Phase 9 (D1-1): backgrounds expose skill grants exclusively through
+        ``effects: [{type: grant_skill_proficiency, skills: [...]}, ...]``.
+        Multiple entries are concatenated in declaration order.
+        """
+        if not isinstance(background_data, dict):
+            return []
+        skills: List[str] = []
+        for effect in background_data.get("effects", []) or []:
+            if (
+                isinstance(effect, dict)
+                and effect.get("type") == "grant_skill_proficiency"
+            ):
+                for skill in effect.get("skills", []) or []:
+                    if isinstance(skill, str) and skill:
+                        skills.append(skill)
+        return skills
+
+    @staticmethod
     def _format_benefits(benefits: list) -> str:
         """Format a list of benefits as markdown paragraphs with bold titles.
 
@@ -431,7 +477,7 @@ class CharacterBuilder:
 
         candidate_feat_names: List[str] = []
         background_data = self.character_data.get("background_data") or {}
-        background_feat = background_data.get("feat")
+        background_feat = self._background_feat_name(background_data)
         if isinstance(background_feat, str) and background_feat:
             candidate_feat_names.append(background_feat)
 
@@ -1465,6 +1511,16 @@ class CharacterBuilder:
                     self.character_data["choices_made"][
                         "species_skill_replacements_needed"
                     ] = needed + 1
+                elif source_type == "background":
+                    # Phase 9 (D1-1): background skill overlap. D&D 2024:
+                    # overlapping background skill proficiencies are replaced
+                    # by player's choice. Track count for the wizard prompt.
+                    needed = self.character_data["choices_made"].get(
+                        "background_skill_replacements_needed", 0
+                    )
+                    self.character_data["choices_made"][
+                        "background_skill_replacements_needed"
+                    ] = needed + 1
 
         elif effect_type == "grant_skill_expertise":
             # Resolve skills from a choice key if specified, otherwise use direct list
@@ -2287,8 +2343,9 @@ class CharacterBuilder:
         prev_bg_data = self.character_data.get("background_data") or {}
         prev_bg_name = prev_bg_data.get("name", self.character_data.get("background", ""))
 
-        # Remove skill proficiencies granted by the previous background
-        prev_skills = prev_bg_data.get("skill_proficiencies", [])
+        # Remove skill proficiencies granted by the previous background.
+        # Phase 9 (D1-1): skill grants live in the canonical ``effects`` array.
+        prev_skills = self._background_skill_proficiencies(prev_bg_data)
         self._remove_skills_sourced_from(prev_skills, prev_bg_name)
 
         # Also remove any replacement skills the player chose due to overlap with
@@ -2336,8 +2393,10 @@ class CharacterBuilder:
         # Clear background features list
         self.character_data["features"]["background"] = []
 
-        # Remove the origin feat granted by the previous background
-        prev_feat_name = prev_bg_data.get("feat")
+        # Remove the origin feat granted by the previous background.
+        # Phase 9 (D1-1): the feat is encoded as a ``grant_origin_feat``
+        # effect in the canonical effects array.
+        prev_feat_name = self._background_feat_name(prev_bg_data)
         if prev_feat_name:
             self.character_data["features"]["feats"] = [
                 f for f in self.character_data["features"]["feats"]
@@ -2411,35 +2470,13 @@ class CharacterBuilder:
             "name", self.character_data.get("background", "Unknown")
         )
 
-        # Skill proficiencies — detect overlaps with existing class skills
-        skill_profs = background_data.get("skill_proficiencies", [])
-        overlapping_skills = []
-        for skill in skill_profs:
-            if skill not in self.character_data["proficiencies"]["skills"]:
-                self.character_data["proficiencies"]["skills"].append(skill)
-                # Track source
-                self.character_data["proficiency_sources"]["skills"][skill] = (
-                    background_name
-                )
-            else:
-                overlapping_skills.append(skill)
+        # Skill proficiencies, the origin feat, and tool proficiencies are
+        # all applied below through the canonical ``effects`` array
+        # (Phase 9 / D1-1). The dispatcher takes care of source tracking,
+        # overlap detection (skills), and feat hydration (origin feat).
 
-        # Store the number of replacement choices needed (D&D 2024: overlapping
-        # background skill proficiencies are replaced by player's choice)
-        if overlapping_skills:
-            self.character_data["choices_made"][
-                "background_skill_replacements_needed"
-            ] = len(overlapping_skills)
-        else:
-            self.character_data["choices_made"].pop(
-                "background_skill_replacements_needed", None
-            )
-
-        # Tool proficiencies
-        # Phase 9 (D1-1): backgrounds expose mechanical grants exclusively
-        # through the ``effects`` array. The flat ``tool_proficiencies`` key
-        # is preserved here as a graceful fallback for any legacy data still
-        # in flight (saved characters, snapshots) but new content must use
+        # Tool proficiencies — legacy flat-key fallback for saved characters
+        # that pre-date the Phase 9 migration. New content MUST use
         # ``effects: [{type: grant_tool_proficiency, tools: [...]}]``.
         legacy_tool_profs = background_data.get("tool_proficiencies", [])
         for tool in legacy_tool_profs:
@@ -2487,40 +2524,10 @@ class CharacterBuilder:
             ):
                 self.character_data["features"]["background"].append(feature_entry)
 
-        # Background feat
-        feat = background_data.get("feat")
-        if feat:
-            # Load the actual feat data to get the description
-            feat_data = self._load_feat_data(feat)
-            if feat_data:
-                # Use the actual feat description
-                description = feat_data.get("description", "")
-                # If there are benefits, append them to the description
-                benefits = feat_data.get("benefits", [])
-                if benefits:
-                    description += self._format_benefits(benefits)
-            else:
-                # Fallback if feat data not found
-                description = f"Feat granted by {background_name} background."
-            
-            feat_entry = {
-                "name": feat,
-                "description": description,
-                "source": background_name,
-            }
-            if not any(
-                f["name"] == feat for f in self.character_data["features"]["feats"]
-            ):
-                self.character_data["features"]["feats"].append(feat_entry)
-
-            # Apply any direct effects from the feat (e.g., Tough's bonus_hp)
-            if feat_data:
-                for feat_effect in feat_data.get("effects", []):
-                    self._apply_effect(feat_effect, feat, "feat")
-
         # Phase 9 (D1-1): apply background-level effects (canonical surface for
-        # tool proficiencies, etc.). Each entry routes through the shared
-        # ``_apply_effect`` dispatcher with source_type="background".
+        # skill proficiencies, origin feat, tool proficiencies, etc.). Each
+        # entry routes through the shared ``_apply_effect`` dispatcher with
+        # source_type="background".
         for bg_effect in background_data.get("effects", []) or []:
             self._apply_effect(bg_effect, background_name, "background")
 
@@ -5090,7 +5097,7 @@ class CharacterBuilder:
 
         # Check for background spell requirements (e.g., Magic Initiate)
         background_data = self.character_data.get("background_data") or {}
-        feat = background_data.get("feat") if background_data else None
+        feat = self._background_feat_name(background_data)
         if feat and "Magic Initiate" in feat:
             # Extract spell list from feat name
             import re
@@ -7955,7 +7962,7 @@ class CharacterBuilder:
               'option_descriptions'.
         """
         background_data = self.character_data.get("background_data") or {}
-        feat_name = background_data.get("feat")
+        feat_name = self._background_feat_name(background_data)
         if not feat_name:
             return {"feat_name": None, "feat_description": "", "feat_benefits": [], "choices": []}
 
@@ -8181,7 +8188,7 @@ class CharacterBuilder:
         """
         if feat_name is None:
             background_data = self.character_data.get("background_data") or {}
-            feat_name = background_data.get("feat", "")
+            feat_name = self._background_feat_name(background_data) or ""
 
         # Clear previous selections for this feat before applying new ones
         self._clear_feat_choices(feat_name)

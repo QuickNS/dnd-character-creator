@@ -41,12 +41,32 @@ class TestBackgroundDataFiles:
 
         assert bg.get("name") == bg_name
         assert isinstance(bg.get("description"), str)
-        assert isinstance(bg.get("feat"), str)
-        assert isinstance(bg.get("skill_proficiencies"), list)
-        assert len(bg["skill_proficiencies"]) == 2
-        # Phase 9 (D1-1): backgrounds expose mechanical grants via the
-        # canonical ``effects`` array, not flat ``tool_proficiencies``.
+        # Phase 9 (D1-1): backgrounds expose all mechanical grants via the
+        # canonical ``effects`` array — the origin feat as
+        # ``grant_origin_feat`` with a ``feat`` field, skill proficiencies as
+        # ``grant_skill_proficiency``, tool proficiencies as
+        # ``grant_tool_proficiency``. The flat top-level ``feat`` and
+        # ``skill_proficiencies`` keys are no longer permitted.
+        assert "feat" not in bg, (
+            "Background must not carry a flat top-level ``feat`` key "
+            "(Phase 9: encode as grant_origin_feat effect instead)."
+        )
+        assert "skill_proficiencies" not in bg, (
+            "Background must not carry a flat top-level "
+            "``skill_proficiencies`` key (Phase 9: encode as "
+            "grant_skill_proficiency effect instead)."
+        )
         assert isinstance(bg.get("effects"), list)
+        origin_feat_effects = [
+            e for e in bg["effects"] if e.get("type") == "grant_origin_feat"
+        ]
+        assert len(origin_feat_effects) == 1
+        assert isinstance(origin_feat_effects[0].get("feat"), str)
+        skill_effects = [
+            e for e in bg["effects"] if e.get("type") == "grant_skill_proficiency"
+        ]
+        assert len(skill_effects) == 1
+        assert len(skill_effects[0].get("skills", [])) == 2
         tool_effects = [
             e for e in bg["effects"] if e.get("type") == "grant_tool_proficiency"
         ]
@@ -812,3 +832,45 @@ class TestBackgroundSkillReplacementValidationRegression:
             f"when the overlap is unresolved; status={background_status}"
         )
 
+
+
+class TestGrantOriginFeatEffect:
+    """Phase 9 (D1-1): the ``grant_origin_feat`` effect handler must work in
+    both shapes:
+
+      * ``{type: grant_origin_feat, feat: "<feat name>"}`` — names the feat
+        explicitly. Used by every background (e.g. Acolyte → Magic Initiate
+        (Cleric)) and by Human's species feat choice cells.
+      * ``{type: grant_origin_feat}`` — no feat name. Used by the warlock
+        invocation *Lessons of the First Ones* and by other "pick an Origin
+        feat" prompts where the player chooses the feat downstream. The
+        handler must apply the entry as a no-op direct grant so the
+        downstream choice flow can resolve it.
+    """
+
+    def test_grant_origin_feat_with_feat_field_grants_named_feat(self):
+        builder = CharacterBuilder()
+        # Apply the effect directly with source_type="background" — mirrors
+        # what _apply_background_features does with the canonical effects
+        # array.
+        builder._apply_effect(
+            {"type": "grant_origin_feat", "feat": "Alert"},
+            "TestBackground",
+            "background",
+        )
+        feat_names = [f["name"] for f in builder.character_data["features"]["feats"]]
+        assert "Alert" in feat_names
+
+    def test_grant_origin_feat_without_feat_field_is_safe_noop(self):
+        builder = CharacterBuilder()
+        before = len(builder.character_data["features"]["feats"])
+        # The Lessons of the First Ones case: no ``feat`` key. The handler
+        # must not crash and must not add a phantom entry — the player will
+        # pick the feat through the downstream choice flow.
+        builder._apply_effect(
+            {"type": "grant_origin_feat"},
+            "Lessons of the First Ones",
+            "invocation",
+        )
+        after = len(builder.character_data["features"]["feats"])
+        assert after == before

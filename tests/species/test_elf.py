@@ -282,10 +282,13 @@ class TestElfLineages:
         assert "grant_save_advantage" in effect_types  # Fey Ancestry
         assert "grant_cantrip" in effect_types  # Druidcraft
         assert "grant_spell" in effect_types  # Longstrider, Pass without Trace
+        assert "increase_speed" in effect_types  # Wood Elf Increased Speed
 
-        # Phase 9: Darkvision now contributes a grant_darkvision effect
-        # (Fey Ancestry + Darkvision + cantrip + 2 spells = 5).
-        assert len(applied_effects) == 5
+        # Phase 9: Wood Elf's Increased Speed contributes an ``increase_speed``
+        # effect; the base elf darkvision contributes a ``grant_darkvision``
+        # effect. Total: Fey Ancestry + base Darkvision + Increased Speed +
+        # cantrip + 2 spells = 6.
+        assert len(applied_effects) == 6
 
     def test_drow_lineage(self):
         """Test Drow lineage implementation"""
@@ -310,9 +313,16 @@ class TestElfLineages:
         assert "grant_cantrip" in effect_types  # Dancing Lights
         assert "grant_spell" in effect_types  # Faerie Fire, Darkness
 
-        # Phase 9: Darkvision now contributes a grant_darkvision effect
-        # (Fey Ancestry + Darkvision + cantrip + 2 spells = 5).
-        assert len(applied_effects) == 5
+        # Phase 9: Drow's Extended Darkvision contributes its own
+        # ``grant_darkvision`` (range 120) on top of the base elf
+        # ``grant_darkvision`` (range 60). Total: Fey Ancestry + base
+        # Darkvision + Extended Darkvision + cantrip + 2 spells = 6.
+        assert len(applied_effects) == 6
+        darkvision_effects = [
+            e for e in applied_effects
+            if e["effect"].get("type") == "grant_darkvision"
+        ]
+        assert len(darkvision_effects) == 2
 
     def test_lineage_spells_by_level(self):
         """Test lineage spells are available at correct levels"""
