@@ -210,6 +210,7 @@
             }
           ]
         },
+        "feature_choices":            { "type": "array", "items": { "type": "string" } },
         "saving_throw_proficiencies": { "type": "array", "items": { "type": "string" } },
         "other_proficiencies":        { "type": "array", "items": { "type": "string" } },
         "notes":                      { "type": ["string", "null"] },

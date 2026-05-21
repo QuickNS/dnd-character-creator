@@ -803,7 +803,7 @@ class TestCharacterBuild:
         ]
         assert divine, "Primary Cleric preview must include Divine Order picker"
 
-    def test_preview_class_secondary_wizard_druid_drops_all_choices(self, client):
+    def test_preview_class_secondary_wizard_druid_keeps_primal_order(self, client):
         choices = self._basics_for_preview()
         choices["classes"] = [
             {"class_name": "Wizard", "level": 3},
@@ -814,7 +814,18 @@ class TestCharacterBuild:
         assert data["row_context"]["is_primary"] is False
         assert data["row_context"]["row_index"] == 1
         assert data["row_context"]["total_class_rows"] == 2
-        assert data["nested_choices"] == []
+        nested = data["nested_choices"]
+        skill_choices = self._find_choices_of_type(nested, "skills")
+        assert skill_choices == []
+        primal_order_choices = [
+            c for c in nested
+            if (c.get("choice_key") or "").lower() == "primal_order"
+        ]
+        assert primal_order_choices, f"Expected Primal Order in nested choices, got: {nested}"
+        assert any(
+            (c.get("depends_on") or "").lower() == "primal_order"
+            for c in nested
+        ), f"Expected dependent Primal Order nested choice to be preserved, got: {nested}"
 
     def test_preview_class_secondary_bard_keeps_skill_and_instrument(self, client):
         choices = self._basics_for_preview()

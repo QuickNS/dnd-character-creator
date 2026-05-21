@@ -39,16 +39,15 @@ class ChoicesValidationError(ValueError):
 
 # ==================== Multiclass nested-choice filtering ====================
 #
-# Per D&D 2024 multiclassing rules, a secondary class entry grants ONLY the
-# proficiencies listed in that class's `multiclassing` block — it does NOT
-# grant the class's level-1 features (no fighting style, no expertise, no
-# divine/primal order, no level-1 spells/cantrips, no weapon mastery picks,
-# no invocations, etc.). The wizard's level-up step pipeline naively produces
-# every nested choice the class would offer at level 1, so for secondary
-# rows we filter that list down to only:
+# A secondary class entry grants proficiencies listed in that class's
+# `multiclassing` block, plus any explicitly allowed level-1 feature choices
+# listed in `multiclassing.feature_choices`. The wizard's level-up step
+# pipeline naively produces every nested choice the class would offer at
+# level 1, so for secondary rows we filter that list down to:
 #   - skill picks (if `multiclassing.skill_proficiencies` is a non-null dict)
 #   - tool picks  (if any `multiclassing.tool_training` entry is a wildcard
 #                  like "Musical Instrument (1 of your choice)")
+#   - feature picks explicitly listed in `multiclassing.feature_choices`
 # Subclass selection is handled by `available_subclasses` / `needs_subclass`
 # on the response and is always allowed for any class row.
 
@@ -101,11 +100,30 @@ def _parse_tool_wildcard(tool_training: List[Any]) -> Dict[str, Any] | None:
     return None
 
 
+def _normalize_choice_token(value: Any) -> str:
+    if not isinstance(value, str):
+        return ""
+    return re.sub(r"[^a-z0-9]+", "_", value.strip().lower()).strip("_")
+
+
+def _choice_matches_multiclass_feature_allowlist(
+    choice: Dict[str, Any],
+    allowed_tokens: set[str],
+) -> bool:
+    if not allowed_tokens:
+        return False
+    for field in ("choice_key", "feature_name", "title"):
+        token = _normalize_choice_token(choice.get(field))
+        if token and token in allowed_tokens:
+            return True
+    return False
+
+
 def _filter_nested_choices_for_secondary_class(
     nested_choices: List[Dict[str, Any]],
     class_data: Dict[str, Any],
 ) -> List[Dict[str, Any]]:
-    """Drop everything except the proficiency picks the multiclass block allows.
+    """Drop everything except picks the multiclass block explicitly allows.
 
     For surviving skill/tool pickers, narrow count and options to match the
     multiclass entry (e.g. Rogue multiclass = 1 skill from a constrained list).
@@ -117,6 +135,19 @@ def _filter_nested_choices_for_secondary_class(
 
     tool_wildcard = _parse_tool_wildcard(multiclass.get("tool_training") or [])
     allow_tool = tool_wildcard is not None
+
+    feature_choices = multiclass.get("feature_choices") or []
+    allowed_feature_tokens = {
+        _normalize_choice_token(entry)
+        for entry in feature_choices
+        if isinstance(entry, str) and entry.strip()
+    }
+    allowed_feature_choice_keys = {
+        _normalize_choice_token(choice.get("choice_key"))
+        for choice in nested_choices
+        if _choice_matches_multiclass_feature_allowlist(choice, allowed_feature_tokens)
+        and _normalize_choice_token(choice.get("choice_key"))
+    }
 
     filtered: List[Dict[str, Any]] = []
     for choice in nested_choices:
@@ -156,8 +187,15 @@ def _filter_nested_choices_for_secondary_class(
                 )
             filtered.append(narrowed)
 
-        # All other categories (fighting style, expertise, spells, cantrips,
-        # divine/primal order, weapon mastery, invocations, etc.) are dropped.
+        elif _choice_matches_multiclass_feature_allowlist(choice, allowed_feature_tokens):
+            filtered.append(dict(choice))
+
+        else:
+            depends_on_key = _normalize_choice_token(choice.get("depends_on"))
+            if depends_on_key and depends_on_key in allowed_feature_choice_keys:
+                filtered.append(dict(choice))
+
+        # All other categories are dropped.
 
     return filtered
 

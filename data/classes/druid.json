@@ -580,6 +580,9 @@
     "weapon_training": [],
     "tool_training": [],
     "skill_proficiencies": null,
+    "feature_choices": [
+      "Primal Order"
+    ],
     "saving_throw_proficiencies": [],
     "other_proficiencies": [],
     "notes": null,
