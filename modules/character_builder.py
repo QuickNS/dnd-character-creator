@@ -457,7 +457,10 @@ class CharacterBuilder:
         return None
 
     def _feat_choice_dependencies_met(
-        self, choice_namespace: str, choice_def: Optional[Dict[str, Any]]
+        self,
+        choice_namespace: str,
+        choice_def: Optional[Dict[str, Any]],
+        choice_key: Optional[str] = None,
     ) -> bool:
         """Check whether a feat sub-choice should be active for the current state."""
         if not isinstance(choice_def, dict):
@@ -471,6 +474,18 @@ class CharacterBuilder:
         dependency_key = f"{choice_namespace}_{depends_on}"
         dependency_value = self.character_data["choices_made"].get(dependency_key)
         if dependency_value is None:
+            # Backward compatibility: allow legacy ASI payloads that persist only
+            # the branch key (ability_plus_2 / abilities_plus_1) without
+            # explicitly persisting asi_option.
+            if (
+                depends_on == "asi_option"
+                and isinstance(choice_key, str)
+                and (
+                    choice_key.endswith("_ability_plus_2")
+                    or choice_key.endswith("_abilities_plus_1")
+                )
+            ):
+                return True
             return False
         if isinstance(dependency_value, list):
             return depends_on_value in dependency_value
@@ -2979,7 +2994,7 @@ class CharacterBuilder:
         # (for example, feat_Magic Initiate (Wizard)_cantrips).
         elif (feat_choice_context := self._resolve_feat_choice_context(choice_key)):
             feat_name, sub_choice_name, feat_data, sub_choice_def, choice_namespace = feat_choice_context
-            if not self._feat_choice_dependencies_met(choice_namespace, sub_choice_def):
+            if not self._feat_choice_dependencies_met(choice_namespace, sub_choice_def, choice_key):
                 return True
             self._apply_feat_choice_selection(
                 feat_name,
