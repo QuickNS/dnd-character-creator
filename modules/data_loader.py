@@ -10,6 +10,49 @@ from pathlib import Path
 from typing import Dict, Any
 
 
+def _validate_features_by_level(
+    fbl: Any, source_label: str
+) -> None:
+    """Validate the ``features_by_level`` shape once at load time.
+
+    Canonical shape (audit, .github/instructions/data-schemas.instructions.md):
+
+        {
+          "<level_str>": {
+            "<feature_name>": "<description>" | { ...feature_object... }
+          }
+        }
+
+    Anything else (arrays, non-dict level entries, non-string level keys)
+    is a real data defect — raise immediately with a path-qualified message
+    instead of letting runtime warnings drown the signal.
+
+    Phase 5 (audit P2-6) replaces the defensive runtime checks scattered
+    through ``character_builder.py`` with this single load-time gate.
+    """
+    if fbl is None:
+        return
+    if not isinstance(fbl, dict):
+        raise ValueError(
+            f"{source_label}: features_by_level must be an object, got "
+            f"{type(fbl).__name__}"
+        )
+    for level_key, level_features in fbl.items():
+        if not isinstance(level_key, str):
+            raise ValueError(
+                f"{source_label}: features_by_level level keys must be strings, "
+                f"got {type(level_key).__name__}: {level_key!r}"
+            )
+        if not isinstance(level_features, dict):
+            raise ValueError(
+                f"{source_label}: features_by_level[{level_key!r}] must be an "
+                f"object mapping feature_name -> description, got "
+                f"{type(level_features).__name__}. "
+                f"NEVER use arrays here — see "
+                f".github/instructions/data-schemas.instructions.md."
+            )
+
+
 class DataLoader:
     """
     Loads and provides access to D&D 2024 game data from JSON files.
@@ -59,6 +102,10 @@ class DataLoader:
                         file_data = json.load(f)
                         name = file_data.get("name")
                         if name:
+                            _validate_features_by_level(
+                                file_data.get("features_by_level"),
+                                f"{json_file}",
+                            )
                             data[name] = file_data
                 except (json.JSONDecodeError, IOError) as e:
                     print(f"Warning: Could not load {json_file}: {e}")
@@ -122,6 +169,10 @@ class DataLoader:
                                 subclass_data = json.load(f)
                                 subclass_name = subclass_data.get("name")
                                 if subclass_name:
+                                    _validate_features_by_level(
+                                        subclass_data.get("features_by_level"),
+                                        f"{json_file}",
+                                    )
                                     subclasses[class_name][subclass_name] = (
                                         subclass_data
                                     )

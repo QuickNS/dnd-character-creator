@@ -150,7 +150,10 @@
       "Deflect Attacks": {
         "description": "When an attack roll hits you and its damage includes Bludgeoning, Piercing, or Slashing damage, you can take a Reaction to reduce the attack's total damage against you. The reduction equals 1d10 plus your Dexterity modifier and Monk level.\n\nIf you reduce the damage to 0, you can expend 1 Focus Point to redirect some of the attack's force. If you do so, choose a creature you can see within 5 feet of yourself if the attack was a melee attack or a creature you can see within 60 feet of yourself that isn't behind Total Cover if the attack was a ranged attack. That creature must succeed on a Dexterity saving throw or take damage equal to two rolls of your Martial Arts die plus your Dexterity modifier. The damage is the same type dealt by the attack."
       },
-      "Monk Subclass": "Choose a Monk subclass: Warrior of Mercy, Warrior of Shadow, Warrior of the Elements, or Warrior of the Open Hand."
+      "Monk Subclass": {
+        "description": "Choose a Monk subclass: Warrior of Mercy, Warrior of Shadow, Warrior of the Elements, or Warrior of the Open Hand.",
+        "feature_kind": "subclass_pick"
+      }
     },
     "4": {
       "Ability Score Improvement": {
@@ -162,7 +165,8 @@
             "file": "general_feats.json",
             "list": "general_feats"
           }
-        }
+        },
+        "feature_kind": "asi"
       },
       "Slow Fall": "You can take a Reaction when you fall to reduce any damage you take from the fall by an amount equal to five times your Monk level."
     },
@@ -196,7 +200,8 @@
             "file": "general_feats.json",
             "list": "general_feats"
           }
-        }
+        },
+        "feature_kind": "asi"
       }
     },
     "9": {
@@ -228,7 +233,8 @@
             "file": "general_feats.json",
             "list": "general_feats"
           }
-        }
+        },
+        "feature_kind": "asi"
       }
     },
     "13": {
@@ -275,7 +281,8 @@
             "file": "general_feats.json",
             "list": "general_feats"
           }
-        }
+        },
+        "feature_kind": "asi"
       }
     },
     "18": {

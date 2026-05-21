@@ -13,7 +13,6 @@ from .ability_scores import AbilityScores
 from .feature_manager import FeatureManager
 from .hp_calculator import HPCalculator
 from .variant_manager import VariantManager
-from .equipment_manager import EquipmentManager
 
 __all__ = [
     "CharacterBuilder",
@@ -22,5 +21,4 @@ __all__ = [
     "FeatureManager",
     "HPCalculator",
     "VariantManager",
-    "EquipmentManager",
 ]

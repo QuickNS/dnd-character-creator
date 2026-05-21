@@ -9,8 +9,6 @@
         "subclass": "War Domain"
       }
     ],
-    "class": "Cleric",
-    "level": 3,
     "spell_selections": {
       "cantrips": [
         "Toll the Dead",
@@ -33,7 +31,6 @@
       "History",
       "Religion"
     ],
-    "subclass": "War Domain",
     "background": "Farmer",
     "species": "Aasimar",
     "ability_scores_method": "standard_array",

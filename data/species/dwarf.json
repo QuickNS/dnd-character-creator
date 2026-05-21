@@ -5,9 +5,16 @@
   "size": "Medium",
   "size_description": "about 4-5 feet tall",
   "speed": 30,
-  "darkvision": 120,
   "traits": {
-    "Darkvision": "You have Darkvision with a range of 120 feet.",
+    "Darkvision": {
+      "description": "You have Darkvision with a range of 120 feet.",
+      "effects": [
+        {
+          "type": "grant_darkvision",
+          "range": 120
+        }
+      ]
+    },
     "Dwarven Resilience": {
       "description": "You have Resistance to Poison damage. You also have Advantage on saving throws you make to avoid or end the Poisoned condition.",
       "effects": [

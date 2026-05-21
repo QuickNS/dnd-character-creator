@@ -441,6 +441,9 @@ def _step_status(builder: CharacterBuilder, step: str) -> Dict[str, Any]:
     choices = character.get("choices_made", {}) or {}
     missing: List[str] = []
 
+    def _is_empty_choice_value(value: Any) -> bool:
+        return value in (None, "", [], {})
+
     for key in _STEP_REQUIRED_KEYS.get(step, []):
         if key == "class":
             has_legacy_class = bool(choices.get("class"))
@@ -529,8 +532,12 @@ def _step_status(builder: CharacterBuilder, step: str) -> Dict[str, Any]:
         if species:
             try:
                 trait_choices = builder.get_species_trait_choices()
+                nested_trait_choices = choices.get("species_trait_choices")
+                if not isinstance(nested_trait_choices, dict):
+                    nested_trait_choices = {}
                 for trait_name in trait_choices.keys():
-                    if trait_name not in choices:
+                    nested_value = nested_trait_choices.get(trait_name)
+                    if _is_empty_choice_value(nested_value):
                         missing.append(trait_name)
             except Exception:
                 pass
@@ -737,6 +744,9 @@ def preview_step():
                         result["nested_choices"], cdata
                     )
                 result["row_context"] = row_context
+                # Surface currently-known languages so the frontend can disable
+                # them in language choice pickers (e.g. Thieves' Cant).
+                result["granted_languages"] = character.get("languages", [])
             else:
                 # No class resolved — still surface a legacy single-class context.
                 result["row_context"] = {

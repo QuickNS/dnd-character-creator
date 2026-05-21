@@ -112,15 +112,26 @@ def get_species(species_name: str):
 # ==================== Backgrounds ====================
 
 
+def _extract_background_feat(data: Dict[str, Any]) -> str | None:
+    """Return the feat name from a grant_origin_feat effect, or None."""
+    for effect in data.get("effects", []):
+        if effect.get("type") == "grant_origin_feat":
+            return effect.get("feat")
+    return None
+
+
 @catalog_bp.get("/backgrounds")
 def list_backgrounds():
     backgrounds = _dl().backgrounds
-    return jsonify({
-        "backgrounds": [
-            _summarize(name, data, ["skill_proficiencies", "ability_scores", "feat"])
-            for name, data in sorted(backgrounds.items())
-        ]
-    })
+    items = []
+    for name, data in sorted(backgrounds.items()):
+        enriched = dict(data)
+        if "feat" not in enriched:
+            feat = _extract_background_feat(data)
+            if feat is not None:
+                enriched["feat"] = feat
+        items.append(_summarize(name, enriched, ["skill_proficiencies", "ability_scores", "feat"]))
+    return jsonify({"backgrounds": items})
 
 
 @catalog_bp.get("/backgrounds/<background_name>")
@@ -128,7 +139,24 @@ def get_background(background_name: str):
     data = _dl().backgrounds.get(background_name)
     if data is None:
         abort(404, description=f"Unknown background: {background_name}")
-    return jsonify(data)
+    enriched = dict(data)
+    skill_proficiencies: List[str] = []
+    tool_proficiencies: List[str] = []
+    for effect in data.get("effects", []):
+        etype = effect.get("type")
+        if etype == "grant_skill_proficiency":
+            skill_proficiencies.extend(effect.get("skills", []))
+        elif etype == "grant_tool_proficiency":
+            tool_proficiencies.extend(effect.get("tools", []))
+    if skill_proficiencies and "skill_proficiencies" not in enriched:
+        enriched["skill_proficiencies"] = skill_proficiencies
+    if tool_proficiencies and "tool_proficiencies" not in enriched:
+        enriched["tool_proficiencies"] = tool_proficiencies
+    if "feat" not in enriched:
+        feat = _extract_background_feat(data)
+        if feat is not None:
+            enriched["feat"] = feat
+    return jsonify(enriched)
 
 
 # ==================== Feats ====================

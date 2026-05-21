@@ -264,14 +264,17 @@ export function AbilitiesStep() {
   );
 
   function setAdditionalModifier(ability: Ability, value: number) {
-    const next = {
-      ...additionalModifiers,
-      [ability]: Math.max(EXTRA_MOD_MIN, Math.min(EXTRA_MOD_MAX, value)),
-    };
-    const compact = Object.fromEntries(
-      Object.entries(next).filter(([, v]) => Number(v) !== 0),
+    const clamped = Math.max(EXTRA_MOD_MIN, Math.min(EXTRA_MOD_MAX, value));
+    // Always send the full 6-ability map (with explicit zeros for unset
+    // abilities). The backend expects a complete `AbilityModifierMap` shape.
+    const next = ABILITIES.reduce(
+      (acc, a) => {
+        acc[a] = a === ability ? clamped : additionalModifiers[a];
+        return acc;
+      },
+      {} as Record<Ability, number>,
     );
-    setChoice("additional_ability_modifiers", compact);
+    setChoice("additional_ability_modifiers", next);
   }
 
   const methodButtons = [
@@ -724,6 +727,11 @@ export function AbilitiesStep() {
         </div>
       </section>
 
+      <BackgroundAsiPicker
+        asi={asi}
+        hasBackground={!!choicesMade["background"]}
+      />
+
       {/* ── Additional modifiers (optional) ───────────────────────────── */}
       <section className="overflow-hidden rounded-2xl border border-border/80 bg-gradient-to-br from-card via-card to-secondary/40 shadow-sm">
         <div className="border-b border-border/70 px-5 py-4 sm:px-6">
@@ -796,10 +804,6 @@ export function AbilitiesStep() {
         </div>
       </section>
 
-      <BackgroundAsiPicker
-        asi={asi}
-        hasBackground={!!choicesMade["background"]}
-      />
     </div>
   );
 }

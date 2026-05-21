@@ -158,7 +158,10 @@
       "Reckless Attack": "When you make your first attack roll on your turn, you can decide to attack recklessly. Doing so gives you Advantage on attack rolls using Strength until the start of your next turn, but attack rolls against you have Advantage during that time."
     },
     "3": {
-      "Barbarian Subclass": "You gain a Barbarian subclass of your choice: Path of the Berserker, Path of the Wild Heart, Path of the World Tree, or Path of the Zealot.",
+      "Barbarian Subclass": {
+        "description": "You gain a Barbarian subclass of your choice: Path of the Berserker, Path of the Wild Heart, Path of the World Tree, or Path of the Zealot.",
+        "feature_kind": "subclass_pick"
+      },
       "Primal Knowledge": "You gain proficiency in another skill of your choice from the Barbarian skill list. In addition, while your Rage is active, you can channel primal power when you attempt certain tasks; whenever you make an ability check using one of the following skills, you can make it as a Strength check even if it normally uses a different ability: Acrobatics, Intimidation, Perception, Stealth, or Survival."
     },
     "4": {
@@ -171,7 +174,8 @@
             "file": "general_feats.json",
             "list": "general_feats"
           }
-        }
+        },
+        "feature_kind": "asi"
       }
     },
     "5": {
@@ -187,7 +191,10 @@
       }
     },
     "6": {
-      "Subclass Feature": "You gain a feature from your Barbarian subclass."
+      "Subclass Feature": {
+        "description": "You gain a feature from your Barbarian subclass.",
+        "feature_kind": "subclass_feature_slot"
+      }
     },
     "7": {
       "Feral Instinct": "Your instincts are so honed that you have Advantage on Initiative rolls.",
@@ -203,14 +210,18 @@
             "file": "general_feats.json",
             "list": "general_feats"
           }
-        }
+        },
+        "feature_kind": "asi"
       }
     },
     "9": {
       "Brutal Strike": "If you use Reckless Attack, you can forgo any Advantage on one Strength-based attack roll on your turn. If the chosen attack roll hits, the target takes an extra 1d10 damage of the same type dealt by the weapon or Unarmed Strike, and you can cause one Brutal Strike effect of your choice. Forceful Blow: The target is pushed 15 feet straight away from you. You can then move up to half your Speed straight toward the target without provoking Opportunity Attacks. Hamstring Blow: The target's Speed is reduced by 15 feet until the start of your next turn."
     },
     "10": {
-      "Subclass Feature": "You gain a feature from your Barbarian subclass."
+      "Subclass Feature": {
+        "description": "You gain a feature from your Barbarian subclass.",
+        "feature_kind": "subclass_feature_slot"
+      }
     },
     "11": {
       "Relentless Rage": "Your Rage can keep you fighting despite grievous wounds. If you drop to 0 Hit Points while your Rage is active and don't die outright, you can make a DC 10 Constitution saving throw. If you succeed, your Hit Points instead change to a number equal to twice your Barbarian level. Each time you use this feature after the first, the DC increases by 5. When you finish a Short or Long Rest, the DC resets to 10."
@@ -225,14 +236,18 @@
             "file": "general_feats.json",
             "list": "general_feats"
           }
-        }
+        },
+        "feature_kind": "asi"
       }
     },
     "13": {
       "Improved Brutal Strike": "You have honed new ways to attack furiously. The following effects are now among your Brutal Strike options. Staggering Blow: The target has Disadvantage on the next saving throw it makes, and it can't make Opportunity Attacks until the start of your next turn. Sundering Blow: Before the start of your next turn, the next attack roll made by another creature against the target gains a +5 bonus to the roll. An attack roll can gain only one Sundering Blow bonus."
     },
     "14": {
-      "Subclass Feature": "You gain a feature from your Barbarian subclass."
+      "Subclass Feature": {
+        "description": "You gain a feature from your Barbarian subclass.",
+        "feature_kind": "subclass_feature_slot"
+      }
     },
     "15": {
       "Persistent Rage": "When you roll Initiative, you can regain all expended uses of Rage. After you regain uses of Rage in this way, you can't do so again until you finish a Long Rest. In addition, your Rage is so fierce that it now lasts for 10 minutes without you needing to do anything to extend it. Your Rage ends early only if you have the Unconscious condition or don Heavy armor."
@@ -247,7 +262,8 @@
             "file": "general_feats.json",
             "list": "general_feats"
           }
-        }
+        },
+        "feature_kind": "asi"
       }
     },
     "17": {

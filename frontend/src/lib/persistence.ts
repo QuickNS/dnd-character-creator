@@ -28,14 +28,17 @@ export function newEntryId(): string {
 export function summarizeChoices(choices: ChoicesMade): string {
   const parts: string[] = [];
   
-  if (choices.level) {
-    parts.push(`Level ${choices.level}`);
+  const level = choices.level as number | undefined;
+  if (level) {
+    parts.push(`Level ${level}`);
   }
   
-  if (choices.class) {
-    parts.push(choices.class);
-    if (choices.subclass) {
-      parts.push(`(${choices.subclass})`);
+  const cls = choices.class as string | undefined;
+  if (cls) {
+    parts.push(cls);
+    const sub = choices.subclass as string | undefined;
+    if (sub) {
+      parts.push(`(${sub})`);
     }
   }
   

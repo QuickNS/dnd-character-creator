@@ -507,7 +507,8 @@
   "features_by_level": {
     "1": {
       "Spellcasting": {
-        "description": "You have learned to channel the magical essence of nature to cast spells. Wisdom is your spellcasting ability. You can use a Druidic Focus as a Spellcasting Focus. You prepare level 1+ Ranger spells, regaining all expended spell slots on a Long Rest."
+        "description": "You have learned to channel the magical essence of nature to cast spells. Wisdom is your spellcasting ability. You can use a Druidic Focus as a Spellcasting Focus. You prepare level 1+ Ranger spells, regaining all expended spell slots on a Long Rest.",
+        "feature_kind": "spellcasting_setup"
       },
       "Favored Enemy": {
         "description": "You always have the Hunter's Mark spell prepared, and it doesn't count against the number of spells you can prepare. You can cast Hunter's Mark without expending a spell slot a number of times shown in the Favored Enemy column of the Ranger Features table (2 at level 1, increasing at levels 5, 9, 13, and 17), and you regain all expended uses when you finish a Long Rest.",
@@ -571,7 +572,10 @@
       }
     },
     "3": {
-      "Ranger Subclass": "You gain a Ranger Subclass of your choice. The Beast Master, Fey Wanderer, Gloom Stalker, and Hunter subclasses are detailed after this class's description."
+      "Ranger Subclass": {
+        "description": "You gain a Ranger Subclass of your choice. The Beast Master, Fey Wanderer, Gloom Stalker, and Hunter subclasses are detailed after this class's description.",
+        "feature_kind": "subclass_pick"
+      }
     },
     "4": {
       "Ability Score Improvement": {
@@ -583,7 +587,8 @@
             "file": "general_feats.json",
             "list": "general_feats"
           }
-        }
+        },
+        "feature_kind": "asi"
       }
     },
     "5": {
@@ -601,7 +606,10 @@
       }
     },
     "7": {
-      "Subclass Feature": "You gain a feature from your Ranger subclass."
+      "Subclass Feature": {
+        "description": "You gain a feature from your Ranger subclass.",
+        "feature_kind": "subclass_feature_slot"
+      }
     },
     "8": {
       "Ability Score Improvement": {
@@ -613,7 +621,8 @@
             "file": "general_feats.json",
             "list": "general_feats"
           }
-        }
+        },
+        "feature_kind": "asi"
       }
     },
     "9": {
@@ -640,7 +649,10 @@
       "Tireless": "Primal forces now help fuel you on your journeys. Temporary Hit Points: As a Magic Action, you can give yourself a number of Temporary Hit Points equal to 1d8 plus your Wisdom modifier (minimum of 1). You can use this action a number of times equal to your Wisdom modifier (minimum of once), and you regain all expended uses when you finish a Long Rest. Decrease Exhaustion: Whenever you finish a Short Rest, your Exhaustion level, if any, decreases by 1."
     },
     "11": {
-      "Subclass Feature": "You gain a feature from your Ranger subclass."
+      "Subclass Feature": {
+        "description": "You gain a feature from your Ranger subclass.",
+        "feature_kind": "subclass_feature_slot"
+      }
     },
     "12": {
       "Ability Score Improvement": {
@@ -652,7 +664,8 @@
             "file": "general_feats.json",
             "list": "general_feats"
           }
-        }
+        },
+        "feature_kind": "asi"
       }
     },
     "13": {
@@ -662,7 +675,10 @@
       "Nature's Veil": "You invoke spirits of nature to magically hide yourself. As a Bonus Action, you can give yourself the Invisible condition until the end of your next turn. You can use this feature a number of times equal to your Wisdom modifier (minimum of once), and you regain all expended uses when you finish a Long Rest."
     },
     "15": {
-      "Subclass Feature": "You gain a feature from your Ranger subclass."
+      "Subclass Feature": {
+        "description": "You gain a feature from your Ranger subclass.",
+        "feature_kind": "subclass_feature_slot"
+      }
     },
     "16": {
       "Ability Score Improvement": {
@@ -674,7 +690,8 @@
             "file": "general_feats.json",
             "list": "general_feats"
           }
-        }
+        },
+        "feature_kind": "asi"
       }
     },
     "17": {

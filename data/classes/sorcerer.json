@@ -365,7 +365,8 @@
   "features_by_level": {
     "1": {
       "Spellcasting": {
-        "description": "An event in your past left an indelible mark on you, infusing you with simmering magic. You are a Sorcerer, and you can cast Sorcerer spells using Charisma as your spellcasting ability. You know four cantrips from the Sorcerer spell list and have two 1st-level Sorcerer spells prepared."
+        "description": "An event in your past left an indelible mark on you, infusing you with simmering magic. You are a Sorcerer, and you can cast Sorcerer spells using Charisma as your spellcasting ability. You know four cantrips from the Sorcerer spell list and have two 1st-level Sorcerer spells prepared.",
+        "feature_kind": "spellcasting_setup"
       },
       "Innate Sorcery": "An event in your past left an indelible mark on you, infusing you with simmering magic. As a Bonus Action, you can unleash that magic for 1 minute, during which you gain the following benefits:\n\nThe spell save DC of your Sorcerer spells increases by 1.\nYou have Advantage on the attack rolls of Sorcerer spells you cast.\n\nYou can use this feature twice, and you regain all expended uses of it when you finish a Long Rest."
     },
@@ -396,7 +397,10 @@
       }
     },
     "3": {
-      "Sorcerer Subclass": "You gain a Sorcerer Subclass of your choice."
+      "Sorcerer Subclass": {
+        "description": "You gain a Sorcerer Subclass of your choice.",
+        "feature_kind": "subclass_pick"
+      }
     },
     "4": {
       "Ability Score Improvement": {
@@ -408,14 +412,18 @@
             "file": "general_feats.json",
             "list": "general_feats"
           }
-        }
+        },
+        "feature_kind": "asi"
       }
     },
     "5": {
       "Sorcerous Restoration": "When you finish a Short Rest, you can regain expended Sorcery Points, but no more than a number equal to half your Sorcerer level (round down). Once you use this feature, you can't do so again until you finish a Long Rest."
     },
     "6": {
-      "Subclass Feature": "You gain a feature from your Sorcerer subclass."
+      "Subclass Feature": {
+        "description": "You gain a feature from your Sorcerer subclass.",
+        "feature_kind": "subclass_feature_slot"
+      }
     },
     "7": {
       "Sorcery Incarnate": "If you have no uses of Innate Sorcery left, you can use it if you spend 2 Sorcery Points when you take the Bonus Action to activate it.\n\nIn addition, while your Innate Sorcery feature is active, you can use up to two of your Metamagic options on each spell you cast."
@@ -430,7 +438,8 @@
             "file": "general_feats.json",
             "list": "general_feats"
           }
-        }
+        },
+        "feature_kind": "asi"
       }
     },
     "10": {
@@ -446,11 +455,15 @@
             "file": "general_feats.json",
             "list": "general_feats"
           }
-        }
+        },
+        "feature_kind": "asi"
       }
     },
     "14": {
-      "Subclass Feature": "You gain a feature from your Sorcerer subclass."
+      "Subclass Feature": {
+        "description": "You gain a feature from your Sorcerer subclass.",
+        "feature_kind": "subclass_feature_slot"
+      }
     },
     "16": {
       "Ability Score Improvement": {
@@ -462,14 +475,18 @@
             "file": "general_feats.json",
             "list": "general_feats"
           }
-        }
+        },
+        "feature_kind": "asi"
       }
     },
     "17": {
       "Metamagic": "You gain two additional Metamagic options of your choice."
     },
     "18": {
-      "Subclass Feature": "You gain a feature from your Sorcerer subclass."
+      "Subclass Feature": {
+        "description": "You gain a feature from your Sorcerer subclass.",
+        "feature_kind": "subclass_feature_slot"
+      }
     },
     "19": {
       "Epic Boon": "You gain an Epic Boon feat or another feat of your choice for which you qualify. Boon of Dimensional Travel is recommended."

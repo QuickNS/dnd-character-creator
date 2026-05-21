@@ -28,6 +28,12 @@ interface CharacterState {
   setCurrentStep: (stepId: string | null) => void;
   setActiveClassRowIndex: (index: number) => void;
   setChoice: (key: string, value: unknown) => void;
+  /**
+   * Write a value into a nested object stored under `parentKey`.
+   * Used for canonical nested-shape choices like `species_trait_choices`
+   * and (in the same spirit as) `spell_selections`.
+   */
+  setNestedChoice: (parentKey: string, childKey: string, value: unknown) => void;
   clearChoice: (key: string) => void;
   reset: () => void;
 }
@@ -111,6 +117,23 @@ export const useCharacterStore = create<CharacterState>()(
           // shouldn't, but guard against accidental self-reference).
           nextChoices[key] = value;
           return { choicesMade: nextChoices };
+        }),
+
+      setNestedChoice: (parentKey, childKey, value) =>
+        set((state) => {
+          const prevParent = state.choicesMade[parentKey];
+          const parentObj: Record<string, unknown> =
+            prevParent && typeof prevParent === "object" && !Array.isArray(prevParent)
+              ? { ...(prevParent as Record<string, unknown>) }
+              : {};
+          if (value === undefined || value === null || value === "") {
+            delete parentObj[childKey];
+          } else {
+            parentObj[childKey] = value;
+          }
+          return {
+            choicesMade: { ...state.choicesMade, [parentKey]: parentObj },
+          };
         }),
 
       clearChoice: (key) =>

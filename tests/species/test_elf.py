@@ -256,8 +256,9 @@ class TestElfLineages:
         assert "grant_cantrip" in effect_types  # Prestidigitation
         assert "grant_spell" in effect_types  # Detect Magic, Misty Step
 
-        # Should have 4 effects: Fey Ancestry + cantrip + 2 spells
-        assert len(applied_effects) == 4
+        # Phase 9: Darkvision now contributes a grant_darkvision effect
+        # (Fey Ancestry + Darkvision + cantrip + 2 spells = 5).
+        assert len(applied_effects) == 5
 
     def test_wood_elf_lineage(self):
         """Test Wood Elf lineage implementation"""
@@ -281,9 +282,13 @@ class TestElfLineages:
         assert "grant_save_advantage" in effect_types  # Fey Ancestry
         assert "grant_cantrip" in effect_types  # Druidcraft
         assert "grant_spell" in effect_types  # Longstrider, Pass without Trace
+        assert "increase_speed" in effect_types  # Wood Elf Increased Speed
 
-        # Should have 4 effects: Fey Ancestry + cantrip + 2 spells
-        assert len(applied_effects) == 4
+        # Phase 9: Wood Elf's Increased Speed contributes an ``increase_speed``
+        # effect; the base elf darkvision contributes a ``grant_darkvision``
+        # effect. Total: Fey Ancestry + base Darkvision + Increased Speed +
+        # cantrip + 2 spells = 6.
+        assert len(applied_effects) == 6
 
     def test_drow_lineage(self):
         """Test Drow lineage implementation"""
@@ -308,8 +313,16 @@ class TestElfLineages:
         assert "grant_cantrip" in effect_types  # Dancing Lights
         assert "grant_spell" in effect_types  # Faerie Fire, Darkness
 
-        # Should have 4 effects: Fey Ancestry + cantrip + 2 spells
-        assert len(applied_effects) == 4
+        # Phase 9: Drow's Extended Darkvision contributes its own
+        # ``grant_darkvision`` (range 120) on top of the base elf
+        # ``grant_darkvision`` (range 60). Total: Fey Ancestry + base
+        # Darkvision + Extended Darkvision + cantrip + 2 spells = 6.
+        assert len(applied_effects) == 6
+        darkvision_effects = [
+            e for e in applied_effects
+            if e["effect"].get("type") == "grant_darkvision"
+        ]
+        assert len(darkvision_effects) == 2
 
     def test_lineage_spells_by_level(self):
         """Test lineage spells are available at correct levels"""
@@ -557,7 +570,11 @@ class TestElfIntegration:
         # Check effect sources are correct
         for effect_data in applied_effects:
             assert effect_data["source_type"] in ["species", "lineage"]
-            assert effect_data["source"] in ["Fey Ancestry", "High Elf Spells"]
+            assert effect_data["source"] in [
+                "Darkvision",
+                "Fey Ancestry",
+                "High Elf Spells",
+            ]
 
     def test_invalid_lineage_handling(self):
         """Test error handling for invalid lineages"""
@@ -610,8 +627,17 @@ class TestElfDataValidation:
         assert elf_data["size"] == "Medium"
         assert "speed" in elf_data
         assert elf_data["speed"] == 30
-        assert "darkvision" in elf_data
-        assert elf_data["darkvision"] == 60
+        # Phase 9: elf no longer carries a top-level ``darkvision`` field;
+        # the canonical source is the grant_darkvision effect on the
+        # ``Darkvision`` trait.
+        darkvision_trait = elf_data["traits"]["Darkvision"]
+        assert isinstance(darkvision_trait, dict)
+        dv_effects = [
+            e for e in darkvision_trait.get("effects", [])
+            if e.get("type") == "grant_darkvision"
+        ]
+        assert len(dv_effects) == 1
+        assert dv_effects[0].get("range") == 60
         assert "traits" in elf_data
         assert "languages" in elf_data
         assert "lineages" in elf_data

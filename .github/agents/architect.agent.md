@@ -61,6 +61,7 @@ When invoked with a casual bug report or feature request (not yet a GitHub Issue
 | `tests/**`                                            | `test`                          |
 | `docs/**`                                             | `docs`                          |
 | Read-only codebase Q&A                                | `Explore`                       |
+| New choice type or new effect type                    | mandatory `data-completeness` consultation before implementation proceeds |
 
 ## Constraints
 

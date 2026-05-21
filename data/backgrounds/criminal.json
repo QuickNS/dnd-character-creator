@@ -3,13 +3,35 @@
   "description": "You are an experienced criminal with a history of breaking the law. You have spent a lot of time among other criminals and still have contacts within the criminal underworld.",
   "ability_score_increase": {
     "total": 3,
-    "options": ["Dexterity", "Intelligence", "Charisma"],
-    "suggested": {"Dexterity": 2, "Intelligence": 1}
+    "options": [
+      "Dexterity",
+      "Intelligence",
+      "Charisma"
+    ],
+    "suggested": {
+      "Dexterity": 2,
+      "Intelligence": 1
+    }
   },
-  "feat": "Alert",
-  "skill_proficiencies": ["Deception", "Stealth"],
-  "tool_proficiencies": ["Thieves' Tools"],
-  "languages": 2,
+  "effects": [
+    {
+      "type": "grant_skill_proficiency",
+      "skills": [
+        "Deception",
+        "Stealth"
+      ]
+    },
+    {
+      "type": "grant_origin_feat",
+      "feat": "Alert"
+    },
+    {
+      "type": "grant_tool_proficiency",
+      "tools": [
+        "Thieves' Tools"
+      ]
+    }
+  ],
   "starting_equipment": {
     "option_a": {
       "items": [
