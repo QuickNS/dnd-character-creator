@@ -79,3 +79,13 @@ Summarise:
 - `.github/instructions/character-builder-api.instructions.md` — authoritative output paths
 - `docs/APIContract.md` — `Character` response shape
 - `.github/skills/implement-feature/SKILL.md` — when validation surfaces a missing/incorrect feature
+
+## Round-trip equality check
+
+After validating the character, run:
+
+```bash
+pytest tests/integration/test_rebuild_equality.py -v
+```
+
+A passing run confirms that re-building from the same `choices_made` produces byte-equal output. If the test fails, the character's `choices_made` dict contains keys or values that produce non-deterministic output — investigate `apply_choices()` pass ordering.

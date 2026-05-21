@@ -12,7 +12,18 @@ import {
   Sword,
   Trash2,
 } from "lucide-react";
-import { api, type ChoicesMade, type ClassAllocation, type ClassDetail, type ClassSummary, type FeatDefinition, type GeneralFeatsReference, type Multiclassing, type OriginFeatsReference, type SpellDefinition } from "@/lib/api";
+import {
+  api,
+  type ChoicesMade,
+  type ClassAllocation,
+  type ClassDetail,
+  type ClassSummary,
+  type FeatDefinition,
+  type GeneralFeatsReference,
+  type Multiclassing,
+  type OriginFeatsReference,
+  type SpellDefinition,
+} from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { useCharacterStore } from "@/store/characterStore";
 import { ChoiceList } from "@/components/wizard/ChoiceList";
@@ -43,8 +54,13 @@ interface ClassFeatPrerequisiteWarning {
   messages: string[];
 }
 
-function isSpellLikeChoice(choice: PreviewChoice, options: Array<unknown>): options is string[] {
-  if (!options.every((option) => typeof option === "string" && option.length > 0)) {
+function isSpellLikeChoice(
+  choice: PreviewChoice,
+  options: Array<unknown>,
+): options is string[] {
+  if (
+    !options.every((option) => typeof option === "string" && option.length > 0)
+  ) {
     return false;
   }
   if (choice.choice_category === "spells") {
@@ -57,7 +73,9 @@ function isSpellLikeChoice(choice: PreviewChoice, options: Array<unknown>): opti
     choice.feature_name,
     choice.name,
   ]
-    .filter((value): value is string => typeof value === "string" && value.length > 0)
+    .filter(
+      (value): value is string => typeof value === "string" && value.length > 0,
+    )
     .join(" ")
     .toLowerCase();
 
@@ -80,11 +98,10 @@ interface SubclassDetail {
 interface SubclassFeatureEntry {
   name: string;
   description?: string;
+  options?: string[];
 }
 
-type ClassInfoTarget =
-  | { kind: "class" }
-  | { kind: "subclass"; id: string };
+type ClassInfoTarget = { kind: "class" } | { kind: "subclass"; id: string };
 
 function clampLevel(value: unknown): number {
   if (typeof value !== "number" || !Number.isFinite(value)) return 1;
@@ -126,10 +143,12 @@ function parentKeyVariants(key: string): string[] {
   return Array.from(new Set([key, snake, titleSpaces]));
 }
 
-const CLASS_FEAT_ASI_OPTION_KEY_RE = /^(class_feat_\d+)_(asi_option|ability_plus_2|abilities_plus_1)$/;
+const CLASS_FEAT_ASI_OPTION_KEY_RE =
+  /^(class_feat_\d+)_(asi_option|ability_plus_2|abilities_plus_1)$/;
 
 function featureLevelEntries(
   featuresByLevel: SubclassDetail["features_by_level"],
+  classData?: Record<string, unknown>,
 ): Array<{ level: string; features: SubclassFeatureEntry[] }> {
   if (!featuresByLevel) return [];
 
@@ -152,7 +171,10 @@ function featureLevelEntries(
       : [];
 
     const grantedSpells = effects
-      .filter((effect) => effect?.type === "grant_spell" && typeof effect.spell === "string")
+      .filter(
+        (effect) =>
+          effect?.type === "grant_spell" && typeof effect.spell === "string",
+      )
       .map((effect) => {
         const spell = String(effect.spell);
         const minLevel =
@@ -162,12 +184,28 @@ function featureLevelEntries(
         return `${spell}${minLevel}`;
       });
 
-    const extra = grantedSpells.length > 0
-      ? `Always prepared spells: ${grantedSpells.join(", ")}.`
-      : "";
+    const extra =
+      grantedSpells.length > 0
+        ? `Always prepared spells: ${grantedSpells.join(", ")}.`
+        : "";
 
     const combined = [baseDescription, extra].filter(Boolean).join(" ").trim();
     return combined.length > 0 ? combined : undefined;
+  }
+
+  function extractOptions(raw: unknown): string[] | undefined {
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) return undefined;
+    const node = raw as Record<string, unknown>;
+    const choices = node.choices as Record<string, unknown> | undefined;
+    if (!choices) return undefined;
+    const source = choices.source as Record<string, unknown> | undefined;
+    if (!source || source.type !== "internal") return undefined;
+    const listName = source.list as string | undefined;
+    if (!listName || !classData) return undefined;
+    const list = classData[listName];
+    if (!list || typeof list !== "object" || Array.isArray(list))
+      return undefined;
+    return Object.keys(list as Record<string, unknown>);
   }
 
   return Object.entries(featuresByLevel)
@@ -181,6 +219,7 @@ function featureLevelEntries(
             .map(([name, description]) => ({
               name,
               description: featureText(description),
+              options: extractOptions(description),
             }));
 
       return { level, features };
@@ -196,7 +235,11 @@ function matchesPreviewContext(
 ): boolean {
   if (!previewData) return false;
   const previewChoices = previewData["choices_made"];
-  if (!previewChoices || typeof previewChoices !== "object" || Array.isArray(previewChoices)) {
+  if (
+    !previewChoices ||
+    typeof previewChoices !== "object" ||
+    Array.isArray(previewChoices)
+  ) {
     return false;
   }
 
@@ -207,12 +250,8 @@ function matchesPreviewContext(
   // Only validate class + level. Subclass changes within the same class
   // use keepPreviousData so the UI stays mounted during the refetch;
   // the subclass-specific choices update smoothly when the new response arrives.
-  return (
-    previewClass === selectedClass &&
-    previewLevel === clampLevel(level)
-  );
+  return previewClass === selectedClass && previewLevel === clampLevel(level);
 }
-
 
 /**
  * Parse a class's `primary_ability` string into a list of required abilities
@@ -223,9 +262,10 @@ function matchesPreviewContext(
  *   "Strength or Dexterity"  -> { kind: 'or',  abilities: ['Strength','Dexterity'] }
  * "&" / "and" are treated as AND; "or" / "/" as OR.
  */
-function parsePrimaryAbilities(
-  primary: string | undefined | null,
-): { kind: "and" | "or"; abilities: string[] } {
+function parsePrimaryAbilities(primary: string | undefined | null): {
+  kind: "and" | "or";
+  abilities: string[];
+} {
   if (!primary || typeof primary !== "string") {
     return { kind: "and", abilities: [] };
   }
@@ -236,13 +276,19 @@ function parsePrimaryAbilities(
   if (orRe.test(trimmed)) {
     return {
       kind: "or",
-      abilities: trimmed.split(orRe).map((s) => s.trim()).filter(Boolean),
+      abilities: trimmed
+        .split(orRe)
+        .map((s) => s.trim())
+        .filter(Boolean),
     };
   }
   if (andRe.test(trimmed)) {
     return {
       kind: "and",
-      abilities: trimmed.split(andRe).map((s) => s.trim()).filter(Boolean),
+      abilities: trimmed
+        .split(andRe)
+        .map((s) => s.trim())
+        .filter(Boolean),
     };
   }
   return { kind: "and", abilities: [trimmed] };
@@ -290,7 +336,8 @@ function checkMulticlassPrereqs(
   abilityScores: Record<string, number> | undefined,
   allClasses: ClassSummary[],
 ): { ok: boolean; missing: string[]; abilitiesUnknown: boolean } {
-  if (!candidateClass) return { ok: true, missing: [], abilitiesUnknown: false };
+  if (!candidateClass)
+    return { ok: true, missing: [], abilitiesUnknown: false };
   if (!abilityScores || Object.keys(abilityScores).length === 0) {
     return { ok: true, missing: [], abilitiesUnknown: true };
   }
@@ -309,7 +356,8 @@ function checkMulticlassPrereqs(
     const parsed = parsePrimaryAbilities(cls.primary_ability);
     if (parsed.abilities.length === 0) continue;
     const checks = parsed.abilities.map((ab) => (abilityScores[ab] ?? 0) >= 13);
-    const ok = parsed.kind === "or" ? checks.some(Boolean) : checks.every(Boolean);
+    const ok =
+      parsed.kind === "or" ? checks.some(Boolean) : checks.every(Boolean);
     if (!ok) {
       const failed = parsed.abilities.filter(
         (ab) => (abilityScores[ab] ?? 0) < 13,
@@ -363,10 +411,15 @@ function evaluateFeatPrerequisite(
   }
 
   const messages: string[] = [];
-  const parts = prerequisite.split(",").map((part) => part.trim()).filter(Boolean);
+  const parts = prerequisite
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean);
   const abilityScoresRaw = choicesMade.ability_scores;
   const abilityScores =
-    abilityScoresRaw && typeof abilityScoresRaw === "object" && !Array.isArray(abilityScoresRaw)
+    abilityScoresRaw &&
+    typeof abilityScoresRaw === "object" &&
+    !Array.isArray(abilityScoresRaw)
       ? (abilityScoresRaw as Record<string, number>)
       : undefined;
   const level =
@@ -379,7 +432,9 @@ function evaluateFeatPrerequisite(
     if (levelMatch && level !== undefined) {
       const requiredLevel = Number(levelMatch[1]);
       if (Number.isFinite(requiredLevel) && level < requiredLevel) {
-        messages.push(`Requires level ${requiredLevel}. Current level: ${level}.`);
+        messages.push(
+          `Requires level ${requiredLevel}. Current level: ${level}.`,
+        );
       }
       continue;
     }
@@ -395,10 +450,16 @@ function evaluateFeatPrerequisite(
 
     const requiresAny = /\bor\b/i.test(part);
     if (requiresAny) {
-      const met = presentAbilities.some((ability) => (abilityScores[ability] ?? 0) >= requiredScore);
+      const met = presentAbilities.some(
+        (ability) => (abilityScores[ability] ?? 0) >= requiredScore,
+      );
       if (!met) {
-        const current = presentAbilities.map((ability) => `${ability} ${abilityScores[ability] ?? 0}`).join(", ");
-        messages.push(`Requires ${presentAbilities.join(" or ")} ${requiredScore}+. Current: ${current}.`);
+        const current = presentAbilities
+          .map((ability) => `${ability} ${abilityScores[ability] ?? 0}`)
+          .join(", ");
+        messages.push(
+          `Requires ${presentAbilities.join(" or ")} ${requiredScore}+. Current: ${current}.`,
+        );
       }
       continue;
     }
@@ -406,7 +467,9 @@ function evaluateFeatPrerequisite(
     for (const ability of presentAbilities) {
       const current = abilityScores[ability] ?? 0;
       if (current < requiredScore) {
-        messages.push(`Requires ${ability} ${requiredScore}+. Current ${ability}: ${current}.`);
+        messages.push(
+          `Requires ${ability} ${requiredScore}+. Current ${ability}: ${current}.`,
+        );
       }
     }
   }
@@ -414,43 +477,29 @@ function evaluateFeatPrerequisite(
   return { met: messages.length === 0, messages };
 }
 
-
 export function ClassStep() {
   const choicesMade = useCharacterStore((s) => s.choicesMade);
   const setChoice = useCharacterStore((s) => s.setChoice);
-  const clearChoice = useCharacterStore((s) => s.clearChoice);
   const activeClassRowIndex = useCharacterStore((s) => s.activeClassRowIndex);
-  const setActiveClassRowIndex = useCharacterStore((s) => s.setActiveClassRowIndex);
+  const setActiveClassRowIndex = useCharacterStore(
+    (s) => s.setActiveClassRowIndex,
+  );
 
   const storedRows = useMemo(
     () => normalizeAllocations(choicesMade.classes),
     [choicesMade.classes],
   );
-  const fallbackClassRow = useMemo<ClassAllocation | null>(() => {
-    const className =
-      typeof choicesMade.class === "string" && choicesMade.class.length > 0
-        ? choicesMade.class
-        : "";
-    if (!className) return null;
-    const subclass =
-      typeof choicesMade.subclass === "string" && choicesMade.subclass.length > 0
-        ? choicesMade.subclass
-        : undefined;
-    return {
-      class_name: className,
-      level: clampLevel(choicesMade.level),
-      ...(subclass ? { subclass } : {}),
-    };
-  }, [choicesMade.class, choicesMade.level, choicesMade.subclass]);
-
   const classAllocations = useMemo(() => {
-    if (storedRows.length > 0) return storedRows;
-    return fallbackClassRow ? [fallbackClassRow] : [];
-  }, [storedRows, fallbackClassRow]);
+    return storedRows;
+  }, [storedRows]);
 
   const { setSidebarPanel } = useWizardSidebarPanel();
-  const [infoTarget, setInfoTarget] = useState<ClassInfoTarget>({ kind: "class" });
-  const [inspectedSpell, setInspectedSpell] = useState<SpellReference | null>(null);
+  const [infoTarget, setInfoTarget] = useState<ClassInfoTarget>({
+    kind: "class",
+  });
+  const [inspectedSpell, setInspectedSpell] = useState<SpellReference | null>(
+    null,
+  );
 
   function writeAllocations(nextRows: ClassAllocation[]) {
     const normalized =
@@ -459,22 +508,6 @@ export function ClassStep() {
         : [{ class_name: "", level: 1 }];
 
     setChoice("classes", normalized);
-
-    if (normalized.length === 1 && normalized[0].class_name) {
-      const primary = normalized[0];
-      setChoice("class", primary.class_name);
-      setChoice("level", primary.level);
-      if (primary.subclass) {
-        setChoice("subclass", primary.subclass);
-      } else {
-        clearChoice("subclass");
-      }
-      return;
-    }
-
-    clearChoice("class");
-    clearChoice("subclass");
-    clearChoice("level");
   }
 
   useEffect(() => {
@@ -496,19 +529,15 @@ export function ClassStep() {
     if (clampedIndex !== activeClassRowIndex) {
       setActiveClassRowIndex(clampedIndex);
     }
-  }, [
-    activeClassRowIndex,
-    classAllocations.length,
-    setActiveClassRowIndex,
-  ]);
+  }, [activeClassRowIndex, classAllocations.length, setActiveClassRowIndex]);
 
   const activeRowIndex =
     classAllocations.length > 0
       ? Math.min(activeClassRowIndex, classAllocations.length - 1)
       : 0;
 
-  const activeRow =
-    classAllocations[activeRowIndex] ?? classAllocations[0] ?? { class_name: "", level: 1 };
+  const activeRow = classAllocations[activeRowIndex] ??
+    classAllocations[0] ?? { class_name: "", level: 1 };
   const selectedClass = activeRow.class_name ?? "";
   const selectedSubclass = activeRow.subclass ?? "";
   const multiclassPending = classAllocations.length > 1;
@@ -547,7 +576,8 @@ export function ClassStep() {
   });
   const generalFeatsQuery = useQuery({
     queryKey: ["catalog", "reference", "general_feats"],
-    queryFn: () => api.catalog.getReference<GeneralFeatsReference>("general_feats"),
+    queryFn: () =>
+      api.catalog.getReference<GeneralFeatsReference>("general_feats"),
   });
 
   // Stable key fragment for skill_choices: sorted join so that order changes
@@ -555,34 +585,40 @@ export function ClassStep() {
   // skill_choices must be included so expertise pickers (whose options are
   // filtered to the character's current proficiencies) refresh when the user
   // changes their skill selection.
-  const skillChoicesKey = (choicesMade.skill_choices as string[] | undefined)
-    ?.slice()
-    .sort()
-    .join(",") ?? "";
+  const skillChoicesKey =
+    (choicesMade.skill_choices as string[] | undefined)
+      ?.slice()
+      .sort()
+      .join(",") ?? "";
   const classFeatChoicesKey = Object.entries(choicesMade)
     .filter(([k]) => k.startsWith("class_feat_"))
     .sort(([a], [b]) => a.localeCompare(b))
-    .map(([k, v]) =>
-      `${k}:${Array.isArray(v) ? v.slice().sort().join("|") : String(v)}`,
+    .map(
+      ([k, v]) =>
+        `${k}:${Array.isArray(v) ? v.slice().sort().join("|") : String(v)}`,
     )
     .join(";");
   const nestedClassChoicesKey = Object.entries(choicesMade)
-    .filter(([key]) => ![
-      "class",
-      "subclass",
-      "level",
-      "classes",
-      "skill_choices",
-    ].includes(key))
+    .filter(
+      ([key]) =>
+        !["class", "subclass", "level", "classes", "skill_choices"].includes(
+          key,
+        ),
+    )
     .filter(([key]) => !key.startsWith("class_feat_"))
-    .filter(([, value]) =>
-      typeof value === "string" ||
-      typeof value === "number" ||
-      (Array.isArray(value) && value.every((item) => typeof item === "string" || typeof item === "number")),
+    .filter(
+      ([, value]) =>
+        typeof value === "string" ||
+        typeof value === "number" ||
+        (Array.isArray(value) &&
+          value.every(
+            (item) => typeof item === "string" || typeof item === "number",
+          )),
     )
     .sort(([a], [b]) => a.localeCompare(b))
-    .map(([key, value]) =>
-      `${key}:${Array.isArray(value) ? value.slice().sort().join("|") : String(value)}`,
+    .map(
+      ([key, value]) =>
+        `${key}:${Array.isArray(value) ? value.slice().sort().join("|") : String(value)}`,
     )
     .join(";");
 
@@ -592,7 +628,17 @@ export function ClassStep() {
     // so picking a spell/mastery/invocation doesn't force a reload of the
     // class preview. skill_choices IS included because expertise-picker options
     // depend on the character's skill proficiencies.
-    queryKey: ["character", "preview-step", "class", selectedClass, clampLevel(activeRow.level), selectedSubclass, skillChoicesKey, classFeatChoicesKey, nestedClassChoicesKey],
+    queryKey: [
+      "character",
+      "preview-step",
+      "class",
+      selectedClass,
+      clampLevel(activeRow.level),
+      selectedSubclass,
+      skillChoicesKey,
+      classFeatChoicesKey,
+      nestedClassChoicesKey,
+    ],
     queryFn: () => api.character.previewStep(previewChoices, "class"),
     enabled: !!selectedClass,
     placeholderData: keepPreviousData,
@@ -602,20 +648,29 @@ export function ClassStep() {
   // When the selected class changes, react-query serves the previous response as placeholder
   // data until the new fetch resolves. Treat that placeholder as "no data yet" so the panel
   // doesn't momentarily render the prior class's features under the new class's name.
-  const classSummary = (classesQuery.data ?? []).find((cls) => cls.id === selectedClass);
+  const classSummary = (classesQuery.data ?? []).find(
+    (cls) => cls.id === selectedClass,
+  );
   const classSummaryById = useMemo(() => {
     return new Map((classesQuery.data ?? []).map((entry) => [entry.id, entry]));
   }, [classesQuery.data]);
-  const fullClassData =
-    fullClassQuery.isPlaceholderData
-      ? undefined
-      : (fullClassQuery.data as ClassDetail | undefined);
-  const detailClass = selectedClass && classSummary ? ({
-    ...classSummary,
-    features_by_level: (fullClassData?.features_by_level as Record<string, Record<string, unknown> | string[]> | undefined) ?? {}
-  } as any) : undefined;
+  const fullClassData = fullClassQuery.isPlaceholderData
+    ? undefined
+    : (fullClassQuery.data as ClassDetail | undefined);
+  const detailClass =
+    selectedClass && classSummary
+      ? ({
+          ...classSummary,
+          features_by_level:
+            (fullClassData?.features_by_level as
+              | Record<string, Record<string, unknown> | string[]>
+              | undefined) ?? {},
+        } as any)
+      : undefined;
 
-  const previewDataRaw = previewQuery.data as Record<string, unknown> | undefined;
+  const previewDataRaw = previewQuery.data as
+    | Record<string, unknown>
+    | undefined;
   const previewData = matchesPreviewContext(
     previewDataRaw,
     selectedClass,
@@ -625,11 +680,12 @@ export function ClassStep() {
     : undefined;
   const needsSubclass = previewData?.["needs_subclass"] === true;
   const availableSubclasses =
-    (previewData?.["available_subclasses"] as SubclassSummary[] | undefined) ?? [];
+    (previewData?.["available_subclasses"] as SubclassSummary[] | undefined) ??
+    [];
   const activeSubclassId =
     infoTarget.kind === "subclass"
       ? infoTarget.id
-      : (selectedSubclass || availableSubclasses[0]?.id || "");
+      : selectedSubclass || availableSubclasses[0]?.id || "";
   const subclassDetailQuery = useQuery({
     queryKey: ["catalog", "subclass", selectedClass, activeSubclassId],
     queryFn: () => api.catalog.getSubclass(selectedClass, activeSubclassId),
@@ -651,7 +707,8 @@ export function ClassStep() {
   );
   const originFeatsQuery = useQuery({
     queryKey: ["catalog", "reference", "origin_feats"],
-    queryFn: () => api.catalog.getReference<OriginFeatsReference>("origin_feats"),
+    queryFn: () =>
+      api.catalog.getReference<OriginFeatsReference>("origin_feats"),
   });
   const originFeatDefinitions = useMemo<Record<string, FeatDefinition>>(
     () => originFeatsQuery.data?.origin_feats ?? {},
@@ -665,39 +722,41 @@ export function ClassStep() {
 
   useEffect(() => {
     setSidebarPanel(
-      inspectedSpell
-        ? (
-            <SpellInfoPanel
-              spell={inspectedSpell}
-              onBack={() => setInspectedSpell(null)}
-            />
-          )
-        : shouldRenderInfoPanel
-        ? (
-            <ClassInfoPanel
-              infoTarget={infoTarget}
-              detailClass={detailClass}
-              fullClassData={fullClassData}
-              isPrimaryRow={activeRowIndex === 0}
-              selectedClass={selectedClass}
-              classLoading={
-                (fullClassQuery.isLoading || fullClassQuery.isPlaceholderData) && !fullClassData
-              }
-              showClassFeatureFallback={
-                !!selectedClass && !!fullClassData && !detailClass?.features_by_level
-              }
-              needsSubclass={needsSubclass}
-              selectedSubclass={selectedSubclass}
-              activeSubclassName={availableSubclasses.find((sub) => sub.id === activeSubclassId)?.name}
-              activeSubclassDetail={activeSubclassDetail}
-              activeFeatureLevels={activeFeatureLevels}
-              subclassLoading={
-                (subclassDetailQuery.isLoading || subclassDetailQuery.isPlaceholderData) &&
-                !activeSubclassDetail
-              }
-            />
-          )
-        : null,
+      inspectedSpell ? (
+        <SpellInfoPanel
+          spell={inspectedSpell}
+          onBack={() => setInspectedSpell(null)}
+        />
+      ) : shouldRenderInfoPanel ? (
+        <ClassInfoPanel
+          infoTarget={infoTarget}
+          detailClass={detailClass}
+          fullClassData={fullClassData}
+          isPrimaryRow={activeRowIndex === 0}
+          selectedClass={selectedClass}
+          classLoading={
+            (fullClassQuery.isLoading || fullClassQuery.isPlaceholderData) &&
+            !fullClassData
+          }
+          showClassFeatureFallback={
+            !!selectedClass &&
+            !!fullClassData &&
+            !detailClass?.features_by_level
+          }
+          needsSubclass={needsSubclass}
+          selectedSubclass={selectedSubclass}
+          activeSubclassName={
+            availableSubclasses.find((sub) => sub.id === activeSubclassId)?.name
+          }
+          activeSubclassDetail={activeSubclassDetail}
+          activeFeatureLevels={activeFeatureLevels}
+          subclassLoading={
+            (subclassDetailQuery.isLoading ||
+              subclassDetailQuery.isPlaceholderData) &&
+            !activeSubclassDetail
+          }
+        />
+      ) : null,
     );
     return () => setSidebarPanel(null);
   }, [
@@ -737,8 +796,8 @@ export function ClassStep() {
                 Choose your class first
               </h3>
               <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
-                Your class defines the core fantasy, early play pattern, and which
-                follow-up choices appear below.
+                Your class defines the core fantasy, early play pattern, and
+                which follow-up choices appear below.
               </p>
             </div>
           </div>
@@ -747,7 +806,7 @@ export function ClassStep() {
         <div
           className={cn(
             "grid grid-cols-1 gap-6 lg:items-start",
-            "px-5 py-5 sm:px-6"
+            "px-5 py-5 sm:px-6",
           )}
         >
           <div className="space-y-3">
@@ -755,20 +814,22 @@ export function ClassStep() {
               const isPrimary = idx === 0;
               const isActiveRow = idx === activeRowIndex;
               const rowClassSummary = classSummaryById.get(row.class_name);
-              const rowSubclassThreshold = rowClassSummary?.subclass_selection_level;
+              const rowSubclassThreshold =
+                rowClassSummary?.subclass_selection_level;
               const rowNeedsSubclass =
                 isActiveRow && row.class_name
                   ? needsSubclass
                   : Boolean(
                       row.class_name &&
-                        typeof rowSubclassThreshold === "number" &&
-                        clampLevel(row.level) >= rowSubclassThreshold,
+                      typeof rowSubclassThreshold === "number" &&
+                      clampLevel(row.level) >= rowSubclassThreshold,
                     );
               const rowSubclassLabel = row.subclass
                 ? `Subclass: ${row.subclass}`
                 : rowNeedsSubclass
                   ? "Subclass required"
-                  : typeof rowSubclassThreshold === "number" && clampLevel(row.level) < rowSubclassThreshold
+                  : typeof rowSubclassThreshold === "number" &&
+                      clampLevel(row.level) < rowSubclassThreshold
                     ? `Subclass at level ${rowSubclassThreshold}`
                     : "Subclass optional";
               return (
@@ -777,7 +838,8 @@ export function ClassStep() {
                   className={cn(
                     "rounded-xl border border-border/70 bg-background/75 p-4",
                     isPrimary && "ring-1 ring-primary/20",
-                    isActiveRow && "border-primary/40 bg-background ring-2 ring-primary/20",
+                    isActiveRow &&
+                      "border-primary/40 bg-background ring-2 ring-primary/20",
                   )}
                 >
                   <div className="mb-3 flex flex-wrap items-center gap-2">
@@ -913,11 +975,13 @@ export function ClassStep() {
                         }}
                         className="mt-2 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                       >
-                        {Array.from({ length: 20 }, (_, i) => i + 1).map((lvl) => (
-                          <option key={lvl} value={lvl}>
-                            {lvl}
-                          </option>
-                        ))}
+                        {Array.from({ length: 20 }, (_, i) => i + 1).map(
+                          (lvl) => (
+                            <option key={lvl} value={lvl}>
+                              {lvl}
+                            </option>
+                          ),
+                        )}
                       </select>
                     </div>
 
@@ -942,7 +1006,9 @@ export function ClassStep() {
                       <button
                         type="button"
                         onClick={() => {
-                          const next = classAllocations.filter((_, i) => i !== idx);
+                          const next = classAllocations.filter(
+                            (_, i) => i !== idx,
+                          );
                           writeAllocations(next);
                           const current = activeClassRowIndex;
                           if (current > idx) {
@@ -997,23 +1063,24 @@ export function ClassStep() {
               </button>
               {abilitiesUnknown ? (
                 <p className="text-xs text-muted-foreground">
-                  Set your ability scores first — multiclassing requires a score of 13 in the primary ability of each class involved.
+                  Set your ability scores first — multiclassing requires a score
+                  of 13 in the primary ability of each class involved.
                 </p>
               ) : (
                 <p className="text-xs text-muted-foreground">
-                  Select an active row to drive class details, subclass selection, and class loadout picks.
+                  Select an active row to drive class details, subclass
+                  selection, and class loadout picks.
                 </p>
               )}
             </div>
 
             {multiclassPending && (
               <div className="rounded-lg border border-amber-400/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-800 dark:text-amber-300">
-                Multiclass rows are saved independently. The detail panel and class refinement
-                sections below always reflect the active row.
+                Multiclass rows are saved independently. The detail panel and
+                class refinement sections below always reflect the active row.
               </div>
             )}
           </div>
-
         </div>
       </section>
 
@@ -1026,7 +1093,12 @@ export function ClassStep() {
           previewData={previewData}
           choicesMade={choicesMade}
           combinedScores={combinedScores}
-          totalLevel={clampLevel(choicesMade.level)}
+          totalLevel={
+            classAllocations.reduce(
+              (sum, row) => sum + clampLevel(row.level),
+              0,
+            ) || 1
+          }
           featDefinitions={generalFeatDefinitions}
           originFeatDefinitions={originFeatDefinitions}
           selectedClassSummary={detailClass}
@@ -1052,7 +1124,9 @@ export function ClassStep() {
           onSubclass={(v) => {
             if (classAllocations.length === 0) return;
             const next = classAllocations.map((row, idx) =>
-              idx === activeRowIndex ? { ...row, ...(v ? { subclass: v } : {}) } : row,
+              idx === activeRowIndex
+                ? { ...row, ...(v ? { subclass: v } : {}) }
+                : row,
             );
             if (!v) {
               const activeRow = next[activeRowIndex];
@@ -1139,7 +1213,9 @@ function SpellInfoPanel({
         )}
 
         {spell.description && (
-          <p className="mt-4 text-sm text-muted-foreground">{spell.description}</p>
+          <p className="mt-4 text-sm text-muted-foreground">
+            {spell.description}
+          </p>
         )}
 
         <dl className="mt-4 space-y-3">
@@ -1216,9 +1292,18 @@ function ClassTraitsSection({
       );
     }
     rows.push({ label: "Hit Die", value: `d${mc.hit_die_granted}` });
-    rows.push({ label: "Armor training", value: formatProfList(mc.armor_training) });
-    rows.push({ label: "Weapon training", value: formatProfList(mc.weapon_training) });
-    rows.push({ label: "Tool training", value: formatProfList(mc.tool_training) });
+    rows.push({
+      label: "Armor training",
+      value: formatProfList(mc.armor_training),
+    });
+    rows.push({
+      label: "Weapon training",
+      value: formatProfList(mc.weapon_training),
+    });
+    rows.push({
+      label: "Tool training",
+      value: formatProfList(mc.tool_training),
+    });
     rows.push({
       label: "Skill proficiencies",
       value: formatMulticlassSkillProfs(mc.skill_proficiencies),
@@ -1267,9 +1352,15 @@ function ClassTraitsSection({
   );
 }
 
-function ClassFeatureProgression({ featuresByLevel }: { featuresByLevel: Record<string, Record<string, unknown> | string[]> }) {
+function ClassFeatureProgression({
+  featuresByLevel,
+  classData,
+}: {
+  featuresByLevel: Record<string, Record<string, unknown> | string[]>;
+  classData?: Record<string, unknown>;
+}) {
   // Reuse featureLevelEntries logic for robust feature extraction
-  const levels = featureLevelEntries(featuresByLevel);
+  const levels = featureLevelEntries(featuresByLevel, classData);
   if (levels.length === 0) return null;
   return (
     <div className="mt-6">
@@ -1284,7 +1375,8 @@ function ClassFeatureProgression({ featuresByLevel }: { featuresByLevel: Record<
               <Shield className="h-3.5 w-3.5 text-primary" />
               Level {entry.level}
               <span className="text-[11px] normal-case tracking-normal text-muted-foreground">
-                ({entry.features.length} feature{entry.features.length === 1 ? "" : "s"})
+                ({entry.features.length} feature
+                {entry.features.length === 1 ? "" : "s"})
               </span>
             </div>
             <ul className="mt-2 space-y-3 text-sm text-foreground/90">
@@ -1296,6 +1388,11 @@ function ClassFeatureProgression({ featuresByLevel }: { featuresByLevel: Record<
                       <p className="mt-1 text-sm text-foreground/85">
                         {feature.description}
                       </p>
+                      {feature.options && feature.options.length > 0 && (
+                        <p className="mt-1 text-[11px] text-muted-foreground">
+                          Options: {feature.options.join(", ")}
+                        </p>
+                      )}
                     </div>
                   )}
                 </li>
@@ -1378,7 +1475,8 @@ function RowPendingIndicator({
   }
 
   if (data) {
-    const nested = (data["nested_choices"] as PreviewChoice[] | undefined) ?? [];
+    const nested =
+      (data["nested_choices"] as PreviewChoice[] | undefined) ?? [];
     for (const choice of nested) {
       // Skip conditional choices whose parent condition is not met
       if (choice.depends_on) {
@@ -1396,8 +1494,7 @@ function RowPendingIndicator({
         if (!met) continue;
       }
 
-      const key =
-        choice.choice_key ?? choice.feature_name ?? choice.name ?? "";
+      const key = choice.choice_key ?? choice.feature_name ?? choice.name ?? "";
       if (!key) continue;
       const value = choicesMade[key];
       const satisfied = Array.isArray(value)
@@ -1453,16 +1550,20 @@ function ClassInfoPanel({
   selectedSubclass: string;
   activeSubclassName?: string;
   activeSubclassDetail?: SubclassDetail;
-  activeFeatureLevels: Array<{ level: string; features: SubclassFeatureEntry[] }>;
+  activeFeatureLevels: Array<{
+    level: string;
+    features: SubclassFeatureEntry[];
+  }>;
   subclassLoading: boolean;
 }) {
-  const showSubclassPanel =
-    infoTarget.kind === "subclass" && needsSubclass;
+  const showSubclassPanel = infoTarget.kind === "subclass" && needsSubclass;
 
   return (
     <aside
       className="info-panel"
-      aria-label={showSubclassPanel ? "Subclass details panel" : "Class details panel"}
+      aria-label={
+        showSubclassPanel ? "Subclass details panel" : "Class details panel"
+      }
     >
       {showSubclassPanel ? (
         <>
@@ -1475,7 +1576,8 @@ function ClassInfoPanel({
           <div className="info-panel-body">
             {!selectedSubclass && (
               <p className="mt-2 text-xs text-muted-foreground">
-                Previewing subclass details. Select a subclass card to lock your choice.
+                Previewing subclass details. Select a subclass card to lock your
+                choice.
               </p>
             )}
             {subclassLoading && (
@@ -1501,7 +1603,8 @@ function ClassInfoPanel({
                         <Shield className="h-3.5 w-3.5 text-primary" />
                         Level {entry.level}
                         <span className="text-[11px] normal-case tracking-normal text-muted-foreground">
-                          ({entry.features.length} feature{entry.features.length === 1 ? "" : "s"})
+                          ({entry.features.length} feature
+                          {entry.features.length === 1 ? "" : "s"})
                         </span>
                       </div>
                       <ul className="mt-2 space-y-3 text-sm text-foreground/90">
@@ -1528,7 +1631,8 @@ function ClassInfoPanel({
             ) : (
               !subclassLoading && (
                 <p className="mt-4 text-sm text-muted-foreground">
-                  No additional subclass detail is available from the current catalog payload.
+                  No additional subclass detail is available from the current
+                  catalog payload.
                 </p>
               )
             )}
@@ -1545,7 +1649,8 @@ function ClassInfoPanel({
           <div className="info-panel-body">
             {!detailClass && (
               <p className="mt-2 text-xs text-muted-foreground">
-                Previewing class details. Select a class card to view its full feature progression.
+                Previewing class details. Select a class card to view its full
+                feature progression.
               </p>
             )}
             {detailClass?.description && (
@@ -1592,7 +1697,15 @@ function ClassInfoPanel({
               </div>
             )}
             {detailClass?.features_by_level && (
-              <ClassFeatureProgression featuresByLevel={detailClass.features_by_level as Record<string, Record<string, unknown> | string[]>} />
+              <ClassFeatureProgression
+                featuresByLevel={
+                  detailClass.features_by_level as Record<
+                    string,
+                    Record<string, unknown> | string[]
+                  >
+                }
+                classData={fullClassData as unknown as Record<string, unknown>}
+              />
             )}
             {showClassFeatureFallback && (
               <div className="mt-6 rounded-lg border border-border/60 bg-background px-4 py-3">
@@ -1647,13 +1760,16 @@ function ClassDetail({
   const nestedChoices =
     (previewData["nested_choices"] as PreviewChoice[] | undefined) ?? [];
   const asiChoiceGroups = useMemo(() => {
-    const grouped = new Map<string, {
-      slotKey: string;
-      slotLevel: number;
-      asiOptionChoice?: PreviewChoice;
-      plusTwoChoice?: PreviewChoice;
-      plusOneChoice?: PreviewChoice;
-    }>();
+    const grouped = new Map<
+      string,
+      {
+        slotKey: string;
+        slotLevel: number;
+        asiOptionChoice?: PreviewChoice;
+        plusTwoChoice?: PreviewChoice;
+        plusOneChoice?: PreviewChoice;
+      }
+    >();
     for (const choice of nestedChoices) {
       const key = choice.choice_key ?? choice.feature_name ?? choice.name ?? "";
       const match = key.match(CLASS_FEAT_ASI_OPTION_KEY_RE);
@@ -1684,16 +1800,14 @@ function ClassDetail({
     const key = choice.choice_key ?? choice.feature_name ?? choice.name ?? "";
     return !asiChoiceKeys.has(key);
   });
-  const featPrerequisiteWarnings = useMemo<ClassFeatPrerequisiteWarning[]>(() => {
+  const featPrerequisiteWarnings = useMemo<
+    ClassFeatPrerequisiteWarning[]
+  >(() => {
     if (!combinedScores) return [];
 
     const warnings: ClassFeatPrerequisiteWarning[] = [];
     for (const choice of nestedChoices) {
-      const key =
-        choice.choice_key ??
-        choice.feature_name ??
-        choice.name ??
-        "";
+      const key = choice.choice_key ?? choice.feature_name ?? choice.name ?? "";
       if (!isClassFeatChoiceKey(key)) continue;
 
       const selectedFeat =
@@ -1732,103 +1846,109 @@ function ClassDetail({
             </div>
             <div>
               <div className="flex flex-wrap items-center gap-2">
-                <h3 className="font-display text-xl text-primary font-bold">Choose a subclass</h3>
+                <h3 className="font-display text-xl text-primary font-bold">
+                  Choose a subclass
+                </h3>
                 <span className="rounded-full border border-border/70 bg-background/70 px-2.5 py-1 text-[11px] uppercase tracking-wide text-muted-foreground">
                   Row {activeRowLabel}
                 </span>
                 {selectedClassSummary && (
                   <span className="rounded-full border border-border/70 bg-background/70 px-2.5 py-1 text-[11px] uppercase tracking-wide text-muted-foreground">
-                    Available at level {selectedClassSummary.subclass_selection_level}
+                    Available at level{" "}
+                    {selectedClassSummary.subclass_selection_level}
                   </span>
                 )}
               </div>
               <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
-                Scan the themes first, then open the detail panel for a quick look at
-                the feature progression before you lock one in.
+                Scan the themes first, then open the detail panel for a quick
+                look at the feature progression before you lock one in.
               </p>
             </div>
           </div>
 
-          <div
-            className={cn(
-              "grid grid-cols-1 gap-3 lg:items-start",
-            )}
-          >
+          <div className={cn("grid grid-cols-1 gap-3 lg:items-start")}>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 items-start">
-            {availableSubclasses.map((sub) => {
-              const isSelected = selectedSubclass === sub.id;
-              return (
-                <button
-                  key={sub.id}
-                  type="button"
-                  onClick={() => {
-                    onSubclass(sub.id);
-                    onSelectSubclassInfo(sub.id);
-                  }}
-                  aria-pressed={isSelected}
-                  className={cn(
-                    "rounded-xl border p-4 text-left transition-all duration-200",
-                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-                    isSelected
-                      ? "border-primary bg-muted/60 shadow-sm ring-1 ring-primary/20"
-                      : "border-border/80 bg-background/80 hover:border-primary/40 hover:bg-secondary/50",
-                  )}
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <div className="font-display text-lg text-primary font-semibold">
-                        {sub.name}
-                      </div>
-                      <div className="mt-2 flex flex-wrap gap-2 text-[11px] uppercase tracking-wide text-muted-foreground">
-                        <span className="rounded-full border border-border/70 bg-background/70 px-2 py-1">
-                          Subclass path
-                        </span>
-                        {(sub.level_3_feature_names ?? []).length > 0 && (
+              {availableSubclasses.map((sub) => {
+                const isSelected = selectedSubclass === sub.id;
+                return (
+                  <button
+                    key={sub.id}
+                    type="button"
+                    onClick={() => {
+                      onSubclass(sub.id);
+                      onSelectSubclassInfo(sub.id);
+                    }}
+                    aria-pressed={isSelected}
+                    className={cn(
+                      "rounded-xl border p-4 text-left transition-all duration-200",
+                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                      isSelected
+                        ? "border-primary bg-muted/60 shadow-sm ring-1 ring-primary/20"
+                        : "border-border/80 bg-background/80 hover:border-primary/40 hover:bg-secondary/50",
+                    )}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <div className="font-display text-lg text-primary font-semibold">
+                          {sub.name}
+                        </div>
+                        <div className="mt-2 flex flex-wrap gap-2 text-[11px] uppercase tracking-wide text-muted-foreground">
                           <span className="rounded-full border border-border/70 bg-background/70 px-2 py-1">
-                            {(sub.level_3_feature_names ?? []).length} early features
+                            Subclass path
                           </span>
-                        )}
+                          {(sub.level_3_feature_names ?? []).length > 0 && (
+                            <span className="rounded-full border border-border/70 bg-background/70 px-2 py-1">
+                              {(sub.level_3_feature_names ?? []).length} early
+                              features
+                            </span>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                    <span
-                      className={cn(
-                        "inline-flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border",
-                        isSelected
+                      <span
+                        className={cn(
+                          "inline-flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border",
+                          isSelected
                             ? "border-primary bg-background text-primary"
-                          : "border-border bg-background text-transparent",
-                      )}
-                    >
-                      <Check className="h-3.5 w-3.5" />
-                    </span>
-                  </div>
-                  {sub.description && (
-                    <div className="mt-3 text-sm text-muted-foreground line-clamp-4">
-                      {sub.description}
+                            : "border-border bg-background text-transparent",
+                        )}
+                      >
+                        <Check className="h-3.5 w-3.5" />
+                      </span>
                     </div>
-                  )}
-                  {(sub.level_3_feature_names ?? []).length > 0 && (
-                    <div className="mt-4 border-t border-border/70 pt-3">
-                      <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                        Signature features
+                    {sub.description && (
+                      <div className="mt-3 text-sm text-muted-foreground line-clamp-4">
+                        {sub.description}
                       </div>
-                      <ul className="mt-2 space-y-1 text-sm text-foreground/90">
-                        {sub.level_3_feature_names?.map((featureName) => (
-                          <li key={featureName}>• {featureName}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
+                    )}
+                    {(sub.level_3_feature_names ?? []).length > 0 && (
+                      <div className="mt-4 border-t border-border/70 pt-3">
+                        <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                          Signature features
+                        </div>
+                        <ul className="mt-2 space-y-1 text-sm text-foreground/90">
+                          {sub.level_3_feature_names?.map((featureName) => (
+                            <li key={featureName}>• {featureName}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
 
-                  <div className="mt-4 flex items-center justify-between text-xs font-medium text-muted-foreground">
-                    <span>{isSelected ? "Selected subclass" : "Click card to select"}</span>
-                    <span className="inline-flex items-center gap-1 text-primary/80">
-                      {isSelected ? "Details on panel" : "Select to view details"}
-                      <ChevronRight className="h-3.5 w-3.5" />
-                    </span>
-                  </div>
-                </button>
-              );
-            })}
+                    <div className="mt-4 flex items-center justify-between text-xs font-medium text-muted-foreground">
+                      <span>
+                        {isSelected
+                          ? "Selected subclass"
+                          : "Click card to select"}
+                      </span>
+                      <span className="inline-flex items-center gap-1 text-primary/80">
+                        {isSelected
+                          ? "Details on panel"
+                          : "Select to view details"}
+                        <ChevronRight className="h-3.5 w-3.5" />
+                      </span>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </div>
         </section>
@@ -1841,10 +1961,12 @@ function ClassDetail({
               <BookOpen className="h-4 w-4" />
             </div>
             <div>
-              <h3 className="font-display text-xl text-primary font-bold">Class choices</h3>
+              <h3 className="font-display text-xl text-primary font-bold">
+                Class choices
+              </h3>
               <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
-                These selections refine the class you picked above, such as spell lists,
-                fighting styles, or other feature-specific choices.
+                These selections refine the class you picked above, such as
+                spell lists, fighting styles, or other feature-specific choices.
               </p>
             </div>
           </div>
@@ -1865,7 +1987,8 @@ function ClassDetail({
                     )}
                   </ul>
                   <p className="mt-2 text-xs">
-                    You can still proceed, but verify your final scores before play.
+                    You can still proceed, but verify your final scores before
+                    play.
                   </p>
                 </div>
               </div>
@@ -1873,103 +1996,118 @@ function ClassDetail({
           )}
 
           <div className="space-y-4">
-          {displayNestedChoices.map((choice, idx) => {
-            const key =
-              choice.choice_key ??
-              choice.feature_name ??
-              choice.name ??
-              `class_choice_${idx}`;
+            {displayNestedChoices.map((choice, idx) => {
+              const key =
+                choice.choice_key ??
+                choice.feature_name ??
+                choice.name ??
+                `class_choice_${idx}`;
 
-            // Feat sub-choices are rendered inside FeatDropdownPicker — skip here
-            if (key.startsWith("feat_") && !isClassFeatChoiceKey(key)) return null;
+              // Feat sub-choices are rendered inside FeatDropdownPicker — skip here
+              if (key.startsWith("feat_") && !isClassFeatChoiceKey(key))
+                return null;
 
-            // ASI sub-choices (class_feat_N_asi_option etc.) are rendered inside
-            // ClassFeatAsiPicker which is inlined after FeatDropdownPicker — skip here
-            if (asiChoiceKeys.has(key)) return null;
+              // ASI sub-choices (class_feat_N_asi_option etc.) are rendered inside
+              // ClassFeatAsiPicker which is inlined after FeatDropdownPicker — skip here
+              if (asiChoiceKeys.has(key)) return null;
 
-            // Feat sub-choices keyed as class_feat_N_<name> (e.g. class_feat_4_ability)
-            // are rendered inside FeatDropdownPicker — skip them at the top level
-            if (!isClassFeatChoiceKey(key) && /^class_feat_\d+_/.test(key)) return null;
+              // Feat sub-choices keyed as class_feat_N_<name> (e.g. class_feat_4_ability)
+              // are rendered inside FeatDropdownPicker — skip them at the top level
+              if (!isClassFeatChoiceKey(key) && /^class_feat_\d+_/.test(key))
+                return null;
 
-            // Honor depends_on / depends_on_value
-            // Treat null the same as undefined: show whenever the parent has any truthy value
-            if (choice.depends_on) {
-              const variants = parentKeyVariants(choice.depends_on);
-              const parent = variants
-                .map((k) => choicesMade[k])
-                .find((v) => v !== undefined);
-              const matches =
-                choice.depends_on_value == null
-                  ? Boolean(parent)
-                  : Array.isArray(parent)
-                    ? parent.includes(choice.depends_on_value)
-                    : parent === choice.depends_on_value;
-              if (!matches) return null;
-            }
+              // Honor depends_on / depends_on_value
+              // Treat null the same as undefined: show whenever the parent has any truthy value
+              if (choice.depends_on) {
+                const variants = parentKeyVariants(choice.depends_on);
+                const parent = variants
+                  .map((k) => choicesMade[k])
+                  .find((v) => v !== undefined);
+                const matches =
+                  choice.depends_on_value == null
+                    ? Boolean(parent)
+                    : Array.isArray(parent)
+                      ? parent.includes(choice.depends_on_value)
+                      : parent === choice.depends_on_value;
+                if (!matches) return null;
+              }
 
-            if (isClassFeatChoiceKey(key)) {
-              const slotLevel = Number(key.replace("class_feat_", "")) || 0;
-              const selectedFeat =
-                typeof choicesMade[key] === "string" ? String(choicesMade[key]) : "";
-              // Sub-choices are keyed as class_feat_N_<name> by the backend
-              const subChoicesForSlot = selectedFeat
-                ? displayNestedChoices.filter((sc) => {
-                    const scKey = sc.choice_key ?? sc.feature_name ?? sc.name ?? "";
-                    return scKey.startsWith(`${key}_`) && !asiChoiceKeys.has(scKey);
-                  })
-                : [];
-              const warningsForFeat = featPrerequisiteWarnings
-                .filter((w) => w.featName === selectedFeat)
-                .flatMap((w) => w.messages);
-              // ASI group for this slot (present when "Ability Score Improvement" is selected)
-              const asiGroup = asiChoiceGroups.find((g) => g.slotKey === key);
+              if (isClassFeatChoiceKey(key)) {
+                const slotLevel = Number(key.replace("class_feat_", "")) || 0;
+                const selectedFeat =
+                  typeof choicesMade[key] === "string"
+                    ? String(choicesMade[key])
+                    : "";
+                // Sub-choices are keyed as class_feat_N_<name> by the backend
+                const subChoicesForSlot = selectedFeat
+                  ? displayNestedChoices.filter((sc) => {
+                      const scKey =
+                        sc.choice_key ?? sc.feature_name ?? sc.name ?? "";
+                      return (
+                        scKey.startsWith(`${key}_`) && !asiChoiceKeys.has(scKey)
+                      );
+                    })
+                  : [];
+                const warningsForFeat = featPrerequisiteWarnings
+                  .filter((w) => w.featName === selectedFeat)
+                  .flatMap((w) => w.messages);
+                // ASI group for this slot (present when "Ability Score Improvement" is selected)
+                const asiGroup = asiChoiceGroups.find((g) => g.slotKey === key);
+                return (
+                  <FeatDropdownPicker
+                    key={key}
+                    choiceKey={key}
+                    slotLevel={slotLevel}
+                    title={choice.title ?? `Feat (Level ${slotLevel})`}
+                    description={choice.description}
+                    generalFeats={featDefinitions}
+                    originFeats={originFeatDefinitions}
+                    featSubChoices={subChoicesForSlot}
+                    choicesMade={choicesMade}
+                    prerequisiteWarning={warningsForFeat}
+                    asiChoiceGroup={asiGroup}
+                    onInspectSpell={onInspectSpell}
+                    inspectedSpellName={inspectedSpellName}
+                  />
+                );
+              }
+
+              const opts = (choice.options ?? []) as Array<unknown>;
+              if (opts.length === 0) return null;
+              if (isSpellLikeChoice(choice, opts)) {
+                return (
+                  <SpellChoiceList
+                    key={key}
+                    choiceKey={key}
+                    title={choice.title ?? choice.name ?? key}
+                    description={choice.description}
+                    options={opts}
+                    count={choice.count ?? 1}
+                    onInspectSpell={onInspectSpell}
+                    inspectedSpellName={inspectedSpellName}
+                  />
+                );
+              }
+              const grantedLanguages =
+                choice.choice_category === "languages"
+                  ? ((previewData["granted_languages"] as
+                      | string[]
+                      | undefined) ?? [])
+                  : undefined;
               return (
-                <FeatDropdownPicker
-                  key={key}
-                  choiceKey={key}
-                  slotLevel={slotLevel}
-                  title={choice.title ?? `Feat (Level ${slotLevel})`}
-                  description={choice.description}
-                  generalFeats={featDefinitions}
-                  originFeats={originFeatDefinitions}
-                  featSubChoices={subChoicesForSlot}
-                  choicesMade={choicesMade}
-                  prerequisiteWarning={warningsForFeat}
-                  asiChoiceGroup={asiGroup}
-                  onInspectSpell={onInspectSpell}
-                  inspectedSpellName={inspectedSpellName}
-                />
-              );
-            }
-
-            const opts = (choice.options ?? []) as Array<unknown>;
-            if (opts.length === 0) return null;
-            if (isSpellLikeChoice(choice, opts)) {
-              return (
-                <SpellChoiceList
+                <ChoiceList
                   key={key}
                   choiceKey={key}
                   title={choice.title ?? choice.name ?? key}
                   description={choice.description}
-                  options={opts}
+                  options={opts as Array<string | { name?: string }>}
+                  optionDescriptions={choice.option_descriptions}
                   count={choice.count ?? 1}
-                  onInspectSpell={onInspectSpell}
-                  inspectedSpellName={inspectedSpellName}
+                  disabledOptions={grantedLanguages}
+                  disabledReason="Already known"
                 />
               );
-            }
-            return (
-              <ChoiceList
-                key={key}
-                choiceKey={key}
-                title={choice.title ?? choice.name ?? key}
-                description={choice.description}
-                options={opts as Array<string | { name?: string }>}
-                optionDescriptions={choice.option_descriptions}
-                count={choice.count ?? 1}
-              />
-            );
-          })}
+            })}
           </div>
         </section>
       )}

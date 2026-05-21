@@ -231,14 +231,18 @@
     "1": {
       "Eldritch Invocations": "You have unearthed Eldritch Invocations, pieces of forbidden knowledge that imbue you with an abiding magical ability or other lessons. You gain one invocation of your choice, such as Pact of the Tome. If an invocation has a prerequisite, you must meet it to learn that invocation. Whenever you gain a Warlock level, you can replace one of your invocations with another one for which you qualify. You can't replace an invocation if it's a prerequisite for another invocation that you have. When you gain certain Warlock levels, you gain more invocations of your choice, as shown in the Invocations column of the Warlock Features table.",
       "Pact Magic": {
-        "description": "Through occult ceremony, you have formed a pact with a mysterious entity to gain magical powers. Charisma is your spellcasting ability, and you can use an Arcane Focus as a spellcasting focus. You know two Warlock cantrips of your choice (Eldritch Blast and Prestidigitation are recommended). You prepare two level 1 Warlock spells (Charm Person and Hex are recommended). The number of spells on your list and their available level increases as you gain Warlock levels, as shown in the Warlock Features table. You regain all expended Pact Magic spell slots when you finish a Short or Long Rest. When you reach Warlock levels 4 and 10, you learn another Warlock cantrip of your choice."
+        "description": "Through occult ceremony, you have formed a pact with a mysterious entity to gain magical powers. Charisma is your spellcasting ability, and you can use an Arcane Focus as a spellcasting focus. You know two Warlock cantrips of your choice (Eldritch Blast and Prestidigitation are recommended). You prepare two level 1 Warlock spells (Charm Person and Hex are recommended). The number of spells on your list and their available level increases as you gain Warlock levels, as shown in the Warlock Features table. You regain all expended Pact Magic spell slots when you finish a Short or Long Rest. When you reach Warlock levels 4 and 10, you learn another Warlock cantrip of your choice.",
+        "feature_kind": "spellcasting_setup"
       }
     },
     "2": {
       "Magical Cunning": "You can perform an esoteric rite for 1 minute. At the end of it, you regain expended Pact Magic spell slots but no more than a number equal to half your maximum (round up). Once you use this feature, you can't do so again until you finish a Long Rest."
     },
     "3": {
-      "Warlock Subclass": "You gain a Warlock Subclass of your choice, which represents the entity with which you've made a pact. The Archfey Patron, Celestial Patron, Fiend Patron, and Great Old One Patron subclasses are detailed in the Player's Handbook. For the rest of your career, you gain each of your subclass's features that are of your Warlock level or lower."
+      "Warlock Subclass": {
+        "description": "You gain a Warlock Subclass of your choice, which represents the entity with which you've made a pact. The Archfey Patron, Celestial Patron, Fiend Patron, and Great Old One Patron subclasses are detailed in the Player's Handbook. For the rest of your career, you gain each of your subclass's features that are of your Warlock level or lower.",
+        "feature_kind": "subclass_pick"
+      }
     },
     "4": {
       "Ability Score Improvement": {
@@ -250,11 +254,15 @@
             "file": "general_feats.json",
             "list": "general_feats"
           }
-        }
+        },
+        "feature_kind": "asi"
       }
     },
     "6": {
-      "Subclass Feature": "You gain a feature from your Warlock subclass."
+      "Subclass Feature": {
+        "description": "You gain a feature from your Warlock subclass.",
+        "feature_kind": "subclass_feature_slot"
+      }
     },
     "8": {
       "Ability Score Improvement": {
@@ -266,7 +274,8 @@
             "file": "general_feats.json",
             "list": "general_feats"
           }
-        }
+        },
+        "feature_kind": "asi"
       }
     },
     "9": {
@@ -282,7 +291,10 @@
       }
     },
     "10": {
-      "Subclass Feature": "You gain a feature from your Warlock subclass."
+      "Subclass Feature": {
+        "description": "You gain a feature from your Warlock subclass.",
+        "feature_kind": "subclass_feature_slot"
+      }
     },
     "11": {
       "Mystic Arcanum": "Your patron grants you a magical secret called an arcanum. Choose one level 6 Warlock spell as this arcanum. You can cast your arcanum spell once without expending a spell slot, and you must finish a Long Rest before you can cast it in this way again. You gain another Warlock spell of your choice that can be cast in this way when you reach Warlock levels 13 (level 7 spell), 15 (level 8 spell), and 17 (level 9 spell). You regain all uses of your Mystic Arcanum when you finish a Long Rest. Whenever you gain a Warlock level, you can replace one of your arcanum spells with another Warlock spell of the same level."
@@ -297,14 +309,18 @@
             "file": "general_feats.json",
             "list": "general_feats"
           }
-        }
+        },
+        "feature_kind": "asi"
       }
     },
     "13": {
       "Mystic Arcanum": "You gain a level 7 Warlock spell as an additional arcanum."
     },
     "14": {
-      "Subclass Feature": "You gain a feature from your Warlock subclass."
+      "Subclass Feature": {
+        "description": "You gain a feature from your Warlock subclass.",
+        "feature_kind": "subclass_feature_slot"
+      }
     },
     "15": {
       "Mystic Arcanum": "You gain a level 8 Warlock spell as an additional arcanum."
@@ -319,7 +335,8 @@
             "file": "general_feats.json",
             "list": "general_feats"
           }
-        }
+        },
+        "feature_kind": "asi"
       }
     },
     "17": {

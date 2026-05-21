@@ -165,6 +165,25 @@
                         {"type": "object"},
                         {"type": "array", "items": {"type": "object"}}
                       ]
+                    },
+                    "feature_kind": {
+                      "type": "string",
+                      "enum": [
+                        "normal",
+                        "asi",
+                        "subclass_pick",
+                        "spellcasting_setup",
+                        "subclass_feature_slot"
+                      ],
+                      "description": "Phase 8 (D6-2): structural role of this feature for builder dispatch. Defaults to 'normal' when omitted. 'asi' = Ability Score Improvement slot; 'subclass_pick' = the placeholder where the player chooses their subclass; 'spellcasting_setup' = Spellcasting/Pact Magic feature that initiates the spell list; 'subclass_feature_slot' = class-level placeholder for a feature granted by the active subclass."
+                    },
+                    "hidden": {
+                      "type": "boolean",
+                      "description": "When true, this feature is suppressed from the rendered class features list (Phase 8). Use sparingly — feature_kind handles asi/subclass_pick suppression automatically."
+                    },
+                    "pdf_summary": {
+                      "type": "string",
+                      "description": "Short PDF-style summary that replaces the verbose description when rendering the sheet (Phase 8)."
                     }
                   }
                 }

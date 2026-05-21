@@ -355,7 +355,8 @@
     "1": {
       "Bardic Inspiration": "As a Bonus Action, inspire a creature within 60 feet. They gain a Bardic Inspiration die (d6) to add to a failed D20 Test within 1 hour. Uses equal to Charisma modifier (min 1), regained on Long Rest. Die becomes d8 at level 5, d10 at level 10, d12 at level 15.",
       "Spellcasting": {
-        "description": "Cast spells using Charisma. Know 2 cantrips, prepare 4 level 1+ spells from the Bard spell list. Use a Musical Instrument as a Spellcasting Focus."
+        "description": "Cast spells using Charisma. Know 2 cantrips, prepare 4 level 1+ spells from the Bard spell list. Use a Musical Instrument as a Spellcasting Focus.",
+        "feature_kind": "spellcasting_setup"
       }
     },
     "2": {
@@ -363,7 +364,10 @@
       "Jack of all Trades": "You can add half your Proficiency Bonus (round down) to any ability check you make that uses a skill proficiency you lack and that doesn't otherwise use your Proficiency Bonus."
     },
     "3": {
-      "Bard Subclass": "Choose your Bard College subclass."
+      "Bard Subclass": {
+        "description": "Choose your Bard College subclass.",
+        "feature_kind": "subclass_pick"
+      }
     },
     "4": {
       "Ability Score Improvement": {
@@ -375,14 +379,18 @@
             "file": "general_feats.json",
             "list": "general_feats"
           }
-        }
+        },
+        "feature_kind": "asi"
       }
     },
     "5": {
       "Font of Inspiration": "Regain all expended uses of Bardic Inspiration on Short or Long Rest. Can expend a spell slot to regain one use."
     },
     "6": {
-      "Subclass Feature": "Gain a feature from your Bard College subclass."
+      "Subclass Feature": {
+        "description": "Gain a feature from your Bard College subclass.",
+        "feature_kind": "subclass_feature_slot"
+      }
     },
     "7": {
       "Countercharm": "When you or a creature within 30 feet fails a save against Charmed or Frightened, use Reaction to reroll with Advantage."
@@ -397,7 +405,8 @@
             "file": "general_feats.json",
             "list": "general_feats"
           }
-        }
+        },
+        "feature_kind": "asi"
       }
     },
     "9": {
@@ -417,12 +426,16 @@
             "file": "general_feats.json",
             "list": "general_feats"
           }
-        }
+        },
+        "feature_kind": "asi"
       }
     },
     "13": {},
     "14": {
-      "Subclass Feature": "Gain a feature from your Bard College subclass."
+      "Subclass Feature": {
+        "description": "Gain a feature from your Bard College subclass.",
+        "feature_kind": "subclass_feature_slot"
+      }
     },
     "15": {},
     "16": {
@@ -435,7 +448,8 @@
             "file": "general_feats.json",
             "list": "general_feats"
           }
-        }
+        },
+        "feature_kind": "asi"
       }
     },
     "17": {},
@@ -451,13 +465,13 @@
         "effects": [
           {
             "type": "grant_spell",
-            "spell": "Power Word: Heal",
+            "spell": "Power Word Heal",
             "min_level": 20,
             "counts_against_limit": false
           },
           {
             "type": "grant_spell",
-            "spell": "Power Word: Kill",
+            "spell": "Power Word Kill",
             "min_level": 20,
             "counts_against_limit": false
           }

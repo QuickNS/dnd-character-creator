@@ -407,7 +407,8 @@
     "1": {
       "Lay On Hands": "Your blessed touch can heal wounds. You have a pool of healing power that replenishes when you finish a Long Rest equal to five times your Paladin level. As a Bonus Action, you can touch a creature and restore Hit Points from the pool. You can also expend 5 Hit Points from the pool to remove the Poisoned condition.",
       "Spellcasting": {
-        "description": "You have learned to cast spells through prayer and meditation. Charisma is your spellcasting ability. You can use a Holy Symbol as a Spellcasting Focus."
+        "description": "You have learned to cast spells through prayer and meditation. Charisma is your spellcasting ability. You can use a Holy Symbol as a Spellcasting Focus.",
+        "feature_kind": "spellcasting_setup"
       },
       "Weapon Mastery": "Your training with weapons allows you to use the mastery properties of two kinds of weapons of your choice with which you have proficiency."
     },
@@ -439,7 +440,10 @@
     },
     "3": {
       "Channel Divinity": "You can channel divine energy directly from the Outer Planes. You can use Channel Divinity twice per Long Rest (regain one use on Short Rest, additional use at level 11). Divine Sense: As a Bonus Action, detect Celestials, Fiends, and Undead within 60 feet for 10 minutes.",
-      "Paladin Subclass": "You gain a Paladin Subclass of your choice: Oath of Devotion, Oath of Glory, Oath of the Ancients, or Oath of Vengeance."
+      "Paladin Subclass": {
+        "description": "You gain a Paladin Subclass of your choice: Oath of Devotion, Oath of Glory, Oath of the Ancients, or Oath of Vengeance.",
+        "feature_kind": "subclass_pick"
+      }
     },
     "4": {
       "Ability Score Improvement": {
@@ -451,7 +455,8 @@
             "file": "general_feats.json",
             "list": "general_feats"
           }
-        }
+        },
+        "feature_kind": "asi"
       }
     },
     "5": {
@@ -471,7 +476,10 @@
       "Aura of Protection": "You radiate a protective, unseeable aura in a 10-foot Emanation. You and your allies in the aura gain a bonus to saving throws equal to your Charisma modifier (minimum bonus of +1). Inactive while you have the Incapacitated condition."
     },
     "7": {
-      "Subclass Feature": "You gain a feature from your sacred oath."
+      "Subclass Feature": {
+        "description": "You gain a feature from your sacred oath.",
+        "feature_kind": "subclass_feature_slot"
+      }
     },
     "8": {
       "Ability Score Improvement": {
@@ -483,7 +491,8 @@
             "file": "general_feats.json",
             "list": "general_feats"
           }
-        }
+        },
+        "feature_kind": "asi"
       }
     },
     "9": {
@@ -505,14 +514,18 @@
             "file": "general_feats.json",
             "list": "general_feats"
           }
-        }
+        },
+        "feature_kind": "asi"
       }
     },
     "14": {
       "Restoring Touch": "When you use Lay On Hands on a creature, you can also remove one or more of the following conditions: Blinded, Charmed, Deafened, Frightened, Paralyzed, or Stunned. You must expend 5 Hit Points from the healing pool for each condition you remove; those points don't also restore Hit Points."
     },
     "15": {
-      "Subclass Feature": "You gain a feature from your sacred oath."
+      "Subclass Feature": {
+        "description": "You gain a feature from your sacred oath.",
+        "feature_kind": "subclass_feature_slot"
+      }
     },
     "16": {
       "Ability Score Improvement": {
@@ -524,7 +537,8 @@
             "file": "general_feats.json",
             "list": "general_feats"
           }
-        }
+        },
+        "feature_kind": "asi"
       }
     },
     "18": {
@@ -534,7 +548,10 @@
       "Epic Boon": "You gain an Epic Boon feat or another feat of your choice. Boon of Truesight is recommended."
     },
     "20": {
-      "Subclass Feature": "You gain your capstone feature from your sacred oath."
+      "Subclass Feature": {
+        "description": "You gain your capstone feature from your sacred oath.",
+        "feature_kind": "subclass_feature_slot"
+      }
     }
   },
   "multiclassing": {

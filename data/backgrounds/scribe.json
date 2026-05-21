@@ -3,13 +3,35 @@
   "description": "You spent formative years in a scriptorium, a monastery dedicated to the preservation of knowledge, or a government agency, where you learned to write with a clear hand and produce finely written texts. Perhaps you scribed government documents or copied tomes of literature. You might have some skill as a writer of poetry, narrative, or scholarly research. Above all, you have a careful attention to detail, helping you avoid introducing mistakes to the documents you copy and create.",
   "ability_score_increase": {
     "total": 3,
-    "options": ["Dexterity", "Intelligence", "Wisdom"],
-    "suggested": {"Dexterity": 1, "Intelligence": 2}
+    "options": [
+      "Dexterity",
+      "Intelligence",
+      "Wisdom"
+    ],
+    "suggested": {
+      "Dexterity": 1,
+      "Intelligence": 2
+    }
   },
-  "feat": "Skilled",
-  "skill_proficiencies": ["Investigation", "Perception"],
-  "tool_proficiencies": ["Calligrapher's Supplies"],
-  "languages": 2,
+  "effects": [
+    {
+      "type": "grant_skill_proficiency",
+      "skills": [
+        "Investigation",
+        "Perception"
+      ]
+    },
+    {
+      "type": "grant_origin_feat",
+      "feat": "Skilled"
+    },
+    {
+      "type": "grant_tool_proficiency",
+      "tools": [
+        "Calligrapher's Supplies"
+      ]
+    }
+  ],
   "starting_equipment": {
     "option_a": {
       "items": [

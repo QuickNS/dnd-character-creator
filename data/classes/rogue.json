@@ -182,7 +182,10 @@
       "Cunning Action": "Your quick thinking and agility allow you to take Dash, Disengage, or Hide as a Bonus Action on your turn."
     },
     "3": {
-      "Rogue Subclass": "Choose your roguish archetype: Arcane Trickster, Assassin, Soulknife, or Thief.",
+      "Rogue Subclass": {
+        "description": "Choose your roguish archetype: Arcane Trickster, Assassin, Soulknife, or Thief.",
+        "feature_kind": "subclass_pick"
+      },
       "Steady Aim": "As a Bonus Action, give yourself Advantage on your next attack roll on the current turn. You can use this only if you haven't moved, and your Speed becomes 0 until the end of the turn."
     },
     "4": {
@@ -195,7 +198,8 @@
             "file": "general_feats.json",
             "list": "general_feats"
           }
-        }
+        },
+        "feature_kind": "asi"
       }
     },
     "5": {
@@ -235,11 +239,15 @@
             "file": "general_feats.json",
             "list": "general_feats"
           }
-        }
+        },
+        "feature_kind": "asi"
       }
     },
     "9": {
-      "Subclass Feature": "Gain feature from your archetype."
+      "Subclass Feature": {
+        "description": "Gain feature from your archetype.",
+        "feature_kind": "subclass_feature_slot"
+      }
     },
     "10": {
       "Ability Score Improvement": {
@@ -251,7 +259,8 @@
             "file": "general_feats.json",
             "list": "general_feats"
           }
-        }
+        },
+        "feature_kind": "asi"
       }
     },
     "11": {
@@ -267,11 +276,15 @@
             "file": "general_feats.json",
             "list": "general_feats"
           }
-        }
+        },
+        "feature_kind": "asi"
       }
     },
     "13": {
-      "Subclass Feature": "Gain feature from your archetype."
+      "Subclass Feature": {
+        "description": "Gain feature from your archetype.",
+        "feature_kind": "subclass_feature_slot"
+      }
     },
     "14": {
       "Devious Strikes": "New Cunning Strike options: Daze (2d6, Con save or limited to one action/move/bonus on next turn), Knock Out (6d6, Con save or Unconscious 1 min), Obscure (3d6, Dex save or Blinded until end of next turn)."
@@ -300,11 +313,15 @@
             "file": "general_feats.json",
             "list": "general_feats"
           }
-        }
+        },
+        "feature_kind": "asi"
       }
     },
     "17": {
-      "Subclass Feature": "Gain capstone feature from your archetype."
+      "Subclass Feature": {
+        "description": "Gain capstone feature from your archetype.",
+        "feature_kind": "subclass_feature_slot"
+      }
     },
     "18": {
       "Elusive": "No attack roll can have Advantage against you unless you have the Incapacitated condition."

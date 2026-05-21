@@ -192,8 +192,10 @@ class TestDwarfSpecies:
         """Test dwarf features work with the effects system"""
         applied_effects = getattr(dwarf_builder, "applied_effects", [])
 
-        # Should have exactly 3 effects from dwarf traits
-        assert len(applied_effects) == 3
+        # Phase 9: dwarf now has 4 effects from traits (Darkvision is
+        # effect-driven via grant_darkvision; Dwarven Resilience x2,
+        # Dwarven Toughness x1).
+        assert len(applied_effects) == 4
 
         effect_types = [
             effect_data["effect"]["type"] for effect_data in applied_effects
@@ -201,11 +203,16 @@ class TestDwarfSpecies:
         assert "grant_save_advantage" in effect_types
         assert "grant_damage_resistance" in effect_types
         assert "bonus_hp" in effect_types
+        assert "grant_darkvision" in effect_types
 
         # Check sources are correct
         for effect_data in applied_effects:
             assert effect_data["source_type"] == "species"
-            assert effect_data["source"] in ["Dwarven Resilience", "Dwarven Toughness"]
+            assert effect_data["source"] in [
+                "Darkvision",
+                "Dwarven Resilience",
+                "Dwarven Toughness",
+            ]
 
 
 class TestDwarfSpeciesValidation:
@@ -232,8 +239,17 @@ class TestDwarfSpeciesValidation:
         assert dwarf_data["size"] == "Medium"
         assert "speed" in dwarf_data
         assert dwarf_data["speed"] == 30
-        assert "darkvision" in dwarf_data
-        assert dwarf_data["darkvision"] == 120
+        # Phase 9: dwarf no longer carries a top-level ``darkvision`` field;
+        # the canonical source is the grant_darkvision effect on the
+        # ``Darkvision`` trait. Assert that effect instead.
+        darkvision_trait = dwarf_data["traits"]["Darkvision"]
+        assert isinstance(darkvision_trait, dict)
+        dv_effects = [
+            e for e in darkvision_trait.get("effects", [])
+            if e.get("type") == "grant_darkvision"
+        ]
+        assert len(dv_effects) == 1
+        assert dv_effects[0].get("range") == 120
         assert "traits" in dwarf_data
         assert "languages" in dwarf_data
 
@@ -285,4 +301,6 @@ class TestDwarfSpeciesValidation:
         # Applied effects should remain consistent
         applied_effects = getattr(builder, "applied_effects", [])
         dwarf_effects = [e for e in applied_effects if e["source_type"] == "species"]
-        assert len(dwarf_effects) == 3
+        # Phase 9: Darkvision is now an effect-driven trait (+1 over the
+        # pre-migration count of 3).
+        assert len(dwarf_effects) == 4

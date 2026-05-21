@@ -389,10 +389,14 @@ export function FeatDropdownPicker({
               </div>
             )}
 
-            {featSubChoices.map((subChoice, idx) => {
-              const subKey =
-                subChoice.choice_key ??
-                `feat_${selectedFeat}_${subChoice.feature_name ?? idx}`;
+            {featSubChoices.map((subChoice) => {
+              if (!subChoice.choice_key) {
+                if (import.meta.env.DEV) {
+                  console.warn('[FeatDropdownPicker] missing choice_key for sub-choice', subChoice);
+                }
+                return null;
+              }
+              const subKey = subChoice.choice_key;
               const opts = (subChoice.options ?? []) as Array<unknown>;
               if (opts.length === 0) return null;
 

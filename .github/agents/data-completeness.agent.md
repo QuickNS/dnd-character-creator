@@ -73,6 +73,18 @@ For each entity (class, subclass, species, background, feat, spell):
 - `.github/instructions/character-builder-api.instructions.md`
 - Skills: `dnd-rules-reference`, `codebase-navigator`, `dependency-map`
 
+## Gating Role
+
+PRs that add prose-only descriptions to sheet-affecting content (class features, species traits, subclass features, feats, eldritch invocations, maneuvers) are **rejected** unless they also include structured `effects` arrays.
+
+Sheet-affecting means: the feature changes HP, AC, ability scores, proficiencies, speed, senses, spell lists, attack rolls, damage rolls, saving throws, or skill checks.
+
+Audit checklist for every new content PR:
+1. Does the feature affect any sheet field? → `effects` array required.
+2. Is the `effect.type` in the closed enum? → If not, a new handler must be added in the same PR.
+3. Does `validate_data.py` exit 0? → Required.
+4. Does `pytest tests/integration/test_rebuild_equality.py` pass? → Required.
+
 ## Output Format
 
 When invoked, deliver:

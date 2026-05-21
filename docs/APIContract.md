@@ -419,17 +419,29 @@ Errors:
 
 ## Canonical Request — `ChoicesMade`
 
+The canonical `ChoicesMade` shape is defined in `frontend/src/lib/api.ts` and validated by `ChoicesMadeSchema` (Zod). All character endpoints accept this body.
+
+### Primary class carrier: `classes`
+
+`classes` is the authoritative way to specify class allocation. The client (post-Phase 11) always writes `classes` and never writes flat `class` / `level` / `subclass` keys. The server normalises legacy flat keys inbound (see `_normalize_multiclass_rows()`) for backward compatibility, but the client must not rely on that path for new builds.
+
+```ts
+interface ClassAllocation {
+  class_name: string;
+  level: number;
+  subclass?: string;
+}
+```
+
+The `classes` array may contain multiple rows for multiclass characters. The **first row is the primary class** (full starting proficiencies and level-1 max-hit-die HP); subsequent rows are secondary classes (proficiencies limited to each class's `multiclassing` block). `proficiency_bonus` is computed from total character level (`sum(classes[].level)`).
+
+### Full interface
+
 ```ts
 interface ChoicesMade {
   character_name?: string;
-  level?: number;
-  class?: string;
-  classes?: Array<{
-    class_name: string;
-    level: number;
-    subclass?: string;
-  }>;
-  subclass?: string;
+  /** Primary class carrier. Always use this; never write flat `class`/`level`/`subclass`. */
+  classes?: ClassAllocation[];
   background?: string;
   species?: string;
   lineage?: string;
@@ -439,8 +451,6 @@ interface ChoicesMade {
   background_bonuses?: Record<string, number>;
   skill_choices?: string[];
   tool_choices?: string[];
-  spells?: string[];
-  cantrips?: string[];
   fighting_style?: string;
   maneuvers?: string[];
   equipment_selections?: Record<string, string>;
@@ -452,10 +462,14 @@ interface ChoicesMade {
   origin_feat?: string;
   // Multiclass: player's resolution of pending skill picks per secondary class
   multiclass_skill_choices?: Record<string, string[]>;
-  // Class feature choices keyed by their `choice_key`
+  // Dynamic keys: feat sub-choices, ASI variants, per-feature picks, etc.
+  // Validated by Zod's .catchall(z.unknown()) on the client; the backend
+  // resolves and normalises them via apply_choices() Pass 2.
   [key: string]: unknown;
 }
 ```
+
+> **Legacy compatibility**: the server's inbound normaliser still accepts flat `class`, `level`, and `subclass` at the top level of `choices_made`. These are treated as equivalent to a single-row `classes` array. The client must not write them; they exist only so that older saved characters and tests can be replayed without a migration.
 
 ## Canonical Response — `Character` Shape
 

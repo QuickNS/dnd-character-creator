@@ -17,6 +17,7 @@ import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { useCharacterStore } from "@/store/characterStore";
 import { useEffect, useRef, useState } from "react";
+import { Download } from "lucide-react";
 
 type Char = Record<string, unknown>;
 type Row = Record<string, unknown>;
@@ -144,7 +145,7 @@ export function SheetPdf() {
 
   return (
     <Frame>
-      <Toolbar />
+      <Toolbar c={c} />
       <Page1 c={c} damageCantrips={damageCantrips} />
       <Page2 c={c} />
     </Frame>
@@ -160,12 +161,39 @@ function Frame({ children }: { children: React.ReactNode }) {
   );
 }
 
-function Toolbar() {
+function downloadJson(filename: string, data: unknown) {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function Toolbar({ c }: { c: Char }) {
   return (
     <div className="sheet-toolbar no-print">
       <Link to="/sheet" className="sheet-tool-btn sheet-tool-back">
         ← Summary
       </Link>
+      {import.meta.env.DEV && (
+        <button
+          type="button"
+          className="sheet-tool-btn print:hidden"
+          style={{ border: "1px solid #f59e0b", color: "#92400e", background: "transparent", borderRadius: 4, padding: "4px 10px", cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}
+          onClick={() => {
+            const name = typeof c.name === "string" ? c.name : "character";
+            const filename = `${name.trim().toLowerCase().replace(/[^a-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "") || "character"}-debug.json`;
+            downloadJson(filename, c);
+          }}
+        >
+          <Download size={14} />
+          Debug JSON
+        </button>
+      )}
       <button
         type="button"
         className="sheet-tool-btn sheet-tool-print"

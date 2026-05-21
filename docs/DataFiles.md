@@ -147,15 +147,48 @@ Served by `GET /api/v1/catalog/reference/<name>` (allowed names: `fighting_style
 
 ## Schemas (`models/`)
 
+Every category under `data/` is validated by [validate_data.py](../validate_data.py) against a schema in [models/](../models/). Shared subschemas live in [models/_shared/](../models/_shared/) and are referenced by entity schemas via relative `$ref`.
+
+| File glob                                      | Schema                                                                                  | Dispatcher entry point                                               | External-source pattern        | Notes                                                                                              |
+|------------------------------------------------|-----------------------------------------------------------------------------------------|----------------------------------------------------------------------|--------------------------------|----------------------------------------------------------------------------------------------------|
+| `data/classes/*.json`                          | [models/class_schema.json](../models/class_schema.json)                                 | `apply_choice("class")` → `feature_manager` → `_apply_effect()`     | `update_classes.py`             | `feature_kind` migration arrives in Phase 8 (`D6-2`).                                              |
+| `data/subclasses/*/*.json`                     | [models/subclass_schema.json](../models/subclass_schema.json)                           | `apply_choice("subclass")` → `feature_manager` → `_apply_effect()`  | `update_classes.py`             | Same `features_by_level` rules as classes.                                                         |
+| `data/species/*.json`                          | [models/species_schema.json](../models/species_schema.json)                             | `apply_choice("species")` → `_apply_effect()`                        | `update_species.py`             | No ability score increases per D&D 2024.                                                           |
+| `data/species_variants/*.json`                 | [models/species_variant_schema.json](../models/species_variant_schema.json)             | `apply_choice("lineage")` → `_apply_effect()`                        | `update_species.py`             | `parent_species` field resolves to a file in `data/species/`.                                      |
+| `data/backgrounds/*.json`                      | [models/background_schema.json](../models/background_schema.json)                       | `apply_choice("background")` → `_apply_effect()`                     | hand-authored                   | Stricter background constraints (skill count, ASI total, origin-feat existence) land in Phase 10 (`D6-5`). |
+| `data/origin_feats.json`                       | [models/feat_schema.json](../models/feat_schema.json)                                   | `grant_origin_feat` effect → `_apply_effect()`                       | hand-authored                   | Single schema covers both feat files; outer wrapper key distinguishes them.                        |
+| `data/general_feats.json`                      | [models/feat_schema.json](../models/feat_schema.json)                                   | class feat slot choice → `_apply_effect()`                           | hand-authored                   |                                                                                                    |
+| `data/spells/definitions/*.json`               | [models/spell_schema.json](../models/spell_schema.json)                                 | `_load_spell_definition()` (on-demand lookup)                        | hand-authored                   | 383 spell files; no fetcher.                                                                       |
+| `data/spells/class_lists/*.json`               | [models/spell_class_list_schema.json](../models/spell_class_list_schema.json)           | `apply_choice("spells")` / `calculate_spellcasting_stats()`          | `update_spells.py`              | `update_spells.py` writes straight into `data/`. See the asymmetry section below.                  |
+| `data/equipment/weapons.json`                  | [models/weapon_schema.json](../models/weapon_schema.json)                               | `apply_choice("equipment_selections")` → `equipment_manager.py`      | hand-authored                   | `damage_type` admits `"Special"` only for Net; see schema TODO.                                    |
+| `data/equipment/armor.json`                    | [models/armor_schema.json](../models/armor_schema.json)                                 | `apply_choice("equipment_selections")` → `equipment_manager.py`      | hand-authored                   | Single schema covers body armor (ac_base/ac_formula) and shields (ac_bonus).                       |
+| `data/equipment/weapon_masteries.json`         | [models/weapon_mastery_schema.json](../models/weapon_mastery_schema.json)               | `calculate_weapon_mastery_stats()`                                   | hand-authored                   |                                                                                                    |
+| `data/equipment/adventuring_gear.json`         | [models/adventuring_gear_schema.json](../models/adventuring_gear_schema.json)           | `apply_choice("equipment_selections")` → `equipment_manager.py`      | hand-authored                   | `weight` admits the literal `"Variable"` only for catch-alls like `Musical Instrument`; see schema TODO. |
+| `data/fighting_styles.json`                    | [models/fighting_style_schema.json](../models/fighting_style_schema.json)               | `apply_choice("fighting_style")` → `_apply_effect()`                 | hand-authored                   | Some styles have `notes` instead of `effects` (reaction-based).                                    |
+| `data/eldritch_invocations.json`               | [models/eldritch_invocation_schema.json](../models/eldritch_invocation_schema.json)     | `apply_choice("eldritch_invocation_selections")` → `_apply_effect()` | hand-authored                   | `effects` are added in Phase 7 (`D0-1`) without re-authoring the schema.                           |
+| `data/maneuvers.json`                          | [models/maneuver_schema.json](../models/maneuver_schema.json)                           | `apply_choice("maneuvers")` (name recorded); `grant_maneuver` effect → `_apply_effect()` (from Battle Master features) | hand-authored | Description-only per schema; individual maneuver mechanics are runtime interactions. Sheet recording is via `grant_maneuver` + `grant_superiority_dice` effects on the Battle Master subclass. |
+| `data/languages.json`                          | [models/languages_schema.json](../models/languages_schema.json)                         | `_apply_effect("grant_language")` (species/bg/feat path); `apply_choice("languages_chosen")` (wizard step) | hand-authored |                                                                                                    |
+| `data/feature_override.json`                   | [models/feature_override_schema.json](../models/feature_override_schema.json)           | `feature_manager` (summary lookup)                                   | hand-authored                   | **Scheduled for deletion in Phase 8 (`D5`/`D6-2`)**; schema authored for its remaining lifetime.   |
+| `data/trait_patterns.json`                     | [models/trait_patterns_schema.json](../models/trait_patterns_schema.json)               | `feature_manager` (heuristic fallback)                               | hand-authored                   | Heuristic fallback patterns; prefer explicit `effects` on new content.                             |
+
+### Shared subschemas
+
+| Subschema                                                                | Used by                                                                                                       |
+|--------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------|
+| [models/_shared/effect.json](../models/_shared/effect.json)              | species, species_variants, backgrounds, feat (general/origin), fighting_styles, eldritch_invocations          |
+| [models/_shared/choice.json](../models/_shared/choice.json)              | species (via `trait_entry`), feat, eldritch_invocations                                                       |
+| [models/_shared/choice_effects.json](../models/_shared/choice_effects.json) | species (via `trait_entry`), feat, eldritch_invocations                                                    |
+| [models/_shared/trait_entry.json](../models/_shared/trait_entry.json)    | species, species_variants                                                                                     |
+
+### Legacy / non-active schemas
+
 | File                              | Status        | Used by                               |
 |-----------------------------------|---------------|---------------------------------------|
-| `class_schema.json`               | Active        | `validate_data.py`, content reviewers |
-| `subclass_schema.json`            | Active        | `validate_data.py`, content reviewers |
 | `character_sheet_v2_schema.json`  | **Aspirational** — no producer or consumer was found in the codebase. Document the intended shape but do not assume any code reads or emits it today. |
 | `example_character_v2.json`       | Reference     | Companion example for the v2 schema   |
 | `README.md`                       | Schema notes  | Reference                             |
 
-Run `python validate_data.py` to validate `data/` against the active schemas.
+Run `python validate_data.py` to validate `data/` against the active schemas. It exits non-zero on any failure **and** refuses to run if any JSON file under `data/` is not covered by the `CATEGORIES` manifest in [validate_data.py](../validate_data.py) (or explicitly listed in `EXCLUDED_FILES`).
 
 ## Wiki Generation Pipeline
 

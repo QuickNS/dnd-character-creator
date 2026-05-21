@@ -1,9 +1,15 @@
 """Pytest configuration and shared fixtures."""
 
 import sys
+import os
 import json
 import pytest
 from pathlib import Path
+
+# Phase 5 (audit P2-6): strict mode is default-on in tests so silent typos
+# in JSON data or unknown choice keys fail the suite immediately. Production
+# (FLASK_ENV=production) keeps strict OFF to avoid raising mid-build.
+os.environ.setdefault("DND_STRICT_EFFECTS", "1")
 
 # Add the project root to the Python path
 project_root = Path(__file__).parent

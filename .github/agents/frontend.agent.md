@@ -35,6 +35,10 @@ You build and maintain the React SPA. The `.github/instructions/frontend-archite
 4. **No computed values in Zustand.** Stores hold raw choices and UI flags only.
 5. **No raw colour/spacing constants.** Use Tailwind semantic tokens.
 6. **All components readable in light + dark mode.**
+7. Never synthesize `choices_made_key` / `choice_key` client-side — use server-provided keys only.
+8. Never filter `always_prepared` or other server-derived spell/item lists.
+9. Never dual-write class allocation (flat `class`/`level`/`subclass` AND `classes[]`) — `classes[]` only.
+10. All outbound ChoicesMade must be validated with `ChoicesMadeSchema` (Zod) before dispatch.
 
 ## Workflow
 

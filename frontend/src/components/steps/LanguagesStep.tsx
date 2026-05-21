@@ -50,8 +50,8 @@ export function LanguagesStep() {
     new Set(rawSelectedRareLanguages.filter((lang) => allRare.includes(lang))),
   );
 
-  const randomLanguages = useMutation({
-    mutationFn: () => api.character.randomLanguages(choicesMade),
+  const suggestLanguages = useMutation({
+    mutationFn: () => api.character.suggestRandomLanguages(choicesMade),
     onSuccess: (languages) => {
       setChoice(LANGUAGES_KEY, languages);
     },
@@ -151,8 +151,8 @@ export function LanguagesStep() {
             <div className="mb-3 flex gap-2">
               <button
                 type="button"
-                onClick={() => randomLanguages.mutate()}
-                disabled={previewQuery.isLoading || randomLanguages.isPending}
+                onClick={() => suggestLanguages.mutate()}
+                disabled={previewQuery.isLoading || suggestLanguages.isPending}
                 className={cn(
                   "inline-flex h-9 items-center justify-center rounded-md border border-border bg-background px-3 text-xs font-medium",
                   "hover:bg-secondary hover:text-foreground transition-colors",
@@ -160,7 +160,7 @@ export function LanguagesStep() {
                   "disabled:opacity-50 disabled:pointer-events-none",
                 )}
               >
-                {randomLanguages.isPending
+                {suggestLanguages.isPending
                   ? "Rolling…"
                   : `Roll ${selectionCount}`}
               </button>

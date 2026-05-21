@@ -316,10 +316,14 @@ export function FeatChoicesPicker({
         )}
       </header>
 
-      {choices.map((choice, idx) => {
-        const key =
-          choice.choices_made_key ??
-          `feat_${data.feat_name}_${choice.feature_name ?? idx}`;
+      {choices.map((choice) => {
+        if (!choice.choices_made_key) {
+          if (import.meta.env.DEV) {
+            console.warn('[FeatChoicesPicker] missing choices_made_key for choice', choice);
+          }
+          return null;
+        }
+        const key = choice.choices_made_key;
         const opts = (choice.options ?? []) as Array<unknown>;
         if (opts.length === 0) return null;
 
