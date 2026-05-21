@@ -254,6 +254,7 @@ class CharacterBuilder:
             "attack_bonuses": [],            # bonus_attack  (Archery fighting style, ...)
             "ac_bonuses": [],                # bonus_ac      (Defense fighting style, ...)
             "hp_bonuses": [],                # bonus_hp      (Tough feat, Hill Dwarf, ...)
+            "initiative_bonuses": [],        # bonus_initiative (Alert feat, ...)
             "alternative_ac_options": [],    # alternative_ac (Monk/Barbarian Unarmored Defense)
             "fighting_style_flags": {
                 "great_weapon_fighting": [],         # list of source names
@@ -1712,6 +1713,15 @@ class CharacterBuilder:
             }
             self.character_data["hp_bonuses"].append(entry)
 
+        elif effect_type == "bonus_initiative":
+            entry = {
+                "value": effect.get("value", 0),
+                "source": source_name,
+                "source_type": source_type,
+                "source_class_name": source_class_name,
+            }
+            self.character_data["initiative_bonuses"].append(entry)
+
         elif effect_type == "great_weapon_fighting":
             flags = self.character_data["fighting_style_flags"]["great_weapon_fighting"]
             if source_name not in flags:
@@ -1974,6 +1984,7 @@ class CharacterBuilder:
         self.character_data["attack_bonuses"] = []
         self.character_data["ac_bonuses"] = []
         self.character_data["hp_bonuses"] = []
+        self.character_data["initiative_bonuses"] = []
         self.character_data["alternative_ac_options"] = []
         self.character_data["fighting_style_flags"] = {
             "great_weapon_fighting": [],
@@ -2028,6 +2039,13 @@ class CharacterBuilder:
                 self.character_data["hp_bonuses"].append({
                     "value": effect.get("value", 0),
                     "scaling": effect.get("scaling"),
+                    "source": source,
+                    "source_type": stype,
+                    "source_class_name": sclass,
+                })
+            elif etype == "bonus_initiative":
+                self.character_data["initiative_bonuses"].append({
+                    "value": effect.get("value", 0),
                     "source": source,
                     "source_type": stype,
                     "source_class_name": sclass,
@@ -6219,6 +6237,13 @@ class CharacterBuilder:
 
         # Proficiency bonus
         proficiency_bonus = self.calculate_proficiency_bonus(level)
+        initiative_bonus = dex_modifier
+        for entry in self.character_data.get("initiative_bonuses", []):
+            value = entry.get("value", 0)
+            if value == "proficiency":
+                initiative_bonus += proficiency_bonus
+            else:
+                initiative_bonus += int(value)
 
         # Check if proficient in Perception
         skill_proficiencies = self.character_data.get("proficiencies", {}).get(
@@ -6230,8 +6255,8 @@ class CharacterBuilder:
         return {
             "armor_class": armor_ac,
             "uses_shield": bool(best_option.get("shield", False)),
-            "initiative": dex_modifier,  # For backward compatibility
-            "initiative_bonus": dex_modifier,
+            "initiative": initiative_bonus,  # For backward compatibility
+            "initiative_bonus": initiative_bonus,
             "speed": speed,
             "hit_point_maximum": max_hp,  # For backward compatibility
             "hit_points": {"current": max_hp, "maximum": max_hp, "temporary": 0},
@@ -6283,6 +6308,7 @@ class CharacterBuilder:
             "attack_bonuses",
             "ac_bonuses",
             "hp_bonuses",
+            "initiative_bonuses",
             "alternative_ac_options",
             "fighting_style_flags",
         ):

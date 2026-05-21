@@ -6,6 +6,9 @@
         "When you roll Initiative, you can add your Proficiency Bonus to the roll.",
         "Immediately after you roll Initiative, you can swap your Initiative with that of one willing ally in the same encounter. You can't make this swap if you or the ally has the Incapacitated condition."
       ],
+      "effects": [
+        {"type": "bonus_initiative", "value": "proficiency"}
+      ],
       "category": "Origin",
       "prerequisite": "None",
       "source": "Player's Handbook 2024"
