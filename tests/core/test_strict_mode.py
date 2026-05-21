@@ -49,8 +49,14 @@ def test_effect_enum_matches_schema():
 
 
 def test_effect_enum_has_expected_size():
-    """Sanity check: 28 effect types, per audit D6-4."""
-    assert len(strict_mode.KNOWN_EFFECT_TYPES) == 28
+    """Sanity check: 34 effect types. Phase 7 (D0-1/D0-2/D4-3) added
+    grant_spell_at_will, bonus_spell_damage_ability_mod, bonus_spell_range,
+    grant_magical_darkness_sight, grant_maneuver, grant_superiority_dice
+    (+6 over the Phase 6 baseline of 28). Phase 7.1 pruned grant_weapon_mastery
+    after the eldritch-invocation reconcile left it with zero data usage;
+    weapon mastery selections continue to flow through the existing
+    `weapon_mastery_selections` choice key."""
+    assert len(strict_mode.KNOWN_EFFECT_TYPES) == 34
 
 
 # ---------------------------------------------------------------------------

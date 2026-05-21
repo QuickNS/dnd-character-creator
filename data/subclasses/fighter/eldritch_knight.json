@@ -46,28 +46,211 @@
     "20": 13
   },
   "spell_slots_by_level": {
-    "3": [2, 0, 0, 0, 0, 0, 0, 0, 0],
-    "4": [3, 0, 0, 0, 0, 0, 0, 0, 0],
-    "5": [3, 0, 0, 0, 0, 0, 0, 0, 0],
-    "6": [3, 0, 0, 0, 0, 0, 0, 0, 0],
-    "7": [4, 2, 0, 0, 0, 0, 0, 0, 0],
-    "8": [4, 2, 0, 0, 0, 0, 0, 0, 0],
-    "9": [4, 2, 0, 0, 0, 0, 0, 0, 0],
-    "10": [4, 3, 0, 0, 0, 0, 0, 0, 0],
-    "11": [4, 3, 0, 0, 0, 0, 0, 0, 0],
-    "12": [4, 3, 0, 0, 0, 0, 0, 0, 0],
-    "13": [4, 3, 2, 0, 0, 0, 0, 0, 0],
-    "14": [4, 3, 2, 0, 0, 0, 0, 0, 0],
-    "15": [4, 3, 2, 0, 0, 0, 0, 0, 0],
-    "16": [4, 3, 3, 0, 0, 0, 0, 0, 0],
-    "17": [4, 3, 3, 0, 0, 0, 0, 0, 0],
-    "18": [4, 3, 3, 0, 0, 0, 0, 0, 0],
-    "19": [4, 3, 3, 1, 0, 0, 0, 0, 0],
-    "20": [4, 3, 3, 1, 0, 0, 0, 0, 0]
+    "3": [
+      2,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "4": [
+      3,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "5": [
+      3,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "6": [
+      3,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "7": [
+      4,
+      2,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "8": [
+      4,
+      2,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "9": [
+      4,
+      2,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "10": [
+      4,
+      3,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "11": [
+      4,
+      3,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "12": [
+      4,
+      3,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "13": [
+      4,
+      3,
+      2,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "14": [
+      4,
+      3,
+      2,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "15": [
+      4,
+      3,
+      2,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "16": [
+      4,
+      3,
+      3,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "17": [
+      4,
+      3,
+      3,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "18": [
+      4,
+      3,
+      3,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "19": [
+      4,
+      3,
+      3,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "20": [
+      4,
+      3,
+      3,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0
+    ]
   },
   "features_by_level": {
     "3": {
-      "Spellcasting": "You have learned to cast spells. You know 2 cantrips from the Wizard spell list, using Intelligence as your spellcasting ability. You can use an Arcane Focus as a spellcasting focus. You prepare a list of Wizard spells that are available for you to cast, choosing from the Wizard spell list. At level 10, you learn another Wizard cantrip.",
+      "Spellcasting": {
+        "description": "You have learned to cast spells. You know 2 cantrips from the Wizard spell list, using Intelligence as your spellcasting ability. You can use an Arcane Focus as a spellcasting focus. You prepare a list of Wizard spells that are available for you to cast, choosing from the Wizard spell list. At level 10, you learn another Wizard cantrip.",
+        "feature_kind": "spellcasting_setup"
+      },
       "War Bond": "You learn a ritual that creates a magical bond between yourself and one weapon. You perform the ritual over the course of 1 hour, which can be done during a Short Rest. The weapon must be within your reach throughout the ritual, at the conclusion of which you touch the weapon and forge the bond. The bond fails if another Fighter is bonded to the weapon or if the weapon is a magic item to which someone else is attuned. Once you have bonded a weapon to yourself, you can't be disarmed of that weapon unless you have the Incapacitated condition. If it is on the same plane of existence, you can summon that weapon as a Bonus Action, causing it to teleport instantly to your hand. You can have up to two bonded weapons, but you can summon only one at a time with a Bonus Action. If you attempt to bond with a third weapon, you must break the bond with one of the other two."
     },
     "7": {

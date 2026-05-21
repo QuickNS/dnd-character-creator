@@ -3,12 +3,30 @@
   "description": "War has been your life for as long as you care to remember. You trained as a youth, studied the use of weapons and armor, learned basic survival techniques, including how to stay alive on the battlefield. You might have been part of a standing national army or a mercenary company, or perhaps a member of a local militia who rose to prominence during a recent war.",
   "ability_score_increase": {
     "total": 3,
-    "options": ["Constitution", "Strength", "Dexterity"],
-    "suggested": {"Constitution": 1, "Strength": 2}
+    "options": [
+      "Constitution",
+      "Strength",
+      "Dexterity"
+    ],
+    "suggested": {
+      "Constitution": 1,
+      "Strength": 2
+    }
   },
   "feat": "Savage Attacker",
-  "skill_proficiencies": ["Athletics", "Intimidation"],
-  "tool_proficiencies": ["Gaming Set", "Vehicles (Land)"],
+  "skill_proficiencies": [
+    "Athletics",
+    "Intimidation"
+  ],
+  "effects": [
+    {
+      "type": "grant_tool_proficiency",
+      "tools": [
+        "Gaming Set",
+        "Vehicles (Land)"
+      ]
+    }
+  ],
   "starting_equipment": {
     "option_a": {
       "items": [

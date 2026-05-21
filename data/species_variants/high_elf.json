@@ -23,10 +23,5 @@
       ]
     }
   },
-  "spells_by_level": {
-    "cantrip": ["Prestidigitation"],
-    "3": ["Detect Magic"],
-    "5": ["Misty Step"]
-  },
   "cantrip_replacement": "Wizard"
 }

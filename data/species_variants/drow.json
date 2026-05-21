@@ -24,10 +24,5 @@
         }
       ]
     }
-  },
-  "spells_by_level": {
-    "cantrip": ["Dancing Lights"],
-    "3": ["Faerie Fire"],
-    "5": ["Darkness"]
   }
 }

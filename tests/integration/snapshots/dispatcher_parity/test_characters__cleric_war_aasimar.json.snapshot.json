@@ -142,6 +142,14 @@
       "total": 3
     },
     "description": "You grew up close to the land. Years tending animals and cultivating the earth rewarded you with patience and good health. You have a keen appreciation for nature's bounty alongside a healthy respect for nature's wrath.",
+    "effects": [
+      {
+        "tools": [
+          "Carpenter's Tools"
+        ],
+        "type": "grant_tool_proficiency"
+      }
+    ],
     "feat": "Tough",
     "name": "Farmer",
     "skill_proficiencies": [
@@ -163,10 +171,7 @@
       "option_b": {
         "gold": 50
       }
-    },
-    "tool_proficiencies": [
-      "Carpenter's Tools"
-    ]
+    }
   },
   "choices_made": {
     "ability_scores": {
@@ -362,7 +367,8 @@
           "description": "You have dedicated yourself to one of the following sacred roles of your choice."
         },
         "Spellcasting": {
-          "description": "You can cast spells using Wisdom as your spellcasting ability. You prepare a number of spells equal to your Wisdom modifier + your Cleric level (minimum of 1). You can change your list of prepared spells whenever you finish a Long Rest. You can use a Holy Symbol as your Spellcasting Focus."
+          "description": "You can cast spells using Wisdom as your spellcasting ability. You prepare a number of spells equal to your Wisdom modifier + your Cleric level (minimum of 1). You can change your list of prepared spells whenever you finish a Long Rest. You can use a Holy Symbol as your Spellcasting Focus.",
+          "feature_kind": "spellcasting_setup"
         }
       },
       "10": {
@@ -379,7 +385,8 @@
               "type": "external"
             }
           },
-          "description": "Increase one ability score by 2, or increase two ability scores by 1."
+          "description": "Increase one ability score by 2, or increase two ability scores by 1.",
+          "feature_kind": "asi"
         }
       },
       "13": {},
@@ -397,11 +404,15 @@
               "type": "external"
             }
           },
-          "description": "Increase one ability score by 2, or increase two ability scores by 1."
+          "description": "Increase one ability score by 2, or increase two ability scores by 1.",
+          "feature_kind": "asi"
         }
       },
       "17": {
-        "Subclass Feature": "Gain a feature from your Divine Domain subclass."
+        "Subclass Feature": {
+          "description": "Gain a feature from your Divine Domain subclass.",
+          "feature_kind": "subclass_feature_slot"
+        }
       },
       "18": {},
       "19": {
@@ -450,7 +461,10 @@
         "Greater Divine Intervention": "Can use Divine Intervention to cast Wish once per week, or any level 8 or lower Cleric spell once per day."
       },
       "3": {
-        "Cleric Subclass": "Choose your Divine Domain subclass."
+        "Cleric Subclass": {
+          "description": "Choose your Divine Domain subclass.",
+          "feature_kind": "subclass_pick"
+        }
       },
       "4": {
         "Ability Score Improvement": {
@@ -462,14 +476,18 @@
               "type": "external"
             }
           },
-          "description": "Increase one ability score by 2, or increase two ability scores by 1."
+          "description": "Increase one ability score by 2, or increase two ability scores by 1.",
+          "feature_kind": "asi"
         }
       },
       "5": {
         "Sear Undead": "When you Turn Undead, affected undead also take 2d8 + Cleric level Radiant damage."
       },
       "6": {
-        "Subclass Feature": "Gain a feature from your Divine Domain subclass."
+        "Subclass Feature": {
+          "description": "Gain a feature from your Divine Domain subclass.",
+          "feature_kind": "subclass_feature_slot"
+        }
       },
       "7": {
         "Blessed Strikes": {
@@ -496,7 +514,8 @@
               "type": "external"
             }
           },
-          "description": "Increase one ability score by 2, or increase two ability scores by 1."
+          "description": "Increase one ability score by 2, or increase two ability scores by 1.",
+          "feature_kind": "asi"
         }
       },
       "9": {}
@@ -981,6 +1000,14 @@
       "value": 2
     },
     {
+      "source": "Farmer",
+      "source_type": "background",
+      "tools": [
+        "Carpenter's Tools"
+      ],
+      "type": "grant_tool_proficiency"
+    },
+    {
       "proficiencies": [
         "Martial weapons"
       ],
@@ -1131,6 +1158,8 @@
   "level": 3,
   "lineage": null,
   "lineage_data": null,
+  "magical_darkness_sight": {},
+  "maneuvers_known": [],
   "name": "",
   "proficiencies": {
     "armor": [
@@ -1401,6 +1430,7 @@
   },
   "speed": 30,
   "speed_bonuses": {},
+  "spell_damage_bonuses": {},
   "spell_metadata": {
     "Guiding Bolt": {
       "always_prepared": true,
@@ -1438,6 +1468,7 @@
       "source_type": "subclass"
     }
   },
+  "spell_range_overrides": {},
   "spell_selections_needed": {
     "background_cantrips": {
       "count": 0,
@@ -2228,6 +2259,7 @@
     "name": "War Domain",
     "source": "Player's Handbook 2024"
   },
+  "superiority_dice": {},
   "tool_proficiencies": [
     "Carpenter's Tools"
   ],

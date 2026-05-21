@@ -151,7 +151,6 @@ class CharacterBuilder:
 
         # Spell definitions cache
         self._spell_definitions_cache = {}
-        self._feature_overrides_cache: Optional[Dict[str, Any]] = None
 
         # D&D 2024 skill to ability mappings for calculations
         self.skill_abilities = {
@@ -261,6 +260,12 @@ class CharacterBuilder:
                 "two_weapon_fighting_modifier": [],  # list of source names
                 "unarmed_fighting": [],              # list of source names
             },
+            # ===== Phase 7 (D0-1 / D0-2 / D4-3) structured fields =====
+            "maneuvers_known": [],           # grant_maneuver — Battle Master picks
+            "superiority_dice": {},          # grant_superiority_dice — {"count": N, "die": "dX"}
+            "magical_darkness_sight": {},    # grant_magical_darkness_sight — {"range": N, "source": ...}
+            "spell_damage_bonuses": {},      # bonus_spell_damage_ability_mod — {spell: {"ability": "Charisma", "source": ...}}
+            "spell_range_overrides": {},     # bonus_spell_range — {spell: {"range": "300 feet", "source": ...}}
             "equipment": None,  # Will be initialized when equipment_selections are processed
             "step": "species",  # Track current step
         }
@@ -344,25 +349,6 @@ class CharacterBuilder:
         filename = background_name.lower().replace(" ", "_")
         file_path = self.data_dir / "backgrounds" / f"{filename}.json"
         return self._load_json_file(file_path)
-
-    def _load_feature_overrides(self) -> Dict[str, Any]:
-        """Load per-class feature overrides for PDF-friendly display."""
-        if self._feature_overrides_cache is None:
-            overrides_file = self.data_dir / "feature_override.json"
-            loaded = self._load_json_file(overrides_file)
-            self._feature_overrides_cache = loaded if isinstance(loaded, dict) else {}
-        return self._feature_overrides_cache
-
-    def _get_class_feature_override(self, feature_name: str) -> Dict[str, Any]:
-        """Get class feature override config for the current class."""
-        class_name = self.character_data.get("class")
-        if not isinstance(class_name, str) or not isinstance(feature_name, str):
-            return {}
-        class_overrides = self._load_feature_overrides().get(class_name, {})
-        if not isinstance(class_overrides, dict):
-            return {}
-        override = class_overrides.get(feature_name, {})
-        return override if isinstance(override, dict) else {}
 
     @staticmethod
     def _format_benefits(benefits: list) -> str:
@@ -666,6 +652,13 @@ class CharacterBuilder:
                 self.character_data["speed"] = species_data["speed"]
             if "darkvision" in species_data:
                 self.character_data["darkvision"] = species_data.get("darkvision", 0)
+            else:
+                # Phase 9: dwarf/elf no longer carry a top-level ``darkvision``
+                # convenience key — the species's grant_darkvision effect is the
+                # canonical source. Reset to 0 here and let the surviving
+                # species-sourced grant_darkvision effects re-establish the
+                # baseline below.
+                self.character_data["darkvision"] = 0
 
         # Clear lineage language grants while preserving baseline/user/other sources
         old_lineage_name = self.character_data.get("lineage")
@@ -688,6 +681,19 @@ class CharacterBuilder:
             self._filter_applied_effects(
                 lambda e: e.get("source_type") in ["lineage", "lineage_choice"]
             )
+
+        # Phase 9: re-derive darkvision from surviving (species-sourced)
+        # grant_darkvision effects. Required because dwarf/elf no longer have a
+        # top-level convenience key; their species grant_darkvision effect is
+        # the only source of truth and the lineage clear above zeroed the
+        # field before pruning lineage entries from applied_effects.
+        if hasattr(self, "applied_effects"):
+            for tracked in self.applied_effects:
+                eff = tracked.get("effect", {})
+                if eff.get("type") == "grant_darkvision":
+                    r = int(eff.get("range", 60) or 0)
+                    if r > self.character_data.get("darkvision", 0):
+                        self.character_data["darkvision"] = r
 
         # Clear lineage spells from always_prepared
         always_prepared = self.character_data["spells"]["always_prepared"]
@@ -868,23 +874,30 @@ class CharacterBuilder:
                     resolved = self._extract_parenthetical(choice_value)
                     description = description.replace(f"{{{var_name}}}", resolved)
 
-        if source == "class":
-            override = self._get_class_feature_override(trait_name)
-            if override.get("hidden") is True:
+        # Phase 8 (D6-2): dispatch on feature_kind / first-class hidden + pdf_summary
+        # fields instead of name-matching or feature_override.json lookups. The kind
+        # is authored in data/classes/*.json and data/subclasses/**/*.json.
+        if source in ("class", "subclass", "class_choice"):
+            trait_dict = trait_data if isinstance(trait_data, dict) else {}
+            feature_kind = trait_dict.get("feature_kind", "normal")
+
+            # Explicit suppression
+            if trait_dict.get("hidden") is True:
                 return
 
-            pdf_summary = override.get("pdf_summary")
+            # ASI slots and subclass-selection placeholders never render as
+            # standalone features — they're system plumbing handled elsewhere
+            # (ASI by the feat / ability-score pipeline; subclass_pick by the
+            # subclass selector). subclass_feature_slot is the class-level
+            # header for "Gain a subclass feature at this level" — keep it
+            # visible so the level callout still shows in the rendered list.
+            if feature_kind in ("asi", "subclass_pick"):
+                return
+
+            # First-class pdf_summary replaces the verbose description.
+            pdf_summary = trait_dict.get("pdf_summary")
             if isinstance(pdf_summary, str) and pdf_summary.strip():
                 description = pdf_summary.strip()
-
-            normalized_trait_name = trait_name.strip().lower()
-            class_name = self.character_data.get("class")
-            if isinstance(class_name, str):
-                subclass_placeholder = f"{class_name.strip().lower()} subclass"
-                if normalized_trait_name == subclass_placeholder:
-                    return
-            if normalized_trait_name == "ability score improvement":
-                return
 
         # Skip features that are just choice placeholders
         # (e.g. "Choose a subclass") and should be skipped. Use a length threshold to
@@ -1053,9 +1066,14 @@ class CharacterBuilder:
                             elif isinstance(internal_list.get(choice_value), str):
                                 description = internal_list[choice_value]
 
-        # For Spellcasting feature, we'll append cantrips later when choices are made
-        # Check if cantrips have already been chosen
-        if trait_name == "Spellcasting":
+        # Phase 8: legacy cantrip-selection rendering for spellcasting_setup features
+        # (Spellcasting / Pact Magic). Old saved characters stored their chosen
+        # cantrips under choices_made["Spellcasting"]; new characters manage spells
+        # post-creation. Dispatch on feature_kind, not feature name.
+        if (
+            isinstance(trait_data, dict)
+            and trait_data.get("feature_kind") == "spellcasting_setup"
+        ):
             spellcasting_choices = self.character_data["choices_made"].get(
                 "Spellcasting", []
             )
@@ -1719,6 +1737,118 @@ class CharacterBuilder:
                     else:
                         self.character_data.pop("pending_species_feat", None)
 
+        # ------------------------------------------------------------------
+        # Phase 7 (D0-1 / D0-2 / D4-3) handlers — invocations, maneuvers,
+        # weapon masteries, and the spell-modifier effects they need.
+        # ------------------------------------------------------------------
+
+        elif effect_type == "grant_spell_at_will":
+            # Sheet-affecting: spell becomes part of the character's
+            # always-available list (typical Warlock invocation pattern,
+            # e.g. Armor of Shadows -> Mage Armor). Recorded in the same
+            # `always_prepared` dict that `grant_spell` writes to, with an
+            # `at_will: True` flag so renderers can annotate "(at will)".
+            spell_name = effect.get("spell")
+            if isinstance(spell_name, str) and spell_name:
+                spell_def = self._load_spell_definition(spell_name) or {}
+                spell_level = spell_def.get("level", 0)
+                if source_type == "subclass":
+                    display_source = self.character_data.get("subclass", source_name)
+                elif source_type == "class":
+                    display_source = self.character_data.get("class", source_name)
+                else:
+                    display_source = source_name
+
+                # Idempotent: write/refresh the same record on re-apply.
+                self.character_data["spells"]["always_prepared"][spell_name] = {
+                    "level": spell_level,
+                    "source": display_source,
+                    "always_prepared": True,
+                    "at_will": True,
+                    "once_per_day": False,
+                    "counts_against_limit": False,
+                }
+                self.character_data["spell_metadata"][spell_name] = {
+                    "source": display_source,
+                    "source_type": source_type,
+                    "always_prepared": True,
+                    "at_will": True,
+                    "once_per_day": False,
+                    "counts_against_limit": False,
+                }
+
+        elif effect_type == "bonus_spell_damage_ability_mod":
+            # Agonizing Blast: add a chosen ability's modifier to the damage
+            # rolls of a specific spell. Per-spell map so the renderer /
+            # `calculate_spellcasting_stats` can annotate the spell.
+            spell_name = effect.get("spell")
+            ability = effect.get("ability")
+            if isinstance(spell_name, str) and isinstance(ability, str):
+                self.character_data["spell_damage_bonuses"][spell_name] = {
+                    "ability": ability,
+                    "source": source_name,
+                    "source_type": source_type,
+                }
+
+        elif effect_type == "bonus_spell_range":
+            # Eldritch Spear: overrides the displayed range of a specific
+            # spell. `to_character()` consults this map when emitting
+            # `spells_by_level` so the override is visible on the sheet.
+            spell_name = effect.get("spell")
+            new_range = effect.get("range")
+            if isinstance(spell_name, str) and new_range:
+                self.character_data["spell_range_overrides"][spell_name] = {
+                    "range": new_range,
+                    "source": source_name,
+                    "source_type": source_type,
+                }
+
+        elif effect_type == "grant_magical_darkness_sight":
+            # Devil's Sight: see normally in magical darkness up to N feet.
+            # Kept distinct from `grant_darkvision` because the underlying
+            # rule is genuinely different (magical darkness specifically).
+            range_ft = int(effect.get("range", 120) or 0)
+            current = self.character_data.get("magical_darkness_sight") or {}
+            if range_ft > int(current.get("range", 0) or 0):
+                self.character_data["magical_darkness_sight"] = {
+                    "range": range_ft,
+                    "source": source_name,
+                    "source_type": source_type,
+                }
+
+        elif effect_type == "grant_maneuver":
+            # Battle Master maneuver pick. Idempotent: do not duplicate names.
+            maneuver_name = effect.get("maneuver")
+            if isinstance(maneuver_name, str) and maneuver_name:
+                if maneuver_name not in self.character_data["maneuvers_known"]:
+                    self.character_data["maneuvers_known"].append(maneuver_name)
+
+        elif effect_type == "grant_superiority_dice":
+            # Battle Master Combat Superiority. Resolves per-level scaling
+            # (count_by_level / die_by_level) against the current class
+            # level; idempotent rewrite of the structured field.
+            level = self.character_data.get("level", 1)
+            count_by_level = effect.get("count_by_level") or {}
+            die_by_level = effect.get("die_by_level") or {}
+            count = int(effect.get("count", 0) or 0)
+            die = effect.get("die", "d8") or "d8"
+            for threshold, value in sorted(
+                count_by_level.items(), key=lambda kv: int(kv[0])
+            ):
+                if level >= int(threshold):
+                    count = int(value)
+            for threshold, value in sorted(
+                die_by_level.items(), key=lambda kv: int(kv[0])
+            ):
+                if level >= int(threshold):
+                    die = str(value)
+            if count > 0:
+                self.character_data["superiority_dice"] = {
+                    "count": count,
+                    "die": die,
+                    "source": source_name,
+                }
+
         # Track applied effect — AUDIT LOG ONLY. See class-level docstring on
         # ``applied_effects`` for the contract.
         tracked: Dict[str, Any] = {
@@ -1755,6 +1885,12 @@ class CharacterBuilder:
             "two_weapon_fighting_modifier": [],
             "unarmed_fighting": [],
         }
+        # Phase 7: rebuildable structured fields owned by new effect types.
+        self.character_data["maneuvers_known"] = []
+        self.character_data["superiority_dice"] = {}
+        self.character_data["magical_darkness_sight"] = {}
+        self.character_data["spell_damage_bonuses"] = {}
+        self.character_data["spell_range_overrides"] = {}
 
         for tracked in self.applied_effects:
             effect = tracked.get("effect", {})
@@ -1818,6 +1954,56 @@ class CharacterBuilder:
                 flags = self.character_data["fighting_style_flags"]["unarmed_fighting"]
                 if source not in flags:
                     flags.append(source)
+            # Phase 7 rebuildable types
+            elif etype == "grant_maneuver":
+                name = effect.get("maneuver")
+                if isinstance(name, str) and name and name not in self.character_data["maneuvers_known"]:
+                    self.character_data["maneuvers_known"].append(name)
+            elif etype == "grant_superiority_dice":
+                level = self.character_data.get("level", 1)
+                count_by_level = effect.get("count_by_level") or {}
+                die_by_level = effect.get("die_by_level") or {}
+                count = int(effect.get("count", 0) or 0)
+                die = effect.get("die", "d8") or "d8"
+                for threshold, value in sorted(count_by_level.items(), key=lambda kv: int(kv[0])):
+                    if level >= int(threshold):
+                        count = int(value)
+                for threshold, value in sorted(die_by_level.items(), key=lambda kv: int(kv[0])):
+                    if level >= int(threshold):
+                        die = str(value)
+                if count > 0:
+                    self.character_data["superiority_dice"] = {
+                        "count": count,
+                        "die": die,
+                        "source": source,
+                    }
+            elif etype == "grant_magical_darkness_sight":
+                range_ft = int(effect.get("range", 120) or 0)
+                current = self.character_data.get("magical_darkness_sight") or {}
+                if range_ft > int(current.get("range", 0) or 0):
+                    self.character_data["magical_darkness_sight"] = {
+                        "range": range_ft,
+                        "source": source,
+                        "source_type": stype,
+                    }
+            elif etype == "bonus_spell_damage_ability_mod":
+                spell_name = effect.get("spell")
+                ability = effect.get("ability")
+                if isinstance(spell_name, str) and isinstance(ability, str):
+                    self.character_data["spell_damage_bonuses"][spell_name] = {
+                        "ability": ability,
+                        "source": source,
+                        "source_type": stype,
+                    }
+            elif etype == "bonus_spell_range":
+                spell_name = effect.get("spell")
+                new_range = effect.get("range")
+                if isinstance(spell_name, str) and new_range:
+                    self.character_data["spell_range_overrides"][spell_name] = {
+                        "range": new_range,
+                        "source": source,
+                        "source_type": stype,
+                    }
 
     def _filter_applied_effects(self, predicate) -> None:
         """Drop applied effects matching *predicate* and rebuild structured fields.
@@ -2117,8 +2303,15 @@ class CharacterBuilder:
             "background_skill_replacements_needed", None
         )
 
-        # Remove tool proficiencies granted by the previous background
-        prev_tools = prev_bg_data.get("tool_proficiencies", [])
+        # Remove tool proficiencies granted by the previous background's
+        # canonical ``effects`` array (Phase 9: tool_proficiencies migrated to
+        # grant_tool_proficiency effects). Older saved data may still carry the
+        # flat ``tool_proficiencies`` key — honor it for back-compat on load.
+        prev_tools: list = []
+        for eff in prev_bg_data.get("effects", []) or []:
+            if isinstance(eff, dict) and eff.get("type") == "grant_tool_proficiency":
+                prev_tools.extend(eff.get("tools", []) or [])
+        prev_tools.extend(prev_bg_data.get("tool_proficiencies", []) or [])
         tool_sources = self.character_data["proficiency_sources"]["tools"]
         for tool in prev_tools:
             if tool_sources.get(tool) == prev_bg_name:
@@ -2178,6 +2371,14 @@ class CharacterBuilder:
                     lambda e: e.get("source_type") == "feat" and e.get("source") == prev_feat_name
                 )
 
+        # Phase 9 (D1-1): clear applied effects sourced directly from the
+        # previous background (canonical ``effects`` array entries).
+        if hasattr(self, "applied_effects") and prev_bg_name:
+            self._filter_applied_effects(
+                lambda e: e.get("source_type") == "background"
+                and e.get("source") == prev_bg_name
+            )
+
     def set_background(self, background_name: str) -> bool:
         """
         Set the character's background.
@@ -2235,8 +2436,13 @@ class CharacterBuilder:
             )
 
         # Tool proficiencies
-        tool_profs = background_data.get("tool_proficiencies", [])
-        for tool in tool_profs:
+        # Phase 9 (D1-1): backgrounds expose mechanical grants exclusively
+        # through the ``effects`` array. The flat ``tool_proficiencies`` key
+        # is preserved here as a graceful fallback for any legacy data still
+        # in flight (saved characters, snapshots) but new content must use
+        # ``effects: [{type: grant_tool_proficiency, tools: [...]}]``.
+        legacy_tool_profs = background_data.get("tool_proficiencies", [])
+        for tool in legacy_tool_profs:
             if tool not in self.character_data["proficiencies"]["tools"]:
                 self.character_data["proficiencies"]["tools"].append(tool)
                 # Track source so it can be cleared on background change
@@ -2311,6 +2517,12 @@ class CharacterBuilder:
             if feat_data:
                 for feat_effect in feat_data.get("effects", []):
                     self._apply_effect(feat_effect, feat, "feat")
+
+        # Phase 9 (D1-1): apply background-level effects (canonical surface for
+        # tool proficiencies, etc.). Each entry routes through the shared
+        # ``_apply_effect`` dispatcher with source_type="background".
+        for bg_effect in background_data.get("effects", []) or []:
+            self._apply_effect(bg_effect, background_name, "background")
 
     def _process_equipment_selections(
         self, equipment_selections: Dict[str, str]
@@ -3152,6 +3364,11 @@ class CharacterBuilder:
                 if "eldritch_invocations" not in self.character_data:
                     self.character_data["eldritch_invocations"] = {"selected": []}
                 self.character_data["eldritch_invocations"]["selected"] = choice_value
+                # Phase 7 (D0-1): route each chosen invocation through the
+                # single dispatcher. Sheet-affecting invocations carry an
+                # `effects` array in data/eldritch_invocations.json; we load
+                # the file once and apply effects per chosen invocation.
+                self._apply_eldritch_invocation_effects(choice_value)
             return True
 
         # Nested bonus choices (e.g., Thaumaturge_bonus_cantrip)
@@ -3504,13 +3721,25 @@ class CharacterBuilder:
 
                 for choice_cfg in choices_list:
                     source_config = choice_cfg.get("source", {})
+                    # select_multiple choices (e.g. Battle Master maneuvers)
+                    # supply a list value; iterate so each chosen option's
+                    # effects flow through the dispatcher independently.
+                    if isinstance(choice_value, list):
+                        values_iter = [v for v in choice_value if v is not None]
+                    else:
+                        values_iter = [choice_value]
+
                     if source_config.get("type") == "external":
-                        option_data = _load_external(
-                            source_config.get("file"),
-                            source_config.get("list"),
-                            choice_value,
-                        )
-                        if _harvest(option_data, str(choice_value)):
+                        any_match = False
+                        for val in values_iter:
+                            option_data = _load_external(
+                                source_config.get("file"),
+                                source_config.get("list"),
+                                val,
+                            )
+                            if _harvest(option_data, str(val)):
+                                any_match = True
+                        if any_match:
                             return results
                     elif source_config.get("type") == "internal":
                         # Location 4: ``choices.source.list`` names a sibling
@@ -3518,8 +3747,16 @@ class CharacterBuilder:
                         internal_list_name = source_config.get("list", "")
                         if internal_list_name:
                             internal_list = feature_data.get(internal_list_name, {})
-                            option_data = internal_list.get(choice_value) if isinstance(internal_list, dict) else None
-                            if _harvest(option_data, str(choice_value)):
+                            any_match = False
+                            for val in values_iter:
+                                option_data = (
+                                    internal_list.get(val)
+                                    if isinstance(internal_list, dict)
+                                    else None
+                                )
+                                if _harvest(option_data, str(val)):
+                                    any_match = True
+                            if any_match:
                                 return results
 
         # ---------------- Internal-list sibling fallback ----------------
@@ -4946,6 +5183,41 @@ class CharacterBuilder:
 
         return stats
 
+    def _apply_eldritch_invocation_effects(self, invocation_names: List[str]) -> None:
+        """Phase 7 (D0-1): apply sheet-affecting invocation effects.
+
+        Each chosen invocation may carry an ``effects`` array in
+        ``data/eldritch_invocations.json``. We funnel each effect through
+        the single dispatcher ``_apply_effect`` so the invocation pathway
+        joins the One Dispatcher Rule (see
+        ``.github/instructions/effects-system.instructions.md``).
+
+        Invocations with no ``effects`` array (play-time-only mechanics
+        such as Eldritch Smite's pact-slot damage rider or Pact of the
+        Chain's familiar attack) are silently skipped — that
+        classification is intentional per the audit's scope rule.
+        """
+        if not invocation_names:
+            return
+        import json as _json
+        from pathlib import Path as _Path
+        path = _Path(__file__).resolve().parent.parent / "data" / "eldritch_invocations.json"
+        if not path.exists():
+            return
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                all_invocations = _json.load(f)
+        except (OSError, _json.JSONDecodeError):
+            return
+        for name in invocation_names:
+            inv = all_invocations.get(name) or {}
+            effects = inv.get("effects") or []
+            if not isinstance(effects, list):
+                continue
+            for effect in effects:
+                if isinstance(effect, dict):
+                    self._apply_effect(effect, name, "invocation")
+
     def calculate_eldritch_invocation_stats(self) -> Dict[str, Any]:
         """
         Calculate Eldritch Invocation statistics for Warlock characters.
@@ -5231,11 +5503,13 @@ class CharacterBuilder:
             damage_bonus = ability_mod
             damage_type = weapon_props.get("damage_type", "Bludgeoning")
 
-            # Apply bonus_damage effects from features (e.g., Dueling fighting style)
-            # Track which bonuses apply (for excluding from dual-wield offhand)
-            # Phase 6: read from structured field, not applied_effects.
+            # Phase 6: apply bonus_damage effects from features (e.g. Dueling,
+            # Thrown Weapon Fighting). Dispatch is purely by the effect's
+            # `condition` string — no feature name is matched. The local
+            # `one_handed_melee_bonus` accumulator exists so dual-wielding can
+            # exclude that condition's bonus from offhand damage, per RAW.
             damage_notes = []
-            dueling_bonus = 0  # Track Dueling separately for dual-wield exclusion
+            one_handed_melee_bonus = 0  # Excluded from dual-wield offhand (RAW: Dueling)
 
             for entry in self.character_data.get("damage_bonuses", []):
                 condition = entry.get("condition", "")
@@ -5243,15 +5517,16 @@ class CharacterBuilder:
                 # Check if condition is met for this weapon
                 applies = False
                 if condition == "one handed melee weapon":
-                    # Dueling: Check weapon qualifies (one-handed melee)
-                    # Display as if used alone (dual-wielding shown separately)
+                    # Effect-driven: any bonus_damage with this condition
+                    # qualifies (Dueling is the canonical example). Display
+                    # as if used alone (dual-wielding shown separately).
                     is_melee = "Ranged" not in category
                     is_one_handed = "Two-Handed" not in properties
 
                     if is_melee and is_one_handed:
                         applies = True
-                        # Track Dueling bonus to exclude from dual-wield damage
-                        dueling_bonus = entry.get("value", 0)
+                        # Track this condition's bonus to exclude from dual-wield
+                        one_handed_melee_bonus = entry.get("value", 0)
                 elif condition == "thrown weapon ranged attack":
                     # Thrown Weapon Fighting: Check if weapon has Thrown property
                     # The "Thrown" property means it can be used for ranged attacks
@@ -5408,7 +5683,7 @@ class CharacterBuilder:
                 "quantity": weapon_quantity,  # Store quantity for dual wield check
                 "_damage_dice": damage_dice,  # Store for offhand calculation
                 "_ability_mod": ability_mod,  # Store for offhand calculation
-                "_dueling_bonus": dueling_bonus,  # Store to exclude from dual-wield
+                "_one_handed_melee_bonus": one_handed_melee_bonus,  # Excluded from dual-wield
             }
 
             # Add thrown damage if applicable
@@ -5538,7 +5813,7 @@ class CharacterBuilder:
         for attack in attacks:
             attack.pop("_damage_dice", None)
             attack.pop("_ability_mod", None)
-            attack.pop("_dueling_bonus", None)
+            attack.pop("_one_handed_melee_bonus", None)
             attack.pop("quantity", None)  # Remove quantity from final attack data
 
         return {"attacks": attacks, "combinations": combinations}
@@ -5598,9 +5873,12 @@ class CharacterBuilder:
         # Offhand average (no GWF adjustment needed here - applied to individual weapons)
         oh_avg_damage = self._calculate_average_damage(oh_damage_dice, oh_damage_bonus)
 
-        # Check if Dueling was applied to either weapon
-        has_dueling = (
-            weapon1.get("_dueling_bonus", 0) > 0 or weapon2.get("_dueling_bonus", 0) > 0
+        # Check if the one-handed-melee condition bonus was applied to either
+        # weapon (Dueling fighting style is the canonical source). Used only
+        # for the user-facing footnote.
+        has_one_handed_melee_bonus = (
+            weapon1.get("_one_handed_melee_bonus", 0) > 0
+            or weapon2.get("_one_handed_melee_bonus", 0) > 0
         )
         
         # Create combination name
@@ -5635,7 +5913,7 @@ class CharacterBuilder:
                 "icon": weapon2["icon"],
             },
             "notes": ["Dueling bonus does not apply when dual-wielding"]
-            if has_dueling
+            if has_one_handed_melee_bonus
             else [],
         }
 
@@ -6047,6 +6325,29 @@ class CharacterBuilder:
 
 
         character_data["spells_by_level"] = spells_by_level
+
+        # Phase 7 (D0-1): apply per-spell range overrides (e.g. Eldritch
+        # Spear changes Eldritch Blast's range to 300 feet). The override
+        # map is populated by the `bonus_spell_range` handler.
+        range_overrides = character_data.get("spell_range_overrides") or {}
+        if range_overrides:
+            for spell_list in spells_by_level.values():
+                for spell in spell_list:
+                    name = spell.get("name")
+                    if name in range_overrides:
+                        spell["range"] = range_overrides[name]["range"]
+                        spell["range_override_source"] = range_overrides[name]["source"]
+
+        # Phase 7 (D0-1): annotate per-spell damage bonuses (e.g. Agonizing
+        # Blast adds Charisma to Eldritch Blast damage). The renderer surfaces
+        # the annotation; the structured field stays the source of truth.
+        damage_bonuses = character_data.get("spell_damage_bonuses") or {}
+        if damage_bonuses:
+            for spell_list in spells_by_level.values():
+                for spell in spell_list:
+                    name = spell.get("name")
+                    if name in damage_bonuses:
+                        spell["damage_ability_bonus"] = damage_bonuses[name]
 
         # For compatibility with tests: add 'cantrips' and 'level_1' keys to spells
         # 'cantrips' = all level 0 spells, 'level_1' = all level 1 spells

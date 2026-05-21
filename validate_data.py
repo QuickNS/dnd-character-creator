@@ -49,9 +49,9 @@ CATEGORIES = [
     {"name": "weapon_masteries",     "glob": "data/equipment/weapon_masteries.json", "schema": "models/weapon_mastery_schema.json"},
     {"name": "adventuring_gear",     "glob": "data/equipment/adventuring_gear.json", "schema": "models/adventuring_gear_schema.json"},
     {"name": "fighting_styles",      "glob": "data/fighting_styles.json",            "schema": "models/fighting_style_schema.json"},
+    {"name": "maneuvers",            "glob": "data/maneuvers.json",                  "schema": "models/maneuver_schema.json"},
     {"name": "eldritch_invocations", "glob": "data/eldritch_invocations.json",       "schema": "models/eldritch_invocation_schema.json"},
     {"name": "languages",            "glob": "data/languages.json",                  "schema": "models/languages_schema.json"},
-    {"name": "feature_override",     "glob": "data/feature_override.json",           "schema": "models/feature_override_schema.json"},
     {"name": "trait_patterns",       "glob": "data/trait_patterns.json",             "schema": "models/trait_patterns_schema.json"},
 ]
 

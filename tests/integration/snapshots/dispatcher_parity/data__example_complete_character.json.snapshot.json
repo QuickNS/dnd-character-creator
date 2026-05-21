@@ -175,6 +175,8 @@
   "level": 1,
   "lineage": null,
   "lineage_data": null,
+  "magical_darkness_sight": {},
+  "maneuvers_known": [],
   "name": "",
   "proficiencies": {
     "armor": [],
@@ -350,7 +352,9 @@
   "species_data": null,
   "speed": 30,
   "speed_bonuses": {},
+  "spell_damage_bonuses": {},
   "spell_metadata": {},
+  "spell_range_overrides": {},
   "spell_selections_needed": {
     "background_cantrips": {
       "count": 0,
@@ -407,6 +411,7 @@
   "step": "species",
   "subclass": null,
   "subclass_data": null,
+  "superiority_dice": {},
   "tool_proficiencies": [],
   "weapon_masteries": {
     "available": [],

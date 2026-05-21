@@ -430,7 +430,8 @@
   "features_by_level": {
     "1": {
       "Spellcasting": {
-        "description": "You can cast spells using Wisdom as your spellcasting ability. You prepare a number of spells equal to your Wisdom modifier + your Cleric level (minimum of 1). You can change your list of prepared spells whenever you finish a Long Rest. You can use a Holy Symbol as your Spellcasting Focus."
+        "description": "You can cast spells using Wisdom as your spellcasting ability. You prepare a number of spells equal to your Wisdom modifier + your Cleric level (minimum of 1). You can change your list of prepared spells whenever you finish a Long Rest. You can use a Holy Symbol as your Spellcasting Focus.",
+        "feature_kind": "spellcasting_setup"
       },
       "Divine Order": {
         "description": "You have dedicated yourself to one of the following sacred roles of your choice.",
@@ -486,7 +487,10 @@
       }
     },
     "3": {
-      "Cleric Subclass": "Choose your Divine Domain subclass."
+      "Cleric Subclass": {
+        "description": "Choose your Divine Domain subclass.",
+        "feature_kind": "subclass_pick"
+      }
     },
     "4": {
       "Ability Score Improvement": {
@@ -498,14 +502,18 @@
             "file": "general_feats.json",
             "list": "general_feats"
           }
-        }
+        },
+        "feature_kind": "asi"
       }
     },
     "5": {
       "Sear Undead": "When you Turn Undead, affected undead also take 2d8 + Cleric level Radiant damage."
     },
     "6": {
-      "Subclass Feature": "Gain a feature from your Divine Domain subclass."
+      "Subclass Feature": {
+        "description": "Gain a feature from your Divine Domain subclass.",
+        "feature_kind": "subclass_feature_slot"
+      }
     },
     "7": {
       "Blessed Strikes": {
@@ -532,7 +540,8 @@
             "file": "general_feats.json",
             "list": "general_feats"
           }
-        }
+        },
+        "feature_kind": "asi"
       }
     },
     "9": {},
@@ -550,7 +559,8 @@
             "file": "general_feats.json",
             "list": "general_feats"
           }
-        }
+        },
+        "feature_kind": "asi"
       }
     },
     "13": {},
@@ -568,11 +578,15 @@
             "file": "general_feats.json",
             "list": "general_feats"
           }
-        }
+        },
+        "feature_kind": "asi"
       }
     },
     "17": {
-      "Subclass Feature": "Gain a feature from your Divine Domain subclass."
+      "Subclass Feature": {
+        "description": "Gain a feature from your Divine Domain subclass.",
+        "feature_kind": "subclass_feature_slot"
+      }
     },
     "18": {},
     "19": {

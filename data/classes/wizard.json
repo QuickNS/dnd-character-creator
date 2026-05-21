@@ -79,7 +79,8 @@
   "features_by_level": {
     "1": {
       "Spellcasting": {
-        "description": "You have learned to cast spells through study of arcane magic. You know three Wizard cantrips (Light, Mage Hand, and Ray of Frost are recommended). Your spellbook starts with six level 1 Wizard spells (Detect Magic, Feather Fall, Mage Armor, Magic Missile, Sleep, and Thunderwave are recommended). You prepare spells from your spellbook and can change your prepared spells when you finish a Long Rest."
+        "description": "You have learned to cast spells through study of arcane magic. You know three Wizard cantrips (Light, Mage Hand, and Ray of Frost are recommended). Your spellbook starts with six level 1 Wizard spells (Detect Magic, Feather Fall, Mage Armor, Magic Missile, Sleep, and Thunderwave are recommended). You prepare spells from your spellbook and can change your prepared spells when you finish a Long Rest.",
+        "feature_kind": "spellcasting_setup"
       },
       "Ritual Adept": "You can cast any spell as a Ritual if that spell has the Ritual tag and the spell is in your spellbook. You needn't have the spell prepared, but you must read from the book to cast a spell in this way.",
       "Arcane Recovery": "When you finish a Short Rest, you can choose expended spell slots to recover. The spell slots can have a combined level equal to no more than half your Wizard level (round up), and none of the slots can be level 6 or higher. Once you use this feature, you can't do so again until you finish a Long Rest."
@@ -112,7 +113,10 @@
       }
     },
     "3": {
-      "Wizard Subclass": "You gain a Wizard subclass of your choice. A subclass is a specialization that grants you features at certain Wizard levels."
+      "Wizard Subclass": {
+        "description": "You gain a Wizard subclass of your choice. A subclass is a specialization that grants you features at certain Wizard levels.",
+        "feature_kind": "subclass_pick"
+      }
     },
     "4": {
       "Ability Score Improvement": {
@@ -124,14 +128,18 @@
             "file": "general_feats.json",
             "list": "general_feats"
           }
-        }
+        },
+        "feature_kind": "asi"
       }
     },
     "5": {
       "Memorize Spell": "Whenever you finish a Short Rest, you can study your spellbook and replace one of the level 1+ Wizard spells you have prepared for your Spellcasting feature with another level 1+ spell from the book."
     },
     "6": {
-      "Subclass Feature": "You gain a feature from your Wizard subclass."
+      "Subclass Feature": {
+        "description": "You gain a feature from your Wizard subclass.",
+        "feature_kind": "subclass_feature_slot"
+      }
     },
     "7": {},
     "8": {
@@ -144,12 +152,16 @@
             "file": "general_feats.json",
             "list": "general_feats"
           }
-        }
+        },
+        "feature_kind": "asi"
       }
     },
     "9": {},
     "10": {
-      "Subclass Feature": "You gain a feature from your Wizard subclass."
+      "Subclass Feature": {
+        "description": "You gain a feature from your Wizard subclass.",
+        "feature_kind": "subclass_feature_slot"
+      }
     },
     "11": {},
     "12": {
@@ -162,12 +174,16 @@
             "file": "general_feats.json",
             "list": "general_feats"
           }
-        }
+        },
+        "feature_kind": "asi"
       }
     },
     "13": {},
     "14": {
-      "Subclass Feature": "You gain a feature from your Wizard subclass."
+      "Subclass Feature": {
+        "description": "You gain a feature from your Wizard subclass.",
+        "feature_kind": "subclass_feature_slot"
+      }
     },
     "15": {},
     "16": {
@@ -180,7 +196,8 @@
             "file": "general_feats.json",
             "list": "general_feats"
           }
-        }
+        },
+        "feature_kind": "asi"
       }
     },
     "17": {},

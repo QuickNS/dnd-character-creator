@@ -24,10 +24,5 @@
         }
       ]
     }
-  },
-  "spells_by_level": {
-    "cantrip": ["Druidcraft"],
-    "3": ["Longstrider"],
-    "5": ["Pass without Trace"]
   }
 }

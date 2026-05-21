@@ -83,6 +83,12 @@ SUBCLASSES = {
     "wizard": ["abjurer", "diviner", "evoker", "illusionist"],
 }
 
+# Class-specific extra pages to fetch (e.g. invocation/maneuver lists).
+# Keys are class slugs; values are wiki page slugs (the path after the base URL).
+CLASS_EXTRA_PAGES = {
+    "warlock": ["warlock:eldritch-invocation"],
+}
+
 # Wiki data directory
 WIKI_DATA_DIR = Path("wiki_data")
 
@@ -197,6 +203,48 @@ def fetch_subclass_data(class_name, subclass_name, overwrite=False):
     return True
 
 
+def fetch_extra_page_data(class_name, page_slug, overwrite=False):
+    """Fetch and save an extra class-related page (e.g. warlock invocations)."""
+    # page_slug is the wiki path, e.g. "warlock:eldritch-invocation".
+    # Strip the "<class>:" prefix to derive the on-disk filename.
+    if ":" in page_slug:
+        _, file_slug = page_slug.split(":", 1)
+    else:
+        file_slug = page_slug
+
+    filepath = WIKI_DATA_DIR / "classes" / class_name / f"{file_slug}.json"
+
+    if not overwrite and filepath.exists():
+        print(f"Skipping extra page: {page_slug} (already exists)")
+        return True
+
+    print(f"  📜 Fetching extra page: {page_slug}")
+    url = f"{WIKI_BASE}/{page_slug}"
+    soup = fetch_wiki_page(url)
+
+    if not soup:
+        print(f"  ❌ Failed to fetch {page_slug}")
+        return False
+
+    content = extract_page_content(soup)
+    if not content:
+        print(f"  ❌ Failed to extract content for {page_slug}")
+        return False
+
+    wiki_data = {
+        "class_name": class_name,
+        "page_slug": page_slug,
+        "url": url,
+        "fetched_at": datetime.now().isoformat(),
+        "content": content,
+    }
+
+    filepath.parent.mkdir(parents=True, exist_ok=True)
+    save_wiki_data(filepath, wiki_data)
+    print(f"  ✅ Saved to {filepath}")
+    return True
+
+
 def main():
     """Main fetch function."""
     # Parse command-line arguments
@@ -286,6 +334,23 @@ Examples:
                     subclass_failed += 1
                 time.sleep(1)  # Be nice to the server
 
+    # Fetch class-specific extra pages (e.g. warlock invocations)
+    print("\n📜 FETCHING EXTRA PAGES")
+    print("-" * 70)
+    extra_success = 0
+    extra_failed = 0
+
+    for class_name in classes_to_fetch:
+        for page_slug in CLASS_EXTRA_PAGES.get(class_name, []):
+            result = fetch_extra_page_data(
+                class_name, page_slug, overwrite=args.overwrite
+            )
+            if result:
+                extra_success += 1
+            else:
+                extra_failed += 1
+            time.sleep(1)  # Be nice to the server
+
     # Summary
     print("\n" + "=" * 70)
     print("📊 FETCH SUMMARY")
@@ -294,7 +359,8 @@ Examples:
         print(f"Class filter: {args.class_filter}")
     print(f"Classes: {class_success} processed, {class_failed} failed")
     print(f"Subclasses: {subclass_success} processed, {subclass_failed} failed")
-    print(f"Total: {class_success + subclass_success} pages")
+    print(f"Extra pages: {extra_success} processed, {extra_failed} failed")
+    print(f"Total: {class_success + subclass_success + extra_success} pages")
     print(f"\nData saved in: {WIKI_DATA_DIR.absolute()}")
     print("\n✅ Wiki data fetch complete!")
     print("\nNext steps:")

@@ -77,6 +77,40 @@ A feature value can be:
 }
 ```
 
+### `feature_kind`, `hidden`, `pdf_summary` (Phase 8)
+
+Class and subclass features may carry three additional first-class fields:
+
+| Field | Type | Notes |
+|---|---|---|
+| `feature_kind` | enum | `"normal"` (default) \| `"asi"` \| `"subclass_pick"` \| `"spellcasting_setup"` \| `"subclass_feature_slot"` |
+| `hidden` | boolean | When `true`, suppress this feature from the rendered class-features list. |
+| `pdf_summary` | string | Short PDF-style summary that replaces the verbose `description` when the feature is rendered on the sheet. |
+
+The enum is **closed**. Do not invent new values — propose them in the audit-fix planning loop and extend `models/class_schema.json` + `models/subclass_schema.json` + the dispatch in `CharacterBuilder._apply_trait_effects` in lockstep.
+
+Builder semantics:
+
+- `feature_kind: "asi"` → always suppressed from the class-features list. The ASI slot is handled by the feat / ability-score pipeline.
+- `feature_kind: "subclass_pick"` → always suppressed. The subclass selector handles this.
+- `feature_kind: "subclass_feature_slot"` → rendered as a class-level header; the actual subclass feature lands alongside it via the subclass walk.
+- `feature_kind: "spellcasting_setup"` → rendered normally, and triggers the legacy `choices_made["Spellcasting"]` cantrip-list append used by older saved characters.
+- `hidden: true` → always suppressed, regardless of `feature_kind`. Use sparingly — `feature_kind` covers the structural cases.
+- `pdf_summary` → if present, the rendered feature's `description` is replaced by this summary string.
+
+### Forbidden: name-based branching for these categories
+
+Do **not** add code that branches on a feature's display name to decide whether it is an ASI slot, a subclass-pick placeholder, a spellcasting-setup feature, or a subclass-feature slot. Examples that are no longer permitted (all removed in Phase 8):
+
+```python
+if normalized_trait_name == "ability score improvement": ...     # ❌
+if normalized_trait_name == f"{class_name.lower()} subclass": ...  # ❌
+if trait_name == "Spellcasting": ...                              # ❌
+if trait_name == "Pact Magic": ...                                # ❌
+```
+
+The replacement is always `feature_kind`-based dispatch. If you need a new structural category, propose a new enum value rather than smuggling it back in as a name match.
+
 ## Species Data (`data/species/*.json`)
 
 | Field | Type | Required | Notes |

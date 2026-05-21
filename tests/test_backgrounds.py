@@ -44,8 +44,15 @@ class TestBackgroundDataFiles:
         assert isinstance(bg.get("feat"), str)
         assert isinstance(bg.get("skill_proficiencies"), list)
         assert len(bg["skill_proficiencies"]) == 2
-        assert isinstance(bg.get("tool_proficiencies"), list)
-        assert len(bg["tool_proficiencies"]) >= 1
+        # Phase 9 (D1-1): backgrounds expose mechanical grants via the
+        # canonical ``effects`` array, not flat ``tool_proficiencies``.
+        assert isinstance(bg.get("effects"), list)
+        tool_effects = [
+            e for e in bg["effects"] if e.get("type") == "grant_tool_proficiency"
+        ]
+        assert len(tool_effects) >= 1
+        tools_granted = [t for e in tool_effects for t in e.get("tools", [])]
+        assert len(tools_granted) >= 1
 
     @pytest.mark.parametrize("bg_name", ALL_BACKGROUNDS)
     def test_background_ability_scores(self, data_loader, bg_name):

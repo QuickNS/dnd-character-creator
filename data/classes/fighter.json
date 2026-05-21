@@ -175,15 +175,22 @@
               "value": "4"
             }
           ]
-        }
+        },
+        "pdf_summary": "Bonus Action: Regain 1d10+Fighter level HP (2/Short Rest, 3/Short Rest at level 4)"
       }
     },
     "2": {
-      "Action Surge": "On your turn, take one additional action, except the Magic action. Once per Short or Long Rest. Starting at level 17, you can use it twice before a rest but only once on a turn.",
+      "Action Surge": {
+        "description": "On your turn, take one additional action, except the Magic action. Once per Short or Long Rest. Starting at level 17, you can use it twice before a rest but only once on a turn.",
+        "pdf_summary": "Once per Short Rest, take one additional Action on your turn"
+      },
       "Tactical Mind": "When you fail an ability check, you can expend a use of your Second Wind to push yourself toward success. Rather than regaining Hit Points, you roll 1d10 and add the number rolled to the ability check, potentially turning it into a success. If the check still fails, this use of Second Wind isn't expended."
     },
     "3": {
-      "Fighter Subclass": "Choose your Martial Archetype subclass."
+      "Fighter Subclass": {
+        "description": "Choose your Martial Archetype subclass.",
+        "feature_kind": "subclass_pick"
+      }
     },
     "4": {
       "Weapon Mastery": "You can use the mastery properties of one additional kind of weapon.",
@@ -196,7 +203,8 @@
             "file": "general_feats.json",
             "list": "general_feats"
           }
-        }
+        },
+        "feature_kind": "asi"
       }
     },
     "5": {
@@ -213,11 +221,15 @@
             "file": "general_feats.json",
             "list": "general_feats"
           }
-        }
+        },
+        "feature_kind": "asi"
       }
     },
     "7": {
-      "Subclass Feature": "Gain a feature from your Martial Archetype subclass."
+      "Subclass Feature": {
+        "description": "Gain a feature from your Martial Archetype subclass.",
+        "feature_kind": "subclass_feature_slot"
+      }
     },
     "8": {
       "Ability Score Improvement": {
@@ -229,7 +241,8 @@
             "file": "general_feats.json",
             "list": "general_feats"
           }
-        }
+        },
+        "feature_kind": "asi"
       }
     },
     "9": {
@@ -256,7 +269,10 @@
     },
     "10": {
       "Weapon Mastery": "You can use the mastery properties of one additional kind of weapon.",
-      "Subclass Feature": "Gain a feature from your Martial Archetype subclass."
+      "Subclass Feature": {
+        "description": "Gain a feature from your Martial Archetype subclass.",
+        "feature_kind": "subclass_feature_slot"
+      }
     },
     "11": {
       "Two Extra Attacks": "You can attack three times instead of once whenever you take the Attack action on your turn."
@@ -271,7 +287,8 @@
             "file": "general_feats.json",
             "list": "general_feats"
           }
-        }
+        },
+        "feature_kind": "asi"
       }
     },
     "13": {
@@ -288,11 +305,15 @@
             "file": "general_feats.json",
             "list": "general_feats"
           }
-        }
+        },
+        "feature_kind": "asi"
       }
     },
     "15": {
-      "Subclass Feature": "Gain a feature from your Martial Archetype subclass."
+      "Subclass Feature": {
+        "description": "Gain a feature from your Martial Archetype subclass.",
+        "feature_kind": "subclass_feature_slot"
+      }
     },
     "16": {
       "Weapon Mastery": "You can use the mastery properties of one additional kind of weapon.",
@@ -305,7 +326,8 @@
             "file": "general_feats.json",
             "list": "general_feats"
           }
-        }
+        },
+        "feature_kind": "asi"
       }
     },
     "17": {
@@ -313,7 +335,10 @@
       "Indomitable (Three Uses)": "You can use Indomitable three times before a Long Rest."
     },
     "18": {
-      "Subclass Feature": "Gain a feature from your Martial Archetype subclass."
+      "Subclass Feature": {
+        "description": "Gain a feature from your Martial Archetype subclass.",
+        "feature_kind": "subclass_feature_slot"
+      }
     },
     "19": {
       "Epic Boon": "Gain an Epic Boon feat or another feat of your choice."

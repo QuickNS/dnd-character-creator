@@ -9,7 +9,7 @@
     "ability_score_increase",
     "feat",
     "skill_proficiencies",
-    "tool_proficiencies",
+    "effects",
     "starting_equipment"
   ],
   "properties": {
@@ -48,9 +48,10 @@
       "type": "array",
       "items": { "type": "string" }
     },
-    "tool_proficiencies": {
+    "effects": {
       "type": "array",
-      "items": { "type": "string" }
+      "description": "Mechanical grants from the background (tool proficiencies, etc.). Each entry must conform to the shared effect schema. Phase 9 (D1-1) canonicalized the background mechanical surface onto this array — flat top-level fields like tool_proficiencies are no longer recognized.",
+      "items": { "$ref": "_shared/effect.json" }
     },
     "starting_equipment": {
       "type": "object",

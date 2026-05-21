@@ -23,11 +23,17 @@ You own everything Python-side: the calculation engine, the REST API, the data f
 
 1. **`CharacterBuilder` is the single source of truth.** All derived values come from `to_character()`.
 2. **Effects system, never hardcode.** Branch on `effect['type']`, never on `feature_name == "..."`.
-3. **D&D 2024 only.** Verify against `wiki_data/` cache before encoding a rule.
-4. **Schema compliance.** `features_by_level` is `{level: {feature_name: description}}` — objects, never arrays.
-5. **Stateless API.** No Flask sessions in `routes/api/`. The request carries everything.
-6. **Thin handlers.** Route handlers parse JSON → call builder/loader → serialize. Logic belongs in `modules/`.
-7. **Backward-compatible API changes.** Add new fields; deprecate before removing.
+3. **No name-based dispatch in builder code.** This is non-negotiable (Phase 8 / D6-2). Forbidden patterns include:
+   - `if feature_name == "..."` / `if trait_name == "..."` to decide structural behaviour (ASI slot, subclass-pick placeholder, spellcasting setup, subclass feature slot).
+   - `if choice_value == "..."` to gate effect application.
+   - `f"{class_name} subclass"` string-formatting to recognise the subclass-pick feature.
+   - Re-introducing `data/feature_override.json` or any equivalent name-keyed override file.
+   Dispatch on `feature_kind` (closed enum on class/subclass features), the first-class `hidden` / `pdf_summary` fields, or `effect['type']`. If you need a new structural category, propose a new `feature_kind` enum value in the audit-fix loop and extend the schema, builder, and docs in lockstep — do not smuggle a name match back in.
+4. **D&D 2024 only.** Verify against `wiki_data/` cache before encoding a rule.
+5. **Schema compliance.** `features_by_level` is `{level: {feature_name: description-or-object}}` — objects, never arrays.
+6. **Stateless API.** No Flask sessions in `routes/api/`. The request carries everything.
+7. **Thin handlers.** Route handlers parse JSON → call builder/loader → serialize. Logic belongs in `modules/`.
+8. **Backward-compatible API changes.** Add new fields; deprecate before removing.
 
 ## Adding New Behaviour
 

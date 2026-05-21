@@ -3,12 +3,29 @@
   "description": "You have always had a way with people. You know what makes them tick, you can tease out their hearts' desires after a few minutes of conversation, and with a few leading questions you can read them like they were children's books. It's a useful talent, and one that you're perfectly willing to use for your advantage.",
   "ability_score_increase": {
     "total": 3,
-    "options": ["Charisma", "Dexterity", "Intelligence"],
-    "suggested": {"Charisma": 2, "Dexterity": 1}
+    "options": [
+      "Charisma",
+      "Dexterity",
+      "Intelligence"
+    ],
+    "suggested": {
+      "Charisma": 2,
+      "Dexterity": 1
+    }
   },
   "feat": "Skilled",
-  "skill_proficiencies": ["Deception", "Sleight of Hand"],
-  "tool_proficiencies": ["Forgery Kit"],
+  "skill_proficiencies": [
+    "Deception",
+    "Sleight of Hand"
+  ],
+  "effects": [
+    {
+      "type": "grant_tool_proficiency",
+      "tools": [
+        "Forgery Kit"
+      ]
+    }
+  ],
   "starting_equipment": {
     "option_a": {
       "items": [
