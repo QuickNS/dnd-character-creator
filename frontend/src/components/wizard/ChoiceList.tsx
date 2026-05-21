@@ -123,136 +123,203 @@ export function ChoiceList({
 
   const selectedCount = selected.size;
   const remainingCount = Math.max(count - selectedCount, 0);
+  const selectedValue = !isMulti ? (typeof value === "string" ? value : "") : "";
+  const selectedOption = !isMulti
+    ? normalized.find((opt) => opt.value === selectedValue)
+    : undefined;
+  const displayTitle = title === "" ? null : (title ?? choiceKey);
+  const counter = isMulti ? (
+    <div
+      className={cn(
+        "inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold sm:ml-auto",
+        counterTone(selectedCount, count),
+      )}
+    >
+      <ListChecks className="h-3.5 w-3.5" />
+      <span>
+        {selectedCount} of {count} selected
+      </span>
+      <span className="text-current/80">
+        {remainingCount === 0
+          ? "Complete"
+          : `${remainingCount} remaining`}
+      </span>
+    </div>
+  ) : (
+    <div
+      className={cn(
+        "inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium sm:ml-auto",
+        selectedCount === 1
+          ? "border-primary/40 bg-muted/60 text-primary"
+          : "border-border bg-muted/40 text-muted-foreground",
+      )}
+    >
+      {selectedCount === 1 ? (
+        <Check className="h-3.5 w-3.5" />
+      ) : (
+        <CircleDashed className="h-3.5 w-3.5" />
+      )}
+      {selectedCount === 1 ? "Complete" : "Choose 1 option"}
+    </div>
+  );
 
   return (
     <fieldset className="rounded-xl border border-border/70 bg-card/70 p-4 shadow-sm sm:p-5">
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <legend className="px-0 text-base font-semibold text-foreground">
-          {title ?? choiceKey}
-        </legend>
-        {isMulti ? (
-          <div
-            className={cn(
-              "inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold",
-              counterTone(selectedCount, count),
-            )}
-          >
-            <ListChecks className="h-3.5 w-3.5" />
-            <span>
-              {selectedCount} of {count} selected
-            </span>
-            <span className="text-current/80">
-              {remainingCount === 0
-                ? "Complete"
-                : `${remainingCount} remaining`}
-            </span>
-          </div>
-        ) : (
-          <div className="inline-flex items-center gap-2 rounded-full border border-border bg-muted/40 px-3 py-1 text-xs font-medium text-muted-foreground">
-            <CircleDashed className="h-3.5 w-3.5" />
-            Choose 1 option
-          </div>
-        )}
-      </div>
-      {description && (
-        <p className="mb-4 max-w-3xl text-sm text-muted-foreground">{description}</p>
+      {displayTitle && (
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <legend className="px-0 text-base font-semibold text-foreground">
+            {displayTitle}
+          </legend>
+          {counter}
+        </div>
       )}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-        {normalized.map((opt) => {
-          const isSelected = selected.has(opt.value);
-          const isAlreadyGranted = alreadyGranted.has(opt.value);
-          const disabled =
-            isAlreadyGranted ||
-            (isMulti && !isSelected && selected.size >= count);
-          return (
-            <div
-              key={opt.value}
-              className={cn(
-                "group relative overflow-hidden rounded-lg border text-left text-sm transition-all duration-200",
-                isSelected && !isAlreadyGranted &&
-                  "border-primary bg-muted/60 text-foreground shadow-sm ring-1 ring-primary/20",
-                !isSelected && !disabled &&
-                  "border-border bg-background/70 hover:-translate-y-0.5 hover:border-primary/40 hover:bg-secondary/60 hover:shadow-sm",
-                isAlreadyGranted &&
-                  "border-border/40 bg-muted/10 opacity-50",
-                !isAlreadyGranted && disabled &&
-                  "border-border/60 bg-muted/20 opacity-45",
-              )}
-            >
-              <div className="flex items-stretch">
-                <button
-                  type="button"
-                  onClick={() => !isAlreadyGranted && toggle(opt.value)}
-                  disabled={disabled}
-                  aria-pressed={isSelected}
-                  aria-label={
-                    isAlreadyGranted
-                      ? `${opt.label} — ${disabledReason.toLowerCase()}`
-                      : opt.label
-                  }
-                  className={cn(
-                    "min-w-0 flex-1 px-4 py-3 text-left",
-                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-                    (isAlreadyGranted || (!isAlreadyGranted && disabled)) &&
-                      "cursor-not-allowed",
-                  )}
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="min-w-0">
-                      <div className="font-medium">{opt.label}</div>
-                      {optionBadges?.[opt.value] && (
-                        <span
-                          className="mt-1 inline-flex rounded-full border border-border/70 bg-background/70 px-2 py-0.5 text-[11px] font-medium text-muted-foreground"
-                          role="status"
-                          aria-label={`Prerequisite: ${optionBadges[opt.value]}`}
-                        >
-                          {optionBadges[opt.value]}
-                        </span>
-                      )}
-                      {isAlreadyGranted && (
-                        <div className="mt-1 text-xs text-amber-600 dark:text-amber-400">
-                          {disabledReason}
-                        </div>
-                      )}
-                      {!isAlreadyGranted && !hideOptionDescriptions && opt.description && (
-                        <div className="mt-1 text-xs text-muted-foreground">
-                          {opt.description}
-                        </div>
-                      )}
-                    </div>
-                    <span
-                      className={cn(
-                        "mt-0.5 inline-flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full border transition-colors",
-                        isSelected
-                          ? "border-primary bg-background text-primary"
-                          : "border-border bg-background text-transparent group-hover:border-primary/40",
-                      )}
-                    >
-                      <Check className="h-3.5 w-3.5" />
-                    </span>
-                  </div>
-                </button>
-                {onInspectOption && (
+      {description ? (
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <p className="max-w-3xl text-sm text-muted-foreground">{description}</p>
+          {!displayTitle && counter}
+        </div>
+      ) : !displayTitle ? (
+        <div className="mb-4 flex justify-start sm:justify-end">
+          {counter}
+        </div>
+      ) : null}
+      {isMulti ? (
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          {normalized.map((opt) => {
+            const isSelected = selected.has(opt.value);
+            const isAlreadyGranted = alreadyGranted.has(opt.value);
+            const disabled =
+              isAlreadyGranted ||
+              (isMulti && !isSelected && selected.size >= count);
+            return (
+              <div
+                key={opt.value}
+                className={cn(
+                  "group relative overflow-hidden rounded-lg border text-left text-sm transition-all duration-200",
+                  isSelected && !isAlreadyGranted &&
+                    "border-primary bg-muted/60 text-foreground shadow-sm ring-1 ring-primary/20",
+                  !isSelected && !disabled &&
+                    "border-border bg-background/70 hover:-translate-y-0.5 hover:border-primary/40 hover:bg-secondary/60 hover:shadow-sm",
+                  isAlreadyGranted &&
+                    "border-border/40 bg-muted/10 opacity-50",
+                  !isAlreadyGranted && disabled &&
+                    "border-border/60 bg-muted/20 opacity-45",
+                )}
+              >
+                <div className="flex items-stretch">
                   <button
                     type="button"
-                    onClick={() => onInspectOption(opt.value)}
-                    aria-label={`View details for ${opt.label}`}
-                    aria-pressed={inspectedOption === opt.value}
+                    onClick={() => !isAlreadyGranted && toggle(opt.value)}
+                    disabled={disabled}
+                    aria-pressed={isSelected}
+                    aria-label={
+                      isAlreadyGranted
+                        ? `${opt.label} — ${disabledReason.toLowerCase()}`
+                        : opt.label
+                    }
                     className={cn(
-                      "flex flex-shrink-0 items-center justify-center border-l border-border/70 px-3 text-muted-foreground transition-colors",
-                      "hover:bg-muted hover:text-foreground",
+                      "min-w-0 flex-1 px-4 py-3 text-left",
                       "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-                      inspectedOption === opt.value && "text-primary",
+                      (isAlreadyGranted || (!isAlreadyGranted && disabled)) &&
+                        "cursor-not-allowed",
                     )}
                   >
-                    <Info className="h-3.5 w-3.5" />
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="font-medium">{opt.label}</div>
+                        {optionBadges?.[opt.value] && (
+                          <span
+                            className="mt-1 inline-flex rounded-full border border-border/70 bg-background/70 px-2 py-0.5 text-[11px] font-medium text-muted-foreground"
+                            role="status"
+                            aria-label={`Prerequisite: ${optionBadges[opt.value]}`}
+                          >
+                            {optionBadges[opt.value]}
+                          </span>
+                        )}
+                        {isAlreadyGranted && (
+                          <div className="mt-1 text-xs text-amber-600 dark:text-amber-400">
+                            {disabledReason}
+                          </div>
+                        )}
+                        {!isAlreadyGranted && !hideOptionDescriptions && opt.description && (
+                          <div className="mt-1 text-xs text-muted-foreground">
+                            {opt.description}
+                          </div>
+                        )}
+                      </div>
+                      <span
+                        className={cn(
+                          "mt-0.5 inline-flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full border transition-colors",
+                          isSelected
+                            ? "border-primary bg-background text-primary"
+                            : "border-border bg-background text-transparent group-hover:border-primary/40",
+                        )}
+                      >
+                        <Check className="h-3.5 w-3.5" />
+                      </span>
+                    </div>
                   </button>
-                )}
+                  {onInspectOption && (
+                    <button
+                      type="button"
+                      onClick={() => onInspectOption(opt.value)}
+                      aria-label={`View details for ${opt.label}`}
+                      aria-pressed={inspectedOption === opt.value}
+                      className={cn(
+                        "flex flex-shrink-0 items-center justify-center border-l border-border/70 px-3 text-muted-foreground transition-colors",
+                        "hover:bg-muted hover:text-foreground",
+                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                        inspectedOption === opt.value && "text-primary",
+                      )}
+                    >
+                      <Info className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                </div>
               </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="space-y-3">
+          <select
+            value={selectedValue}
+            onChange={(event) => setChoice(choiceKey, event.target.value)}
+            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            aria-label={title ?? choiceKey}
+          >
+            <option value="">Select an option</option>
+            {normalized.map((opt) => (
+              <option
+                key={opt.value}
+                value={opt.value}
+                disabled={alreadyGranted.has(opt.value)}
+              >
+                {opt.label}
+              </option>
+            ))}
+          </select>
+          {selectedOption && !hideOptionDescriptions && selectedOption.description && (
+            <div className="text-sm text-muted-foreground">
+              {selectedOption.description}
             </div>
-          );
-        })}
-      </div>
+          )}
+          {selectedOption && optionBadges?.[selectedOption.value] && (
+            <span
+              className="inline-flex rounded-full border border-border/70 bg-background/70 px-2 py-0.5 text-[11px] font-medium text-muted-foreground"
+              role="status"
+              aria-label={`Prerequisite: ${optionBadges[selectedOption.value]}`}
+            >
+              {optionBadges[selectedOption.value]}
+            </span>
+          )}
+          {(disabledOptions ?? []).length > 0 && (
+            <div className="text-xs text-muted-foreground">
+              Disabled options are marked as unavailable because they are already granted.
+            </div>
+          )}
+        </div>
+      )}
     </fieldset>
   );
 }

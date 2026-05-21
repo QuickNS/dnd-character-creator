@@ -9,9 +9,7 @@ import { useRosterStore } from "@/store/rosterStore";
 import { summarizeChoices } from "@/lib/persistence";
 import { useIsDark } from "@/hooks/useIsDark";
 import { SAMPLE_CHARACTERS } from "@/data/sampleCharacters";
-
-const BUG_REPORT_URL =
-  "https://github.com/QuickNS/dnd-character-creator/issues/new?labels=bug";
+import { useBugReportUrl } from "@/hooks/useBugReportUrl";
 
 export function Home() {
   const navigate = useNavigate();
@@ -25,6 +23,7 @@ export function Home() {
   const saveCurrent = useRosterStore((s) => s.saveCurrent);
   const deleteEntry = useRosterStore((s) => s.delete);
   const isDark = useIsDark();
+  const bugReportUrl = useBugReportUrl();
 
   const [importError, setImportError] = useState<string | null>(null);
   const [importOpen, setImportOpen] = useState(false);
@@ -180,7 +179,7 @@ export function Home() {
       {/* ── Theme toggle ─────────────────────────────────────────── */}
       <div className="fixed top-4 right-4 z-20 flex items-center gap-2">
         <a
-          href={BUG_REPORT_URL}
+          href={bugReportUrl}
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex items-center rounded-md border border-border bg-background px-3 py-2 text-sm font-medium text-muted-foreground shadow-sm hover:bg-secondary hover:text-foreground transition-colors"

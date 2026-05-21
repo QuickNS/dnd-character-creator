@@ -224,6 +224,10 @@ export interface GeneralFeatsReference {
   general_feats: Record<string, FeatDefinition>;
 }
 
+export interface OriginFeatsReference {
+  origin_feats: Record<string, FeatDefinition>;
+}
+
 export class ApiError extends Error {
   constructor(
     public status: number,

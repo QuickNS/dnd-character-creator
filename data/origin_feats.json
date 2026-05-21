@@ -67,6 +67,11 @@
         "Choose one 1st-level spell from the Cleric spell list. You can cast this spell once without expending a spell slot, and you regain the ability to cast it in this way when you finish a Long Rest. You can also cast the spell using any spell slots you have.",
         "Your spellcasting ability for these spells is Wisdom."
       ],
+      "effects": [
+        {"type": "grant_cantrip", "spell": "${cantrips[0]}"},
+        {"type": "grant_cantrip", "spell": "${cantrips[1]}"},
+        {"type": "grant_spell", "spell": "${1st_level_spell}", "level": 1}
+      ],
       "category": "Origin",
       "prerequisite": "None",
       "source": "Player's Handbook 2024",
@@ -99,6 +104,11 @@
         "Choose one 1st-level spell from the Druid spell list. You can cast this spell once without expending a spell slot, and you regain the ability to cast it in this way when you finish a Long Rest. You can also cast the spell using any spell slots you have.",
         "Your spellcasting ability for these spells is Wisdom."
       ],
+      "effects": [
+        {"type": "grant_cantrip", "spell": "${cantrips[0]}"},
+        {"type": "grant_cantrip", "spell": "${cantrips[1]}"},
+        {"type": "grant_spell", "spell": "${1st_level_spell}", "level": 1}
+      ],
       "category": "Origin",
       "prerequisite": "None",
       "source": "Player's Handbook 2024",
@@ -130,6 +140,11 @@
         "Choose two cantrips from the Wizard spell list.",
         "Choose one 1st-level spell from the Wizard spell list. You can cast this spell once without expending a spell slot, and you regain the ability to cast it in this way when you finish a Long Rest. You can also cast the spell using any spell slots you have.",
         "Your spellcasting ability for these spells is Intelligence."
+      ],
+      "effects": [
+        {"type": "grant_cantrip", "spell": "${cantrips[0]}"},
+        {"type": "grant_cantrip", "spell": "${cantrips[1]}"},
+        {"type": "grant_spell", "spell": "${1st_level_spell}", "level": 1}
       ],
       "category": "Origin",
       "prerequisite": "None",

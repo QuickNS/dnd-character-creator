@@ -436,6 +436,45 @@ class TestGeneralFeatEffects:
 
 
 class TestOriginFeatEffects:
+    class TestMagicInitiateAlwaysPrepared:
+        """Magic Initiate (Wizard): granted spells/cantrips are always prepared."""
+
+        def _build_magic_initiate_wizard(self, cantrips, spell):
+            """Helper: build a level 1 Human Fighter with Magic Initiate (Wizard) feat and chosen spells."""
+            builder = CharacterBuilder()
+            builder.apply_choices({
+                "character_name": "MI Wizard Test",
+                "level": 1,
+                "species": "Human",
+                "class": "Fighter",
+                "background": "Sage",  # Sage grants Magic Initiate (Wizard)
+                "ability_scores": {
+                    "Strength": 10, "Dexterity": 10, "Constitution": 10,
+                    "Intelligence": 16, "Wisdom": 10, "Charisma": 10
+                },
+                "background_bonuses": {"Intelligence": 2, "Constitution": 1},
+                "feat_choices": {
+                    "Magic Initiate (Wizard)": {
+                        "cantrips": cantrips,
+                        "spell": spell,
+                    }
+                }
+            })
+            return builder.to_character()
+
+        def test_magic_initiate_wizard_spells_always_prepared(self):
+            """Spells/cantrips from Magic Initiate (Wizard) are always prepared."""
+            cantrips = ["Mage Hand", "Prestidigitation"]
+            spell = "Shield"
+            char = self._build_magic_initiate_wizard(cantrips, spell)
+            # Check cantrips
+            cantrip_entries = [s for s in char["spells"]["cantrips"] if s["source"] == "Magic Initiate (Wizard)"]
+            for entry in cantrip_entries:
+                assert entry.get("always_prepared"), f"Cantrip {entry['name']} should be always prepared"
+            # Check spell
+            spell_entries = [s for s in char["spells"]["level_1"] if s["source"] == "Magic Initiate (Wizard)"]
+            for entry in spell_entries:
+                assert entry.get("always_prepared"), f"Spell {entry['name']} should be always prepared"
     """Origin feats with effects should have correct definitions."""
 
     def test_tough_has_bonus_hp_effect(self, origin_feats):

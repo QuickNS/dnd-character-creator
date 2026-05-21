@@ -91,11 +91,13 @@
 @layer components {
 
   .info-panel {
-    @apply rounded-xl border border-primary/25 bg-muted/60 shadow-inner;
+    @apply rounded-xl border border-primary/25 bg-muted/60 shadow-inner
+           flex flex-col;
+    max-height: calc(100dvh - 3rem);
   }
 
   .info-panel-header {
-    @apply border-b border-border/70 px-4 py-3 sm:px-5;
+    @apply flex-none border-b border-border/70 px-4 py-3 sm:px-5;
   }
 
   .info-panel-kicker {
@@ -107,7 +109,22 @@
   }
 
   .info-panel-body {
-    @apply px-4 py-4 sm:px-5;
+    @apply flex-1 min-h-0 overflow-y-auto px-4 py-4 sm:px-5;
+  }
+
+  /* Theme-aware custom scrollbar for the info panel */
+  .info-panel-body::-webkit-scrollbar {
+    width: 6px;
+  }
+  .info-panel-body::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .info-panel-body::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 3px;
+  }
+  .info-panel-body::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--primary) / 0.45);
   }
 
   .info-panel-block {
