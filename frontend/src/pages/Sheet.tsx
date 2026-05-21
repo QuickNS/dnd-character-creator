@@ -846,12 +846,6 @@ function Spells({ c }: { c: Char }) {
       ? Math.max(0, spellsPreparedTotal - spellsAlwaysPrepared)
       : undefined;
   const maxSpells = num(stats.max_spells_to_prepare) ?? num(stats.max_spells_prepared);
-  const preparedSpellsDisplay =
-    maxSpells !== undefined
-      ? `${spellsPreparedToChoose ?? 0} / ${maxSpells}${
-          spellsAlwaysPrepared > 0 ? ` (+${spellsAlwaysPrepared})` : ""
-        }`
-      : undefined;
   const ritual = stats.ritual_casting === true;
 
   return (

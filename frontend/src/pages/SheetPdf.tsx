@@ -687,68 +687,6 @@ function AbilityBlock({
   );
 }
 
-// ---------- Feature columns ----------
-
-function FeatureColumn({
-  style,
-  features,
-  titleSize,
-  bodySize,
-}: {
-  style: React.CSSProperties;
-  features: Row[];
-  titleSize: number;
-  bodySize: number;
-}) {
-  const merged: React.CSSProperties = {
-    position: "absolute",
-    color: "#000",
-    overflow: "hidden",
-    ...style,
-  };
-  if (typeof merged.top === "number") merged.top = `${merged.top}px`;
-  if (typeof merged.left === "number") merged.left = `${merged.left}px`;
-  if (typeof merged.width === "number") merged.width = `${merged.width}px`;
-  if (typeof merged.height === "number") merged.height = `${merged.height}px`;
-  return (
-    <div style={merged}>
-      {features.map((f, i) => {
-        const name = str(f.name) ?? "";
-        const desc = str(f.description) ?? "";
-        return (
-          <div
-            key={i}
-            style={{
-              marginBottom: 4,
-              breakInside: "avoid",
-              fontFamily: "'Inter', sans-serif",
-            }}
-          >
-            <div
-              style={{
-                fontSize: `${titleSize}pt`,
-                fontWeight: "bold",
-                lineHeight: 1.2,
-              }}
-            >
-              {name}
-            </div>
-            <div
-              style={{
-                fontSize: `${bodySize}pt`,
-                lineHeight: 1.1,
-                whiteSpace: "pre-wrap",
-              }}
-            >
-              {desc}
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
 function EditableFeatureColumn({
   style,
   features: initialFeatures,
