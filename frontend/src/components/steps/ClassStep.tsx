@@ -12,10 +12,12 @@ import {
   Sword,
   Trash2,
 } from "lucide-react";
-import { api, type ChoicesMade, type ClassAllocation, type ClassDetail, type ClassSummary, type FeatDefinition, type GeneralFeatsReference, type Multiclassing } from "@/lib/api";
+import { api, type ChoicesMade, type ClassAllocation, type ClassDetail, type ClassSummary, type FeatDefinition, type GeneralFeatsReference, type Multiclassing, type OriginFeatsReference, type SpellDefinition } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { useCharacterStore } from "@/store/characterStore";
 import { ChoiceList } from "@/components/wizard/ChoiceList";
+import { FeatDropdownPicker } from "@/components/wizard/FeatDropdownPicker";
+import { SpellChoiceList } from "@/components/wizard/FeatChoicesPicker";
 import {
   ClassAdvancedChoices,
   type SpellReference,
@@ -33,11 +35,33 @@ interface PreviewChoice {
   count?: number;
   depends_on?: string;
   depends_on_value?: string;
+  choice_category?: string;
 }
 
 interface ClassFeatPrerequisiteWarning {
   featName: string;
   messages: string[];
+}
+
+function isSpellLikeChoice(choice: PreviewChoice, options: Array<unknown>): options is string[] {
+  if (!options.every((option) => typeof option === "string" && option.length > 0)) {
+    return false;
+  }
+  if (choice.choice_category === "spells") {
+    return true;
+  }
+
+  const labelText = [
+    choice.title,
+    choice.description,
+    choice.feature_name,
+    choice.name,
+  ]
+    .filter((value): value is string => typeof value === "string" && value.length > 0)
+    .join(" ")
+    .toLowerCase();
+
+  return labelText.includes("spell") || labelText.includes("cantrip");
 }
 
 interface SubclassSummary {
@@ -103,16 +127,6 @@ function parentKeyVariants(key: string): string[] {
 }
 
 const CLASS_FEAT_ASI_OPTION_KEY_RE = /^(class_feat_\d+)_(asi_option|ability_plus_2|abilities_plus_1)$/;
-const ASI_PLUS_TWO_OPTION = "+2 to one ability";
-const ASI_PLUS_ONE_TWO_OPTION = "+1 to two abilities";
-const ASI_ABILITIES = [
-  "Strength",
-  "Dexterity",
-  "Constitution",
-  "Intelligence",
-  "Wisdom",
-  "Charisma",
-];
 
 function featureLevelEntries(
   featuresByLevel: SubclassDetail["features_by_level"],
@@ -336,31 +350,8 @@ const ABILITIES = [
   "Charisma",
 ] as const;
 
-function formatChoiceLabel(value: string): string {
-  return value
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (m) => m.toUpperCase());
-}
-
 function isClassFeatChoiceKey(value: string): boolean {
   return /^class_feat_\d+$/.test(value);
-}
-
-function featOptionName(option: string | { name?: string }): string {
-  if (typeof option === "string") return option;
-  return option.name ?? "";
-}
-
-function buildFeatPrerequisiteBadges(
-  options: Array<string | { name?: string }>,
-  featDefinitions: Record<string, FeatDefinition>,
-): Record<string, string | undefined> {
-  return Object.fromEntries(
-    options
-      .map((option) => featOptionName(option))
-      .filter(Boolean)
-      .map((name) => [name, featDefinitions[name]?.prerequisite]),
-  );
 }
 
 function evaluateFeatPrerequisite(
@@ -460,7 +451,6 @@ export function ClassStep() {
   const { setSidebarPanel } = useWizardSidebarPanel();
   const [infoTarget, setInfoTarget] = useState<ClassInfoTarget>({ kind: "class" });
   const [inspectedSpell, setInspectedSpell] = useState<SpellReference | null>(null);
-  const [inspectedFeat, setInspectedFeat] = useState<string | null>(null);
 
   function writeAllocations(nextRows: ClassAllocation[]) {
     const normalized =
@@ -576,6 +566,25 @@ export function ClassStep() {
       `${k}:${Array.isArray(v) ? v.slice().sort().join("|") : String(v)}`,
     )
     .join(";");
+  const nestedClassChoicesKey = Object.entries(choicesMade)
+    .filter(([key]) => ![
+      "class",
+      "subclass",
+      "level",
+      "classes",
+      "skill_choices",
+    ].includes(key))
+    .filter(([key]) => !key.startsWith("class_feat_"))
+    .filter(([, value]) =>
+      typeof value === "string" ||
+      typeof value === "number" ||
+      (Array.isArray(value) && value.every((item) => typeof item === "string" || typeof item === "number")),
+    )
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([key, value]) =>
+      `${key}:${Array.isArray(value) ? value.slice().sort().join("|") : String(value)}`,
+    )
+    .join(";");
 
   const previewQuery = useQuery({
     // Key on the four fields that actually change what class features are
@@ -583,7 +592,7 @@ export function ClassStep() {
     // so picking a spell/mastery/invocation doesn't force a reload of the
     // class preview. skill_choices IS included because expertise-picker options
     // depend on the character's skill proficiencies.
-    queryKey: ["character", "preview-step", "class", selectedClass, clampLevel(activeRow.level), selectedSubclass, skillChoicesKey, classFeatChoicesKey],
+    queryKey: ["character", "preview-step", "class", selectedClass, clampLevel(activeRow.level), selectedSubclass, skillChoicesKey, classFeatChoicesKey, nestedClassChoicesKey],
     queryFn: () => api.character.previewStep(previewChoices, "class"),
     enabled: !!selectedClass,
     placeholderData: keepPreviousData,
@@ -640,13 +649,17 @@ export function ClassStep() {
     () => generalFeatsQuery.data?.general_feats ?? {},
     [generalFeatsQuery.data],
   );
-  const inspectedFeatDefinition = inspectedFeat
-    ? generalFeatDefinitions[inspectedFeat]
-    : undefined;
+  const originFeatsQuery = useQuery({
+    queryKey: ["catalog", "reference", "origin_feats"],
+    queryFn: () => api.catalog.getReference<OriginFeatsReference>("origin_feats"),
+  });
+  const originFeatDefinitions = useMemo<Record<string, FeatDefinition>>(
+    () => originFeatsQuery.data?.origin_feats ?? {},
+    [originFeatsQuery.data],
+  );
 
   useEffect(() => {
     setInspectedSpell(null);
-    setInspectedFeat(null);
     setInfoTarget({ kind: "class" });
   }, [activeRowIndex, selectedClass]);
 
@@ -657,14 +670,6 @@ export function ClassStep() {
             <SpellInfoPanel
               spell={inspectedSpell}
               onBack={() => setInspectedSpell(null)}
-            />
-          )
-        : inspectedFeat && inspectedFeatDefinition
-        ? (
-            <FeatInfoPanel
-              featName={inspectedFeat}
-              feat={inspectedFeatDefinition}
-              onBack={() => setInspectedFeat(null)}
             />
           )
         : shouldRenderInfoPanel
@@ -705,8 +710,6 @@ export function ClassStep() {
     fullClassData,
     fullClassQuery.isLoading,
     fullClassQuery.isPlaceholderData,
-    inspectedFeat,
-    inspectedFeatDefinition,
     inspectedSpell,
     infoTarget,
     needsSubclass,
@@ -1025,16 +1028,23 @@ export function ClassStep() {
           combinedScores={combinedScores}
           totalLevel={clampLevel(choicesMade.level)}
           featDefinitions={generalFeatDefinitions}
-          inspectedFeatName={inspectedFeat}
-          onInspectFeat={(featName) => {
-            setInspectedSpell(null);
-            setInspectedFeat(featName);
-          }}
+          originFeatDefinitions={originFeatDefinitions}
           selectedClassSummary={detailClass}
           selectedSubclass={selectedSubclass}
           activeRowLabel={activeRowLabel}
           needsSubclass={needsSubclass}
           availableSubclasses={availableSubclasses}
+          onInspectSpell={(spell) => {
+            setInspectedSpell({
+              ...spell,
+              components: Array.isArray(spell.components)
+                ? spell.components
+                : spell.components
+                  ? [spell.components]
+                  : undefined,
+            });
+          }}
+          inspectedSpellName={inspectedSpell?.name}
           onSelectSubclassInfo={(id) => {
             setInspectedSpell(null);
             setInfoTarget({ kind: "subclass", id });
@@ -1064,7 +1074,6 @@ export function ClassStep() {
           choicesForDerived={previewChoices}
           inspectedSpellName={inspectedSpell?.name}
           onInspectSpell={(spell) => {
-            setInspectedFeat(null);
             setInspectedSpell(spell);
           }}
         />
@@ -1150,89 +1159,6 @@ function SpellInfoPanel({
               </div>
             ))}
         </dl>
-      </div>
-    </aside>
-  );
-}
-
-function FeatInfoPanel({
-  featName,
-  feat,
-  onBack,
-}: {
-  featName: string;
-  feat: FeatDefinition;
-  onBack: () => void;
-}) {
-  const choices = Array.isArray(feat.choices)
-    ? feat.choices.filter(
-        (choice): choice is Record<string, unknown> =>
-          !!choice && typeof choice === "object" && !Array.isArray(choice),
-      )
-    : [];
-
-  return (
-    <aside className="info-panel" aria-label="Feat details panel">
-      <div className="info-panel-header">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <p className="info-panel-kicker">Feat details</p>
-            <h4 className="info-panel-title">{featName}</h4>
-          </div>
-          <button
-            type="button"
-            onClick={onBack}
-            className="inline-flex items-center rounded-md border border-border/70 bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-          >
-            Back
-          </button>
-        </div>
-      </div>
-      <div className="info-panel-body">
-        {feat.prerequisite && (
-          <span className="inline-flex rounded-full border border-border/70 bg-background/70 px-2.5 py-1 text-[11px] uppercase tracking-wide text-muted-foreground">
-            {feat.prerequisite}
-          </span>
-        )}
-        {feat.description && (
-          <p className="mt-4 text-sm text-muted-foreground">{feat.description}</p>
-        )}
-        {Array.isArray(feat.benefits) && feat.benefits.length > 0 && (
-          <div className="mt-4 rounded-lg border border-border/70 bg-background/80 px-3 py-3">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">
-              Benefits
-            </p>
-            <ul className="mt-2 list-disc space-y-1 pl-4 text-sm text-foreground/90">
-              {feat.benefits.map((benefit) => (
-                <li key={benefit}>{benefit}</li>
-              ))}
-            </ul>
-          </div>
-        )}
-        {choices.length > 0 && (
-          <div className="mt-4 rounded-lg border border-border/70 bg-background/80 px-3 py-3">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">
-              Required choices
-            </p>
-            <ul className="mt-2 space-y-1 text-sm text-foreground/90">
-              {choices.map((choice, index) => {
-                const choiceName =
-                  typeof choice.name === "string" && choice.name.length > 0
-                    ? choice.name
-                    : `choice_${index + 1}`;
-                const count =
-                  typeof choice.count === "number" && choice.count > 1
-                    ? choice.count
-                    : 1;
-                return (
-                  <li key={`${choiceName}-${index}`}>
-                    • {formatChoiceLabel(choiceName)} (choose {count})
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        )}
       </div>
     </aside>
   );
@@ -1688,8 +1614,7 @@ function ClassDetail({
   combinedScores,
   totalLevel,
   featDefinitions,
-  inspectedFeatName,
-  onInspectFeat,
+  originFeatDefinitions,
   selectedClassSummary,
   selectedSubclass,
   activeRowLabel,
@@ -1697,14 +1622,15 @@ function ClassDetail({
   availableSubclasses,
   onSelectSubclassInfo,
   onSubclass,
+  onInspectSpell,
+  inspectedSpellName,
 }: {
   previewData: Record<string, unknown>;
   choicesMade: Record<string, unknown>;
   combinedScores?: Record<string, number>;
   totalLevel: number;
   featDefinitions: Record<string, FeatDefinition>;
-  inspectedFeatName?: string | null;
-  onInspectFeat: (featName: string) => void;
+  originFeatDefinitions: Record<string, FeatDefinition>;
   selectedClassSummary?: {
     name: string;
     subclass_selection_level: number;
@@ -1715,6 +1641,8 @@ function ClassDetail({
   availableSubclasses: SubclassSummary[];
   onSelectSubclassInfo: (id: string) => void;
   onSubclass: (v: string) => void;
+  onInspectSpell: (spell: SpellDefinition) => void;
+  inspectedSpellName?: string;
 }) {
   const nestedChoices =
     (previewData["nested_choices"] as PreviewChoice[] | undefined) ?? [];
@@ -1945,42 +1873,90 @@ function ClassDetail({
           )}
 
           <div className="space-y-4">
-          {asiChoiceGroups.map((group) => (
-            <ClassFeatAsiPicker
-              key={`${group.slotKey}_asi`}
-              slotKey={group.slotKey}
-              slotLevel={group.slotLevel}
-              asiOptionChoice={group.asiOptionChoice}
-              plusTwoChoice={group.plusTwoChoice}
-              plusOneChoice={group.plusOneChoice}
-            />
-          ))}
           {displayNestedChoices.map((choice, idx) => {
             const key =
               choice.choice_key ??
               choice.feature_name ??
               choice.name ??
               `class_choice_${idx}`;
-            const opts = (choice.options ?? []) as Array<unknown>;
-            // Only render renderable shapes; otherwise skip silently.
-            if (opts.length === 0) return null;
-            // Honor depends_on / depends_on_value: hide nested bonus
-            // choices (e.g. Thaumaturge bonus cantrip) until the parent
-            // option is actually selected. Backend may emit depends_on
-            // in snake_case while the parent is stored under its
-            // Title Case feature name, so try a few normalized matches.
+
+            // Feat sub-choices are rendered inside FeatDropdownPicker — skip here
+            if (key.startsWith("feat_") && !isClassFeatChoiceKey(key)) return null;
+
+            // ASI sub-choices (class_feat_N_asi_option etc.) are rendered inside
+            // ClassFeatAsiPicker which is inlined after FeatDropdownPicker — skip here
+            if (asiChoiceKeys.has(key)) return null;
+
+            // Feat sub-choices keyed as class_feat_N_<name> (e.g. class_feat_4_ability)
+            // are rendered inside FeatDropdownPicker — skip them at the top level
+            if (!isClassFeatChoiceKey(key) && /^class_feat_\d+_/.test(key)) return null;
+
+            // Honor depends_on / depends_on_value
+            // Treat null the same as undefined: show whenever the parent has any truthy value
             if (choice.depends_on) {
               const variants = parentKeyVariants(choice.depends_on);
               const parent = variants
                 .map((k) => choicesMade[k])
                 .find((v) => v !== undefined);
               const matches =
-                choice.depends_on_value === undefined
+                choice.depends_on_value == null
                   ? Boolean(parent)
                   : Array.isArray(parent)
                     ? parent.includes(choice.depends_on_value)
                     : parent === choice.depends_on_value;
               if (!matches) return null;
+            }
+
+            if (isClassFeatChoiceKey(key)) {
+              const slotLevel = Number(key.replace("class_feat_", "")) || 0;
+              const selectedFeat =
+                typeof choicesMade[key] === "string" ? String(choicesMade[key]) : "";
+              // Sub-choices are keyed as class_feat_N_<name> by the backend
+              const subChoicesForSlot = selectedFeat
+                ? displayNestedChoices.filter((sc) => {
+                    const scKey = sc.choice_key ?? sc.feature_name ?? sc.name ?? "";
+                    return scKey.startsWith(`${key}_`) && !asiChoiceKeys.has(scKey);
+                  })
+                : [];
+              const warningsForFeat = featPrerequisiteWarnings
+                .filter((w) => w.featName === selectedFeat)
+                .flatMap((w) => w.messages);
+              // ASI group for this slot (present when "Ability Score Improvement" is selected)
+              const asiGroup = asiChoiceGroups.find((g) => g.slotKey === key);
+              return (
+                <FeatDropdownPicker
+                  key={key}
+                  choiceKey={key}
+                  slotLevel={slotLevel}
+                  title={choice.title ?? `Feat (Level ${slotLevel})`}
+                  description={choice.description}
+                  generalFeats={featDefinitions}
+                  originFeats={originFeatDefinitions}
+                  featSubChoices={subChoicesForSlot}
+                  choicesMade={choicesMade}
+                  prerequisiteWarning={warningsForFeat}
+                  asiChoiceGroup={asiGroup}
+                  onInspectSpell={onInspectSpell}
+                  inspectedSpellName={inspectedSpellName}
+                />
+              );
+            }
+
+            const opts = (choice.options ?? []) as Array<unknown>;
+            if (opts.length === 0) return null;
+            if (isSpellLikeChoice(choice, opts)) {
+              return (
+                <SpellChoiceList
+                  key={key}
+                  choiceKey={key}
+                  title={choice.title ?? choice.name ?? key}
+                  description={choice.description}
+                  options={opts}
+                  count={choice.count ?? 1}
+                  onInspectSpell={onInspectSpell}
+                  inspectedSpellName={inspectedSpellName}
+                />
+              );
             }
             return (
               <ChoiceList
@@ -1991,23 +1967,6 @@ function ClassDetail({
                 options={opts as Array<string | { name?: string }>}
                 optionDescriptions={choice.option_descriptions}
                 count={choice.count ?? 1}
-                 hideOptionDescriptions={isClassFeatChoiceKey(key)}
-                 optionBadges={
-                  isClassFeatChoiceKey(key)
-                    ? buildFeatPrerequisiteBadges(
-                        opts as Array<string | { name?: string }>,
-                        featDefinitions,
-                      )
-                    : undefined
-                }
-                 onInspectOption={
-                  isClassFeatChoiceKey(key)
-                    ? (featName) => onInspectFeat(featName)
-                    : undefined
-                 }
-                 inspectedOption={
-                  isClassFeatChoiceKey(key) ? inspectedFeatName ?? undefined : undefined
-                 }
               />
             );
           })}
@@ -2015,143 +1974,5 @@ function ClassDetail({
         </section>
       )}
     </div>
-  );
-}
-
-function ClassFeatAsiPicker({
-  slotKey,
-  slotLevel,
-  asiOptionChoice,
-}: {
-  slotKey: string;
-  slotLevel: number;
-  asiOptionChoice?: PreviewChoice;
-  plusTwoChoice?: PreviewChoice;
-  plusOneChoice?: PreviewChoice;
-}) {
-  const choicesMade = useCharacterStore((s) => s.choicesMade);
-  const setChoice = useCharacterStore((s) => s.setChoice);
-  const clearChoice = useCharacterStore((s) => s.clearChoice);
-
-  const asiOptionKey = asiOptionChoice?.choice_key ?? `${slotKey}_asi_option`;
-  const plusTwoKey = `${slotKey}_ability_plus_2`;
-  const plusOneKey = `${slotKey}_abilities_plus_1`;
-  const selectedOption =
-    typeof choicesMade[asiOptionKey] === "string"
-      ? (choicesMade[asiOptionKey] as string)
-      : "";
-  const selectedPlusTwo =
-    typeof choicesMade[plusTwoKey] === "string"
-      ? (choicesMade[plusTwoKey] as string)
-      : "";
-  const selectedPlusOne = Array.isArray(choicesMade[plusOneKey])
-    ? (choicesMade[plusOneKey] as string[]).filter((v): v is string => typeof v === "string")
-    : [];
-  const remaining =
-    selectedOption === ASI_PLUS_TWO_OPTION
-      ? (selectedPlusTwo ? 0 : 1)
-      : selectedOption === ASI_PLUS_ONE_TWO_OPTION
-        ? Math.max(2 - selectedPlusOne.length, 0)
-        : 2;
-
-  function setAsiOption(option: string) {
-    setChoice(asiOptionKey, option);
-    if (option === ASI_PLUS_TWO_OPTION) {
-      clearChoice(plusOneKey);
-    } else if (option === ASI_PLUS_ONE_TWO_OPTION) {
-      clearChoice(plusTwoKey);
-    }
-  }
-
-  function toggleAbility(ability: string) {
-    if (selectedOption === ASI_PLUS_TWO_OPTION) {
-      setChoice(plusTwoKey, ability);
-      return;
-    }
-    if (selectedOption !== ASI_PLUS_ONE_TWO_OPTION) return;
-
-    const picked = new Set(selectedPlusOne);
-    if (picked.has(ability)) {
-      picked.delete(ability);
-    } else if (picked.size < 2) {
-      picked.add(ability);
-    }
-    setChoice(plusOneKey, Array.from(picked));
-  }
-
-  return (
-    <fieldset className="overflow-hidden rounded-2xl border border-border/80 bg-gradient-to-br from-card via-card to-secondary/30 shadow-sm">
-      <div className="border-b border-border/70 px-5 py-4 sm:px-6">
-        <legend className="font-semibold text-lg text-foreground">
-          Ability Score Improvement (Level {slotLevel})
-        </legend>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {asiOptionChoice?.description || "Choose +2 to one ability or +1 to two different abilities."}{" "}
-          <span className={cn(
-            "font-medium",
-            remaining === 0 ? "text-green-600 dark:text-green-400" : "text-muted-foreground",
-          )}>
-            {remaining} remaining.
-          </span>
-        </p>
-      </div>
-
-      <div className="space-y-4 px-5 py-5 sm:px-6">
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-          {[ASI_PLUS_TWO_OPTION, ASI_PLUS_ONE_TWO_OPTION].map((option) => {
-            const isSelected = selectedOption === option;
-            return (
-              <button
-                key={option}
-                type="button"
-                onClick={() => setAsiOption(option)}
-                aria-pressed={isSelected}
-                className={cn(
-                  "rounded-lg border px-4 py-3 text-left text-sm transition-all duration-200",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-                  isSelected
-                    ? "border-primary bg-muted/60 text-foreground shadow-sm ring-1 ring-primary/20"
-                    : "border-border bg-background/70 hover:border-primary/40 hover:bg-secondary/50",
-                )}
-              >
-                {option}
-              </button>
-            );
-          })}
-        </div>
-
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-          {ASI_ABILITIES.map((ability) => {
-            const isSelected =
-              selectedOption === ASI_PLUS_TWO_OPTION
-                ? selectedPlusTwo === ability
-                : selectedPlusOne.includes(ability);
-            const disabled =
-              selectedOption === ASI_PLUS_ONE_TWO_OPTION &&
-              !isSelected &&
-              selectedPlusOne.length >= 2;
-            return (
-              <button
-                key={`${slotKey}-${ability}`}
-                type="button"
-                onClick={() => toggleAbility(ability)}
-                disabled={!selectedOption || disabled}
-                aria-pressed={isSelected}
-                className={cn(
-                  "rounded-lg border px-3 py-2 text-sm transition-all duration-200",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-                  isSelected
-                    ? "border-primary bg-muted/60 text-foreground shadow-sm ring-1 ring-primary/20"
-                    : "border-border bg-background/75 text-foreground hover:border-primary/40 hover:bg-secondary/50",
-                  (!selectedOption || disabled) && "cursor-not-allowed opacity-50",
-                )}
-              >
-                {ability}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-    </fieldset>
   );
 }

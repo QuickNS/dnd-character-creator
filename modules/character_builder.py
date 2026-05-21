@@ -390,6 +390,156 @@ class CharacterBuilder:
         m = re.search(r"class_feat_(\d+)", slot_key)
         return int(m.group(1)) if m else 0
 
+    def _resolve_feat_choice_context(
+        self, choice_key: str
+    ) -> Optional[Tuple[str, str, Optional[Dict[str, Any]], Optional[Dict[str, Any]], str]]:
+        """Resolve a persisted feat sub-choice key to its feat metadata.
+
+        Supports both class-level feat slot keys (for example,
+        ``class_feat_4_cantrips``) and namespaced feat keys used by feat choice
+        pages (for example, ``feat_Magic Initiate (Wizard)_cantrips``).
+        """
+        match = _CLASS_FEAT_SUB_RE.match(choice_key)
+        if match:
+            parent_key = match.group(1)
+            choice_name = match.group(2)
+            feat_name = self.character_data["choices_made"].get(parent_key)
+            if not isinstance(feat_name, str) or not feat_name:
+                return None
+            feat_data = self._load_feat_data(feat_name)
+            if not isinstance(feat_data, dict):
+                return None
+            choice_def = next(
+                (
+                    item
+                    for item in feat_data.get("choices", [])
+                    if isinstance(item, dict) and item.get("name") == choice_name
+                ),
+                None,
+            )
+            return feat_name, choice_name, feat_data, choice_def, parent_key
+
+        if not choice_key.startswith("feat_"):
+            return None
+
+        candidate_feat_names: List[str] = []
+        background_data = self.character_data.get("background_data") or {}
+        background_feat = background_data.get("feat")
+        if isinstance(background_feat, str) and background_feat:
+            candidate_feat_names.append(background_feat)
+
+        pending_species_feat = self.character_data.get("pending_species_feat")
+        if isinstance(pending_species_feat, str) and pending_species_feat:
+            candidate_feat_names.append(pending_species_feat)
+
+        for feat_entry in self.character_data["features"].get("feats", []):
+            feat_name = feat_entry.get("name")
+            if isinstance(feat_name, str) and feat_name:
+                candidate_feat_names.append(feat_name)
+
+        seen_feat_names = set()
+        for feat_name in candidate_feat_names:
+            if feat_name in seen_feat_names:
+                continue
+            seen_feat_names.add(feat_name)
+            feat_data = self._load_feat_data(feat_name)
+            if not isinstance(feat_data, dict):
+                continue
+            for choice_def in feat_data.get("choices", []):
+                if not isinstance(choice_def, dict):
+                    continue
+                choice_name = choice_def.get("name")
+                if not isinstance(choice_name, str) or not choice_name:
+                    continue
+                if choice_key == f"feat_{feat_name}_{choice_name}":
+                    return feat_name, choice_name, feat_data, choice_def, f"feat_{feat_name}"
+
+        return None
+
+    def _feat_choice_dependencies_met(
+        self, choice_namespace: str, choice_def: Optional[Dict[str, Any]]
+    ) -> bool:
+        """Check whether a feat sub-choice should be active for the current state."""
+        if not isinstance(choice_def, dict):
+            return True
+
+        depends_on = choice_def.get("depends_on")
+        depends_on_value = choice_def.get("depends_on_value")
+        if not depends_on or depends_on_value is None:
+            return True
+
+        dependency_key = f"{choice_namespace}_{depends_on}"
+        dependency_value = self.character_data["choices_made"].get(dependency_key)
+        if dependency_value is None:
+            return False
+        if isinstance(dependency_value, list):
+            return depends_on_value in dependency_value
+        return dependency_value == depends_on_value
+
+    def _apply_feat_choice_selection(
+        self,
+        feat_name: str,
+        choice_name: str,
+        choice_value: Any,
+        feat_data: Optional[Dict[str, Any]] = None,
+        persist_choice_key: Optional[str] = None,
+    ) -> None:
+        """Apply one feat sub-choice to character state.
+
+        This is shared by the live feat choice flow and rebuild-time replay from
+        ``choices_made`` so both paths hydrate spells, proficiencies, and
+        data-driven ``choice_effects`` the same way.
+        """
+        if isinstance(choice_value, str):
+            values = [choice_value]
+        elif isinstance(choice_value, list):
+            values = choice_value
+        else:
+            values = []
+
+        if persist_choice_key:
+            self.character_data["choices_made"][persist_choice_key] = values
+
+        if choice_name == "skills_or_tools":
+            for item in values:
+                if item in self._ALL_SKILLS:
+                    if item not in self.character_data["proficiencies"]["skills"]:
+                        self.character_data["proficiencies"]["skills"].append(item)
+                        self.character_data["proficiency_sources"]["skills"][item] = feat_name
+                else:
+                    if item not in self.character_data["proficiencies"]["tools"]:
+                        self.character_data["proficiencies"]["tools"].append(item)
+
+        elif choice_name == "cantrips":
+            for cantrip in values:
+                self.character_data["spells"]["prepared"]["cantrips"][cantrip] = {}
+                self.character_data["spell_metadata"][cantrip] = {
+                    "source": feat_name,
+                    "always_prepared": True,
+                    "once_per_day": False,
+                    "counts_against_limit": False,
+                }
+
+        elif "spell" in choice_name:
+            for spell in values:
+                self.character_data["spells"]["prepared"]["spells"][spell] = {}
+                self.character_data["spell_metadata"][spell] = {
+                    "source": feat_name,
+                    "always_prepared": True,
+                    "once_per_day": True,
+                    "counts_against_limit": False,
+                }
+
+        feat_data = feat_data if isinstance(feat_data, dict) else self._load_feat_data(feat_name)
+        if not isinstance(feat_data, dict) or "choice_effects" not in feat_data:
+            return
+
+        choice_effect_map = feat_data["choice_effects"].get(choice_name, {})
+        for value in values:
+            if value in choice_effect_map:
+                for effect in choice_effect_map[value]:
+                    self._apply_effect(effect, feat_name, "feat")
+
     # ==================== Species/Lineage Methods ====================
 
     def _clear_species_features(self):
@@ -1003,13 +1153,57 @@ class CharacterBuilder:
             source_class_name: For class/subclass effects, the originating class name
                 (used so per-level scaling is scoped to that class's level in multiclass).
         """
+
         effect_type = effect.get("type")
+
+        def _resolve_choice_reference(ref: str):
+            # Only handles ${cantrips[0]}, ${cantrips[1]}, ${1st_level_spell}, etc.
+            import re
+            m = re.match(r"^\$\{(.+?)\}$", ref)
+            if not m:
+                return ref
+            key = m.group(1)
+            # Handle cantrips[0], cantrips[1], 1st_level_spell, etc.
+            if key.startswith("cantrips["):
+                idx = int(key[len("cantrips["):-1])
+                cantrips = []
+                # Try to find the feat name from the effect context
+                # This is only used for feat effects (e.g. Magic Initiate)
+                for feat_key, value in self.character_data.get("choices_made", {}).items():
+                    if feat_key.endswith("cantrips") and isinstance(value, list):
+                        cantrips = value
+                        break
+                if idx < len(cantrips):
+                    return cantrips[idx]
+                return None
+            elif key == "1st_level_spell":
+                # Find the spell choice for 1st_level_spell
+                for feat_key, value in self.character_data.get("choices_made", {}).items():
+                    if feat_key.endswith("1st_level_spell") and value:
+                        if isinstance(value, list):
+                            return value[0]
+                        return value
+                # Some feats use 'spell' as the key
+                for feat_key, value in self.character_data.get("choices_made", {}).items():
+                    if feat_key.endswith("spell") and value:
+                        if isinstance(value, list):
+                            return value[0]
+                        return value
+                return None
+            return None
 
         if effect_type == "grant_cantrip":
             spell_name = effect.get("spell")
             counts_against_limit = effect.get("counts_against_limit", False)
 
-            if spell_name:
+            # Resolve choice reference if present
+            resolved_spell = None
+            if isinstance(spell_name, str) and spell_name.startswith("${"):
+                resolved_spell = _resolve_choice_reference(spell_name)
+            else:
+                resolved_spell = spell_name
+
+            if resolved_spell:
                 # Map source_type to actual display name
                 if source_type == "species":
                     display_source = self.character_data.get("species", source_name)
@@ -1023,7 +1217,7 @@ class CharacterBuilder:
                     display_source = source_name
 
                 # Add to always_prepared dict with metadata
-                self.character_data["spells"]["always_prepared"][spell_name] = {
+                self.character_data["spells"]["always_prepared"][resolved_spell] = {
                     "level": 0,
                     "source": display_source,
                     "always_prepared": True,
@@ -1031,7 +1225,7 @@ class CharacterBuilder:
                 }
 
                 # Also track in spell_metadata for compatibility
-                self.character_data["spell_metadata"][spell_name] = {
+                self.character_data["spell_metadata"][resolved_spell] = {
                     "source": display_source,
                     "source_type": source_type,
                     "always_prepared": True,
@@ -1049,9 +1243,16 @@ class CharacterBuilder:
             min_level = effect.get("min_level", 1)
             counts_against_limit = effect.get("counts_against_limit", False)
 
-            if spell_name and self.character_data["level"] >= min_level:
+            # Resolve choice reference if present
+            resolved_spell = None
+            if isinstance(spell_name, str) and spell_name.startswith("${"):
+                resolved_spell = _resolve_choice_reference(spell_name)
+            else:
+                resolved_spell = spell_name
+
+            if resolved_spell and self.character_data["level"] >= min_level:
                 # Load spell definition to get actual spell level
-                spell_def = self._load_spell_definition(spell_name)
+                spell_def = self._load_spell_definition(resolved_spell)
                 spell_level = spell_def.get("level", 1)
 
                 # Map source_type to actual name for display
@@ -1072,7 +1273,7 @@ class CharacterBuilder:
                 once_per_day = source_type in ["species", "lineage"]
 
                 # Add to always_prepared dict with metadata
-                self.character_data["spells"]["always_prepared"][spell_name] = {
+                self.character_data["spells"]["always_prepared"][resolved_spell] = {
                     "level": spell_level,
                     "source": display_source,
                     "always_prepared": True,
@@ -1081,7 +1282,7 @@ class CharacterBuilder:
                 }
 
                 # Also track in spell_metadata for compatibility
-                self.character_data["spell_metadata"][spell_name] = {
+                self.character_data["spell_metadata"][resolved_spell] = {
                     "source": display_source,
                     "source_type": source_type,
                     "once_per_day": once_per_day,
@@ -2773,52 +2974,19 @@ class CharacterBuilder:
         elif choice_key_lower == "equipment_selections":
             return self._process_equipment_selections(choice_value)
 
-        # Class-level feat sub-choices: keys like "class_feat_4_ability_plus_2"
-        # These apply choice_effects from the previously-selected class-level feat.
-        elif (m := _CLASS_FEAT_SUB_RE.match(choice_key)):
-            parent_key = m.group(1)      # e.g. "class_feat_4"
-            sub_choice_name = m.group(2)  # e.g. "ability_plus_2"
-            selected_feat = self.character_data["choices_made"].get(parent_key)
-            if selected_feat:
-                feat_data = self._load_feat_data(selected_feat)
-                if feat_data and "choice_effects" in feat_data:
-                    sub_choices = feat_data.get("choices", [])
-                    sub_choice_def = (
-                        next(
-                            (
-                                item
-                                for item in sub_choices
-                                if isinstance(item, dict)
-                                and item.get("name") == sub_choice_name
-                            ),
-                            None,
-                        )
-                        if isinstance(sub_choices, list)
-                        else None
-                    )
-                    if isinstance(sub_choice_def, dict):
-                        depends_on = sub_choice_def.get("depends_on")
-                        depends_on_value = sub_choice_def.get("depends_on_value")
-                        if depends_on and depends_on_value is not None:
-                            dep_key = f"{parent_key}_{depends_on}"
-                            dep_value = self.character_data["choices_made"].get(dep_key)
-                            if dep_value is not None:
-                                matches = (
-                                    depends_on_value in dep_value
-                                    if isinstance(dep_value, list)
-                                    else dep_value == depends_on_value
-                                )
-                                if not matches:
-                                    return True
-                    choice_effect_map = feat_data["choice_effects"].get(sub_choice_name, {})
-                    values = (
-                        [choice_value] if isinstance(choice_value, str)
-                        else (choice_value if isinstance(choice_value, list) else [])
-                    )
-                    for val in values:
-                        if val in choice_effect_map:
-                            for effect in choice_effect_map[val]:
-                                self._apply_effect(effect, selected_feat, "feat")
+        # Feat sub-choices can come from either class feat slots
+        # (for example, class_feat_4_cantrips) or namespaced feat-choice pages
+        # (for example, feat_Magic Initiate (Wizard)_cantrips).
+        elif (feat_choice_context := self._resolve_feat_choice_context(choice_key)):
+            feat_name, sub_choice_name, feat_data, sub_choice_def, choice_namespace = feat_choice_context
+            if not self._feat_choice_dependencies_met(choice_namespace, sub_choice_def):
+                return True
+            self._apply_feat_choice_selection(
+                feat_name,
+                sub_choice_name,
+                choice_value,
+                feat_data=feat_data,
+            )
             return True
 
         # Generic choice - might be class feature choice
@@ -5459,7 +5627,23 @@ class CharacterBuilder:
                     spells_by_level[level] = []
                 spells_by_level[level].append(spell_data)
 
+
         character_data["spells_by_level"] = spells_by_level
+
+        # For compatibility with tests: add 'cantrips' and 'level_1' keys to spells
+        # 'cantrips' = all level 0 spells, 'level_1' = all level 1 spells
+        cantrips_list = []
+        level1_list = []
+        for spell in spells_by_level.get(0, []):
+            entry = spell.copy()
+            entry["name"] = entry.get("name") or entry.get("spell") or entry.get("id")
+            cantrips_list.append(entry)
+        for spell in spells_by_level.get(1, []):
+            entry = spell.copy()
+            entry["name"] = entry.get("name") or entry.get("spell") or entry.get("id")
+            level1_list.append(entry)
+        character_data.setdefault("spells", {})["cantrips"] = cantrips_list
+        character_data["spells"]["level_1"] = level1_list
 
         multiclass_spellcasting = self._calculate_multiclass_spell_slot_progression()
 
@@ -7229,62 +7413,18 @@ class CharacterBuilder:
         # Clear previous selections for this feat before applying new ones
         self._clear_feat_choices(feat_name)
 
-        for choice_name, choice_value in choices.items():
-            # Normalise to a list
-            if isinstance(choice_value, str):
-                values = [choice_value]
-            elif isinstance(choice_value, list):
-                values = choice_value
-            else:
-                values = []
 
-            # Persist in choices_made under a namespaced key
-            self.character_data["choices_made"][f"feat_{feat_name}_{choice_name}"] = values
-
-            if choice_name == "skills_or_tools":
-                for item in values:
-                    if item in self._ALL_SKILLS:
-                        if item not in self.character_data["proficiencies"]["skills"]:
-                            self.character_data["proficiencies"]["skills"].append(item)
-                            self.character_data["proficiency_sources"]["skills"][item] = feat_name
-                    else:
-                        if item not in self.character_data["proficiencies"]["tools"]:
-                            self.character_data["proficiencies"]["tools"].append(item)
-
-            elif choice_name == "cantrips":
-                for cantrip in values:
-                    self.character_data["spells"]["prepared"]["cantrips"][cantrip] = {}
-                    self.character_data["spell_metadata"][cantrip] = {
-                        "source": feat_name,
-                        "always_prepared": True,
-                        "once_per_day": False,
-                        "counts_against_limit": False,
-                    }
-
-            elif "spell" in choice_name:
-                for spell in values:
-                    self.character_data["spells"]["prepared"]["spells"][spell] = {}
-                    self.character_data["spell_metadata"][spell] = {
-                        "source": feat_name,
-                        "always_prepared": True,
-                        "once_per_day": True,
-                        "counts_against_limit": False,
-                    }
-
-        # Apply choice_effects from feat data (data-driven choice → effect mapping)
+        # Load feat_data for this feat_name
         feat_data = self._load_feat_data(feat_name) if feat_name else None
-        if feat_data and "choice_effects" in feat_data:
-            feat_choice_effects = feat_data["choice_effects"]
-            for choice_name, choice_value in choices.items():
-                if choice_name not in feat_choice_effects:
-                    continue
-                choice_effect_map = feat_choice_effects[choice_name]
-                # Normalise to a list
-                values = [choice_value] if isinstance(choice_value, str) else (choice_value if isinstance(choice_value, list) else [])
-                for val in values:
-                    if val in choice_effect_map:
-                        for effect in choice_effect_map[val]:
-                            self._apply_effect(effect, feat_name, "feat")
+
+        for choice_name, choice_value in choices.items():
+            self._apply_feat_choice_selection(
+                feat_name,
+                choice_name,
+                choice_value,
+                feat_data=feat_data,
+                persist_choice_key=f"feat_{feat_name}_{choice_name}",
+            )
 
         return True
 

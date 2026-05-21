@@ -89,6 +89,7 @@
       "choices": [
         {
           "type": "select_single",
+          "description": "Choose which ability score to increase.",
           "name": "ability",
           "source": {
             "type": "fixed_list",

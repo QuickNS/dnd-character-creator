@@ -66,7 +66,7 @@ function spellHasConcentration(spell: SpellDefinition): boolean {
   return duration.includes("concentration");
 }
 
-function SpellChoiceList({
+export function SpellChoiceList({
   choiceKey,
   title,
   description,
@@ -107,6 +107,8 @@ function SpellChoiceList({
   const spellByName = new Map(
     options.map((name, index) => [name, spellDefinitionQueries[index]?.data]),
   );
+  const selectedName = !isMulti && typeof value === "string" ? value : "";
+  const selectedSpell = selectedName ? spellByName.get(selectedName) : undefined;
 
   function toggle(name: string) {
     if (!isMulti) {
@@ -132,87 +134,154 @@ function SpellChoiceList({
           {description}
         </p>
       )}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-        {options.map((name) => {
-          const isSelected = selected.has(name);
-          const spell = spellByName.get(name);
-          const isInspected = inspectedSpellName === name;
-          const atLimit = isMulti && !isSelected && selected.size >= count;
+      {isMulti ? (
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          {options.map((name) => {
+            const isSelected = selected.has(name);
+            const spell = spellByName.get(name);
+            const isInspected = inspectedSpellName === name;
+            const atLimit = !isSelected && selected.size >= count;
 
-          return (
-            <div
-              key={name}
-              className={cn(
-                "flex items-stretch gap-1 rounded-lg border text-left text-sm transition-all duration-200",
-                isSelected
-                  ? "border-primary bg-muted/60 shadow-sm ring-1 ring-primary/20"
-                  : isInspected
-                    ? "border-muted-foreground/40 bg-secondary/60 ring-1 ring-muted-foreground/20"
-                    : "border-border bg-background/70 hover:border-primary/30 hover:bg-secondary/60",
-                atLimit && "cursor-not-allowed opacity-50",
-              )}
-            >
-              <button
-                type="button"
-                onClick={() => {
-                  if (!atLimit) toggle(name);
-                }}
-                disabled={atLimit}
-                aria-pressed={isSelected}
+            return (
+              <div
+                key={name}
                 className={cn(
-                  "flex flex-1 items-center justify-between gap-3 rounded-l-lg px-3 py-2 text-left",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                  "flex items-stretch gap-1 rounded-lg border text-left text-sm transition-all duration-200",
+                  isSelected
+                    ? "border-primary bg-muted/60 shadow-sm ring-1 ring-primary/20"
+                    : isInspected
+                      ? "border-muted-foreground/40 bg-secondary/60 ring-1 ring-muted-foreground/20"
+                      : "border-border bg-background/70 hover:border-primary/30 hover:bg-secondary/60",
+                  atLimit && "cursor-not-allowed opacity-50",
                 )}
               >
-                <span className="min-w-0">
-                  <span className="flex flex-wrap items-center gap-3">
-                    <span>{name}</span>
-                    {spell && spellHasConcentration(spell) && (
-                      <span className="shrink-0 rounded bg-amber-600/80 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
-                        C
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!atLimit) toggle(name);
+                  }}
+                  disabled={atLimit}
+                  aria-pressed={isSelected}
+                  className={cn(
+                    "flex flex-1 items-center justify-between gap-3 rounded-l-lg px-3 py-2 text-left",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                  )}
+                >
+                  <span className="min-w-0">
+                    <span className="flex flex-wrap items-center gap-3">
+                      <span>{name}</span>
+                      {spell && spellHasConcentration(spell) && (
+                        <span className="shrink-0 rounded bg-amber-600/80 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
+                          C
+                        </span>
+                      )}
+                    </span>
+                    {spell?.school && (
+                      <span className="mt-1 text-xs text-muted-foreground">
+                        {spell.school}
                       </span>
                     )}
                   </span>
-                  {spell?.school && (
-                    <span className="mt-1 text-xs text-muted-foreground">
-                      {spell.school}
-                    </span>
-                  )}
-                </span>
-                <span
-                  className={cn(
-                    "inline-flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full border",
-                    isSelected
-                      ? "border-primary bg-background text-primary"
-                      : "border-border bg-background text-transparent",
-                  )}
-                >
-                  <Check className="h-3 w-3" />
-                </span>
-              </button>
-              {onInspectSpell && spell && (
-                <button
-                  type="button"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    onInspectSpell(spell);
-                  }}
-                  aria-label="View spell details"
-                  aria-pressed={isInspected}
-                  className={cn(
-                    "flex flex-shrink-0 items-center justify-center rounded-r-lg p-1 px-2 text-muted-foreground transition-colors",
-                    "hover:bg-muted hover:text-foreground",
-                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-                    isInspected && "text-primary",
-                  )}
-                >
-                  <Info className="h-3.5 w-3.5" />
+                  <span
+                    className={cn(
+                      "inline-flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full border",
+                      isSelected
+                        ? "border-primary bg-background text-primary"
+                        : "border-border bg-background text-transparent",
+                    )}
+                  >
+                    <Check className="h-3 w-3" />
+                  </span>
                 </button>
+                {onInspectSpell && spell && (
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onInspectSpell(spell);
+                    }}
+                    aria-label="View spell details"
+                    aria-pressed={isInspected}
+                    className={cn(
+                      "flex flex-shrink-0 items-center justify-center rounded-r-lg p-1 px-2 text-muted-foreground transition-colors",
+                      "hover:bg-muted hover:text-foreground",
+                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                      isInspected && "text-primary",
+                    )}
+                  >
+                    <Info className="h-3.5 w-3.5" />
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="space-y-3">
+          <select
+            value={selectedName}
+            onChange={(event) => setChoice(choiceKey, event.target.value)}
+            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            aria-label={title}
+          >
+            <option value="">Select a spell</option>
+            {options.map((name) => (
+              <option key={name} value={name}>
+                {name}
+              </option>
+            ))}
+          </select>
+          {selectedSpell && (
+            <div className="rounded-lg border border-border/70 bg-background/50 p-3 text-sm">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="font-medium text-foreground">{selectedSpell.name}</span>
+                <span className="rounded-full border border-border/70 bg-background px-2 py-0.5 text-[11px] uppercase tracking-wide text-muted-foreground">
+                  {selectedSpell.level === 0 ? "Cantrip" : `Level ${selectedSpell.level ?? "-"}`}
+                </span>
+                {selectedSpell.school && (
+                  <span className="rounded-full border border-border/70 bg-background px-2 py-0.5 text-[11px] uppercase tracking-wide text-muted-foreground">
+                    {selectedSpell.school}
+                  </span>
+                )}
+                {spellHasConcentration(selectedSpell) && (
+                  <span className="rounded bg-amber-600/80 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
+                    C
+                  </span>
+                )}
+              </div>
+              {selectedSpell.description && (
+                <p className="mt-2 text-xs text-muted-foreground">{selectedSpell.description}</p>
               )}
+              <dl className="mt-3 grid grid-cols-1 gap-2 text-xs text-muted-foreground sm:grid-cols-2">
+                {selectedSpell.casting_time && (
+                  <div>
+                    <dt className="font-medium text-foreground">Casting Time</dt>
+                    <dd>{selectedSpell.casting_time}</dd>
+                  </div>
+                )}
+                {selectedSpell.range && (
+                  <div>
+                    <dt className="font-medium text-foreground">Range</dt>
+                    <dd>{selectedSpell.range}</dd>
+                  </div>
+                )}
+                {selectedSpell.duration && (
+                  <div>
+                    <dt className="font-medium text-foreground">Duration</dt>
+                    <dd>{selectedSpell.duration}</dd>
+                  </div>
+                )}
+                {selectedSpell.components && (
+                  <div>
+                    <dt className="font-medium text-foreground">Components</dt>
+                    <dd>{Array.isArray(selectedSpell.components) ? selectedSpell.components.join(", ") : selectedSpell.components}</dd>
+                  </div>
+                )}
+              </dl>
             </div>
-          );
-        })}
-      </div>
+          )}
+        </div>
+      )}
     </fieldset>
   );
 }
