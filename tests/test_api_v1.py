@@ -911,20 +911,20 @@ class TestCharacterBuild:
             "Nature", "Perception", "Stealth", "Survival",
         }
 
-        feature_keys = {(c.get("choice_key") or "").lower() for c in nested}
-        assert "deft_explorer_expertise" in feature_keys
-        assert "fighting_style" in feature_keys
+        feature_choices_by_key = {
+            (c.get("choice_key") or "").lower(): c
+            for c in nested
+            if c.get("choice_key")
+        }
+        assert "deft_explorer_expertise" in feature_choices_by_key
+        assert "fighting_style" in feature_choices_by_key
 
-        deft_explorer = next(
-            c for c in nested if (c.get("choice_key") or "").lower() == "deft_explorer_expertise"
-        )
+        deft_explorer = feature_choices_by_key["deft_explorer_expertise"]
         assert deft_explorer.get("count") == 1
         assert isinstance(deft_explorer.get("options"), list)
         assert len(deft_explorer["options"]) >= 1
 
-        fighting_style = next(
-            c for c in nested if (c.get("choice_key") or "").lower() == "fighting_style"
-        )
+        fighting_style = feature_choices_by_key["fighting_style"]
         assert fighting_style.get("count") == 1
         assert isinstance(fighting_style.get("options"), list)
         assert len(fighting_style["options"]) >= 1

@@ -31,6 +31,7 @@ _DERIVED_VIEWS = {
     "mastery_management",
     "invocation_management",
 }
+_CORE_TRAIT_PROFICIENCY_KEYS = {"skill_choices", "tool_choices"}
 
 
 class ChoicesValidationError(ValueError):
@@ -101,10 +102,7 @@ def _is_core_trait_proficiency_picker(choice: Dict[str, Any]) -> bool:
     """True when a nested choice is the class core-trait skill/tool picker."""
     key = str(choice.get("choice_key") or "").strip().lower()
     choices_key = str(choice.get("choices_made_key") or "").strip().lower()
-    return key in {"skill_choices", "tool_choices"} or choices_key in {
-        "skill_choices",
-        "tool_choices",
-    }
+    return key in _CORE_TRAIT_PROFICIENCY_KEYS or choices_key in _CORE_TRAIT_PROFICIENCY_KEYS
 
 
 def _filter_nested_choices_for_secondary_class(
