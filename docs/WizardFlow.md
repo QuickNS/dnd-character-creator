@@ -42,7 +42,7 @@ The class step adapts its rendering and validation to the active row's `row_cont
 - **Per-row pending indicator.** Each class row in the list shows an amber dot when that row has unresolved choices. A row is "pending" when:
   - `row_context.is_primary == true` (or there is only one row) and any of the row's required `nested_choices` are unsatisfied; or
   - `needs_subclass == true` for the row and `classes[i].subclass` is empty; or
-  - `is_primary == false` and the filtered secondary-row `nested_choices` (skill / tool picks granted by multiclass entry) are unsatisfied.
+  - `is_primary == false` and the filtered secondary-row `nested_choices` (core-trait skill / tool picks narrowed by multiclass rules, plus preserved class-feature choices at all unlocked levels) are unsatisfied.
 
 > **Known limitation — shared choice keys across rows.** Player choices like `skill_choices` and `tool_choices` are stored under a single key in `choices_made`, not partitioned per class row. In multi-row builds where both the primary row and a secondary row prompt for skill picks, the two pickers currently write to the same storage slot and can overwrite each other. Per-row choice partitioning (e.g. `skill_choices_by_row`) is tracked as a future improvement.
 

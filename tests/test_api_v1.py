@@ -803,7 +803,7 @@ class TestCharacterBuild:
         ]
         assert divine, "Primary Cleric preview must include Divine Order picker"
 
-    def test_preview_class_secondary_wizard_druid_drops_all_choices(self, client):
+    def test_preview_class_secondary_wizard_druid_keeps_primal_order(self, client):
         choices = self._basics_for_preview()
         choices["classes"] = [
             {"class_name": "Wizard", "level": 3},
@@ -814,7 +814,16 @@ class TestCharacterBuild:
         assert data["row_context"]["is_primary"] is False
         assert data["row_context"]["row_index"] == 1
         assert data["row_context"]["total_class_rows"] == 2
-        assert data["nested_choices"] == []
+        nested = data["nested_choices"]
+        primal = [
+            c for c in nested
+            if (c.get("feature_name") or "") == "Primal Order"
+            or (c.get("choice_key") or "") == "primal_order"
+        ]
+        assert primal, f"Expected Primal Order choice to be retained, got: {nested}"
+        primal_order = primal[0]
+        assert primal_order.get("feature_name") == "Primal Order"
+        assert primal_order.get("choice_key") == "primal_order"
 
     def test_preview_class_secondary_bard_keeps_skill_and_instrument(self, client):
         choices = self._basics_for_preview()
@@ -827,7 +836,6 @@ class TestCharacterBuild:
         assert data["row_context"]["is_primary"] is False
         assert data["row_context"]["row_index"] == 1
         nested = data["nested_choices"]
-        assert len(nested) == 2, f"Expected 2 nested choices, got {len(nested)}: {nested}"
 
         skill_choices = self._find_choices_of_type(nested, "skills")
         tool_choices = self._find_choices_of_type(nested, "tools")
@@ -852,8 +860,9 @@ class TestCharacterBuild:
 
         assert data["row_context"]["is_primary"] is False
         nested = data["nested_choices"]
-        assert len(nested) == 1, f"Expected exactly 1 nested choice (skill), got: {nested}"
-        skill = nested[0]
+        skill_choices = self._find_choices_of_type(nested, "skills")
+        assert len(skill_choices) == 1, f"Expected exactly 1 skill choice, got: {nested}"
+        skill = skill_choices[0]
         assert (skill.get("type") or "").lower() == "skills"
         assert skill["count"] == 1
         assert set(skill["options"]) == {
@@ -872,15 +881,55 @@ class TestCharacterBuild:
 
         assert data["row_context"]["is_primary"] is False
         nested = data["nested_choices"]
-        assert len(nested) == 1, f"Expected exactly 1 nested choice (skill), got: {nested}"
-        skill = nested[0]
+        skill_choices = self._find_choices_of_type(nested, "skills")
+        assert len(skill_choices) == 1, f"Expected exactly 1 skill choice, got: {nested}"
+        skill = skill_choices[0]
         assert (skill.get("type") or "").lower() == "skills"
         assert set(skill["options"]) == {
             "Animal Handling", "Athletics", "Insight", "Investigation",
             "Nature", "Perception", "Stealth", "Survival",
         }
 
-    def test_preview_class_secondary_fighter_drops_fighting_style_and_skills(self, client):
+    def test_preview_class_secondary_ranger_level2_keeps_feature_choices(self, client):
+        choices = self._basics_for_preview()
+        choices["classes"] = [
+            {"class_name": "Wizard", "level": 3},
+            {"class_name": "Ranger", "level": 2},
+        ]
+        data = self._preview_class(client, choices, target_class="Ranger", target_level=2)
+
+        assert data["row_context"]["is_primary"] is False
+        nested = data["nested_choices"]
+
+        skill_choices = [
+            c for c in nested if (c.get("choice_key") or "").lower() == "skill_choices"
+        ]
+        assert len(skill_choices) == 1
+        assert skill_choices[0]["count"] == 1
+        assert set(skill_choices[0]["options"]) == {
+            "Animal Handling", "Athletics", "Insight", "Investigation",
+            "Nature", "Perception", "Stealth", "Survival",
+        }
+
+        feature_choices_by_key = {
+            (c.get("choice_key") or "").lower(): c
+            for c in nested
+            if c.get("choice_key")
+        }
+        assert "deft_explorer_expertise" in feature_choices_by_key
+        assert "fighting_style" in feature_choices_by_key
+
+        deft_explorer = feature_choices_by_key["deft_explorer_expertise"]
+        assert deft_explorer.get("count") == 1
+        assert isinstance(deft_explorer.get("options"), list)
+        assert len(deft_explorer["options"]) >= 1
+
+        fighting_style = feature_choices_by_key["fighting_style"]
+        assert fighting_style.get("count") == 1
+        assert isinstance(fighting_style.get("options"), list)
+        assert len(fighting_style["options"]) >= 1
+
+    def test_preview_class_secondary_fighter_keeps_fighting_style_and_drops_skills(self, client):
         choices = self._basics_for_preview()
         choices["classes"] = [
             {"class_name": "Wizard", "level": 3},
@@ -890,7 +939,14 @@ class TestCharacterBuild:
 
         assert data["row_context"]["is_primary"] is False
         assert data["row_context"]["row_index"] == 1
-        assert data["nested_choices"] == []
+        nested = data["nested_choices"]
+        assert self._find_choices_of_type(nested, "skills") == []
+        style_choices = [
+            c for c in nested
+            if "fighting_style" in (c.get("choice_key") or "").lower()
+            or "fighting style" in (c.get("title") or c.get("feature_name") or "").lower()
+        ]
+        assert style_choices, f"Expected Fighting Style choice for secondary fighter, got: {nested}"
 
     def test_preview_class_legacy_single_class_unchanged(self, client):
         r = client.post(
