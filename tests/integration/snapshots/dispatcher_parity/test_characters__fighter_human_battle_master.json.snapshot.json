@@ -71,18 +71,18 @@
   },
   "ac_options": [
     {
-      "ac": 16,
-      "armor": "Chain Mail",
-      "equipped_armor": "Chain Mail",
-      "formula": "Armor base (16)",
-      "notes": [],
-      "shield": false
-    },
-    {
       "ac": 11,
       "armor": null,
       "equipped_armor": null,
       "formula": "10 + Dex modifier (1)",
+      "notes": [],
+      "shield": false
+    },
+    {
+      "ac": 16,
+      "armor": "Chain Mail",
+      "equipped_armor": "Chain Mail",
+      "formula": "Armor base (16)",
       "notes": [],
       "shield": false
     }
@@ -100,19 +100,22 @@
       "ability": "STR",
       "attack_bonus": 5,
       "attack_bonus_display": "+5",
-      "avg_crit": 17.0,
-      "avg_damage": 10.0,
-      "damage": "2d6 + 3",
-      "damage_notes": [],
-      "damage_type": "Slashing",
-      "icon": "/static/images/weapons/sword.svg",
-      "mastery": "Graze",
-      "name": "Greatsword",
+      "avg_crit": 12.0,
+      "avg_damage": 8.5,
+      "avg_throw_damage": 6.5,
+      "damage": "1d6 + 5",
+      "damage_notes": [
+        "+2 from Dueling"
+      ],
+      "damage_type": "Piercing",
+      "icon": "/static/images/weapons/spear.svg",
+      "mastery": "Slow",
+      "name": "Javelin",
       "proficient": true,
       "properties": [
-        "Heavy",
-        "Two-Handed"
-      ]
+        "Thrown (range 30/120)"
+      ],
+      "throw_damage": "1d6 + 3"
     },
     {
       "ability": "STR",
@@ -135,22 +138,19 @@
       "ability": "STR",
       "attack_bonus": 5,
       "attack_bonus_display": "+5",
-      "avg_crit": 12.0,
-      "avg_damage": 8.5,
-      "avg_throw_damage": 6.5,
-      "damage": "1d6 + 5",
-      "damage_notes": [
-        "+2 from Dueling"
-      ],
-      "damage_type": "Piercing",
-      "icon": "/static/images/weapons/spear.svg",
-      "mastery": "Slow",
-      "name": "Javelin",
+      "avg_crit": 17.0,
+      "avg_damage": 10.0,
+      "damage": "2d6 + 3",
+      "damage_notes": [],
+      "damage_type": "Slashing",
+      "icon": "/static/images/weapons/sword.svg",
+      "mastery": "Graze",
+      "name": "Greatsword",
       "proficient": true,
       "properties": [
-        "Thrown (range 30/120)"
-      ],
-      "throw_damage": "1d6 + 3"
+        "Heavy",
+        "Two-Handed"
+      ]
     },
     {
       "ability": "STR",
@@ -185,15 +185,15 @@
     "description": "War has been your life for as long as you care to remember. You trained as a youth, studied the use of weapons and armor, learned basic survival techniques, including how to stay alive on the battlefield. You might have been part of a standing national army or a mercenary company, or perhaps a member of a local militia who rose to prominence during a recent war.",
     "effects": [
       {
+        "feat": "Savage Attacker",
+        "type": "grant_origin_feat"
+      },
+      {
         "skills": [
           "Athletics",
           "Intimidation"
         ],
         "type": "grant_skill_proficiency"
-      },
-      {
-        "feat": "Savage Attacker",
-        "type": "grant_origin_feat"
       },
       {
         "tools": [
@@ -319,12 +319,12 @@
                 "value": "2"
               },
               {
-                "min_level": 4,
-                "value": "3"
-              },
-              {
                 "min_level": 10,
                 "value": "4"
+              },
+              {
+                "min_level": 4,
+                "value": "3"
               }
             ]
           }
@@ -482,16 +482,16 @@
           "scaling": {
             "uses": [
               {
-                "min_level": 9,
-                "value": "once"
-              },
-              {
                 "min_level": 13,
                 "value": "twice"
               },
               {
                 "min_level": 17,
                 "value": "three times"
+              },
+              {
+                "min_level": 9,
+                "value": "once"
               }
             ]
           }
@@ -687,6 +687,13 @@
   "darkvision": 0,
   "effects": [
     {
+      "condition": "one handed melee weapon",
+      "source": "Dueling",
+      "source_type": "class_choice",
+      "type": "bonus_damage",
+      "value": 2
+    },
+    {
       "count_by_level": {
         "15": 6,
         "3": 4,
@@ -703,35 +710,16 @@
       "type": "grant_superiority_dice"
     },
     {
-      "skills": [
-        "Athletics",
-        "Intimidation"
-      ],
-      "source": "Soldier",
-      "source_type": "background",
-      "type": "grant_skill_proficiency"
+      "feat": "Lucky",
+      "source": "Versatile: Lucky",
+      "source_type": "species_choice",
+      "type": "grant_origin_feat"
     },
     {
       "feat": "Savage Attacker",
       "source": "Soldier",
       "source_type": "background",
       "type": "grant_origin_feat"
-    },
-    {
-      "source": "Soldier",
-      "source_type": "background",
-      "tools": [
-        "Gaming Set",
-        "Vehicles (Land)"
-      ],
-      "type": "grant_tool_proficiency"
-    },
-    {
-      "condition": "one handed melee weapon",
-      "source": "Dueling",
-      "source_type": "class_choice",
-      "type": "bonus_damage",
-      "value": 2
     },
     {
       "maneuver": "Rally",
@@ -753,6 +741,15 @@
     },
     {
       "skills": [
+        "Athletics",
+        "Intimidation"
+      ],
+      "source": "Soldier",
+      "source_type": "background",
+      "type": "grant_skill_proficiency"
+    },
+    {
+      "skills": [
         "Investigation"
       ],
       "source": "Skillful: Investigation",
@@ -760,10 +757,13 @@
       "type": "grant_skill_proficiency"
     },
     {
-      "feat": "Lucky",
-      "source": "Versatile: Lucky",
-      "source_type": "species_choice",
-      "type": "grant_origin_feat"
+      "source": "Soldier",
+      "source_type": "background",
+      "tools": [
+        "Gaming Set",
+        "Vehicles (Land)"
+      ],
+      "type": "grant_tool_proficiency"
     }
   ],
   "eldritch_invocation_stats": {
@@ -788,6 +788,22 @@
     ],
     "weapons": [
       {
+        "display_name": "Flail",
+        "name": "Flail",
+        "properties": {
+          "category": "Martial Melee",
+          "cost": "10 gp",
+          "damage": "1d8",
+          "damage_type": "Bludgeoning",
+          "mastery": "Sap",
+          "proficiency_required": "Martial weapons",
+          "properties": [],
+          "weight": 2
+        },
+        "quantity": 1,
+        "source": "Class"
+      },
+      {
         "display_name": "Greatsword",
         "name": "Greatsword",
         "properties": {
@@ -802,22 +818,6 @@
             "Two-Handed"
           ],
           "weight": 6
-        },
-        "quantity": 1,
-        "source": "Class"
-      },
-      {
-        "display_name": "Flail",
-        "name": "Flail",
-        "properties": {
-          "category": "Martial Melee",
-          "cost": "10 gp",
-          "damage": "1d8",
-          "damage_type": "Bludgeoning",
-          "mastery": "Sap",
-          "proficiency_required": "Martial weapons",
-          "properties": [],
-          "weight": 2
         },
         "quantity": 1,
         "source": "Class"
@@ -846,18 +846,6 @@
     "background": [],
     "class": [
       {
-        "description": "When you are wielding a melee weapon in one hand and no other weapons, you gain a +2 bonus to damage rolls with that weapon.",
-        "level": 1,
-        "name": "Fighting Style: Dueling",
-        "source": "Fighter"
-      },
-      {
-        "description": "Your training with weapons allows you to use the mastery properties of three kinds of Simple or Martial weapons of your choice. Whenever you finish a Long Rest, you can switch one mastery.",
-        "level": 1,
-        "name": "Weapon Mastery",
-        "source": "Fighter"
-      },
-      {
         "description": "Bonus Action: Regain 1d10+Fighter level HP (2/Short Rest, 3/Short Rest at level 4)",
         "level": 1,
         "name": "Second Wind",
@@ -870,22 +858,34 @@
         "source": "Fighter"
       },
       {
+        "description": "When you are wielding a melee weapon in one hand and no other weapons, you gain a +2 bonus to damage rolls with that weapon.",
+        "level": 1,
+        "name": "Fighting Style: Dueling",
+        "source": "Fighter"
+      },
+      {
         "description": "When you fail an ability check, you can expend a use of your Second Wind to push yourself toward success. Rather than regaining Hit Points, you roll 1d10 and add the number rolled to the ability check, potentially turning it into a success. If the check still fails, this use of Second Wind isn't expended.",
         "level": 2,
         "name": "Tactical Mind",
+        "source": "Fighter"
+      },
+      {
+        "description": "Your training with weapons allows you to use the mastery properties of three kinds of Simple or Martial weapons of your choice. Whenever you finish a Long Rest, you can switch one mastery.",
+        "level": 1,
+        "name": "Weapon Mastery",
         "source": "Fighter"
       }
     ],
     "feats": [
       {
-        "description": "You've trained to deal particularly damaging strikes. Once per turn when you hit a target with a weapon, you can roll the weapon's damage dice twice and use either roll against the target.",
-        "name": "Savage Attacker",
-        "source": "Soldier"
-      },
-      {
         "description": "You have inexplicable luck that seems to kick in at just the right moment.\n\n**Luck Points.** You have a number of Luck Points equal to your Proficiency Bonus and can spend the points on the benefits below. You regain your expended Luck Points when you finish a Long Rest.\n\n**Advantage.** When you roll a d20 for a D20 Test, you can spend 1 Luck Point to give yourself Advantage on the roll.\n\n**Disadvantage.** When a creature rolls a d20 for an attack roll against you, you can spend 1 Luck Point to impose Disadvantage on that roll.",
         "name": "Lucky",
         "source": "Versatile: Lucky"
+      },
+      {
+        "description": "You've trained to deal particularly damaging strikes. Once per turn when you hit a target with a weapon, you can roll the weapon's damage dice twice and use either roll against the target.",
+        "name": "Savage Attacker",
+        "source": "Soldier"
       }
     ],
     "lineage": [],
@@ -896,27 +896,27 @@
         "source": "Human"
       },
       {
-        "description": "You gain proficiency in one skill of your choice.",
-        "name": "Skillful: Investigation",
+        "description": "You gain an Origin feat of your choice. Skilled is recommended.",
+        "name": "Versatile: Lucky",
         "source": "Human"
       },
       {
-        "description": "You gain an Origin feat of your choice. Skilled is recommended.",
-        "name": "Versatile: Lucky",
+        "description": "You gain proficiency in one skill of your choice.",
+        "name": "Skillful: Investigation",
         "source": "Human"
       }
     ],
     "subclass": [
       {
-        "description": "You learn maneuvers that are fueled by special dice called Superiority Dice. You learn three maneuvers of your choice. You have four Superiority Dice (d8s). A Superiority Die is expended when you use it. You regain all expended Superiority Dice when you finish a Short or Long Rest. You gain additional Superiority Dice at levels 7 and 15. If a maneuver requires a saving throw, the DC equals 8 + your Strength or Dexterity modifier (your choice) + Proficiency Bonus.",
-        "level": 3,
-        "name": "Combat Superiority",
-        "source": "Battle Master"
-      },
-      {
         "description": "You gain proficiency with one type of Artisan's Tools of your choice, and you gain proficiency in one skill of your choice from the skills available to Fighters at level 1.",
         "level": 3,
         "name": "Student of War",
+        "source": "Battle Master"
+      },
+      {
+        "description": "You learn maneuvers that are fueled by special dice called Superiority Dice. You learn three maneuvers of your choice. You have four Superiority Dice (d8s). A Superiority Die is expended when you use it. You regain all expended Superiority Dice when you finish a Short or Long Rest. You gain additional Superiority Dice at levels 7 and 15. If a maneuver requires a saving throw, the DC equals 8 + your Strength or Dexterity modifier (your choice) + Proficiency Bonus.",
+        "level": 3,
+        "name": "Combat Superiority",
         "source": "Battle Master"
       }
     ]

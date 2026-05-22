@@ -564,29 +564,32 @@ export const SAMPLE_CHARACTERS: SampleCharacter[] = [
     flavor: "He made a deal. He has not yet decided if he regrets it.",
     choices: {
       character_name: "Grax the Bound",
-      classes: [{ class_name: "Warlock", level: 3, subclass: "The Fiend" }],
+      classes: [
+        {
+          class_name: "Warlock",
+          level: 3,
+          subclass: "The Fiend",
+        },
+      ],
       species: "Orc",
       background: "Charlatan",
       ability_scores_method: "standard_array",
       ability_scores: {
         Strength: 10,
-        Dexterity: 13,
-        Constitution: 14,
+        Dexterity: 14,
+        Constitution: 13,
         Intelligence: 8,
         Wisdom: 12,
         Charisma: 15,
       },
-      background_bonuses: { Charisma: 2, Constitution: 1 },
+      background_bonuses: {
+        Charisma: 2,
+        Constitution: 1,
+      },
       skill_choices: ["Intimidation", "Arcana"],
       spell_selections: {
-        cantrips: ["Eldritch Blast", "Minor Illusion", "Mage Hand"],
-        spells: [
-          "Armor of Agathys",
-          "Hellish Rebuke",
-          "Hex",
-          "Darkness",
-          "Hold Person",
-        ],
+        cantrips: ["Eldritch Blast", "Mind Sliver"],
+        spells: [],
         background_cantrips: [],
         background_spells: [],
       },
@@ -595,6 +598,12 @@ export const SAMPLE_CHARACTERS: SampleCharacter[] = [
         class_equipment: "option_a",
         background_equipment: "option_a",
       },
+      eldritch_invocation_selections: [
+        "Agonizing Blast",
+        "Eldritch Mind",
+        "Pact of the Chain",
+      ],
+      feat_Skilled_skills_or_tools: ["Persuasion", "Stealth", "Perception"],
     },
   },
   {

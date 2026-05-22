@@ -244,3 +244,23 @@ class TestWeaponMasterySystem:
             assert mastery in masteries
             assert "name" in masteries[mastery]
             assert "description" in masteries[mastery]
+
+    def test_mastery_management_view_includes_properties(self, fighter_builder):
+        """build_mastery_management_view includes mastery_properties with description and weapons."""
+        from modules.derived_stats import build_mastery_management_view
+
+        result = build_mastery_management_view(fighter_builder)
+
+        assert "mastery_properties" in result
+        props = result["mastery_properties"]
+        # At least one property should exist given a Fighter's weapon list
+        assert len(props) > 0
+
+        # Each property entry must have name, description, and weapons
+        for prop_name, prop in props.items():
+            assert prop["name"] == prop_name
+            assert isinstance(prop["description"], str) and len(prop["description"]) > 0
+            assert isinstance(prop["weapons"], list) and len(prop["weapons"]) > 0
+            # Every weapon listed must be in the fighter's available weapons
+            for w in prop["weapons"]:
+                assert w in result["available_weapons"]

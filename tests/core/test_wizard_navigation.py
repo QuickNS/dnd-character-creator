@@ -288,7 +288,7 @@ class TestFeatChoicesCleanup:
             feat_name=feat_name
         )
 
-        cantrips = builder.character_data["spells"]["prepared"]["cantrips"]
+        cantrips = builder.character_data["spells"]["always_prepared"]
         assert "Sacred Flame" in cantrips
         assert "Guidance" in cantrips
 
@@ -298,7 +298,7 @@ class TestFeatChoicesCleanup:
             feat_name=feat_name
         )
 
-        cantrips = builder.character_data["spells"]["prepared"]["cantrips"]
+        cantrips = builder.character_data["spells"]["always_prepared"]
         assert "Thaumaturgy" in cantrips
         assert "Light" in cantrips
         assert "Sacred Flame" not in cantrips
@@ -316,7 +316,7 @@ class TestFeatChoicesCleanup:
             feat_name=feat_name
         )
 
-        spells = builder.character_data["spells"]["prepared"]["spells"]
+        spells = builder.character_data["spells"]["always_prepared"]
         assert "Bless" in spells
 
         builder.apply_feat_choices(
@@ -324,7 +324,7 @@ class TestFeatChoicesCleanup:
             feat_name=feat_name
         )
 
-        spells = builder.character_data["spells"]["prepared"]["spells"]
+        spells = builder.character_data["spells"]["always_prepared"]
         assert "Healing Word" in spells
         assert "Bless" not in spells
 

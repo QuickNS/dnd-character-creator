@@ -1,12 +1,18 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
-import { api } from "@/lib/api";
+import { api, type ChoicesMade } from "@/lib/api";
 import { useCharacterStore } from "@/store/characterStore";
+import { useRosterStore } from "@/store/rosterStore";
 import { useIsDark } from "@/hooks/useIsDark";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { useBugReportUrl } from "@/hooks/useBugReportUrl";
-import { Download } from "lucide-react";
+import { BookmarkCheck, Download, Save } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { PrepareSpellsDialog } from "@/components/sheet/PrepareSpellsDialog";
+import { ChooseMasteriesDialog } from "@/components/sheet/ChooseMasteriesDialog";
+import { InvocationsDialog } from "@/components/sheet/InvocationsDialog";
 
 // `to_character()` is too sprawling to fully type at the boundary.
 // We treat it as a loose record and narrow only where we read.
@@ -30,13 +36,29 @@ function signed(v: number | undefined): string {
   if (v === undefined) return "—";
   return v >= 0 ? `+${v}` : String(v);
 }
-function slotLevelLabel(level: string): string {
-  const numeric = level.match(/\d+/)?.[0];
-  return numeric ? `Level ${numeric}` : `Level ${level}`;
+const SLOT_LEVEL_ORDINALS = [
+  "Cantrip",
+  "1st",
+  "2nd",
+  "3rd",
+  "4th",
+  "5th",
+  "6th",
+  "7th",
+  "8th",
+  "9th",
+];
+
+function slotLevelOrdinal(level: string): string {
+  const numeric = Number(level.match(/\d+/)?.[0]);
+  if (!Number.isFinite(numeric)) return level;
+  return SLOT_LEVEL_ORDINALS[numeric] ?? `${numeric}th`;
 }
 
 function downloadJson(filename: string, data: unknown) {
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+  const blob = new Blob([JSON.stringify(data, null, 2)], {
+    type: "application/json",
+  });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
@@ -47,14 +69,110 @@ function downloadJson(filename: string, data: unknown) {
   URL.revokeObjectURL(url);
 }
 
+function safeFilename(name: string): string {
+  return (
+    name
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9._-]+/g, "-")
+      .replace(/^-+|-+$/g, "") || "character"
+  );
+}
+
 export function Sheet() {
   const choicesMade = useCharacterStore((s) => s.choicesMade);
+  const saveCurrent = useRosterStore((s) => s.saveCurrent);
   const buildQuery = useQuery({
     queryKey: ["character", "build", choicesMade],
     queryFn: () => api.character.build(choicesMade),
     retry: false,
     placeholderData: keepPreviousData,
   });
+
+  const [spellDialogOpen, setSpellDialogOpen] = useState(false);
+  const [masteryDialogOpen, setMasteryDialogOpen] = useState(false);
+  const [invocationDialogOpen, setInvocationDialogOpen] = useState(false);
+  const [savedFlash, setSavedFlash] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [exportFlash, setExportFlash] = useState<string | null>(null);
+  const [exportError, setExportError] = useState<string | null>(null);
+
+  const spellDerived = useQuery({
+    queryKey: [
+      "character",
+      "derived",
+      "spell_management",
+      choicesMade.class,
+      choicesMade.level,
+      choicesMade.subclass,
+      choicesMade.classes,
+    ],
+    queryFn: () => api.character.derived(choicesMade, "spell_management"),
+    enabled:
+      Array.isArray(choicesMade["classes"]) &&
+      (choicesMade["classes"] as unknown[]).length > 0,
+    retry: false,
+  });
+  const masteryDerived = useQuery({
+    queryKey: [
+      "character",
+      "derived",
+      "mastery_management",
+      choicesMade.class,
+      choicesMade.level,
+      choicesMade.subclass,
+      choicesMade.classes,
+    ],
+    queryFn: () => api.character.derived(choicesMade, "mastery_management"),
+    enabled:
+      Array.isArray(choicesMade["classes"]) &&
+      (choicesMade["classes"] as unknown[]).length > 0,
+    retry: false,
+  });
+  const invocationDerived = useQuery({
+    queryKey: [
+      "character",
+      "derived",
+      "invocation_management",
+      choicesMade.class,
+      choicesMade.level,
+      choicesMade.subclass,
+      choicesMade.classes,
+      choicesMade.eldritch_invocation_selections,
+    ],
+    queryFn: () => api.character.derived(choicesMade, "invocation_management"),
+    enabled:
+      Array.isArray(choicesMade["classes"]) &&
+      (choicesMade["classes"] as unknown[]).length > 0,
+    retry: false,
+  });
+
+  const spellApplicable = spellDerived.data?.applicable === true;
+  const masteryApplicable = masteryDerived.data?.applicable === true;
+  const invocationApplicable = invocationDerived.data?.applicable === true;
+  const invData =
+    invocationDerived.data?.data != null &&
+    typeof invocationDerived.data.data === "object"
+      ? (invocationDerived.data.data as Record<string, unknown>)
+      : null;
+  const currentInvocations: string[] = Array.isArray(
+    invData?.current_invocations,
+  )
+    ? (invData!.current_invocations as string[])
+    : [];
+  // Build a lookup map from name → description using available_invocations
+  const invocationDescMap = new Map<string, string>(
+    (Array.isArray(invData?.available_invocations)
+      ? (invData!.available_invocations as Record<string, unknown>[])
+      : []
+    )
+      .filter((v) => typeof v === "object" && v !== null)
+      .flatMap((v) => {
+        const name = String(v.name ?? "");
+        const desc = String(v.description ?? "");
+        return name.length > 0 ? [[name, desc] as [string, string]] : [];
+      }),
+  );
 
   if (buildQuery.isLoading) {
     return (
@@ -80,8 +198,89 @@ export function Sheet() {
   }
 
   const c = (buildQuery.data ?? {}) as Char;
+  const defaultName =
+    (typeof choicesMade.character_name === "string" &&
+    choicesMade.character_name.trim().length > 0
+      ? choicesMade.character_name
+      : undefined) ??
+    str(c.name) ??
+    str(c.character_name) ??
+    "Unnamed";
+
+  function handleSaveToRoster() {
+    setSaveError(null);
+    setExportFlash(null);
+    const characterName =
+      typeof choicesMade.character_name === "string"
+        ? choicesMade.character_name
+        : defaultName;
+    saveCurrent(choicesMade, characterName)
+      .then((entry) => {
+        setSavedFlash(`Saved "${entry.name}" to your roster.`);
+        window.setTimeout(() => setSavedFlash(null), 3000);
+      })
+      .catch((err: unknown) => {
+        setSaveError(
+          err instanceof Error ? err.message : "Failed to save character.",
+        );
+      });
+  }
+
+  function handleDownloadChoices() {
+    setExportError(null);
+    setSaveError(null);
+    try {
+      downloadJson(`${safeFilename(defaultName)}-choices.json`, {
+        version: 1,
+        exported_at: new Date().toISOString(),
+        choices_made: choicesMade,
+      });
+      setExportFlash("Downloaded character choices JSON.");
+      window.setTimeout(() => setExportFlash(null), 3000);
+    } catch (err: unknown) {
+      setExportError(
+        err instanceof Error ? err.message : "Failed to download character.",
+      );
+    }
+  }
+
   return (
-    <Shell debugData={c}>
+    <Shell
+      debugData={c}
+      headerActions={
+        <>
+          <Button variant="outline" size="sm" onClick={handleDownloadChoices}>
+            <Download className="w-3 h-3 mr-1" />
+            Download Choices
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleSaveToRoster}>
+            {savedFlash ? (
+              <>
+                <BookmarkCheck className="w-3 h-3 mr-1 text-green-600" />
+                Saved!
+              </>
+            ) : (
+              <>
+                <Save className="w-3 h-3 mr-1" />
+                Save to Roster
+              </>
+            )}
+          </Button>
+        </>
+      }
+      actionFeedback={
+        <>
+          {saveError && <p className="text-xs text-destructive">{saveError}</p>}
+          {savedFlash && <p className="text-xs text-emerald-500">{savedFlash}</p>}
+          {exportError && (
+            <p className="text-xs text-destructive">{exportError}</p>
+          )}
+          {exportFlash && (
+            <p className="text-xs text-emerald-500">{exportFlash}</p>
+          )}
+        </>
+      }
+    >
       <Header c={c} />
       <CoreStats c={c} />
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6 lg:items-stretch">
@@ -93,23 +292,100 @@ export function Sheet() {
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
         <ACOptions c={c} />
-        <Attacks c={c} />
+        <Attacks
+          c={c}
+          masteryApplicable={masteryApplicable}
+          choicesMade={choicesMade}
+          onChooseMasteries={() => setMasteryDialogOpen(true)}
+        />
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
         <Proficiencies c={c} />
         <Languages c={c} />
       </div>
-      <Spells c={c} />
+      {invocationApplicable && (
+        <div className="mt-6">
+          <Section
+            title="Eldritch Invocations"
+            titleRight={
+              <Button size="sm" onClick={() => setInvocationDialogOpen(true)}>
+                Manage Invocations
+              </Button>
+            }
+          >
+            {currentInvocations.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No invocations selected.
+              </p>
+            ) : (
+              <ul className="space-y-2">
+                {currentInvocations.map((inv) => {
+                  const description = invocationDescMap.get(inv);
+                  return (
+                    <li
+                      key={inv}
+                      className="rounded border border-border bg-background/40 p-3"
+                    >
+                      <div className="text-sm font-semibold text-foreground">{inv}</div>
+                      {description && (
+                        <p className="mt-1 text-xs text-foreground/90">{description}</p>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </Section>
+        </div>
+      )}
+      <Spells
+        c={c}
+        spellApplicable={spellApplicable}
+        onPrepareSpells={() => setSpellDialogOpen(true)}
+      />
       <Features c={c} />
+      <PrepareSpellsDialog
+        open={spellDialogOpen}
+        onClose={() => setSpellDialogOpen(false)}
+      />
+      <ChooseMasteriesDialog
+        open={masteryDialogOpen}
+        onClose={() => setMasteryDialogOpen(false)}
+      />
+      <InvocationsDialog
+        open={invocationDialogOpen}
+        onClose={() => setInvocationDialogOpen(false)}
+      />
     </Shell>
   );
 }
 
-function Shell({ children, debugData }: { children: React.ReactNode; debugData?: unknown }) {
+function Shell({
+  children,
+  debugData,
+  headerActions,
+  actionFeedback,
+}: {
+  children: React.ReactNode;
+  debugData?: unknown;
+  headerActions?: React.ReactNode;
+  actionFeedback?: React.ReactNode;
+}) {
   const isDark = useIsDark();
   const bugReportUrl = useBugReportUrl();
   const choicesMade = useCharacterStore((s) => s.choicesMade);
-  const classKey = str(choicesMade.class)?.toLowerCase() ?? "";
+  const rawClassKey =
+    str(choicesMade.class) ??
+    (() => {
+      const rows = choicesMade.classes;
+      if (Array.isArray(rows) && rows.length > 0) {
+        const primary = rows[0] as { class_name?: unknown } | undefined;
+        const name = primary?.class_name;
+        return typeof name === "string" && name.length > 0 ? name : undefined;
+      }
+      return undefined;
+    })();
+  const classKey = rawClassKey?.toLowerCase() ?? "";
   const leftSrc = isDark
     ? "/images/home/sidebar-1-dark.png"
     : "/images/home/sidebar-1.png";
@@ -144,11 +420,12 @@ function Shell({ children, debugData }: { children: React.ReactNode; debugData?:
       {/* ── Content — sits above the fixed sidebars ─────────── */}
       <div className="relative z-10">
         <div className="container py-10 max-w-5xl">
-          <div className="flex items-center justify-between mb-6">
+          <div className="mb-6 space-y-2">
+            <div className="flex items-center justify-between gap-4">
             <Button asChild variant="ghost" size="sm">
               <Link to="/">← Home</Link>
             </Button>
-            <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center justify-end gap-3">
               <Button asChild variant="outline" size="sm">
                 <a
                   href={bugReportUrl}
@@ -158,16 +435,26 @@ function Shell({ children, debugData }: { children: React.ReactNode; debugData?:
                   Bug Report
                 </a>
               </Button>
+              {headerActions}
               {import.meta.env.DEV && debugData != null && (
                 <Button
                   variant="outline"
                   size="sm"
                   className="border-amber-500 text-amber-700 hover:bg-amber-50 print:hidden"
                   onClick={() => {
-                    const name = typeof (debugData as Record<string, unknown>).name === "string"
-                      ? (debugData as Record<string, unknown>).name as string
-                      : "character";
-                    const filename = `${name.trim().toLowerCase().replace(/[^a-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "") || "character"}-debug.json`;
+                    const name =
+                      typeof (debugData as Record<string, unknown>).name ===
+                      "string"
+                        ? ((debugData as Record<string, unknown>)
+                            .name as string)
+                        : "character";
+                    const filename = `${
+                      name
+                        .trim()
+                        .toLowerCase()
+                        .replace(/[^a-z0-9._-]+/g, "-")
+                        .replace(/^-+|-+$/g, "") || "character"
+                    }-debug.json`;
                     downloadJson(filename, debugData);
                   }}
                 >
@@ -183,6 +470,12 @@ function Shell({ children, debugData }: { children: React.ReactNode; debugData?:
               </Button>
               <ThemeToggle />
             </div>
+            </div>
+            {actionFeedback ? (
+              <div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-1">
+                {actionFeedback}
+              </div>
+            ) : null}
           </div>
           {children}
         </div>
@@ -195,10 +488,12 @@ function Section({
   title,
   children,
   className,
+  titleRight,
 }: {
   title: string;
   children: React.ReactNode;
   className?: string;
+  titleRight?: React.ReactNode;
 }) {
   return (
     <section
@@ -207,7 +502,10 @@ function Section({
         (className ? " " + className : "")
       }
     >
-      <h2 className="font-display text-lg text-primary mb-3">{title}</h2>
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="font-display text-lg text-primary">{title}</h2>
+        {titleRight}
+      </div>
       {children}
     </section>
   );
@@ -303,7 +601,9 @@ function Abilities({ c, className }: { c: Char; className?: string }) {
   };
   function pick(name: string): AbilityView {
     const direct = rec(
-      abilities[name] ?? abilities[name.toLowerCase()] ?? abilities[name.slice(0, 3).toLowerCase()],
+      abilities[name] ??
+        abilities[name.toLowerCase()] ??
+        abilities[name.slice(0, 3).toLowerCase()],
     );
     if (Object.keys(direct).length) {
       return {
@@ -316,7 +616,9 @@ function Abilities({ c, className }: { c: Char; className?: string }) {
     }
     const rawScores = rec(c.ability_scores);
     const raw =
-      rawScores[name] ?? rawScores[name.toLowerCase()] ?? rawScores[name.slice(0, 3).toLowerCase()];
+      rawScores[name] ??
+      rawScores[name.toLowerCase()] ??
+      rawScores[name.slice(0, 3).toLowerCase()];
     return { score: num(raw) };
   }
 
@@ -446,9 +748,7 @@ function SavingThrows({ c }: { c: Char }) {
                 >
                   {name}
                 </span>
-                {proficient && (
-                  <span className="shrink-0 text-primary">★</span>
-                )}
+                {proficient && <span className="shrink-0 text-primary">★</span>}
                 {advLabel && (
                   <span
                     title={advLabel}
@@ -461,7 +761,9 @@ function SavingThrows({ c }: { c: Char }) {
               <span
                 className={
                   "shrink-0 tabular-nums " +
-                  (proficient ? "text-foreground font-semibold" : "text-muted-foreground")
+                  (proficient
+                    ? "text-foreground font-semibold"
+                    : "text-muted-foreground")
                 }
               >
                 {signed(bonus)}
@@ -575,9 +877,7 @@ function ACOptions({ c }: { c: Char }) {
   return (
     <Section title="Armor Class">
       {options.length === 0 ? (
-        <p className="text-xs text-muted-foreground">
-          No AC options computed.
-        </p>
+        <p className="text-xs text-muted-foreground">No AC options computed.</p>
       ) : (
         <ul className="space-y-2 text-sm">
           {options.slice(0, 4).map((opt, i) => {
@@ -618,20 +918,30 @@ function ACOptions({ c }: { c: Char }) {
   );
 }
 
-const MASTERY_CLASSES = new Set([
-  "Fighter",
-  "Rogue",
-  "Barbarian",
-  "Ranger",
-  "Paladin",
-]);
-
-function Attacks({ c }: { c: Char }) {
+function Attacks({
+  c,
+  masteryApplicable,
+  choicesMade,
+  onChooseMasteries,
+}: {
+  c: Char;
+  masteryApplicable?: boolean;
+  choicesMade?: ChoicesMade;
+  onChooseMasteries?: () => void;
+}) {
   const attacks = arr<Record<string, unknown>>(c.attacks);
-  const className = str(c.class) ?? "";
-  const showMastery = MASTERY_CLASSES.has(className);
   return (
-    <Section title="Attacks">
+    <Section
+      title="Attacks"
+      titleRight={
+        masteryApplicable &&
+        onChooseMasteries && (
+          <Button size="sm" onClick={onChooseMasteries}>
+            Choose Masteries
+          </Button>
+        )
+      }
+    >
       {attacks.length === 0 ? (
         <p className="text-xs text-muted-foreground">No weapon attacks.</p>
       ) : (
@@ -639,8 +949,7 @@ function Attacks({ c }: { c: Char }) {
           {attacks.map((a, i) => {
             const name = str(a.name) ?? str(a.weapon) ?? "Attack";
             const bonus = num(a.attack_bonus) ?? num(a.bonus);
-            const bonusDisplay =
-              str(a.attack_bonus_display) ?? signed(bonus);
+            const bonusDisplay = str(a.attack_bonus_display) ?? signed(bonus);
             const damage = str(a.damage) ?? str(a.damage_string);
             const damageType = str(a.damage_type);
             const avgDamage = num(a.avg_damage);
@@ -650,6 +959,13 @@ function Attacks({ c }: { c: Char }) {
             const properties = arr<string>(a.properties);
             const damageNotes = arr<string>(a.damage_notes);
             const mastery = str(a.mastery);
+            const weaponName = str(a.weapon ?? a.name) ?? "";
+            const masteryIsSelected =
+              masteryApplicable === true &&
+              Array.isArray(choicesMade?.weapon_mastery_selections) &&
+              (choicesMade!.weapon_mastery_selections as string[]).includes(
+                weaponName,
+              );
             const proficient = a.proficient !== false;
             const throwDamage = str(a.throw_damage);
             const avgThrow = num(a.avg_throw_damage);
@@ -677,9 +993,7 @@ function Attacks({ c }: { c: Char }) {
                     <dt className="font-semibold text-muted-foreground">
                       Attack:
                     </dt>
-                    <dd className="text-foreground">
-                      {bonusDisplay} to hit
-                    </dd>
+                    <dd className="text-foreground">{bonusDisplay} to hit</dd>
                     {range && (
                       <dd className="text-muted-foreground">
                         (Range: {range})
@@ -766,13 +1080,20 @@ function Attacks({ c }: { c: Char }) {
                     </div>
                   )}
 
-                  {mastery && showMastery && (
+                  {masteryApplicable && mastery && (
                     <div className="flex flex-wrap items-center gap-x-2">
                       <dt className="font-semibold text-muted-foreground">
                         Mastery:
                       </dt>
                       <dd>
-                        <span className="rounded border border-border bg-secondary/60 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-foreground">
+                        <span
+                          className={cn(
+                            "rounded border px-1.5 py-0.5 text-[10px] uppercase tracking-wide",
+                            masteryIsSelected
+                              ? "border-primary bg-primary/15 text-primary font-semibold"
+                              : "border-border bg-secondary/60 text-muted-foreground",
+                          )}
+                        >
                           {mastery}
                         </span>
                       </dd>
@@ -826,14 +1147,38 @@ function Proficiencies({ c }: { c: Char }) {
 
 function Languages({ c }: { c: Char }) {
   const langs = arr<string>(c.languages);
+  const darkvision = c.darkvision as number | undefined;
   return (
-    <Section title="Languages">
-      <p className="text-sm">{langs.length > 0 ? langs.join(", ") : "—"}</p>
+    <Section title="Languages & Senses">
+      <div className="space-y-3">
+        <div>
+          <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-1">
+            Languages
+          </p>
+          <p className="text-sm">{langs.length > 0 ? langs.join(", ") : "—"}</p>
+        </div>
+        <div>
+          <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-1">
+            Darkvision
+          </p>
+          <p className="text-sm">
+            {darkvision && darkvision > 0 ? `${darkvision} feet` : "None"}
+          </p>
+        </div>
+      </div>
     </Section>
   );
 }
 
-function Spells({ c }: { c: Char }) {
+function Spells({
+  c,
+  spellApplicable,
+  onPrepareSpells,
+}: {
+  c: Char;
+  spellApplicable?: boolean;
+  onPrepareSpells?: () => void;
+}) {
   const byLevel = rec(c.spells_by_level);
   const slots = rec(c.spell_slots);
   const stats = rec(c.spellcasting_stats);
@@ -843,17 +1188,29 @@ function Spells({ c }: { c: Char }) {
     effectiveCasterLevelFromStats && effectiveCasterLevelFromStats > 0
       ? effectiveCasterLevelFromStats
       : (num(c.level) ?? effectiveCasterLevelFromStats);
-  const statsPactMagicSlots = arr<Record<string, unknown>>(stats.pact_magic_slots);
-  const topLevelPactMagicSlots = arr<Record<string, unknown>>(c.pact_magic_slots);
+  const statsPactMagicSlots = arr<Record<string, unknown>>(
+    stats.pact_magic_slots,
+  );
+  const topLevelPactMagicSlots = arr<Record<string, unknown>>(
+    c.pact_magic_slots,
+  );
   const pactMagicSlots =
-    statsPactMagicSlots.length > 0 ? statsPactMagicSlots : topLevelPactMagicSlots;
+    statsPactMagicSlots.length > 0
+      ? statsPactMagicSlots
+      : topLevelPactMagicSlots;
   const statsMulticlassNotes = arr<string>(stats.multiclass_notes);
   const topLevelSpellSlotNotes = arr<string>(c.spell_slot_notes);
   const multiclassNotes =
-    statsMulticlassNotes.length > 0 ? statsMulticlassNotes : topLevelSpellSlotNotes;
+    statsMulticlassNotes.length > 0
+      ? statsMulticlassNotes
+      : topLevelSpellSlotNotes;
   const levels = Object.keys(byLevel).sort((a, b) => Number(a) - Number(b));
 
-  if (!hasSpellcasting && levels.length === 0 && Object.keys(slots).length === 0) {
+  if (
+    !hasSpellcasting &&
+    levels.length === 0 &&
+    Object.keys(slots).length === 0
+  ) {
     return null;
   }
 
@@ -870,50 +1227,60 @@ function Spells({ c }: { c: Char }) {
       : undefined;
   const maxCantrips = num(stats.max_cantrips_prepared);
   const spellsPreparedTotal = num(stats.spells_prepared);
-  const maxSpells = num(stats.max_spells_to_prepare) ?? num(stats.max_spells_prepared);
+  const maxSpells =
+    num(stats.max_spells_to_prepare) ?? num(stats.max_spells_prepared);
   const ritual = stats.ritual_casting === true;
 
   return (
     <div className="mt-6">
-      <Section title="Spellcasting">
+      <Section
+        title="Spellcasting"
+        titleRight={
+          spellApplicable &&
+          onPrepareSpells && (
+            <Button size="sm" onClick={onPrepareSpells}>
+              Prepare Spells
+            </Button>
+          )
+        }
+      >
         {hasSpellcasting && (
           <>
             <dl className="grid grid-cols-2 sm:grid-cols-4 gap-y-3 gap-x-6 text-sm">
               <Stat label="Spellcasting Ability" value={ability ?? "—"} />
               <Stat label="Spell Save DC" value={saveDC ?? "—"} />
-              <Stat
-                label="Spell Attack Bonus"
-                value={signed(attackBonus)}
-              />
-              <Stat
-                label="Spellcasting Modifier"
-                value={signed(castingMod)}
-              />
+              <Stat label="Spell Attack Bonus" value={signed(attackBonus)} />
+              <Stat label="Spellcasting Modifier" value={signed(castingMod)} />
               {effectiveCasterLevel !== undefined && (
                 <Stat
                   label="Effective Caster Level"
                   value={effectiveCasterLevel}
                 />
               )}
-              {maxCantrips !== undefined && (() => {
-                const cantripsDisplay = cantripsAlwaysPrepared > 0
-                  ? `${cantripsToChoose ?? 0} / ${maxCantrips} (+${cantripsAlwaysPrepared})`
-                  : `${cantripsPrepared ?? 0} / ${maxCantrips}`;
-                return <Stat label="Cantrips Known" value={cantripsDisplay} />;
-              })()}
-              {maxSpells !== undefined && (() => {
-                const alwaysPreparedCount = num(stats.spells_always_prepared) ?? 0;
-                const userPrepared = (spellsPreparedTotal ?? 0) - alwaysPreparedCount;
-                const preparedDisplay = alwaysPreparedCount > 0
-                  ? `${userPrepared} / ${maxSpells} (+${alwaysPreparedCount})`
-                  : `${spellsPreparedTotal ?? 0} / ${maxSpells}`;
-                return (
-                  <Stat
-                    label="Prepared Spells"
-                    value={preparedDisplay}
-                  />
-                );
-              })()}
+              {maxCantrips !== undefined &&
+                (() => {
+                  const cantripsDisplay =
+                    cantripsAlwaysPrepared > 0
+                      ? `${cantripsToChoose ?? 0} / ${maxCantrips} (+${cantripsAlwaysPrepared})`
+                      : `${cantripsPrepared ?? 0} / ${maxCantrips}`;
+                  return (
+                    <Stat label="Cantrips Known" value={cantripsDisplay} />
+                  );
+                })()}
+              {maxSpells !== undefined &&
+                (() => {
+                  const alwaysPreparedCount =
+                    num(stats.spells_always_prepared) ?? 0;
+                  const userPrepared =
+                    (spellsPreparedTotal ?? 0) - alwaysPreparedCount;
+                  const preparedDisplay =
+                    alwaysPreparedCount > 0
+                      ? `${userPrepared} / ${maxSpells} (+${alwaysPreparedCount})`
+                      : `${spellsPreparedTotal ?? 0} / ${maxSpells}`;
+                  return (
+                    <Stat label="Prepared Spells" value={preparedDisplay} />
+                  );
+                })()}
               {ritual && <Stat label="Ritual Casting" value="Yes" />}
             </dl>
 
@@ -924,13 +1291,17 @@ function Spells({ c }: { c: Char }) {
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {Object.entries(slots).map(([lvl, n]) => (
-                    <span
+                    <div
                       key={lvl}
-                      className="rounded bg-primary px-2 py-0.5 text-xs font-semibold text-primary-foreground"
+                      className="flex flex-col items-center gap-0.5"
                     >
-                      {slotLevelLabel(lvl)}: {String(n)}{" "}
-                      {Number(n) === 1 ? "slot" : "slots"}
-                    </span>
+                      <span className="text-xs uppercase tracking-wide text-muted-foreground">
+                        {slotLevelOrdinal(lvl)}
+                      </span>
+                      <span className="text-xs font-semibold text-foreground">
+                        {String(n)}
+                      </span>
+                    </div>
                   ))}
                 </div>
                 <div className="mt-2 text-[11px] text-muted-foreground">
@@ -940,24 +1311,31 @@ function Spells({ c }: { c: Char }) {
             )}
 
             {pactMagicSlots.length > 0 && (
-              <div className="mt-3 rounded border border-border bg-background/40 p-3">
-                <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              <div className="mt-4 rounded border border-primary/60 bg-primary/5 p-3">
+                <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-primary">
                   Pact Magic Slots
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {pactMagicSlots.map((entry, i) => {
-                    const className = str(entry.class_name) ?? "Pact";
                     const slotLevel = num(entry.slot_level);
                     const slotCount = num(entry.slots);
                     return (
-                      <span
-                        key={`${className}-${slotLevel ?? "x"}-${i}`}
-                        className="rounded border border-border bg-secondary/60 px-2 py-0.5 text-xs font-medium text-foreground"
+                      <div
+                        key={`pact-${slotLevel ?? "x"}-${i}`}
+                        className="flex flex-col items-center gap-0.5"
                       >
-                        {className}: {slotCount ?? "—"} at level {slotLevel ?? "—"}
-                      </span>
+                        <span className="text-xs uppercase tracking-wide text-muted-foreground">
+                          {slotLevelOrdinal(String(slotLevel ?? 0))}
+                        </span>
+                        <span className="text-xs font-semibold text-foreground">
+                          {String(slotCount ?? 0)}
+                        </span>
+                      </div>
                     );
                   })}
+                </div>
+                <div className="mt-2 text-[11px] text-muted-foreground">
+                  You regain all expended slots when you finish a Short Rest.
                 </div>
               </div>
             )}

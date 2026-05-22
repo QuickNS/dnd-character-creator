@@ -199,3 +199,14 @@ class TestVersatileFeatChoicesFlow:
         assert isinstance(data, dict)
         assert "feat_name" in data
         assert "choices" in data
+
+
+class TestHumanDarkvision:
+    """Tests for darkvision in to_character() output for Human species."""
+
+    def test_no_darkvision_in_to_character_output(self):
+        """to_character() must expose darkvision == 0 for Human (no darkvision species)."""
+        builder = CharacterBuilder()
+        builder.set_species("Human")
+        character = builder.to_character()
+        assert character["darkvision"] == 0

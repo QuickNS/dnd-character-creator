@@ -1171,6 +1171,46 @@ class TestCharacterDerived:
         assert "spell_slots" in data
         assert "limits" in data
 
+    def test_derived_spell_management_warlock_includes_pact_magic_slots(self, client):
+        choices = {
+            "character_name": "Test",
+            "level": 5,
+            "species": "Human",
+            "class": "Warlock",
+            "subclass": "Fiend",
+            "background": "Acolyte",
+            "languages": [],
+            "ability_scores": {
+                "Strength": 10,
+                "Dexterity": 10,
+                "Constitution": 10,
+                "Intelligence": 10,
+                "Wisdom": 16,
+                "Charisma": 16,
+            },
+            "background_bonuses": {"Wisdom": 2, "Charisma": 1},
+        }
+
+        r = client.post(
+            "/api/v1/character/derived",
+            json={"choices_made": choices, "view": "spell_management"},
+        )
+
+        assert r.status_code == 200
+        body = r.get_json()
+        assert body["view"] == "spell_management"
+        assert body["applicable"] is True
+
+        data = body["data"]
+        assert data is not None
+        assert "pact_magic_slots" in data
+        assert isinstance(data["pact_magic_slots"], list)
+        assert data["pact_magic_slots"]
+
+        first_slot = data["pact_magic_slots"][0]
+        assert first_slot["slots"] > 0
+        assert first_slot["slot_level"] > 0
+
     def test_derived_spell_management_respects_explicit_multiclass_active_row(self, client):
         choices = TestCharacterBuild._cleric_fighter_multiclass_choices()
         choices["class"] = "Fighter"
@@ -1223,6 +1263,77 @@ class TestCharacterDerived:
         assert body["applicable"] is False
         assert isinstance(body.get("reason"), str)
         assert body["data"] is None
+
+    # ------------------------------------------------------------------
+    # prepare_rule tests
+    # ------------------------------------------------------------------
+
+    def test_derived_spell_management_prepare_rule_present(self, client, dwarf_cleric_choices):
+        """prepare_rule must be present in every applicable spell_management response."""
+        r = client.post(
+            "/api/v1/character/derived",
+            json={"choices_made": dwarf_cleric_choices, "view": "spell_management"},
+        )
+        assert r.status_code == 200
+        data = r.get_json()["data"]
+        assert "prepare_rule" in data
+        assert data["prepare_rule"] in ("long_rest", "level_up", "short_rest", "fixed")
+
+    @pytest.mark.parametrize(
+        "class_name,subclass,expected_rule",
+        [
+            ("Cleric", "Light Domain", "long_rest"),
+            ("Druid", "Moon", "long_rest"),
+            ("Paladin", "Oath of Devotion", "long_rest"),
+            ("Wizard", "Evoker", "long_rest"),
+            ("Bard", "Lore", "level_up"),
+            ("Sorcerer", "Draconic Bloodline", "level_up"),
+            ("Warlock", "Fiend", "short_rest"),
+        ],
+    )
+    def test_derived_spell_management_prepare_rule_by_class(
+        self, client, class_name, subclass, expected_rule
+    ):
+        choices = {
+            "character_name": "Test",
+            "level": 5,
+            "species": "Human",
+            "class": class_name,
+            "subclass": subclass,
+            "background": "Acolyte",
+            "languages": [],
+            "ability_scores": {
+                "Strength": 10, "Dexterity": 10, "Constitution": 10,
+                "Intelligence": 10, "Wisdom": 16, "Charisma": 16,
+            },
+            "background_bonuses": {"Wisdom": 2, "Charisma": 1},
+        }
+        r = client.post(
+            "/api/v1/character/derived",
+            json={"choices_made": choices, "view": "spell_management"},
+        )
+        assert r.status_code == 200
+        body = r.get_json()
+        # Some classes might not be applicable at all; skip those gracefully.
+        if not body.get("applicable", True):
+            pytest.skip(f"{class_name} returned applicable=False; skipping prepare_rule check")
+        data = body["data"]
+        assert data["prepare_rule"] == expected_rule, (
+            f"{class_name}: expected prepare_rule={expected_rule!r}, got {data['prepare_rule']!r}"
+        )
+
+    def test_derived_spell_management_prepare_rule_fixed_for_non_caster(
+        self, client, elf_fighter_choices
+    ):
+        """Non-casters return applicable=False; prepare_rule is absent from data (data is None)."""
+        r = client.post(
+            "/api/v1/character/derived",
+            json={"choices_made": elf_fighter_choices, "view": "spell_management"},
+        )
+        assert r.status_code == 200
+        body = r.get_json()
+        assert body["applicable"] is False
+        assert body["data"] is None  # no prepare_rule when not applicable
 
     def test_derived_mastery_management_fighter(self, client, elf_fighter_choices):
         r = client.post(

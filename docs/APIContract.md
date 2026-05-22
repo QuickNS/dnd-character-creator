@@ -496,6 +496,7 @@ The `Character` object is the literal output of `CharacterBuilder.to_character()
 | `abilities`                 | `calculate_processed_ability_scores()`              | Map of ability → `{ score, modifier, save_modifier, save_proficient, ... }`. |
 | `skills`                    | `calculate_skills()`                                | Map of skill → `{ modifier, proficient, expertise?, ... }`.           |
 | `combat`                    | `calculate_combat_stats()`                          | `{ armor_class, initiative, initiative_bonus, speed, hit_point_maximum, hit_points: { current, maximum, temporary }, hp_breakdown, hit_dice: { total, spent }, passive_perception }`. |
+| `darkvision`                | Applied via effects system                          | Range of darkvision in feet. `0` means no darkvision. Examples: `0` (Human), `60` (Elf), `120` (Orc). |
 | `attacks`                   | `calculate_weapon_attacks().attacks`                | List of attack rows.                                                  |
 | `attack_combinations`       | `calculate_weapon_attacks().combinations`           | List of multi-weapon combinations.                                    |
 | `ac_options`                | `calculate_ac_options()`                            | List of AC formulas with their components.                            |

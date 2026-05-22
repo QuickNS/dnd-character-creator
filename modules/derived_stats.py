@@ -33,6 +33,7 @@ _SAVE_FAIL_RE = re.compile(r'saving throw or ([^.;]+)', re.IGNORECASE)
 _DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 _SPELL_CLASS_LISTS = _DATA_DIR / "spells" / "class_lists"
 _WEAPONS_FILE = _DATA_DIR / "equipment" / "weapons.json"
+_WEAPON_MASTERIES_FILE = _DATA_DIR / "equipment" / "weapon_masteries.json"
 
 
 # ---------------------------------------------------------------------------
@@ -156,13 +157,22 @@ def build_spell_management_view(builder) -> Dict[str, Any]:
             builder._load_spell_definition(name) for name in spell_names
         ]
 
-    # Filter available spells by levels the character actually has slots for
-    character = builder.to_character()
-    spell_slots = character.get("spell_slots", {}) or {}
+    # Filter available spells by levels the character actually has slots for.
+    # Read directly from class/subclass data to avoid a full to_character() build.
+    _char_level = builder._get_primary_class_level()
+    _class_data = builder.character_data.get("class_data") or {}
+    _subclass_data = builder.character_data.get("subclass_data") or {}
+    _multiclass = builder._calculate_multiclass_spell_slot_progression()
+    if _multiclass.get("is_multiclass") and _multiclass.get("spell_slots"):
+        _char_slots = _multiclass["spell_slots"]
+    else:
+        _slots_src = _class_data if _class_data.get("spell_slots_by_level") else _subclass_data
+        _level_slots = (_slots_src.get("spell_slots_by_level") or {}).get(str(_char_level), [])
+        _char_slots = builder._slots_payload_to_dict(_level_slots)
     available_slot_levels = {
         ORDINAL_TO_INT[name]
-        for name in spell_slots
-        if name in ORDINAL_TO_INT and spell_slots[name] > 0
+        for name in _char_slots
+        if name in ORDINAL_TO_INT and _char_slots[name] > 0
     }
     if available_slot_levels:
         available_spells = {
@@ -223,17 +233,43 @@ def build_spell_management_view(builder) -> Dict[str, Any]:
                     if isinstance(data, dict) and data.get("level", 0) > 0
                 ]
 
+    limits = {
+        "cantrips": stats.get("max_cantrips_to_prepare", 0),
+        "spells": stats.get("max_spells_to_prepare", 0),
+    }
+
+    # Determine prepare_rule from the primary class name.
+    _LONG_REST_CASTERS = {"cleric", "druid", "paladin", "wizard"}
+    _LEVEL_UP_CASTERS = {"bard", "ranger", "sorcerer"}
+    _SHORT_REST_CASTERS = {"warlock"}
+
+    primary_class_row = builder._get_primary_class_row()
+    primary_class_name = (
+        primary_class_row.get("class_name", "") if primary_class_row else
+        builder.character_data.get("class", "")
+    ).lower()
+
+    if limits["cantrips"] == 0 and limits["spells"] == 0 and not always_prepared:
+        prepare_rule = "fixed"
+    elif primary_class_name in _LONG_REST_CASTERS:
+        prepare_rule = "long_rest"
+    elif primary_class_name in _LEVEL_UP_CASTERS:
+        prepare_rule = "level_up"
+    elif primary_class_name in _SHORT_REST_CASTERS:
+        prepare_rule = "short_rest"
+    else:
+        prepare_rule = "long_rest"
+
     return {
         "always_prepared": always_prepared,
         "available_cantrips": available_cantrips,
         "available_spells": available_spells,
-        "spell_slots": spell_slots,
+        "spell_slots": _char_slots,
+        "pact_magic_slots": stats.get("pact_magic_slots", []),
         "current_selections": current_selections,
-        "limits": {
-            "cantrips": stats.get("max_cantrips_to_prepare", 0),
-            "spells": stats.get("max_spells_to_prepare", 0),
-        },
+        "limits": limits,
         "background_requirements": background_requirements,
+        "prepare_rule": prepare_rule,
     }
 
 
@@ -263,11 +299,30 @@ def build_mastery_management_view(builder) -> Dict[str, Any]:
         except (json.JSONDecodeError, IOError):
             pass
 
+    # Build mastery_properties: property_name -> { name, description, weapons: [weapon_name, ...] }
+    mastery_properties: Dict[str, Any] = {}
+    if _WEAPON_MASTERIES_FILE.exists():
+        try:
+            with open(_WEAPON_MASTERIES_FILE, "r") as f:
+                masteries_data = json.load(f)
+            for weapon_name, prop_name in weapon_masteries.items():
+                if prop_name in masteries_data:
+                    if prop_name not in mastery_properties:
+                        mastery_properties[prop_name] = {
+                            "name": prop_name,
+                            "description": masteries_data[prop_name].get("description", ""),
+                            "weapons": [],
+                        }
+                    mastery_properties[prop_name]["weapons"].append(weapon_name)
+        except (json.JSONDecodeError, IOError):
+            pass
+
     return {
         "available_weapons": stats.get("available_weapons", []),
         "max_masteries": stats.get("max_masteries", 0),
         "current_masteries": stats.get("current_masteries", []),
         "weapon_masteries": weapon_masteries,
+        "mastery_properties": mastery_properties,
     }
 
 
