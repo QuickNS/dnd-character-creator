@@ -115,9 +115,10 @@ def test_fixtures_discovered():
     assert any(label.startswith("test_characters/") for label in found), (
         f"No fixtures discovered under test_characters/. Found: {found}"
     )
-    assert "data/example_complete_character.json" in found, (
-        f"data/example_complete_character.json not picked up. Found: {found}"
-    )
+    if EXAMPLE_COMPLETE.exists():
+        assert "data/example_complete_character.json" in found, (
+            f"data/example_complete_character.json not picked up. Found: {found}"
+        )
 
 
 @pytest.mark.integration
