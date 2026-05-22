@@ -461,6 +461,19 @@ Grants a bonus to hit points.
 
 Example: a Sorcerer 5 / Paladin 5 with Draconic Resilience (Draconic Sorcery, `value: 1`, `per_level`, source = Sorcerer) gains `+5` HP from that effect, not `+10`. Dwarven Toughness on the same character still grants `+10`.
 
+#### bonus_initiative ✅
+Grants a bonus to initiative.
+
+**Implementation**: Applied in `calculate_combat_stats()`. Numeric values add directly; `"proficiency"` adds the character's current proficiency bonus.
+
+**Example:** Alert feat
+```json
+{
+  "type": "bonus_initiative",
+  "value": "proficiency"
+}
+```
+
 ## Feature Structure
 
 Features can include an `effects` array alongside their description:
@@ -637,6 +650,7 @@ Every valid `effect.type` string accepted by `_apply_effect()`. Using a value no
 | `bonus_damage` | Combat | Adds entry to `damage_bonuses` |
 | `bonus_attack` | Combat | Adds entry to `attack_bonuses` |
 | `bonus_hp` | Combat | Adds entry to `hp_bonuses` |
+| `bonus_initiative` | Combat | Adds entry to `initiative_bonuses` |
 | `bonus_spell_damage_ability_mod` | Combat | Writes `spell_metadata[spell]["damage_bonus"]` |
 | `bonus_spell_range` | Combat | Writes `spell_metadata[spell]["range_override"]` |
 | `great_weapon_fighting` | Fighting style | Flag in `fighting_style_flags` |

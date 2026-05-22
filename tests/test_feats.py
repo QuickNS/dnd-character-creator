@@ -555,6 +555,33 @@ class TestOriginFeatEffects:
         assert hp_effects[0]["value"] == 2
         assert hp_effects[0]["scaling"] == "per_level"
 
+    def test_alert_has_bonus_initiative_effect(self, origin_feats):
+        """Alert must add proficiency bonus to initiative via a structured effect."""
+        effects = origin_feats["Alert"].get("effects", [])
+        initiative_effects = [e for e in effects if e["type"] == "bonus_initiative"]
+        assert len(initiative_effects) == 1
+        assert initiative_effects[0]["value"] == "proficiency"
+
+    def test_alert_adds_proficiency_bonus_to_initiative(self, built_character):
+        """Alert should make initiative equal Dex modifier plus proficiency bonus."""
+        character = built_character({
+            "character_name": "Alert Test",
+            "level": 5,
+            "species": "Human",
+            "class": "Fighter",
+            "background": "Criminal",  # Criminal grants the Alert origin feat.
+            "ability_scores": {
+                "Strength": 15, "Dexterity": 14, "Constitution": 14,
+                "Intelligence": 10, "Wisdom": 12, "Charisma": 8
+            },
+            "background_bonuses": {"Strength": 2, "Constitution": 1},
+        })
+        feat_names = [feat["name"] for feat in character["features"]["feats"]]
+        assert "Alert" in feat_names
+        # Dex mod (+2) + proficiency bonus at level 5 (+3) = 5.
+        assert character["combat"]["initiative"] == 5
+        assert character["combat"]["initiative_bonus"] == 5
+
 
 # Feats that have effects (for parametrize)
 FEATS_WITH_EFFECTS = [

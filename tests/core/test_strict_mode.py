@@ -49,12 +49,13 @@ def test_effect_enum_matches_schema():
 
 
 def test_effect_enum_has_expected_size():
-    """Sanity check: 36 effect types. Phase 7 (D0-1/D0-2/D4-3) added
+    """Sanity check: 37 effect types. Phase 7 (D0-1/D0-2/D4-3) added
     grant_spell_at_will, bonus_spell_damage_ability_mod, bonus_spell_range,
     grant_magical_darkness_sight, grant_maneuver, grant_superiority_dice
     (+6 over the Phase 6 baseline of 28). Phase 10 (D2-3) added
-    grant_spell_slots and grant_weapon_mastery (+2)."""
-    assert len(strict_mode.KNOWN_EFFECT_TYPES) == 36
+    grant_spell_slots and grant_weapon_mastery (+2). This issue adds
+    bonus_initiative (+1)."""
+    assert len(strict_mode.KNOWN_EFFECT_TYPES) == 37
 
 
 # ---------------------------------------------------------------------------

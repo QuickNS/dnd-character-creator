@@ -62,6 +62,7 @@ KNOWN_EFFECT_TYPES: frozenset = frozenset({
     "bonus_attack",
     "bonus_damage",
     "bonus_hp",
+    "bonus_initiative",
     "bonus_spell_damage_ability_mod",
     "bonus_spell_range",
     "grant_armor_proficiency",

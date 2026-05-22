@@ -254,6 +254,7 @@ class CharacterBuilder:
             "attack_bonuses": [],            # bonus_attack  (Archery fighting style, ...)
             "ac_bonuses": [],                # bonus_ac      (Defense fighting style, ...)
             "hp_bonuses": [],                # bonus_hp      (Tough feat, Hill Dwarf, ...)
+            "initiative_bonuses": [],        # bonus_initiative (Alert feat, ...)
             "alternative_ac_options": [],    # alternative_ac (Monk/Barbarian Unarmored Defense)
             "fighting_style_flags": {
                 "great_weapon_fighting": [],         # list of source names
@@ -1712,6 +1713,16 @@ class CharacterBuilder:
             }
             self.character_data["hp_bonuses"].append(entry)
 
+        elif effect_type == "bonus_initiative":
+            self.character_data["initiative_bonuses"].append(
+                self._build_initiative_bonus_entry(
+                    effect,
+                    source_name,
+                    source_type,
+                    source_class_name,
+                )
+            )
+
         elif effect_type == "great_weapon_fighting":
             flags = self.character_data["fighting_style_flags"]["great_weapon_fighting"]
             if source_name not in flags:
@@ -1974,6 +1985,7 @@ class CharacterBuilder:
         self.character_data["attack_bonuses"] = []
         self.character_data["ac_bonuses"] = []
         self.character_data["hp_bonuses"] = []
+        self.character_data["initiative_bonuses"] = []
         self.character_data["alternative_ac_options"] = []
         self.character_data["fighting_style_flags"] = {
             "great_weapon_fighting": [],
@@ -2032,6 +2044,15 @@ class CharacterBuilder:
                     "source_type": stype,
                     "source_class_name": sclass,
                 })
+            elif etype == "bonus_initiative":
+                self.character_data["initiative_bonuses"].append(
+                    self._build_initiative_bonus_entry(
+                        effect,
+                        source,
+                        stype,
+                        sclass,
+                    )
+                )
             elif etype == "alternative_ac":
                 self.character_data["alternative_ac_options"].append({
                     "base": effect.get("base", 10),
@@ -6228,6 +6249,10 @@ class CharacterBuilder:
 
         # Proficiency bonus
         proficiency_bonus = self.calculate_proficiency_bonus(level)
+        initiative_bonus = self._calculate_initiative_bonus(
+            dex_modifier,
+            proficiency_bonus,
+        )
 
         # Check if proficient in Perception
         skill_proficiencies = self.character_data.get("proficiencies", {}).get(
@@ -6239,8 +6264,8 @@ class CharacterBuilder:
         return {
             "armor_class": armor_ac,
             "uses_shield": bool(best_option.get("shield", False)),
-            "initiative": dex_modifier,  # For backward compatibility
-            "initiative_bonus": dex_modifier,
+            "initiative": initiative_bonus,  # For backward compatibility
+            "initiative_bonus": initiative_bonus,
             "speed": speed,
             "hit_point_maximum": max_hp,  # For backward compatibility
             "hit_points": {"current": max_hp, "maximum": max_hp, "temporary": 0},
@@ -6269,6 +6294,37 @@ class CharacterBuilder:
 
         return hp_bonuses
 
+    def _build_initiative_bonus_entry(
+        self,
+        effect: Dict[str, Any],
+        source_name: str,
+        source_type: Optional[str],
+        source_class_name: Optional[str],
+    ) -> Dict[str, Any]:
+        """Create the canonical structured entry for a bonus_initiative effect."""
+        return {
+            "value": effect.get("value", 0),
+            "source": source_name,
+            "source_type": source_type,
+            "source_class_name": source_class_name,
+        }
+
+    def _calculate_initiative_bonus(
+        self,
+        dex_modifier: int,
+        proficiency_bonus: int,
+    ) -> int:
+        """Calculate initiative from Dexterity plus structured initiative bonuses."""
+        initiative_bonus = dex_modifier
+        for entry in self.character_data.get("initiative_bonuses", []):
+            value = entry.get("value", 0)
+            if value == "proficiency":
+                initiative_bonus += proficiency_bonus
+            else:
+                initiative_bonus += int(value)
+
+        return initiative_bonus
+
     # ==================== Export Methods ====================
 
     def to_character(self) -> Dict[str, Any]:
@@ -6292,6 +6348,7 @@ class CharacterBuilder:
             "attack_bonuses",
             "ac_bonuses",
             "hp_bonuses",
+            "initiative_bonuses",
             "alternative_ac_options",
             "fighting_style_flags",
         ):
