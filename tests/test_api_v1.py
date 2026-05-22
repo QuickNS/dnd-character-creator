@@ -890,6 +890,31 @@ class TestCharacterBuild:
             "Nature", "Perception", "Stealth", "Survival",
         }
 
+    def test_preview_class_secondary_ranger_level2_keeps_feature_choices(self, client):
+        choices = self._basics_for_preview()
+        choices["classes"] = [
+            {"class_name": "Wizard", "level": 3},
+            {"class_name": "Ranger", "level": 2},
+        ]
+        data = self._preview_class(client, choices, target_class="Ranger", target_level=2)
+
+        assert data["row_context"]["is_primary"] is False
+        nested = data["nested_choices"]
+
+        skill_choices = [
+            c for c in nested if (c.get("choice_key") or "").lower() == "skill_choices"
+        ]
+        assert len(skill_choices) == 1
+        assert skill_choices[0]["count"] == 1
+        assert set(skill_choices[0]["options"]) == {
+            "Animal Handling", "Athletics", "Insight", "Investigation",
+            "Nature", "Perception", "Stealth", "Survival",
+        }
+
+        feature_keys = {(c.get("choice_key") or "").lower() for c in nested}
+        assert "deft_explorer_expertise" in feature_keys
+        assert "fighting_style" in feature_keys
+
     def test_preview_class_secondary_fighter_keeps_fighting_style_and_drops_skills(self, client):
         choices = self._basics_for_preview()
         choices["classes"] = [

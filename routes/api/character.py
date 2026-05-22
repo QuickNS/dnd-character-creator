@@ -39,15 +39,12 @@ class ChoicesValidationError(ValueError):
 
 # ==================== Multiclass nested-choice filtering ====================
 #
-# Per D&D 2024 multiclassing rules, a secondary class entry grants proficiencies
-# listed in that class's `multiclassing` block while still granting the class's
-# level-1 features. The wizard's level-up step pipeline naively produces every
-# nested choice the class would offer at level 1, so for secondary rows we:
-#   - skill picks (if `multiclassing.skill_proficiencies` is a non-null dict)
-#   - tool picks  (if any `multiclassing.tool_training` entry is a wildcard
-#                  like "Musical Instrument (1 of your choice)")
-#   - all non-skill/tool nested choices unchanged (feature choices, spell picks,
-#     fighting styles, mastery choices, etc.)
+# Per D&D 2024 multiclassing rules, a secondary class entry grants core-trait
+# proficiencies listed in that class's `multiclassing` block while still
+# granting class features by level. The class preview pipeline can include many
+# nested choices (features from multiple levels), so for secondary rows we only
+# filter the core-trait proficiency pickers and preserve all other feature
+# choices unchanged.
 # Subclass selection is handled by `available_subclasses` / `needs_subclass`
 # on the response and is always allowed for any class row.
 
@@ -100,15 +97,25 @@ def _parse_tool_wildcard(tool_training: List[Any]) -> Dict[str, Any] | None:
     return None
 
 
+def _is_core_trait_proficiency_picker(choice: Dict[str, Any]) -> bool:
+    """True when a nested choice is the class core-trait skill/tool picker."""
+    key = str(choice.get("choice_key") or "").strip().lower()
+    choices_key = str(choice.get("choices_made_key") or "").strip().lower()
+    return key in {"skill_choices", "tool_choices"} or choices_key in {
+        "skill_choices",
+        "tool_choices",
+    }
+
+
 def _filter_nested_choices_for_secondary_class(
     nested_choices: List[Dict[str, Any]],
     class_data: Dict[str, Any],
 ) -> List[Dict[str, Any]]:
-    """Apply multiclass proficiency narrowing while preserving level-1 features.
+    """Apply multiclass core-trait proficiency narrowing.
 
-    Skill/tool pickers are narrowed to the multiclass entry (e.g. Rogue
-    multiclass = 1 skill from a constrained list). All other nested choices are
-    preserved as-is for level-1 class features.
+    Core-trait skill/tool pickers are narrowed to the multiclass entry
+    (e.g. Rogue multiclass = 1 skill from a constrained list). Other nested
+    choices (feature choices at any level) are preserved unchanged.
     """
     multiclass = class_data.get("multiclassing") or {}
 
@@ -122,6 +129,9 @@ def _filter_nested_choices_for_secondary_class(
         kind = _classify_choice_for_multiclass(choice)
 
         if kind == "skill":
+            if not _is_core_trait_proficiency_picker(choice):
+                filtered.append(dict(choice))
+                continue
             if allow_skill:
                 narrowed = dict(choice)
                 mc_options = skill_block.get("options")
@@ -143,6 +153,9 @@ def _filter_nested_choices_for_secondary_class(
             continue
 
         if kind == "tool":
+            if not _is_core_trait_proficiency_picker(choice):
+                filtered.append(dict(choice))
+                continue
             if allow_tool:
                 narrowed = dict(choice)
                 narrowed["count"] = tool_wildcard["count"]
@@ -159,7 +172,7 @@ def _filter_nested_choices_for_secondary_class(
                 filtered.append(narrowed)
             continue
 
-        # Preserve all non-proficiency level-1 nested choices.
+        # Preserve all non-core-trait nested choices.
         else:
             filtered.append(dict(choice))
 

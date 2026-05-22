@@ -276,9 +276,9 @@ When `is_primary` is `false`, `nested_choices` is filtered **server-side** only 
 |---------------------------------------------|-------------------------|---------------------------------------------------------------------------------------------------------|
 | Skill picker                                | Only when allowed       | `multiclassing.skill_proficiencies` is non-null (Bard, Rogue, Ranger). `count` and `options` are narrowed to the multiclass entry — Bard = any skill, Rogue / Ranger = their constrained lists. |
 | Tool picker                                 | Only when allowed       | `multiclassing.tool_training` contains a wildcard "(N of your choice)" entry (e.g. Bard musical instrument). `count` and `options` reflect the wildcard. |
-| Feature picker / non-proficiency level-1 choices | Always preserved        | Level-1 feature-driven choices (for example class feature pickers) are returned unchanged on secondary rows. |
+| Feature picker / non-core-trait choices | Always preserved        | Feature-driven choices are returned unchanged on secondary rows, including features unlocked above level 1. |
 | Subclass selection (`needs_subclass` / `available_subclasses`) | Always              | Reported via top-level fields, independent of `nested_choices` filtering. Always allowed at the subclass-unlock level for every row. |
-| Fighting style, expertise, bonus cantrip, weapon mastery, eldritch invocations, other non-proficiency level-1 categories | Always preserved | Level-1 class features still apply when that class is taken as a multiclass row. |
+| Fighting style, expertise, bonus cantrip, weapon mastery, eldritch invocations, other non-core-trait categories | Always preserved | Class features continue to apply on secondary rows according to the selected class level. |
 
 Example secondary-row payload (`choices_made.classes = [{Wizard, 5}, {Rogue, 1}]`, previewing Rogue):
 
