@@ -3,11 +3,12 @@ import { Link } from "react-router-dom";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { api, type ChoicesMade } from "@/lib/api";
 import { useCharacterStore } from "@/store/characterStore";
+import { useRosterStore } from "@/store/rosterStore";
 import { useIsDark } from "@/hooks/useIsDark";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { useBugReportUrl } from "@/hooks/useBugReportUrl";
-import { Download } from "lucide-react";
+import { BookmarkCheck, Download, Save } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PrepareSpellsDialog } from "@/components/sheet/PrepareSpellsDialog";
 import { ChooseMasteriesDialog } from "@/components/sheet/ChooseMasteriesDialog";
@@ -68,8 +69,19 @@ function downloadJson(filename: string, data: unknown) {
   URL.revokeObjectURL(url);
 }
 
+function safeFilename(name: string): string {
+  return (
+    name
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9._-]+/g, "-")
+      .replace(/^-+|-+$/g, "") || "character"
+  );
+}
+
 export function Sheet() {
   const choicesMade = useCharacterStore((s) => s.choicesMade);
+  const saveCurrent = useRosterStore((s) => s.saveCurrent);
   const buildQuery = useQuery({
     queryKey: ["character", "build", choicesMade],
     queryFn: () => api.character.build(choicesMade),
@@ -80,6 +92,10 @@ export function Sheet() {
   const [spellDialogOpen, setSpellDialogOpen] = useState(false);
   const [masteryDialogOpen, setMasteryDialogOpen] = useState(false);
   const [invocationDialogOpen, setInvocationDialogOpen] = useState(false);
+  const [savedFlash, setSavedFlash] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [exportFlash, setExportFlash] = useState<string | null>(null);
+  const [exportError, setExportError] = useState<string | null>(null);
 
   const spellDerived = useQuery({
     queryKey: [
@@ -182,8 +198,89 @@ export function Sheet() {
   }
 
   const c = (buildQuery.data ?? {}) as Char;
+  const defaultName =
+    (typeof choicesMade.character_name === "string" &&
+    choicesMade.character_name.trim().length > 0
+      ? choicesMade.character_name
+      : undefined) ??
+    str(c.name) ??
+    str(c.character_name) ??
+    "Unnamed";
+
+  function handleSaveToRoster() {
+    setSaveError(null);
+    setExportFlash(null);
+    const characterName =
+      typeof choicesMade.character_name === "string"
+        ? choicesMade.character_name
+        : defaultName;
+    saveCurrent(choicesMade, characterName)
+      .then((entry) => {
+        setSavedFlash(`Saved "${entry.name}" to your roster.`);
+        window.setTimeout(() => setSavedFlash(null), 3000);
+      })
+      .catch((err: unknown) => {
+        setSaveError(
+          err instanceof Error ? err.message : "Failed to save character.",
+        );
+      });
+  }
+
+  function handleDownloadChoices() {
+    setExportError(null);
+    setSaveError(null);
+    try {
+      downloadJson(`${safeFilename(defaultName)}-choices.json`, {
+        version: 1,
+        exported_at: new Date().toISOString(),
+        choices_made: choicesMade,
+      });
+      setExportFlash("Downloaded character choices JSON.");
+      window.setTimeout(() => setExportFlash(null), 3000);
+    } catch (err: unknown) {
+      setExportError(
+        err instanceof Error ? err.message : "Failed to download character.",
+      );
+    }
+  }
+
   return (
-    <Shell debugData={c}>
+    <Shell
+      debugData={c}
+      headerActions={
+        <>
+          <Button variant="outline" size="sm" onClick={handleDownloadChoices}>
+            <Download className="w-3 h-3 mr-1" />
+            Download Choices
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleSaveToRoster}>
+            {savedFlash ? (
+              <>
+                <BookmarkCheck className="w-3 h-3 mr-1 text-green-600" />
+                Saved!
+              </>
+            ) : (
+              <>
+                <Save className="w-3 h-3 mr-1" />
+                Save to Roster
+              </>
+            )}
+          </Button>
+        </>
+      }
+      actionFeedback={
+        <>
+          {saveError && <p className="text-xs text-destructive">{saveError}</p>}
+          {savedFlash && <p className="text-xs text-emerald-500">{savedFlash}</p>}
+          {exportError && (
+            <p className="text-xs text-destructive">{exportError}</p>
+          )}
+          {exportFlash && (
+            <p className="text-xs text-emerald-500">{exportFlash}</p>
+          )}
+        </>
+      }
+    >
       <Header c={c} />
       <CoreStats c={c} />
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6 lg:items-stretch">
@@ -266,9 +363,13 @@ export function Sheet() {
 function Shell({
   children,
   debugData,
+  headerActions,
+  actionFeedback,
 }: {
   children: React.ReactNode;
   debugData?: unknown;
+  headerActions?: React.ReactNode;
+  actionFeedback?: React.ReactNode;
 }) {
   const isDark = useIsDark();
   const bugReportUrl = useBugReportUrl();
@@ -319,11 +420,12 @@ function Shell({
       {/* ── Content — sits above the fixed sidebars ─────────── */}
       <div className="relative z-10">
         <div className="container py-10 max-w-5xl">
-          <div className="flex items-center justify-between mb-6">
+          <div className="mb-6 space-y-2">
+            <div className="flex items-center justify-between gap-4">
             <Button asChild variant="ghost" size="sm">
               <Link to="/">← Home</Link>
             </Button>
-            <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center justify-end gap-3">
               <Button asChild variant="outline" size="sm">
                 <a
                   href={bugReportUrl}
@@ -333,6 +435,7 @@ function Shell({
                   Bug Report
                 </a>
               </Button>
+              {headerActions}
               {import.meta.env.DEV && debugData != null && (
                 <Button
                   variant="outline"
@@ -367,6 +470,12 @@ function Shell({
               </Button>
               <ThemeToggle />
             </div>
+            </div>
+            {actionFeedback ? (
+              <div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-1">
+                {actionFeedback}
+              </div>
+            ) : null}
           </div>
           {children}
         </div>
@@ -1202,25 +1311,31 @@ function Spells({
             )}
 
             {pactMagicSlots.length > 0 && (
-              <div className="mt-3 rounded border border-border bg-background/40 p-3">
-                <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              <div className="mt-4 rounded border border-primary/60 bg-primary/5 p-3">
+                <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-primary">
                   Pact Magic Slots
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {pactMagicSlots.map((entry, i) => {
-                    const className = str(entry.class_name) ?? "Pact";
                     const slotLevel = num(entry.slot_level);
                     const slotCount = num(entry.slots);
                     return (
-                      <span
-                        key={`${className}-${slotLevel ?? "x"}-${i}`}
-                        className="rounded border border-border bg-secondary/60 px-2 py-0.5 text-xs font-medium text-foreground"
+                      <div
+                        key={`pact-${slotLevel ?? "x"}-${i}`}
+                        className="flex flex-col items-center gap-0.5"
                       >
-                        {className}: {slotCount ?? "—"} at level{" "}
-                        {slotLevel ?? "—"}
-                      </span>
+                        <span className="text-xs uppercase tracking-wide text-muted-foreground">
+                          {slotLevelOrdinal(String(slotLevel ?? 0))}
+                        </span>
+                        <span className="text-xs font-semibold text-foreground">
+                          {String(slotCount ?? 0)}
+                        </span>
+                      </div>
                     );
                   })}
+                </div>
+                <div className="mt-2 text-[11px] text-muted-foreground">
+                  You regain all expended slots when you finish a Short Rest.
                 </div>
               </div>
             )}

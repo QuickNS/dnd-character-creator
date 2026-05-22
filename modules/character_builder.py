@@ -5271,10 +5271,35 @@ class CharacterBuilder:
                 available_cantrips = spell_list_data.get("cantrips", [])
                 stats["available_cantrips"] = sorted(available_cantrips)
 
-                # Get available spells by level
+                # Get available spells by level, capped at the character's max accessible level.
+                # For pact magic (Warlock), max level = pact slot level from table.
+                # For standard casters, max level = highest level with a non-zero slot.
+                max_accessible_level = 9  # default: show all
+                pact_slots = multiclass_spellcasting.get("pact_magic_slots", [])
+                if pact_slots:
+                    # Single-class or multiclass Warlock: cap at highest pact slot level
+                    max_accessible_level = max(
+                        (entry.get("slot_level", 0) for entry in pact_slots), default=0
+                    )
+                else:
+                    slots_table = spellcasting_source.get("spell_slots_by_level", {})
+                    if isinstance(slots_table, dict):
+                        level_slots = slots_table.get(str(level), [])
+                        if isinstance(level_slots, list):
+                            # slots list is indexed 0=lvl1, 1=lvl2, ...; find highest non-zero
+                            for idx in range(len(level_slots) - 1, -1, -1):
+                                try:
+                                    if int(level_slots[idx]) > 0:
+                                        max_accessible_level = idx + 1
+                                        break
+                                except (TypeError, ValueError):
+                                    pass
+
                 spells_by_level = spell_list_data.get("spells_by_level", {})
                 stats["available_spells"] = {
-                    int(k): sorted(v) for k, v in spells_by_level.items()
+                    int(k): sorted(v)
+                    for k, v in spells_by_level.items()
+                    if int(k) <= max_accessible_level
                 }
 
             except (json.JSONDecodeError, IOError) as e:

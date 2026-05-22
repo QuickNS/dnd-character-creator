@@ -42,6 +42,12 @@ interface SpellEntry extends SpellReference {
   levelKey: string;
 }
 
+interface PactMagicSlot {
+  class_name?: string;
+  slot_level?: number;
+  slots?: number;
+}
+
 function arr<T = unknown>(v: unknown): T[] {
   return Array.isArray(v) ? (v as T[]) : [];
 }
@@ -215,12 +221,45 @@ export function PrepareSpellsDialog({ open, onClose }: PrepareSpellsDialogProps)
     () =>
       Object.entries(spellSlots)
         .map(([key, count]) => ({
+          kind: "regular" as const,
           level: ORDINAL_TO_NUM[key] ?? parseInt(key, 10),
           count: num(count) ?? 0,
         }))
         .filter((s) => s.count > 0 && !Number.isNaN(s.level))
         .sort((a, b) => a.level - b.level),
     [spellSlots],
+  );
+
+  const pactSlotDisplay = useMemo(
+    () => {
+      const slots = arr<PactMagicSlot>(data?.pact_magic_slots ?? []).reduce<
+        Array<{
+          kind: "pact";
+          level: number;
+          count: number;
+          className?: string;
+        }>
+      >((acc, slot) => {
+        const level = num(slot.slot_level);
+        const count = num(slot.slots) ?? 0;
+        if (level === undefined || count <= 0) return acc;
+        acc.push({
+          kind: "pact",
+          level,
+          count,
+          className: str(slot.class_name),
+        });
+        return acc;
+      }, []);
+
+      return slots.sort((a, b) => a.level - b.level);
+    },
+    [data?.pact_magic_slots],
+  );
+
+  const allSlotDisplay = useMemo(
+    () => [...slotDisplay, ...pactSlotDisplay],
+    [slotDisplay, pactSlotDisplay],
   );
 
   // Flat list of all spells available to pick (cantrips + leveled + always-prepared extras)
@@ -552,19 +591,24 @@ export function PrepareSpellsDialog({ open, onClose }: PrepareSpellsDialogProps)
                 </div>
 
                 {/* Spell slots box */}
-                {slotDisplay.length > 0 && (
+                {allSlotDisplay.length > 0 && (
                   <div className="mx-4 mb-2 shrink-0 rounded border border-border bg-background/50 p-2">
                     <div className="flex flex-1 justify-center items-center gap-6">
                       <div className="flex shrink-0 text-[10px] uppercase tracking-widest text-muted-foreground leading-tight">
                         Slots
                       </div>
                       <div className="flex flex-wrap gap-2">
-                        {slotDisplay.map(({ level, count }) => (
-                          <div key={level} className="flex flex-col items-center gap-0.5">
+                        {allSlotDisplay.map((slot) => (
+                          <div
+                            key={slot.kind === "pact" ? `pact-${slot.className ?? "slot"}-${slot.level}` : `regular-${slot.level}`}
+                            className="flex flex-col items-center gap-0.5"
+                          >
                             <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                              {LEVEL_ORDINALS[level] ?? `${level}th`}
+                              {slot.kind === "pact"
+                                ? `Pact ${LEVEL_ORDINALS[slot.level] ?? `${slot.level}th`}`
+                                : LEVEL_ORDINALS[slot.level] ?? `${slot.level}th`}
                             </span>
-                            <span className="text-sm font-semibold text-foreground">{count}</span>
+                            <span className="text-sm font-semibold text-foreground">{slot.count}</span>
                           </div>
                         ))}
                       </div>

@@ -1171,6 +1171,46 @@ class TestCharacterDerived:
         assert "spell_slots" in data
         assert "limits" in data
 
+    def test_derived_spell_management_warlock_includes_pact_magic_slots(self, client):
+        choices = {
+            "character_name": "Test",
+            "level": 5,
+            "species": "Human",
+            "class": "Warlock",
+            "subclass": "Fiend",
+            "background": "Acolyte",
+            "languages": [],
+            "ability_scores": {
+                "Strength": 10,
+                "Dexterity": 10,
+                "Constitution": 10,
+                "Intelligence": 10,
+                "Wisdom": 16,
+                "Charisma": 16,
+            },
+            "background_bonuses": {"Wisdom": 2, "Charisma": 1},
+        }
+
+        r = client.post(
+            "/api/v1/character/derived",
+            json={"choices_made": choices, "view": "spell_management"},
+        )
+
+        assert r.status_code == 200
+        body = r.get_json()
+        assert body["view"] == "spell_management"
+        assert body["applicable"] is True
+
+        data = body["data"]
+        assert data is not None
+        assert "pact_magic_slots" in data
+        assert isinstance(data["pact_magic_slots"], list)
+        assert data["pact_magic_slots"]
+
+        first_slot = data["pact_magic_slots"][0]
+        assert first_slot["slots"] > 0
+        assert first_slot["slot_level"] > 0
+
     def test_derived_spell_management_respects_explicit_multiclass_active_row(self, client):
         choices = TestCharacterBuild._cleric_fighter_multiclass_choices()
         choices["class"] = "Fighter"

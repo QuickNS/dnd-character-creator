@@ -457,16 +457,15 @@ class TestSpellManagement:
         for high_level in ["2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "9th"]:
             assert high_level not in spell_slots or spell_slots[high_level] == 0
 
-    def test_available_spells_includes_levels_beyond_slots_before_filtering(self):
-        """Without slot filtering, the spell list would include levels the character
-        cannot cast. This test confirms the raw spell list has higher levels."""
+    def test_available_spells_is_capped_to_accessible_levels(self):
+        """calculate_spellcasting_stats() should only expose spell levels the character can cast."""
         builder = CharacterBuilder()
         builder.apply_choices(
             {
                 "character_name": "Baby Wizard",
                 "species": "Human",
                 "class": "Wizard",
-                "level": 1,
+                "level": 3,
                 "background": "Sage",
                 "ability_scores": {
                     "Strength": 8,
@@ -481,11 +480,9 @@ class TestSpellManagement:
         )
         stats = builder.calculate_spellcasting_stats()
 
-        # The raw class spell list contains spells of many levels
         available_spells = stats.get("available_spells", {})
         levels_in_list = {int(k) for k in available_spells}
-        # Wizard spell list should include at least 1st through 3rd level spells
-        assert levels_in_list.issuperset({1, 2, 3})
+        assert levels_in_list == {1, 2}
 
     def test_slot_filtering_removes_unavailable_levels(self):
         """Verify the filtering logic used in the route correctly narrows down

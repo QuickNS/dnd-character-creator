@@ -1080,6 +1080,15 @@
   "magical_darkness_sight": {},
   "maneuvers_known": [],
   "name": "Grax the Bound",
+  "pact_magic_slots": [
+    {
+      "class_level": 3,
+      "class_name": "Warlock",
+      "slot_level": 2,
+      "slots": 2,
+      "subclass": "The Fiend"
+    }
+  ],
   "proficiencies": {
     "armor": [
       "Light armor"
@@ -1399,72 +1408,6 @@
         "Shatter",
         "Spider Climb",
         "Suggestion"
-      ],
-      "3": [
-        "Counterspell",
-        "Dispel Magic",
-        "Fear",
-        "Fly",
-        "Gaseous Form",
-        "Hunger of Hadar",
-        "Hypnotic Pattern",
-        "Magic Circle",
-        "Major Image",
-        "Remove Curse",
-        "Summon Fey",
-        "Summon Undead",
-        "Tongues",
-        "Vampiric Touch"
-      ],
-      "4": [
-        "Banishment",
-        "Blight",
-        "Charm Monster",
-        "Dimension Door",
-        "Hallucinatory Terrain",
-        "Summon Aberration"
-      ],
-      "5": [
-        "Contact Other Plane",
-        "Dream",
-        "Hold Monster",
-        "Mislead",
-        "Planar Binding",
-        "Scrying",
-        "Synaptic Static",
-        "Teleportation Circle"
-      ],
-      "6": [
-        "Arcane Gate",
-        "Circle of Death",
-        "Conjure Fey",
-        "Create Undead",
-        "Eyebite",
-        "Flesh to Stone",
-        "Mass Suggestion",
-        "True Seeing"
-      ],
-      "7": [
-        "Etherealness",
-        "Finger of Death",
-        "Forcecage",
-        "Plane Shift"
-      ],
-      "8": [
-        "Demiplane",
-        "Dominate Monster",
-        "Feeblemind",
-        "Glibness",
-        "Power Word Stun"
-      ],
-      "9": [
-        "Astral Projection",
-        "Foresight",
-        "Gate",
-        "Imprisonment",
-        "Power Word Kill",
-        "True Polymorph",
-        "Weird"
       ]
     },
     "background_cantrips_list": null,
@@ -1484,7 +1427,15 @@
     "max_spells_prepared": 4,
     "max_spells_to_prepare": 4,
     "multiclass_notes": [],
-    "pact_magic_slots": [],
+    "pact_magic_slots": [
+      {
+        "class_level": 3,
+        "class_name": "Warlock",
+        "slot_level": 2,
+        "slots": 2,
+        "subclass": "The Fiend"
+      }
+    ],
     "preparation_formula": "class_table",
     "ritual_casting": false,
     "spell_attack_bonus": 5,

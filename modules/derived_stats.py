@@ -265,6 +265,7 @@ def build_spell_management_view(builder) -> Dict[str, Any]:
         "available_cantrips": available_cantrips,
         "available_spells": available_spells,
         "spell_slots": _char_slots,
+        "pact_magic_slots": stats.get("pact_magic_slots", []),
         "current_selections": current_selections,
         "limits": limits,
         "background_requirements": background_requirements,
