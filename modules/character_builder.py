@@ -4751,6 +4751,15 @@ class CharacterBuilder:
             return False
 
         working_choices = dict(choices)
+
+        # Normalize singular/plural key aliases at builder level so test
+        # fixtures and direct API callers that use the singular form work
+        # without going through the API normalization layer.
+        if "background_skill_replacement" in working_choices and "background_skill_replacements" not in working_choices:
+            working_choices["background_skill_replacements"] = working_choices.pop("background_skill_replacement")
+        elif "background_skill_replacement" in working_choices:
+            working_choices.pop("background_skill_replacement")
+
         class_rows = self._normalize_multiclass_rows(working_choices.get("classes"))
         if class_rows:
             primary = class_rows[0]

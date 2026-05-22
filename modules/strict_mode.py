@@ -152,6 +152,7 @@ KNOWN_CHOICE_KEYS: frozenset = frozenset({
     # Background
     "background",
     "background_skill_replacements",
+    "background_skill_replacement",      # Singular alias normalised by apply_choices
     "background_ability_score_assignment",
     "background_bonuses",
     "background_bonuses_method",
