@@ -88,9 +88,22 @@ def _snapshot_path(fixture_path: Path) -> Path:
     return SNAPSHOT_DIR / f"{rel}.snapshot.json"
 
 
+def _stable_sort(obj: Any) -> Any:
+    """Recursively sort lists of dicts by their canonical JSON representation so
+    that snapshot comparisons are insensitive to non-deterministic effect ordering."""
+    if isinstance(obj, dict):
+        return {k: _stable_sort(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        items = [_stable_sort(i) for i in obj]
+        if items and all(isinstance(i, dict) for i in items):
+            return sorted(items, key=lambda x: json.dumps(x, sort_keys=True, default=str))
+        return items
+    return obj
+
+
 def _canonicalize(character: Dict[str, Any]) -> str:
     return json.dumps(
-        _strip_volatile(character), sort_keys=True, indent=2, default=str
+        _stable_sort(_strip_volatile(character)), sort_keys=True, indent=2, default=str
     )
 
 

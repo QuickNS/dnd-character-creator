@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import {
   AlertTriangle,
@@ -29,10 +29,7 @@ import { useCharacterStore } from "@/store/characterStore";
 import { ChoiceList } from "@/components/wizard/ChoiceList";
 import { FeatDropdownPicker } from "@/components/wizard/FeatDropdownPicker";
 import { SpellChoiceList } from "@/components/wizard/FeatChoicesPicker";
-import {
-  ClassAdvancedChoices,
-  type SpellReference,
-} from "@/components/wizard/ClassAdvancedChoices";
+import { type SpellReference } from "@/components/wizard/ClassAdvancedChoices";
 import { useWizardSidebarPanel } from "@/components/layout/useWizardSidebarPanel";
 
 interface PreviewChoice {
@@ -715,6 +712,26 @@ export function ClassStep() {
     [originFeatsQuery.data],
   );
 
+  // Only show the overlay for previewQuery when the *structural* parts of its
+  // key change (class, subclass, level) — not when only choice keys (skills,
+  // feats, nested choices) change. Those background re-fetches are silent: the
+  // nav-bar validation indicator covers their status.
+  const structuralKey = `${selectedClass}:${clampLevel(activeRow.level)}:${selectedSubclass ?? ""}`;
+  const prevStructuralKeyRef = useRef(structuralKey);
+  const structuralChangePendingRef = useRef(false);
+  if (prevStructuralKeyRef.current !== structuralKey) {
+    prevStructuralKeyRef.current = structuralKey;
+    structuralChangePendingRef.current = true;
+  }
+  if (!previewQuery.isFetching) {
+    structuralChangePendingRef.current = false;
+  }
+
+  const isStepFetching =
+    (structuralChangePendingRef.current && previewQuery.isFetching) ||
+    fullClassQuery.isFetching ||
+    subclassDetailQuery.isFetching;
+
   useEffect(() => {
     setInspectedSpell(null);
     setInfoTarget({ kind: "class" });
@@ -781,7 +798,19 @@ export function ClassStep() {
   ]);
 
   return (
-    <div className="space-y-8">
+    <div className="relative space-y-8">
+      {isStepFetching && (
+        <div
+          aria-live="polite"
+          aria-busy="true"
+          className="absolute inset-0 z-20 flex items-center justify-center rounded-2xl bg-background/60 backdrop-blur-[2px]"
+        >
+          <div className="flex flex-col items-center gap-3">
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary/30 border-t-primary" />
+            <p className="text-sm text-muted-foreground">Loading…</p>
+          </div>
+        </div>
+      )}
       <section className="overflow-hidden rounded-2xl border border-border/80 bg-gradient-to-br from-card via-card to-secondary/40 shadow-sm">
         <div className="border-b border-border/70 px-5 py-5 sm:px-6">
           <div className="flex items-start gap-3">
@@ -1143,15 +1172,6 @@ export function ClassStep() {
         />
       )}
 
-      {selectedClass && (
-        <ClassAdvancedChoices
-          choicesForDerived={previewChoices}
-          inspectedSpellName={inspectedSpell?.name}
-          onInspectSpell={(spell) => {
-            setInspectedSpell(spell);
-          }}
-        />
-      )}
     </div>
   );
 }

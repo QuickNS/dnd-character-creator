@@ -121,15 +121,15 @@
     "description": "War has been your life for as long as you care to remember. You trained as a youth, studied the use of weapons and armor, learned basic survival techniques, including how to stay alive on the battlefield. You might have been part of a standing national army or a mercenary company, or perhaps a member of a local militia who rose to prominence during a recent war.",
     "effects": [
       {
+        "feat": "Savage Attacker",
+        "type": "grant_origin_feat"
+      },
+      {
         "skills": [
           "Athletics",
           "Intimidation"
         ],
         "type": "grant_skill_proficiency"
-      },
-      {
-        "feat": "Savage Attacker",
-        "type": "grant_origin_feat"
       },
       {
         "tools": [
@@ -236,12 +236,12 @@
                 "value": "2"
               },
               {
-                "min_level": 4,
-                "value": "3"
-              },
-              {
                 "min_level": 10,
                 "value": "4"
+              },
+              {
+                "min_level": 4,
+                "value": "3"
               }
             ]
           }
@@ -399,16 +399,16 @@
           "scaling": {
             "uses": [
               {
-                "min_level": 9,
-                "value": "once"
-              },
-              {
                 "min_level": 13,
                 "value": "twice"
               },
               {
                 "min_level": 17,
                 "value": "three times"
+              },
+              {
+                "min_level": 9,
+                "value": "once"
               }
             ]
           }
@@ -610,6 +610,18 @@
       "type": "grant_damage_resistance"
     },
     {
+      "damage_type_from_choice": "Draconic Ancestry",
+      "source": "Damage Resistance",
+      "source_type": "species",
+      "type": "grant_damage_resistance"
+    },
+    {
+      "feat": "Savage Attacker",
+      "source": "Soldier",
+      "source_type": "background",
+      "type": "grant_origin_feat"
+    },
+    {
       "range": 60,
       "source": "Darkvision",
       "source_type": "species",
@@ -625,12 +637,6 @@
       "type": "grant_skill_proficiency"
     },
     {
-      "feat": "Savage Attacker",
-      "source": "Soldier",
-      "source_type": "background",
-      "type": "grant_origin_feat"
-    },
-    {
       "source": "Soldier",
       "source_type": "background",
       "tools": [
@@ -638,12 +644,6 @@
         "Vehicles (Land)"
       ],
       "type": "grant_tool_proficiency"
-    },
-    {
-      "damage_type_from_choice": "Draconic Ancestry",
-      "source": "Damage Resistance",
-      "source_type": "species",
-      "type": "grant_damage_resistance"
     }
   ],
   "eldritch_invocation_stats": {
@@ -657,6 +657,12 @@
     "background": [],
     "class": [
       {
+        "description": "Bonus Action: Regain 1d10+Fighter level HP (2/Short Rest, 3/Short Rest at level 4)",
+        "level": 1,
+        "name": "Second Wind",
+        "source": "Fighter"
+      },
+      {
         "description": "You adopt a particular style of fighting as your specialty.",
         "level": 1,
         "name": "Fighting Style",
@@ -666,12 +672,6 @@
         "description": "Your training with weapons allows you to use the mastery properties of three kinds of Simple or Martial weapons of your choice. Whenever you finish a Long Rest, you can switch one mastery.",
         "level": 1,
         "name": "Weapon Mastery",
-        "source": "Fighter"
-      },
-      {
-        "description": "Bonus Action: Regain 1d10+Fighter level HP (2/Short Rest, 3/Short Rest at level 4)",
-        "level": 1,
-        "name": "Second Wind",
         "source": "Fighter"
       }
     ],
@@ -684,11 +684,6 @@
     ],
     "lineage": [],
     "species": [
-      {
-        "description": "Your lineage stems from a dragon progenitor. Choose the kind of dragon from the list. Your choice affects your Breath Weapon and Damage Resistance traits as well as your appearance.",
-        "name": "Draconic Ancestry: Red (Fire)",
-        "source": "Dragonborn"
-      },
       {
         "choice_substitutions": {
           "damage_type": "Draconic Ancestry"
@@ -706,13 +701,18 @@
         "source": "Dragonborn"
       },
       {
+        "description": "When you reach character level 5, you can channel draconic magic to give yourself temporary flight. As a Bonus Action, you sprout spectral wings on your back that last for 10 minutes or until you retract the wings (no action required) or have the Incapacitated condition. During that time, you have a Fly Speed equal to your Speed. Your wings appear to be made of the same energy as your Breath Weapon. Once you use this trait, you can't use it again until you finish a Long Rest.",
+        "name": "Draconic Flight",
+        "source": "Dragonborn"
+      },
+      {
         "description": "You have Darkvision with a range of 60 feet.",
         "name": "Darkvision",
         "source": "Dragonborn"
       },
       {
-        "description": "When you reach character level 5, you can channel draconic magic to give yourself temporary flight. As a Bonus Action, you sprout spectral wings on your back that last for 10 minutes or until you retract the wings (no action required) or have the Incapacitated condition. During that time, you have a Fly Speed equal to your Speed. Your wings appear to be made of the same energy as your Breath Weapon. Once you use this trait, you can't use it again until you finish a Long Rest.",
-        "name": "Draconic Flight",
+        "description": "Your lineage stems from a dragon progenitor. Choose the kind of dragon from the list. Your choice affects your Breath Weapon and Damage Resistance traits as well as your appearance.",
+        "name": "Draconic Ancestry: Red (Fire)",
         "source": "Dragonborn"
       }
     ],

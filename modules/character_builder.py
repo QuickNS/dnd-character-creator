@@ -583,7 +583,13 @@ class CharacterBuilder:
 
         elif choice_name == "cantrips":
             for cantrip in values:
-                self.character_data["spells"]["prepared"]["cantrips"][cantrip] = {}
+                # Store in always_prepared so stats count these correctly as "+X" bonus
+                self.character_data["spells"]["always_prepared"][cantrip] = {
+                    "level": 0,
+                    "source": feat_name,
+                    "always_prepared": True,
+                    "counts_against_limit": False,
+                }
                 self.character_data["spell_metadata"][cantrip] = {
                     "source": feat_name,
                     "always_prepared": True,
@@ -593,7 +599,16 @@ class CharacterBuilder:
 
         elif "spell" in choice_name:
             for spell in values:
-                self.character_data["spells"]["prepared"]["spells"][spell] = {}
+                spell_def = self._load_spell_definition(spell) or {}
+                spell_level = spell_def.get("level", 1)
+                # Store in always_prepared so stats count these correctly as "+X" bonus
+                self.character_data["spells"]["always_prepared"][spell] = {
+                    "level": spell_level,
+                    "source": feat_name,
+                    "always_prepared": True,
+                    "once_per_day": True,
+                    "counts_against_limit": False,
+                }
                 self.character_data["spell_metadata"][spell] = {
                     "source": feat_name,
                     "always_prepared": True,
@@ -6539,6 +6554,11 @@ class CharacterBuilder:
             character_data.get("level", 1)
         )
 
+        # Expose darkvision range explicitly (0 = none; e.g. 60 = 60 ft).
+        # The value is already tracked in character_data via grant_darkvision
+        # effects; this line ensures a guaranteed int is always present.
+        character_data["darkvision"] = int(character_data.get("darkvision", 0))
+
         # Add spellcasting stats
         character_data["spellcasting_stats"] = self.calculate_spellcasting_stats()
 
@@ -8291,12 +8311,14 @@ class CharacterBuilder:
 
             elif choice_name == "cantrips":
                 for cantrip in old_values:
-                    self.character_data["spells"]["prepared"]["cantrips"].pop(cantrip, None)
+                    self.character_data["spells"]["always_prepared"].pop(cantrip, None)
+                    self.character_data["spells"]["prepared"]["cantrips"].pop(cantrip, None)  # legacy
                     self.character_data["spell_metadata"].pop(cantrip, None)
 
             elif "spell" in choice_name:
                 for spell in old_values:
-                    self.character_data["spells"]["prepared"]["spells"].pop(spell, None)
+                    self.character_data["spells"]["always_prepared"].pop(spell, None)
+                    self.character_data["spells"]["prepared"]["spells"].pop(spell, None)  # legacy
                     self.character_data["spell_metadata"].pop(spell, None)
 
             # Remove the old choices_made entry
@@ -8324,10 +8346,10 @@ class CharacterBuilder:
         Handles:
         - ``skills_or_tools``: each item is added to ``proficiencies['skills']``
           if it is a D&D skill, otherwise to ``proficiencies['tools']``.
-        - ``cantrips``: each item is added to ``spells['prepared']['cantrips']``
+        - ``cantrips``: each item is added to ``spells['always_prepared']``
           (e.g. Magic Initiate).
         - any choice whose name contains ``spell``: each item is added to
-          ``spells['prepared']['spells']`` (e.g. Magic Initiate 1st-level spell).
+          ``spells['always_prepared']`` (e.g. Magic Initiate 1st-level spell).
 
         Unrecognised choice names are still stored in ``choices_made`` so that
         future handlers can use them.

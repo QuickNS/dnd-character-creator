@@ -8,10 +8,6 @@
           "type": "grant_damage_resistance"
         },
         {
-          "spell": "Fire Bolt",
-          "type": "grant_cantrip"
-        },
-        {
           "min_level": 3,
           "spell": "Hellish Rebuke",
           "type": "grant_spell"
@@ -20,6 +16,10 @@
           "min_level": 5,
           "spell": "Darkness",
           "type": "grant_spell"
+        },
+        {
+          "spell": "Fire Bolt",
+          "type": "grant_cantrip"
         }
       ]
     }
@@ -96,18 +96,18 @@
   },
   "ac_options": [
     {
-      "ac": 13,
-      "armor": "Leather Armor",
-      "equipped_armor": "Leather Armor",
-      "formula": "Armor base (11) + Dex modifier (2)",
-      "notes": [],
-      "shield": false
-    },
-    {
       "ac": 12,
       "armor": null,
       "equipped_armor": null,
       "formula": "10 + Dex modifier (2)",
+      "notes": [],
+      "shield": false
+    },
+    {
+      "ac": 13,
+      "armor": "Leather Armor",
+      "equipped_armor": "Leather Armor",
+      "formula": "Armor base (11) + Dex modifier (2)",
       "notes": [],
       "shield": false
     }
@@ -145,48 +145,6 @@
   ],
   "attacks": [
     {
-      "ability": "STR/DEX (DEX)",
-      "attack_bonus": 4,
-      "attack_bonus_display": "+4",
-      "avg_crit": 7.0,
-      "avg_damage": 4.5,
-      "avg_throw_damage": 4.5,
-      "damage": "1d4 + 2",
-      "damage_notes": [],
-      "damage_type": "Piercing",
-      "icon": "/static/images/weapons/dagger.svg",
-      "mastery": "Nick",
-      "name": "Dagger",
-      "proficient": true,
-      "properties": [
-        "Finesse",
-        "Light",
-        "Thrown (range 20/60)"
-      ],
-      "throw_damage": "1d4 + 2"
-    },
-    {
-      "ability": "STR/DEX (DEX)",
-      "attack_bonus": 4,
-      "attack_bonus_display": "+4",
-      "avg_crit": 7.0,
-      "avg_damage": 4.5,
-      "avg_throw_damage": 4.5,
-      "damage": "1d4 + 2",
-      "damage_notes": [],
-      "damage_type": "Piercing",
-      "icon": "/static/images/weapons/dagger.svg",
-      "mastery": "Nick",
-      "name": "Dagger",
-      "proficient": true,
-      "properties": [
-        "Finesse",
-        "Light",
-        "Thrown (range 20/60)"
-      ],
-      "throw_damage": "1d4 + 2"
-    },
-    {
       "ability": "STR",
       "attack_bonus": 2,
       "attack_bonus_display": "+2",
@@ -200,6 +158,48 @@
       "name": "Unarmed Strike",
       "proficient": true,
       "properties": []
+    },
+    {
+      "ability": "STR/DEX (DEX)",
+      "attack_bonus": 4,
+      "attack_bonus_display": "+4",
+      "avg_crit": 7.0,
+      "avg_damage": 4.5,
+      "avg_throw_damage": 4.5,
+      "damage": "1d4 + 2",
+      "damage_notes": [],
+      "damage_type": "Piercing",
+      "icon": "/static/images/weapons/dagger.svg",
+      "mastery": "Nick",
+      "name": "Dagger",
+      "proficient": true,
+      "properties": [
+        "Finesse",
+        "Light",
+        "Thrown (range 20/60)"
+      ],
+      "throw_damage": "1d4 + 2"
+    },
+    {
+      "ability": "STR/DEX (DEX)",
+      "attack_bonus": 4,
+      "attack_bonus_display": "+4",
+      "avg_crit": 7.0,
+      "avg_damage": 4.5,
+      "avg_throw_damage": 4.5,
+      "damage": "1d4 + 2",
+      "damage_notes": [],
+      "damage_type": "Piercing",
+      "icon": "/static/images/weapons/dagger.svg",
+      "mastery": "Nick",
+      "name": "Dagger",
+      "proficient": true,
+      "properties": [
+        "Finesse",
+        "Light",
+        "Thrown (range 20/60)"
+      ],
+      "throw_damage": "1d4 + 2"
     }
   ],
   "background": "Charlatan",
@@ -219,15 +219,15 @@
     "description": "You have always had a way with people. You know what makes them tick, you can tease out their hearts' desires after a few minutes of conversation, and with a few leading questions you can read them like they were children's books. It's a useful talent, and one that you're perfectly willing to use for your advantage.",
     "effects": [
       {
+        "feat": "Skilled",
+        "type": "grant_origin_feat"
+      },
+      {
         "skills": [
           "Deception",
           "Sleight of Hand"
         ],
         "type": "grant_skill_proficiency"
-      },
-      {
-        "feat": "Skilled",
-        "type": "grant_origin_feat"
       },
       {
         "tools": [
@@ -865,16 +865,10 @@
   "darkvision": 60,
   "effects": [
     {
-      "range": 60,
-      "source": "Darkvision",
-      "source_type": "species",
-      "type": "grant_darkvision"
-    },
-    {
-      "source": "Otherworldly Presence",
-      "source_type": "species",
-      "spell": "Thaumaturgy",
-      "type": "grant_cantrip"
+      "damage_type": "Fire",
+      "source": "Infernal Legacy",
+      "source_type": "lineage",
+      "type": "grant_damage_resistance"
     },
     {
       "damage_type": "Fire",
@@ -883,10 +877,17 @@
       "type": "grant_damage_resistance"
     },
     {
+      "feat": "Skilled",
+      "source": "Charlatan",
+      "source_type": "background",
+      "type": "grant_origin_feat"
+    },
+    {
+      "min_level": 3,
       "source": "Infernal Legacy",
       "source_type": "lineage",
-      "spell": "Fire Bolt",
-      "type": "grant_cantrip"
+      "spell": "Hellish Rebuke",
+      "type": "grant_spell"
     },
     {
       "min_level": 3,
@@ -900,25 +901,6 @@
       "source": "Infernal Legacy",
       "source_type": "lineage",
       "spell": "Darkness",
-      "type": "grant_spell"
-    },
-    {
-      "damage_type": "Fire",
-      "source": "Infernal Legacy",
-      "source_type": "lineage",
-      "type": "grant_damage_resistance"
-    },
-    {
-      "source": "Infernal Legacy",
-      "source_type": "lineage",
-      "spell": "Fire Bolt",
-      "type": "grant_cantrip"
-    },
-    {
-      "min_level": 3,
-      "source": "Infernal Legacy",
-      "source_type": "lineage",
-      "spell": "Hellish Rebuke",
       "type": "grant_spell"
     },
     {
@@ -948,6 +930,12 @@
       "type": "grant_armor_proficiency"
     },
     {
+      "range": 60,
+      "source": "Darkvision",
+      "source_type": "species",
+      "type": "grant_darkvision"
+    },
+    {
       "skills": [
         "Deception",
         "Sleight of Hand"
@@ -957,18 +945,30 @@
       "type": "grant_skill_proficiency"
     },
     {
-      "feat": "Skilled",
-      "source": "Charlatan",
-      "source_type": "background",
-      "type": "grant_origin_feat"
-    },
-    {
       "source": "Charlatan",
       "source_type": "background",
       "tools": [
         "Forgery Kit"
       ],
       "type": "grant_tool_proficiency"
+    },
+    {
+      "source": "Infernal Legacy",
+      "source_type": "lineage",
+      "spell": "Fire Bolt",
+      "type": "grant_cantrip"
+    },
+    {
+      "source": "Infernal Legacy",
+      "source_type": "lineage",
+      "spell": "Fire Bolt",
+      "type": "grant_cantrip"
+    },
+    {
+      "source": "Otherworldly Presence",
+      "source_type": "species",
+      "spell": "Thaumaturgy",
+      "type": "grant_cantrip"
     }
   ],
   "eldritch_invocation_stats": {
@@ -987,11 +987,11 @@
     "gold": 69,
     "items": [
       {
-        "name": "Musical Instrument",
+        "name": "Entertainer's Pack",
         "source": "Class"
       },
       {
-        "name": "Entertainer's Pack",
+        "name": "Musical Instrument",
         "source": "Class"
       }
     ],
@@ -1083,13 +1083,13 @@
     ],
     "species": [
       {
-        "description": "You have Darkvision with a range of 60 feet.",
-        "name": "Darkvision",
+        "description": "You are the recipient of a legacy that grants you supernatural abilities. Intelligence, Wisdom, or Charisma is your spellcasting ability for the spells you cast with this trait.",
+        "name": "Fiendish Legacy: Charisma",
         "source": "Tiefling"
       },
       {
-        "description": "You are the recipient of a legacy that grants you supernatural abilities. Intelligence, Wisdom, or Charisma is your spellcasting ability for the spells you cast with this trait.",
-        "name": "Fiendish Legacy: Charisma",
+        "description": "You have Darkvision with a range of 60 feet.",
+        "name": "Darkvision",
         "source": "Tiefling"
       },
       {
@@ -1139,10 +1139,6 @@
             "type": "grant_damage_resistance"
           },
           {
-            "spell": "Fire Bolt",
-            "type": "grant_cantrip"
-          },
-          {
             "min_level": 3,
             "spell": "Hellish Rebuke",
             "type": "grant_spell"
@@ -1151,6 +1147,10 @@
             "min_level": 5,
             "spell": "Darkness",
             "type": "grant_spell"
+          },
+          {
+            "spell": "Fire Bolt",
+            "type": "grant_cantrip"
           }
         ]
       }
@@ -1688,43 +1688,6 @@
     "background_spells": {},
     "cantrips": [
       {
-        "always_prepared": true,
-        "casting_time": "1 action",
-        "classes": [
-          "Cleric"
-        ],
-        "components": "V",
-        "concentration": false,
-        "description": "You manifest a minor wonder, a sign of supernatural power, within range. You create one of several effects: your voice booms, flames flicker, tremors shake the ground, or other minor magical effects.",
-        "duration": "Up to 1 minute",
-        "level": 0,
-        "name": "Thaumaturgy",
-        "once_per_day": false,
-        "range": "30 feet",
-        "ritual": false,
-        "school": "Transmutation",
-        "source": "Tiefling"
-      },
-      {
-        "always_prepared": true,
-        "casting_time": "1 action",
-        "classes": [
-          "Sorcerer",
-          "Wizard"
-        ],
-        "components": "V, S",
-        "concentration": false,
-        "description": "You hurl a mote of fire at a creature or object within range. Make a ranged spell attack against the target. On a hit, the target takes 1d10 fire damage. A flammable object hit by this spell ignites if it isn't being worn or carried. This spell's damage increases by 1d10 when you reach 5th level (2d10), 11th level (3d10), and 17th level (4d10).",
-        "duration": "Instantaneous",
-        "level": 0,
-        "name": "Fire Bolt",
-        "once_per_day": false,
-        "range": "120 feet",
-        "ritual": false,
-        "school": "Evocation",
-        "source": "Infernal Tiefling"
-      },
-      {
         "always_prepared": false,
         "casting_time": "1 action",
         "classes": [
@@ -1764,45 +1727,47 @@
         "ritual": false,
         "school": "Transmutation",
         "source": "Selected"
+      },
+      {
+        "always_prepared": true,
+        "casting_time": "1 action",
+        "classes": [
+          "Cleric"
+        ],
+        "components": "V",
+        "concentration": false,
+        "description": "You manifest a minor wonder, a sign of supernatural power, within range. You create one of several effects: your voice booms, flames flicker, tremors shake the ground, or other minor magical effects.",
+        "duration": "Up to 1 minute",
+        "level": 0,
+        "name": "Thaumaturgy",
+        "once_per_day": false,
+        "range": "30 feet",
+        "ritual": false,
+        "school": "Transmutation",
+        "source": "Tiefling"
+      },
+      {
+        "always_prepared": true,
+        "casting_time": "1 action",
+        "classes": [
+          "Sorcerer",
+          "Wizard"
+        ],
+        "components": "V, S",
+        "concentration": false,
+        "description": "You hurl a mote of fire at a creature or object within range. Make a ranged spell attack against the target. On a hit, the target takes 1d10 fire damage. A flammable object hit by this spell ignites if it isn't being worn or carried. This spell's damage increases by 1d10 when you reach 5th level (2d10), 11th level (3d10), and 17th level (4d10).",
+        "duration": "Instantaneous",
+        "level": 0,
+        "name": "Fire Bolt",
+        "once_per_day": false,
+        "range": "120 feet",
+        "ritual": false,
+        "school": "Evocation",
+        "source": "Infernal Tiefling"
       }
     ],
     "known": {},
     "level_1": [
-      {
-        "always_prepared": true,
-        "casting_time": "1 reaction, which you take in response to being damaged by a creature within 60 feet of you that you can see",
-        "classes": [
-          "Warlock"
-        ],
-        "components": "V, S",
-        "concentration": false,
-        "description": "You point your finger, and the creature that damaged you is momentarily surrounded by hellish flames. The creature must make a Dexterity saving throw. It takes 2d10 fire damage on a failed save, or half as much damage on a successful one. At Higher Levels. When you cast this spell using a spell slot of 2nd level or higher, the damage increases by 1d10 for each slot level above 1st.",
-        "duration": "Instantaneous",
-        "level": 1,
-        "name": "Hellish Rebuke",
-        "once_per_day": true,
-        "range": "60 feet",
-        "ritual": false,
-        "school": "Evocation",
-        "source": "Infernal Tiefling"
-      },
-      {
-        "always_prepared": false,
-        "casting_time": "1 action",
-        "classes": [
-          "Bard"
-        ],
-        "components": "V",
-        "concentration": false,
-        "description": "You whisper a discordant melody that only one creature of your choice within range can hear, wracking it with terrible pain. The target must make a Wisdom saving throw. On a failed save, it takes 3d6 Psychic damage and must immediately use its Reaction, if available, to move as far as its speed allows away from you. The creature doesn't move into obviously dangerous ground, such as a fire or a pit. On a successful save, the target takes half as much damage and doesn't have to move away. A Deafened creature automatically succeeds on the save. At Higher Levels. When you cast this spell using a spell slot of 2nd level or higher, the damage increases by 1d6 for each slot level above 1st.",
-        "duration": "Instantaneous",
-        "level": 1,
-        "name": "Dissonant Whispers",
-        "range": "60 feet",
-        "ritual": false,
-        "school": "Enchantment",
-        "source": "Selected"
-      },
       {
         "always_prepared": false,
         "casting_time": "1 action",
@@ -1864,6 +1829,41 @@
         "ritual": false,
         "school": "Transmutation",
         "source": "Selected"
+      },
+      {
+        "always_prepared": false,
+        "casting_time": "1 action",
+        "classes": [
+          "Bard"
+        ],
+        "components": "V",
+        "concentration": false,
+        "description": "You whisper a discordant melody that only one creature of your choice within range can hear, wracking it with terrible pain. The target must make a Wisdom saving throw. On a failed save, it takes 3d6 Psychic damage and must immediately use its Reaction, if available, to move as far as its speed allows away from you. The creature doesn't move into obviously dangerous ground, such as a fire or a pit. On a successful save, the target takes half as much damage and doesn't have to move away. A Deafened creature automatically succeeds on the save. At Higher Levels. When you cast this spell using a spell slot of 2nd level or higher, the damage increases by 1d6 for each slot level above 1st.",
+        "duration": "Instantaneous",
+        "level": 1,
+        "name": "Dissonant Whispers",
+        "range": "60 feet",
+        "ritual": false,
+        "school": "Enchantment",
+        "source": "Selected"
+      },
+      {
+        "always_prepared": true,
+        "casting_time": "1 reaction, which you take in response to being damaged by a creature within 60 feet of you that you can see",
+        "classes": [
+          "Warlock"
+        ],
+        "components": "V, S",
+        "concentration": false,
+        "description": "You point your finger, and the creature that damaged you is momentarily surrounded by hellish flames. The creature must make a Dexterity saving throw. It takes 2d10 fire damage on a failed save, or half as much damage on a successful one. At Higher Levels. When you cast this spell using a spell slot of 2nd level or higher, the damage increases by 1d10 for each slot level above 1st.",
+        "duration": "Instantaneous",
+        "level": 1,
+        "name": "Hellish Rebuke",
+        "once_per_day": true,
+        "range": "60 feet",
+        "ritual": false,
+        "school": "Evocation",
+        "source": "Infernal Tiefling"
       }
     ],
     "prepared": {
@@ -1885,43 +1885,6 @@
   "spells_by_level": {
     "0": [
       {
-        "always_prepared": true,
-        "casting_time": "1 action",
-        "classes": [
-          "Cleric"
-        ],
-        "components": "V",
-        "concentration": false,
-        "description": "You manifest a minor wonder, a sign of supernatural power, within range. You create one of several effects: your voice booms, flames flicker, tremors shake the ground, or other minor magical effects.",
-        "duration": "Up to 1 minute",
-        "level": 0,
-        "name": "Thaumaturgy",
-        "once_per_day": false,
-        "range": "30 feet",
-        "ritual": false,
-        "school": "Transmutation",
-        "source": "Tiefling"
-      },
-      {
-        "always_prepared": true,
-        "casting_time": "1 action",
-        "classes": [
-          "Sorcerer",
-          "Wizard"
-        ],
-        "components": "V, S",
-        "concentration": false,
-        "description": "You hurl a mote of fire at a creature or object within range. Make a ranged spell attack against the target. On a hit, the target takes 1d10 fire damage. A flammable object hit by this spell ignites if it isn't being worn or carried. This spell's damage increases by 1d10 when you reach 5th level (2d10), 11th level (3d10), and 17th level (4d10).",
-        "duration": "Instantaneous",
-        "level": 0,
-        "name": "Fire Bolt",
-        "once_per_day": false,
-        "range": "120 feet",
-        "ritual": false,
-        "school": "Evocation",
-        "source": "Infernal Tiefling"
-      },
-      {
         "always_prepared": false,
         "casting_time": "1 action",
         "classes": [
@@ -1961,44 +1924,46 @@
         "ritual": false,
         "school": "Transmutation",
         "source": "Selected"
-      }
-    ],
-    "1": [
-      {
-        "always_prepared": true,
-        "casting_time": "1 reaction, which you take in response to being damaged by a creature within 60 feet of you that you can see",
-        "classes": [
-          "Warlock"
-        ],
-        "components": "V, S",
-        "concentration": false,
-        "description": "You point your finger, and the creature that damaged you is momentarily surrounded by hellish flames. The creature must make a Dexterity saving throw. It takes 2d10 fire damage on a failed save, or half as much damage on a successful one. At Higher Levels. When you cast this spell using a spell slot of 2nd level or higher, the damage increases by 1d10 for each slot level above 1st.",
-        "duration": "Instantaneous",
-        "level": 1,
-        "name": "Hellish Rebuke",
-        "once_per_day": true,
-        "range": "60 feet",
-        "ritual": false,
-        "school": "Evocation",
-        "source": "Infernal Tiefling"
       },
       {
-        "always_prepared": false,
+        "always_prepared": true,
         "casting_time": "1 action",
         "classes": [
-          "Bard"
+          "Cleric"
         ],
         "components": "V",
         "concentration": false,
-        "description": "You whisper a discordant melody that only one creature of your choice within range can hear, wracking it with terrible pain. The target must make a Wisdom saving throw. On a failed save, it takes 3d6 Psychic damage and must immediately use its Reaction, if available, to move as far as its speed allows away from you. The creature doesn't move into obviously dangerous ground, such as a fire or a pit. On a successful save, the target takes half as much damage and doesn't have to move away. A Deafened creature automatically succeeds on the save. At Higher Levels. When you cast this spell using a spell slot of 2nd level or higher, the damage increases by 1d6 for each slot level above 1st.",
-        "duration": "Instantaneous",
-        "level": 1,
-        "name": "Dissonant Whispers",
-        "range": "60 feet",
+        "description": "You manifest a minor wonder, a sign of supernatural power, within range. You create one of several effects: your voice booms, flames flicker, tremors shake the ground, or other minor magical effects.",
+        "duration": "Up to 1 minute",
+        "level": 0,
+        "name": "Thaumaturgy",
+        "once_per_day": false,
+        "range": "30 feet",
         "ritual": false,
-        "school": "Enchantment",
-        "source": "Selected"
+        "school": "Transmutation",
+        "source": "Tiefling"
       },
+      {
+        "always_prepared": true,
+        "casting_time": "1 action",
+        "classes": [
+          "Sorcerer",
+          "Wizard"
+        ],
+        "components": "V, S",
+        "concentration": false,
+        "description": "You hurl a mote of fire at a creature or object within range. Make a ranged spell attack against the target. On a hit, the target takes 1d10 fire damage. A flammable object hit by this spell ignites if it isn't being worn or carried. This spell's damage increases by 1d10 when you reach 5th level (2d10), 11th level (3d10), and 17th level (4d10).",
+        "duration": "Instantaneous",
+        "level": 0,
+        "name": "Fire Bolt",
+        "once_per_day": false,
+        "range": "120 feet",
+        "ritual": false,
+        "school": "Evocation",
+        "source": "Infernal Tiefling"
+      }
+    ],
+    "1": [
       {
         "always_prepared": false,
         "casting_time": "1 action",
@@ -2060,6 +2025,41 @@
         "ritual": false,
         "school": "Transmutation",
         "source": "Selected"
+      },
+      {
+        "always_prepared": false,
+        "casting_time": "1 action",
+        "classes": [
+          "Bard"
+        ],
+        "components": "V",
+        "concentration": false,
+        "description": "You whisper a discordant melody that only one creature of your choice within range can hear, wracking it with terrible pain. The target must make a Wisdom saving throw. On a failed save, it takes 3d6 Psychic damage and must immediately use its Reaction, if available, to move as far as its speed allows away from you. The creature doesn't move into obviously dangerous ground, such as a fire or a pit. On a successful save, the target takes half as much damage and doesn't have to move away. A Deafened creature automatically succeeds on the save. At Higher Levels. When you cast this spell using a spell slot of 2nd level or higher, the damage increases by 1d6 for each slot level above 1st.",
+        "duration": "Instantaneous",
+        "level": 1,
+        "name": "Dissonant Whispers",
+        "range": "60 feet",
+        "ritual": false,
+        "school": "Enchantment",
+        "source": "Selected"
+      },
+      {
+        "always_prepared": true,
+        "casting_time": "1 reaction, which you take in response to being damaged by a creature within 60 feet of you that you can see",
+        "classes": [
+          "Warlock"
+        ],
+        "components": "V, S",
+        "concentration": false,
+        "description": "You point your finger, and the creature that damaged you is momentarily surrounded by hellish flames. The creature must make a Dexterity saving throw. It takes 2d10 fire damage on a failed save, or half as much damage on a successful one. At Higher Levels. When you cast this spell using a spell slot of 2nd level or higher, the damage increases by 1d10 for each slot level above 1st.",
+        "duration": "Instantaneous",
+        "level": 1,
+        "name": "Hellish Rebuke",
+        "once_per_day": true,
+        "range": "60 feet",
+        "ritual": false,
+        "school": "Evocation",
+        "source": "Infernal Tiefling"
       }
     ],
     "2": [

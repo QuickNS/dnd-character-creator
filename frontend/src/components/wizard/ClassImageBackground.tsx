@@ -22,14 +22,10 @@ export function ClassImageBackground() {
   const selectedClass = useCharacterStore((s) => {
     const rows = s.choicesMade.classes;
     if (Array.isArray(rows) && rows.length > 0) {
-      const clampedIndex = Math.max(
-        0,
-        Math.min(s.activeClassRowIndex, rows.length - 1),
-      );
-      const active = rows[clampedIndex] as { class_name?: unknown } | undefined;
-      const activeClassName = active?.class_name;
-      if (typeof activeClassName === "string" && activeClassName.length > 0) {
-        return activeClassName;
+      const primary = rows[0] as { class_name?: unknown } | undefined;
+      const primaryClassName = primary?.class_name;
+      if (typeof primaryClassName === "string" && primaryClassName.length > 0) {
+        return primaryClassName;
       }
     }
 
@@ -41,15 +37,7 @@ export function ClassImageBackground() {
       return fallbackClassChoice;
     }
 
-    if (!Array.isArray(rows) || rows.length === 0) return undefined;
-    const primary = rows[0];
-    if (!primary) {
-      return undefined;
-    }
-    const className = primary.class_name;
-    return typeof className === "string" && className.length > 0
-      ? className
-      : undefined;
+    return undefined;
   });
 
   // Try the theme-specific variant first (e.g. "monk-dark.png"), fall back to base.

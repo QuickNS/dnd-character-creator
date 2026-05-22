@@ -503,6 +503,39 @@ class TestOriginFeatEffects:
             for entry in spell_entries:
                 assert entry.get("always_prepared"), f"Spell {entry['name']} should be always prepared"
 
+        def test_magic_initiate_counted_in_stats_always_prepared(self):
+            """Magic Initiate cantrips/spells are stored in always_prepared (not prepared), counted in +X bonus."""
+            cantrips = ["Mage Hand", "Prestidigitation"]
+            spell = "Shield"
+            builder = CharacterBuilder()
+            builder.apply_choices({
+                "character_name": "MI Stats Test",
+                "level": 1,
+                "species": "Human",
+                "class": "Fighter",
+                "background": "Sage",  # Sage grants Magic Initiate (Wizard)
+                "ability_scores": {
+                    "Strength": 10, "Dexterity": 10, "Constitution": 10,
+                    "Intelligence": 16, "Wisdom": 10, "Charisma": 10
+                },
+                "background_bonuses": {"Intelligence": 2, "Constitution": 1},
+                "feat_Magic Initiate (Wizard)_cantrips": cantrips,
+                "feat_Magic Initiate (Wizard)_1st_level_spell": spell,
+            })
+            always_prepared = builder.character_data["spells"]["always_prepared"]
+            prepared_cantrips = builder.character_data["spells"]["prepared"]["cantrips"]
+            prepared_spells = builder.character_data["spells"]["prepared"]["spells"]
+            # Cantrips and spell must be in always_prepared, NOT in prepared
+            for cantrip in cantrips:
+                assert cantrip in always_prepared, f"{cantrip} should be in always_prepared"
+                assert cantrip not in prepared_cantrips, f"{cantrip} must NOT be in prepared.cantrips"
+            assert spell in always_prepared, f"{spell} should be in always_prepared"
+            assert spell not in prepared_spells, f"{spell} must NOT be in prepared.spells"
+            # Verify stored metadata
+            assert always_prepared["Mage Hand"]["level"] == 0
+            assert always_prepared["Mage Hand"]["counts_against_limit"] is False
+            assert always_prepared[spell]["counts_against_limit"] is False
+
     class TestFeyTouchedAlwaysPrepared:
         """Fey Touched: both the fixed Misty Step and the chosen spell are always prepared."""
 

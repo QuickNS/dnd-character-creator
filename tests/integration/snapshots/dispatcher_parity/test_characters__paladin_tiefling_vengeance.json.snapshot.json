@@ -8,10 +8,6 @@
           "type": "grant_damage_resistance"
         },
         {
-          "spell": "Fire Bolt",
-          "type": "grant_cantrip"
-        },
-        {
           "min_level": 3,
           "spell": "Hellish Rebuke",
           "type": "grant_spell"
@@ -20,6 +16,10 @@
           "min_level": 5,
           "spell": "Darkness",
           "type": "grant_spell"
+        },
+        {
+          "spell": "Fire Bolt",
+          "type": "grant_cantrip"
         }
       ]
     }
@@ -96,18 +96,18 @@
   },
   "ac_options": [
     {
-      "ac": 18,
-      "armor": "Chain Mail",
-      "equipped_armor": "Chain Mail",
-      "formula": "Armor base (16) + Shield (2)",
-      "notes": [],
-      "shield": true
-    },
-    {
       "ac": 12,
       "armor": null,
       "equipped_armor": null,
       "formula": "10 + Dex modifier (0) + Shield (2)",
+      "notes": [],
+      "shield": true
+    },
+    {
+      "ac": 18,
+      "armor": "Chain Mail",
+      "equipped_armor": "Chain Mail",
+      "formula": "Armor base (16) + Shield (2)",
       "notes": [],
       "shield": true
     }
@@ -121,6 +121,27 @@
   ],
   "attack_combinations": [],
   "attacks": [
+    {
+      "ability": "STR",
+      "attack_bonus": 5,
+      "attack_bonus_display": "+5",
+      "avg_crit": 12.0,
+      "avg_damage": 8.5,
+      "avg_throw_damage": 6.5,
+      "damage": "1d6 + 5",
+      "damage_notes": [
+        "+2 from Dueling"
+      ],
+      "damage_type": "Piercing",
+      "icon": "/static/images/weapons/spear.svg",
+      "mastery": "Slow",
+      "name": "Javelin",
+      "proficient": true,
+      "properties": [
+        "Thrown (range 30/120)"
+      ],
+      "throw_damage": "1d6 + 3"
+    },
     {
       "ability": "STR",
       "attack_bonus": 5,
@@ -143,27 +164,6 @@
       "properties": [
         "Versatile (1d10)"
       ]
-    },
-    {
-      "ability": "STR",
-      "attack_bonus": 5,
-      "attack_bonus_display": "+5",
-      "avg_crit": 12.0,
-      "avg_damage": 8.5,
-      "avg_throw_damage": 6.5,
-      "damage": "1d6 + 5",
-      "damage_notes": [
-        "+2 from Dueling"
-      ],
-      "damage_type": "Piercing",
-      "icon": "/static/images/weapons/spear.svg",
-      "mastery": "Slow",
-      "name": "Javelin",
-      "proficient": true,
-      "properties": [
-        "Thrown (range 30/120)"
-      ],
-      "throw_damage": "1d6 + 3"
     },
     {
       "ability": "STR",
@@ -198,15 +198,15 @@
     "description": "War has been your life for as long as you care to remember. You trained as a youth, studied the use of weapons and armor, learned basic survival techniques, including how to stay alive on the battlefield. You might have been part of a standing national army or a mercenary company, or perhaps a member of a local militia who rose to prominence during a recent war.",
     "effects": [
       {
+        "feat": "Savage Attacker",
+        "type": "grant_origin_feat"
+      },
+      {
         "skills": [
           "Athletics",
           "Intimidation"
         ],
         "type": "grant_skill_proficiency"
-      },
-      {
-        "feat": "Savage Attacker",
-        "type": "grant_origin_feat"
       },
       {
         "tools": [
@@ -912,16 +912,11 @@
   "darkvision": 60,
   "effects": [
     {
-      "range": 60,
-      "source": "Darkvision",
-      "source_type": "species",
-      "type": "grant_darkvision"
-    },
-    {
-      "source": "Otherworldly Presence",
-      "source_type": "species",
-      "spell": "Thaumaturgy",
-      "type": "grant_cantrip"
+      "condition": "one handed melee weapon",
+      "source": "Dueling",
+      "source_type": "class_choice",
+      "type": "bonus_damage",
+      "value": 2
     },
     {
       "damage_type": "Fire",
@@ -930,49 +925,47 @@
       "type": "grant_damage_resistance"
     },
     {
-      "source": "Infernal Legacy",
-      "source_type": "lineage",
-      "spell": "Fire Bolt",
-      "type": "grant_cantrip"
-    },
-    {
-      "min_level": 3,
-      "source": "Infernal Legacy",
-      "source_type": "lineage",
-      "spell": "Hellish Rebuke",
-      "type": "grant_spell"
-    },
-    {
-      "min_level": 5,
-      "source": "Infernal Legacy",
-      "source_type": "lineage",
-      "spell": "Darkness",
-      "type": "grant_spell"
-    },
-    {
       "damage_type": "Fire",
       "source": "Infernal Legacy",
       "source_type": "lineage",
       "type": "grant_damage_resistance"
     },
     {
-      "source": "Infernal Legacy",
-      "source_type": "lineage",
-      "spell": "Fire Bolt",
-      "type": "grant_cantrip"
+      "feat": "Savage Attacker",
+      "source": "Soldier",
+      "source_type": "background",
+      "type": "grant_origin_feat"
     },
     {
-      "min_level": 3,
-      "source": "Infernal Legacy",
-      "source_type": "lineage",
-      "spell": "Hellish Rebuke",
+      "min_level": 13,
+      "source": "Oath Spells",
+      "source_class_name": "Paladin",
+      "source_type": "subclass",
+      "spell": "Banishment",
       "type": "grant_spell"
     },
     {
-      "min_level": 5,
-      "source": "Infernal Legacy",
-      "source_type": "lineage",
-      "spell": "Darkness",
+      "min_level": 13,
+      "source": "Oath Spells",
+      "source_class_name": "Paladin",
+      "source_type": "subclass",
+      "spell": "Dimension Door",
+      "type": "grant_spell"
+    },
+    {
+      "min_level": 17,
+      "source": "Oath Spells",
+      "source_class_name": "Paladin",
+      "source_type": "subclass",
+      "spell": "Hold Monster",
+      "type": "grant_spell"
+    },
+    {
+      "min_level": 17,
+      "source": "Oath Spells",
+      "source_class_name": "Paladin",
+      "source_type": "subclass",
+      "spell": "Scrying",
       "type": "grant_spell"
     },
     {
@@ -981,6 +974,20 @@
       "source_class_name": "Paladin",
       "source_type": "class",
       "spell": "Divine Smite",
+      "type": "grant_spell"
+    },
+    {
+      "min_level": 3,
+      "source": "Infernal Legacy",
+      "source_type": "lineage",
+      "spell": "Hellish Rebuke",
+      "type": "grant_spell"
+    },
+    {
+      "min_level": 3,
+      "source": "Infernal Legacy",
+      "source_type": "lineage",
+      "spell": "Hellish Rebuke",
       "type": "grant_spell"
     },
     {
@@ -997,6 +1004,20 @@
       "source_class_name": "Paladin",
       "source_type": "subclass",
       "spell": "Hunter's Mark",
+      "type": "grant_spell"
+    },
+    {
+      "min_level": 5,
+      "source": "Infernal Legacy",
+      "source_type": "lineage",
+      "spell": "Darkness",
+      "type": "grant_spell"
+    },
+    {
+      "min_level": 5,
+      "source": "Infernal Legacy",
+      "source_type": "lineage",
+      "spell": "Darkness",
       "type": "grant_spell"
     },
     {
@@ -1032,36 +1053,10 @@
       "type": "grant_spell"
     },
     {
-      "min_level": 13,
-      "source": "Oath Spells",
-      "source_class_name": "Paladin",
-      "source_type": "subclass",
-      "spell": "Banishment",
-      "type": "grant_spell"
-    },
-    {
-      "min_level": 13,
-      "source": "Oath Spells",
-      "source_class_name": "Paladin",
-      "source_type": "subclass",
-      "spell": "Dimension Door",
-      "type": "grant_spell"
-    },
-    {
-      "min_level": 17,
-      "source": "Oath Spells",
-      "source_class_name": "Paladin",
-      "source_type": "subclass",
-      "spell": "Hold Monster",
-      "type": "grant_spell"
-    },
-    {
-      "min_level": 17,
-      "source": "Oath Spells",
-      "source_class_name": "Paladin",
-      "source_type": "subclass",
-      "spell": "Scrying",
-      "type": "grant_spell"
+      "range": 60,
+      "source": "Darkvision",
+      "source_type": "species",
+      "type": "grant_darkvision"
     },
     {
       "skills": [
@@ -1073,10 +1068,22 @@
       "type": "grant_skill_proficiency"
     },
     {
-      "feat": "Savage Attacker",
-      "source": "Soldier",
-      "source_type": "background",
-      "type": "grant_origin_feat"
+      "source": "Infernal Legacy",
+      "source_type": "lineage",
+      "spell": "Fire Bolt",
+      "type": "grant_cantrip"
+    },
+    {
+      "source": "Infernal Legacy",
+      "source_type": "lineage",
+      "spell": "Fire Bolt",
+      "type": "grant_cantrip"
+    },
+    {
+      "source": "Otherworldly Presence",
+      "source_type": "species",
+      "spell": "Thaumaturgy",
+      "type": "grant_cantrip"
     },
     {
       "source": "Soldier",
@@ -1086,13 +1093,6 @@
         "Vehicles (Land)"
       ],
       "type": "grant_tool_proficiency"
-    },
-    {
-      "condition": "one handed melee weapon",
-      "source": "Dueling",
-      "source_type": "class_choice",
-      "type": "bonus_damage",
-      "value": 2
     }
   ],
   "eldritch_invocation_stats": {
@@ -1104,11 +1104,11 @@
   "equipment": {
     "armor": [
       {
-        "name": "Shield",
+        "name": "Chain Mail",
         "source": "Class"
       },
       {
-        "name": "Chain Mail",
+        "name": "Shield",
         "source": "Class"
       }
     ],
@@ -1124,24 +1124,6 @@
       }
     ],
     "weapons": [
-      {
-        "display_name": "Longsword",
-        "name": "Longsword",
-        "properties": {
-          "category": "Martial Melee",
-          "cost": "15 gp",
-          "damage": "1d8",
-          "damage_type": "Slashing",
-          "mastery": "Vex",
-          "proficiency_required": "Martial weapons",
-          "properties": [
-            "Versatile (1d10)"
-          ],
-          "weight": 3
-        },
-        "quantity": 1,
-        "source": "Class"
-      },
       {
         "display_name": "Javelin (5)",
         "name": "Javelin",
@@ -1159,30 +1141,30 @@
         },
         "quantity": 5,
         "source": "Class"
+      },
+      {
+        "display_name": "Longsword",
+        "name": "Longsword",
+        "properties": {
+          "category": "Martial Melee",
+          "cost": "15 gp",
+          "damage": "1d8",
+          "damage_type": "Slashing",
+          "mastery": "Vex",
+          "proficiency_required": "Martial weapons",
+          "properties": [
+            "Versatile (1d10)"
+          ],
+          "weight": 3
+        },
+        "quantity": 1,
+        "source": "Class"
       }
     ]
   },
   "features": {
     "background": [],
     "class": [
-      {
-        "description": "Your blessed touch can heal wounds. You have a pool of healing power that replenishes when you finish a Long Rest equal to five times your Paladin level. As a Bonus Action, you can touch a creature and restore Hit Points from the pool. You can also expend 5 Hit Points from the pool to remove the Poisoned condition.",
-        "level": 1,
-        "name": "Lay On Hands",
-        "source": "Paladin"
-      },
-      {
-        "description": "You have learned to cast spells through prayer and meditation. Charisma is your spellcasting ability. You can use a Holy Symbol as a Spellcasting Focus.",
-        "level": 1,
-        "name": "Spellcasting",
-        "source": "Paladin"
-      },
-      {
-        "description": "Your training with weapons allows you to use the mastery properties of two kinds of weapons of your choice with which you have proficiency.",
-        "level": 1,
-        "name": "Weapon Mastery",
-        "source": "Paladin"
-      },
       {
         "description": "When you are wielding a melee weapon in one hand and no other weapons, you gain a +2 bonus to damage rolls with that weapon.",
         "level": 2,
@@ -1199,6 +1181,24 @@
         "description": "You can channel divine energy directly from the Outer Planes. You can use Channel Divinity twice per Long Rest (regain one use on Short Rest, additional use at level 11). Divine Sense: As a Bonus Action, detect Celestials, Fiends, and Undead within 60 feet for 10 minutes.",
         "level": 3,
         "name": "Channel Divinity",
+        "source": "Paladin"
+      },
+      {
+        "description": "You have learned to cast spells through prayer and meditation. Charisma is your spellcasting ability. You can use a Holy Symbol as a Spellcasting Focus.",
+        "level": 1,
+        "name": "Spellcasting",
+        "source": "Paladin"
+      },
+      {
+        "description": "Your blessed touch can heal wounds. You have a pool of healing power that replenishes when you finish a Long Rest equal to five times your Paladin level. As a Bonus Action, you can touch a creature and restore Hit Points from the pool. You can also expend 5 Hit Points from the pool to remove the Poisoned condition.",
+        "level": 1,
+        "name": "Lay On Hands",
+        "source": "Paladin"
+      },
+      {
+        "description": "Your training with weapons allows you to use the mastery properties of two kinds of weapons of your choice with which you have proficiency.",
+        "level": 1,
+        "name": "Weapon Mastery",
         "source": "Paladin"
       }
     ],
@@ -1219,13 +1219,13 @@
     ],
     "species": [
       {
-        "description": "You have Darkvision with a range of 60 feet.",
-        "name": "Darkvision",
+        "description": "You are the recipient of a legacy that grants you supernatural abilities. Intelligence, Wisdom, or Charisma is your spellcasting ability for the spells you cast with this trait.",
+        "name": "Fiendish Legacy: Charisma",
         "source": "Tiefling"
       },
       {
-        "description": "You are the recipient of a legacy that grants you supernatural abilities. Intelligence, Wisdom, or Charisma is your spellcasting ability for the spells you cast with this trait.",
-        "name": "Fiendish Legacy: Charisma",
+        "description": "You have Darkvision with a range of 60 feet.",
+        "name": "Darkvision",
         "source": "Tiefling"
       },
       {
@@ -1275,10 +1275,6 @@
             "type": "grant_damage_resistance"
           },
           {
-            "spell": "Fire Bolt",
-            "type": "grant_cantrip"
-          },
-          {
             "min_level": 3,
             "spell": "Hellish Rebuke",
             "type": "grant_spell"
@@ -1287,6 +1283,10 @@
             "min_level": 5,
             "spell": "Darkness",
             "type": "grant_spell"
+          },
+          {
+            "spell": "Fire Bolt",
+            "type": "grant_cantrip"
           }
         ]
       }
@@ -1801,40 +1801,40 @@
     "known": {},
     "level_1": [
       {
-        "always_prepared": true,
-        "casting_time": "1 reaction, which you take in response to being damaged by a creature within 60 feet of you that you can see",
+        "always_prepared": false,
+        "casting_time": "1 action",
         "classes": [
-          "Warlock"
-        ],
-        "components": "V, S",
-        "concentration": false,
-        "description": "You point your finger, and the creature that damaged you is momentarily surrounded by hellish flames. The creature must make a Dexterity saving throw. It takes 2d10 fire damage on a failed save, or half as much damage on a successful one. At Higher Levels. When you cast this spell using a spell slot of 2nd level or higher, the damage increases by 1d10 for each slot level above 1st.",
-        "duration": "Instantaneous",
-        "level": 1,
-        "name": "Hellish Rebuke",
-        "once_per_day": true,
-        "range": "60 feet",
-        "ritual": false,
-        "school": "Evocation",
-        "source": "Infernal Tiefling"
-      },
-      {
-        "always_prepared": true,
-        "casting_time": "1 bonus action, which you take immediately after hitting a target with a Melee weapon or an Unarmed Strike",
-        "classes": [
+          "Cleric",
           "Paladin"
         ],
-        "components": "V",
-        "concentration": false,
-        "description": "The target takes an extra 2d8 Radiant damage from the attack. The damage increases by 1d8 if the target is a Fiend or an Undead. Using a Higher-Level Spell Slot. The damage increases by 1d8 for each spell slot level above 1.",
-        "duration": "Instantaneous",
+        "components": "V, S",
+        "concentration": true,
+        "description": "For the duration, you sense the presence of any Aberration, Celestial, Elemental, Fey, Fiend, or Undead within 30 feet of you, as well as where the creature is located. Similarly, you sense whether a place or object within 30 feet of you has been magically consecrated or desecrated. The spell can penetrate most barriers, but it is blocked by 1 foot of stone, 1 inch of common metal, a thin sheet of lead, or 3 feet of wood or dirt.",
+        "duration": "Concentration, up to 10 minutes",
         "level": 1,
-        "name": "Divine Smite",
-        "once_per_day": false,
+        "name": "Detect Evil and Good",
         "range": "Self",
         "ritual": false,
-        "school": "Evocation",
-        "source": "Paladin"
+        "school": "Divination",
+        "source": "Selected"
+      },
+      {
+        "always_prepared": false,
+        "casting_time": "1 action",
+        "classes": [
+          "Cleric",
+          "Paladin"
+        ],
+        "components": "V, S, M (a sprinkle of Holy Water)",
+        "concentration": true,
+        "description": "You bless up to three creatures of your choice within range. Whenever a target makes an attack roll or a saving throw before the spell ends, the target adds 1d4 to the attack roll or save. Using a Higher-Level Spell Slot. You can target one additional creature for each spell slot level above 1.",
+        "duration": "Concentration, up to 1 minute",
+        "level": 1,
+        "name": "Bless",
+        "range": "30 feet",
+        "ritual": false,
+        "school": "Enchantment",
+        "source": "Selected"
       },
       {
         "always_prepared": true,
@@ -1875,40 +1875,40 @@
         "source": "Oath of Vengeance"
       },
       {
-        "always_prepared": false,
-        "casting_time": "1 action",
+        "always_prepared": true,
+        "casting_time": "1 bonus action, which you take immediately after hitting a target with a Melee weapon or an Unarmed Strike",
         "classes": [
-          "Cleric",
           "Paladin"
         ],
-        "components": "V, S, M (a sprinkle of Holy Water)",
-        "concentration": true,
-        "description": "You bless up to three creatures of your choice within range. Whenever a target makes an attack roll or a saving throw before the spell ends, the target adds 1d4 to the attack roll or save. Using a Higher-Level Spell Slot. You can target one additional creature for each spell slot level above 1.",
-        "duration": "Concentration, up to 1 minute",
+        "components": "V",
+        "concentration": false,
+        "description": "The target takes an extra 2d8 Radiant damage from the attack. The damage increases by 1d8 if the target is a Fiend or an Undead. Using a Higher-Level Spell Slot. The damage increases by 1d8 for each spell slot level above 1.",
+        "duration": "Instantaneous",
         "level": 1,
-        "name": "Bless",
-        "range": "30 feet",
-        "ritual": false,
-        "school": "Enchantment",
-        "source": "Selected"
-      },
-      {
-        "always_prepared": false,
-        "casting_time": "1 action",
-        "classes": [
-          "Cleric",
-          "Paladin"
-        ],
-        "components": "V, S",
-        "concentration": true,
-        "description": "For the duration, you sense the presence of any Aberration, Celestial, Elemental, Fey, Fiend, or Undead within 30 feet of you, as well as where the creature is located. Similarly, you sense whether a place or object within 30 feet of you has been magically consecrated or desecrated. The spell can penetrate most barriers, but it is blocked by 1 foot of stone, 1 inch of common metal, a thin sheet of lead, or 3 feet of wood or dirt.",
-        "duration": "Concentration, up to 10 minutes",
-        "level": 1,
-        "name": "Detect Evil and Good",
+        "name": "Divine Smite",
+        "once_per_day": false,
         "range": "Self",
         "ritual": false,
-        "school": "Divination",
-        "source": "Selected"
+        "school": "Evocation",
+        "source": "Paladin"
+      },
+      {
+        "always_prepared": true,
+        "casting_time": "1 reaction, which you take in response to being damaged by a creature within 60 feet of you that you can see",
+        "classes": [
+          "Warlock"
+        ],
+        "components": "V, S",
+        "concentration": false,
+        "description": "You point your finger, and the creature that damaged you is momentarily surrounded by hellish flames. The creature must make a Dexterity saving throw. It takes 2d10 fire damage on a failed save, or half as much damage on a successful one. At Higher Levels. When you cast this spell using a spell slot of 2nd level or higher, the damage increases by 1d10 for each slot level above 1st.",
+        "duration": "Instantaneous",
+        "level": 1,
+        "name": "Hellish Rebuke",
+        "once_per_day": true,
+        "range": "60 feet",
+        "ritual": false,
+        "school": "Evocation",
+        "source": "Infernal Tiefling"
       }
     ],
     "prepared": {
@@ -1964,40 +1964,40 @@
     ],
     "1": [
       {
-        "always_prepared": true,
-        "casting_time": "1 reaction, which you take in response to being damaged by a creature within 60 feet of you that you can see",
+        "always_prepared": false,
+        "casting_time": "1 action",
         "classes": [
-          "Warlock"
-        ],
-        "components": "V, S",
-        "concentration": false,
-        "description": "You point your finger, and the creature that damaged you is momentarily surrounded by hellish flames. The creature must make a Dexterity saving throw. It takes 2d10 fire damage on a failed save, or half as much damage on a successful one. At Higher Levels. When you cast this spell using a spell slot of 2nd level or higher, the damage increases by 1d10 for each slot level above 1st.",
-        "duration": "Instantaneous",
-        "level": 1,
-        "name": "Hellish Rebuke",
-        "once_per_day": true,
-        "range": "60 feet",
-        "ritual": false,
-        "school": "Evocation",
-        "source": "Infernal Tiefling"
-      },
-      {
-        "always_prepared": true,
-        "casting_time": "1 bonus action, which you take immediately after hitting a target with a Melee weapon or an Unarmed Strike",
-        "classes": [
+          "Cleric",
           "Paladin"
         ],
-        "components": "V",
-        "concentration": false,
-        "description": "The target takes an extra 2d8 Radiant damage from the attack. The damage increases by 1d8 if the target is a Fiend or an Undead. Using a Higher-Level Spell Slot. The damage increases by 1d8 for each spell slot level above 1.",
-        "duration": "Instantaneous",
+        "components": "V, S",
+        "concentration": true,
+        "description": "For the duration, you sense the presence of any Aberration, Celestial, Elemental, Fey, Fiend, or Undead within 30 feet of you, as well as where the creature is located. Similarly, you sense whether a place or object within 30 feet of you has been magically consecrated or desecrated. The spell can penetrate most barriers, but it is blocked by 1 foot of stone, 1 inch of common metal, a thin sheet of lead, or 3 feet of wood or dirt.",
+        "duration": "Concentration, up to 10 minutes",
         "level": 1,
-        "name": "Divine Smite",
-        "once_per_day": false,
+        "name": "Detect Evil and Good",
         "range": "Self",
         "ritual": false,
-        "school": "Evocation",
-        "source": "Paladin"
+        "school": "Divination",
+        "source": "Selected"
+      },
+      {
+        "always_prepared": false,
+        "casting_time": "1 action",
+        "classes": [
+          "Cleric",
+          "Paladin"
+        ],
+        "components": "V, S, M (a sprinkle of Holy Water)",
+        "concentration": true,
+        "description": "You bless up to three creatures of your choice within range. Whenever a target makes an attack roll or a saving throw before the spell ends, the target adds 1d4 to the attack roll or save. Using a Higher-Level Spell Slot. You can target one additional creature for each spell slot level above 1.",
+        "duration": "Concentration, up to 1 minute",
+        "level": 1,
+        "name": "Bless",
+        "range": "30 feet",
+        "ritual": false,
+        "school": "Enchantment",
+        "source": "Selected"
       },
       {
         "always_prepared": true,
@@ -2038,60 +2038,43 @@
         "source": "Oath of Vengeance"
       },
       {
-        "always_prepared": false,
-        "casting_time": "1 action",
-        "classes": [
-          "Cleric",
-          "Paladin"
-        ],
-        "components": "V, S, M (a sprinkle of Holy Water)",
-        "concentration": true,
-        "description": "You bless up to three creatures of your choice within range. Whenever a target makes an attack roll or a saving throw before the spell ends, the target adds 1d4 to the attack roll or save. Using a Higher-Level Spell Slot. You can target one additional creature for each spell slot level above 1.",
-        "duration": "Concentration, up to 1 minute",
-        "level": 1,
-        "name": "Bless",
-        "range": "30 feet",
-        "ritual": false,
-        "school": "Enchantment",
-        "source": "Selected"
-      },
-      {
-        "always_prepared": false,
-        "casting_time": "1 action",
-        "classes": [
-          "Cleric",
-          "Paladin"
-        ],
-        "components": "V, S",
-        "concentration": true,
-        "description": "For the duration, you sense the presence of any Aberration, Celestial, Elemental, Fey, Fiend, or Undead within 30 feet of you, as well as where the creature is located. Similarly, you sense whether a place or object within 30 feet of you has been magically consecrated or desecrated. The spell can penetrate most barriers, but it is blocked by 1 foot of stone, 1 inch of common metal, a thin sheet of lead, or 3 feet of wood or dirt.",
-        "duration": "Concentration, up to 10 minutes",
-        "level": 1,
-        "name": "Detect Evil and Good",
-        "range": "Self",
-        "ritual": false,
-        "school": "Divination",
-        "source": "Selected"
-      }
-    ],
-    "2": [
-      {
-        "always_prepared": false,
+        "always_prepared": true,
         "casting_time": "1 bonus action, which you take immediately after hitting a target with a Melee weapon or an Unarmed Strike",
         "classes": [
           "Paladin"
         ],
         "components": "V",
         "concentration": false,
-        "description": "The target takes an extra 2d6 Radiant damage from the attack. The target also sheds Dim Light in a 5-foot radius and can't benefit from the Invisible condition for the duration. Using a Higher-Level Spell Slot. The damage increases by 1d6 for each spell slot level above 2.",
-        "duration": "1 minute",
-        "level": 2,
-        "name": "Branding Smite",
+        "description": "The target takes an extra 2d8 Radiant damage from the attack. The damage increases by 1d8 if the target is a Fiend or an Undead. Using a Higher-Level Spell Slot. The damage increases by 1d8 for each spell slot level above 1.",
+        "duration": "Instantaneous",
+        "level": 1,
+        "name": "Divine Smite",
+        "once_per_day": false,
         "range": "Self",
         "ritual": false,
         "school": "Evocation",
-        "source": "Selected"
+        "source": "Paladin"
       },
+      {
+        "always_prepared": true,
+        "casting_time": "1 reaction, which you take in response to being damaged by a creature within 60 feet of you that you can see",
+        "classes": [
+          "Warlock"
+        ],
+        "components": "V, S",
+        "concentration": false,
+        "description": "You point your finger, and the creature that damaged you is momentarily surrounded by hellish flames. The creature must make a Dexterity saving throw. It takes 2d10 fire damage on a failed save, or half as much damage on a successful one. At Higher Levels. When you cast this spell using a spell slot of 2nd level or higher, the damage increases by 1d10 for each slot level above 1st.",
+        "duration": "Instantaneous",
+        "level": 1,
+        "name": "Hellish Rebuke",
+        "once_per_day": true,
+        "range": "60 feet",
+        "ritual": false,
+        "school": "Evocation",
+        "source": "Infernal Tiefling"
+      }
+    ],
+    "2": [
       {
         "always_prepared": false,
         "casting_time": "1 action",
@@ -2107,6 +2090,23 @@
         "range": "30 feet",
         "ritual": false,
         "school": "Conjuration",
+        "source": "Selected"
+      },
+      {
+        "always_prepared": false,
+        "casting_time": "1 bonus action, which you take immediately after hitting a target with a Melee weapon or an Unarmed Strike",
+        "classes": [
+          "Paladin"
+        ],
+        "components": "V",
+        "concentration": false,
+        "description": "The target takes an extra 2d6 Radiant damage from the attack. The target also sheds Dim Light in a 5-foot radius and can't benefit from the Invisible condition for the duration. Using a Higher-Level Spell Slot. The damage increases by 1d6 for each spell slot level above 2.",
+        "duration": "1 minute",
+        "level": 2,
+        "name": "Branding Smite",
+        "range": "Self",
+        "ritual": false,
+        "school": "Evocation",
         "source": "Selected"
       }
     ]
@@ -2127,6 +2127,26 @@
         "Oath Spells": {
           "description": "The magic of your oath ensures you always have certain spells ready.",
           "effects": [
+            {
+              "min_level": 13,
+              "spell": "Banishment",
+              "type": "grant_spell"
+            },
+            {
+              "min_level": 13,
+              "spell": "Dimension Door",
+              "type": "grant_spell"
+            },
+            {
+              "min_level": 17,
+              "spell": "Hold Monster",
+              "type": "grant_spell"
+            },
+            {
+              "min_level": 17,
+              "spell": "Scrying",
+              "type": "grant_spell"
+            },
             {
               "min_level": 3,
               "spell": "Bane",
@@ -2155,26 +2175,6 @@
             {
               "min_level": 9,
               "spell": "Protection from Energy",
-              "type": "grant_spell"
-            },
-            {
-              "min_level": 13,
-              "spell": "Banishment",
-              "type": "grant_spell"
-            },
-            {
-              "min_level": 13,
-              "spell": "Dimension Door",
-              "type": "grant_spell"
-            },
-            {
-              "min_level": 17,
-              "spell": "Hold Monster",
-              "type": "grant_spell"
-            },
-            {
-              "min_level": 17,
-              "spell": "Scrying",
               "type": "grant_spell"
             }
           ]

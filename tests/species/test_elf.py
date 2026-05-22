@@ -556,6 +556,13 @@ class TestElfIntegration:
             assert len(feature["description"]) > 0
             assert isinstance(feature["description"], str)
 
+    def test_darkvision_in_to_character_output(self):
+        """to_character() must expose darkvision == 60 for Elf."""
+        builder = CharacterBuilder()
+        builder.set_species("Elf")
+        character = builder.to_character()
+        assert character["darkvision"] == 60
+
     def test_elf_effects_system_integration(self):
         """Test elf features work with the effects system"""
         builder = CharacterBuilder()

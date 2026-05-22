@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { AlertCircle, BookmarkCheck, CheckCircle2, ChevronRight, Circle, Download, Loader2, Save } from "lucide-react";
 import { api, type WizardStep } from "@/lib/api";
+import { cn } from "@/lib/utils";
 import { useCharacterStore } from "@/store/characterStore";
 import { useRosterStore } from "@/store/rosterStore";
 import { Button } from "@/components/ui/button";
@@ -83,7 +84,7 @@ export function SummaryStep({ steps }: Props) {
   const character = (buildQuery.data ?? {}) as Char;
   const buildError = buildQuery.error ? String(buildQuery.error) : null;
 
-  const name = str(character.name) ?? str(character.character_name) ?? "Unnamed";
+  const name = str(character.name) || str(character.character_name) || "Unnamed";
   const cls = str(character.class);
   const sub = str(character.subclass);
   const species = str(character.species);
@@ -255,7 +256,7 @@ export function SummaryStep({ steps }: Props) {
           <div className="info-panel-header">
             <p className="info-panel-kicker">Character preview</p>
             <div className="mt-2">
-              <div className="font-display text-2xl text-foreground">{name}</div>
+              <div className={cn("font-display text-2xl", name === "Unnamed" ? "text-muted-foreground italic" : "text-primary")}>{name}</div>
               <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 mt-1 text-sm text-muted-foreground">
                 {level !== undefined && <span>Level {level}</span>}
                 {cls && <><span aria-hidden>·</span><span>{cls}</span></>}

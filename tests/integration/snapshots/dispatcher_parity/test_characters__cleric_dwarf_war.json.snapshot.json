@@ -71,18 +71,18 @@
   },
   "ac_options": [
     {
-      "ac": 15,
-      "armor": "Chain Shirt",
-      "equipped_armor": "Chain Shirt",
-      "formula": "Armor base (13) + Dex modifier (0) + Shield (2)",
-      "notes": [],
-      "shield": true
-    },
-    {
       "ac": 12,
       "armor": null,
       "equipped_armor": null,
       "formula": "10 + Dex modifier (0) + Shield (2)",
+      "notes": [],
+      "shield": true
+    },
+    {
+      "ac": 15,
+      "armor": "Chain Shirt",
+      "equipped_armor": "Chain Shirt",
+      "formula": "Armor base (13) + Dex modifier (0) + Shield (2)",
       "notes": [],
       "shield": true
     }
@@ -100,21 +100,6 @@
       "ability": "STR",
       "attack_bonus": 3,
       "attack_bonus_display": "+3",
-      "avg_crit": 8.0,
-      "avg_damage": 4.5,
-      "damage": "1d6 + 1",
-      "damage_notes": [],
-      "damage_type": "Bludgeoning",
-      "icon": "/static/images/weapons/mace.svg",
-      "mastery": "Sap",
-      "name": "Mace",
-      "proficient": true,
-      "properties": []
-    },
-    {
-      "ability": "STR",
-      "attack_bonus": 3,
-      "attack_bonus_display": "+3",
       "avg_crit": 2.0,
       "avg_damage": 2.0,
       "damage": "2",
@@ -123,6 +108,21 @@
       "icon": "/static/images/weapons/strike.svg",
       "mastery": null,
       "name": "Unarmed Strike",
+      "proficient": true,
+      "properties": []
+    },
+    {
+      "ability": "STR",
+      "attack_bonus": 3,
+      "attack_bonus_display": "+3",
+      "avg_crit": 8.0,
+      "avg_damage": 4.5,
+      "damage": "1d6 + 1",
+      "damage_notes": [],
+      "damage_type": "Bludgeoning",
+      "icon": "/static/images/weapons/mace.svg",
+      "mastery": "Sap",
+      "name": "Mace",
       "proficient": true,
       "properties": []
     }
@@ -144,15 +144,15 @@
     "description": "You come from a humble social rank, but you are destined for so much more. Already the people of your home village regard you as their champion, and your destiny calls you to stand against the tyrants and monsters that threaten the common folk everywhere.",
     "effects": [
       {
+        "feat": "Tough",
+        "type": "grant_origin_feat"
+      },
+      {
         "skills": [
           "Animal Handling",
           "Survival"
         ],
         "type": "grant_skill_proficiency"
-      },
-      {
-        "feat": "Tough",
-        "type": "grant_origin_feat"
       },
       {
         "tools": [
@@ -256,12 +256,12 @@
         "scaling": {
           "strike_dice": [
             {
-              "min_level": 7,
-              "value": "1d8"
-            },
-            {
               "min_level": 14,
               "value": "2d8"
+            },
+            {
+              "min_level": 7,
+              "value": "1d8"
             }
           ]
         }
@@ -271,12 +271,12 @@
         "scaling": {
           "improved_text": [
             {
-              "min_level": 7,
-              "value": ""
-            },
-            {
               "min_level": 14,
               "value": "When you cast a Cleric cantrip and deal damage to a creature with it, you can give vitality to yourself or another creature within 60 feet of yourself, granting a number of Temporary Hit Points equal to twice your Wisdom modifier."
+            },
+            {
+              "min_level": 7,
+              "value": ""
             }
           ]
         }
@@ -312,15 +312,15 @@
         "effects": [
           {
             "proficiencies": [
-              "Martial weapons"
-            ],
-            "type": "grant_weapon_proficiency"
-          },
-          {
-            "proficiencies": [
               "Heavy armor"
             ],
             "type": "grant_armor_proficiency"
+          },
+          {
+            "proficiencies": [
+              "Martial weapons"
+            ],
+            "type": "grant_weapon_proficiency"
           }
         ]
       },
@@ -339,12 +339,6 @@
         "description": "You know one extra cantrip from the Cleric spell list. In addition, your mystical connection to the divine gives you a bonus to your Intelligence (Arcana or Religion) checks. The bonus equals your Wisdom modifier (minimum of +1).",
         "effects": [
           {
-            "category": "always_prepared",
-            "count": 1,
-            "counts_against_limit": false,
-            "type": "grant_cantrip_choice"
-          },
-          {
             "ability": "Intelligence",
             "minimum": 1,
             "skills": [
@@ -353,6 +347,12 @@
             ],
             "type": "ability_bonus",
             "value": "wisdom_modifier"
+          },
+          {
+            "category": "always_prepared",
+            "count": 1,
+            "counts_against_limit": false,
+            "type": "grant_cantrip_choice"
           }
         ]
       }
@@ -430,23 +430,27 @@
           "scaling": {
             "spark_dice": [
               {
-                "min_level": 2,
-                "value": "1d8"
-              },
-              {
-                "min_level": 7,
-                "value": "2d8"
-              },
-              {
                 "min_level": 13,
                 "value": "3d8"
               },
               {
                 "min_level": 18,
                 "value": "4d8"
+              },
+              {
+                "min_level": 2,
+                "value": "1d8"
+              },
+              {
+                "min_level": 7,
+                "value": "2d8"
               }
             ],
             "uses": [
+              {
+                "min_level": 18,
+                "value": "4"
+              },
               {
                 "min_level": 2,
                 "value": "2"
@@ -454,10 +458,6 @@
               {
                 "min_level": 6,
                 "value": "3"
-              },
-              {
-                "min_level": 18,
-                "value": "4"
               }
             ]
           }
@@ -896,12 +896,6 @@
   "darkvision": 120,
   "effects": [
     {
-      "range": 120,
-      "source": "Darkvision",
-      "source_type": "species",
-      "type": "grant_darkvision"
-    },
-    {
       "abilities": [
         "Constitution"
       ],
@@ -918,11 +912,10 @@
       "type": "grant_damage_resistance"
     },
     {
-      "scaling": "per_level",
-      "source": "Dwarven Toughness",
-      "source_type": "species",
-      "type": "bonus_hp",
-      "value": 1
+      "feat": "Tough",
+      "source": "Folk Hero",
+      "source_type": "background",
+      "type": "grant_origin_feat"
     },
     {
       "min_level": 3,
@@ -1005,35 +998,12 @@
       "type": "grant_spell"
     },
     {
-      "skills": [
-        "Animal Handling",
-        "Survival"
+      "proficiencies": [
+        "Heavy armor"
       ],
-      "source": "Folk Hero",
-      "source_type": "background",
-      "type": "grant_skill_proficiency"
-    },
-    {
-      "scaling": "per_level",
-      "source": "Tough",
-      "source_type": "feat",
-      "type": "bonus_hp",
-      "value": 2
-    },
-    {
-      "feat": "Tough",
-      "source": "Folk Hero",
-      "source_type": "background",
-      "type": "grant_origin_feat"
-    },
-    {
-      "source": "Folk Hero",
-      "source_type": "background",
-      "tools": [
-        "Carpenter's Tools",
-        "Vehicles (Land)"
-      ],
-      "type": "grant_tool_proficiency"
+      "source": "Protector",
+      "source_type": "class_choice",
+      "type": "grant_armor_proficiency"
     },
     {
       "proficiencies": [
@@ -1044,12 +1014,42 @@
       "type": "grant_weapon_proficiency"
     },
     {
-      "proficiencies": [
-        "Heavy armor"
+      "range": 120,
+      "source": "Darkvision",
+      "source_type": "species",
+      "type": "grant_darkvision"
+    },
+    {
+      "scaling": "per_level",
+      "source": "Dwarven Toughness",
+      "source_type": "species",
+      "type": "bonus_hp",
+      "value": 1
+    },
+    {
+      "scaling": "per_level",
+      "source": "Tough",
+      "source_type": "feat",
+      "type": "bonus_hp",
+      "value": 2
+    },
+    {
+      "skills": [
+        "Animal Handling",
+        "Survival"
       ],
-      "source": "Protector",
-      "source_type": "class_choice",
-      "type": "grant_armor_proficiency"
+      "source": "Folk Hero",
+      "source_type": "background",
+      "type": "grant_skill_proficiency"
+    },
+    {
+      "source": "Folk Hero",
+      "source_type": "background",
+      "tools": [
+        "Carpenter's Tools",
+        "Vehicles (Land)"
+      ],
+      "type": "grant_tool_proficiency"
     }
   ],
   "eldritch_invocation_stats": {
@@ -1109,15 +1109,15 @@
         "source": "Cleric"
       },
       {
-        "description": "You gain proficiency with Martial weapons and training with Heavy armor.",
-        "level": 1,
-        "name": "Divine Order: Protector",
-        "source": "Cleric"
-      },
-      {
         "description": "You can channel divine energy directly from the Outer Planes to fuel magical effects. You start with two such effects: Divine Spark and Turn Undead. You can use this class's Channel Divinity 2 per Short/Long Rest. Divine Spark: Point your Holy Symbol at a creature within 30 feet, roll 1d8 + Wisdom modifier, restore HP or deal Necrotic/Radiant damage (Constitution save for half). Turn Undead: Present Holy Symbol, Undead within 30 feet make Wisdom save or be Frightened and Incapacitated for 1 minute.",
         "level": 2,
         "name": "Channel Divinity",
+        "source": "Cleric"
+      },
+      {
+        "description": "You gain proficiency with Martial weapons and training with Heavy armor.",
+        "level": 1,
+        "name": "Divine Order: Protector",
         "source": "Cleric"
       }
     ],
@@ -1130,6 +1130,11 @@
     ],
     "lineage": [],
     "species": [
+      {
+        "description": "As a Bonus Action, you gain Tremorsense with a range of 60 feet for 10 minutes. You must be on a stone surface or touching a stone surface to use this Tremorsense. The stone can be natural or worked. You can use this Bonus Action a number of times equal to your Proficiency Bonus, and you regain all expended uses when you finish a Long Rest.",
+        "name": "Stonecunning",
+        "source": "Dwarf"
+      },
       {
         "description": "You have Darkvision with a range of 120 feet.",
         "name": "Darkvision",
@@ -1144,14 +1149,15 @@
         "description": "Your Hit Point maximum increases by 1, and it increases by 1 again whenever you gain a level.",
         "name": "Dwarven Toughness",
         "source": "Dwarf"
-      },
-      {
-        "description": "As a Bonus Action, you gain Tremorsense with a range of 60 feet for 10 minutes. You must be on a stone surface or touching a stone surface to use this Tremorsense. The stone can be natural or worked. You can use this Bonus Action a number of times equal to your Proficiency Bonus, and you regain all expended uses when you finish a Long Rest.",
-        "name": "Stonecunning",
-        "source": "Dwarf"
       }
     ],
     "subclass": [
+      {
+        "description": "As a Bonus Action, you can make one attack with a weapon or an Unarmed Strike. You can use this Bonus Action a number of times equal to your Wisdom modifier (minimum of once). You regain all expended uses when you finish a Short or Long Rest.",
+        "level": 3,
+        "name": "War Priest",
+        "source": "War Domain"
+      },
       {
         "description": "When you or a creature within 30 feet of you misses with an attack roll, you can expend one use of your Channel Divinity and give that roll a +10 bonus, potentially causing it to hit. When you use this feature to benefit another creature's attack roll, you must take a Reaction to do so.",
         "level": 3,
@@ -1162,12 +1168,6 @@
         "description": "You always have certain spells prepared.\n\n<table class=\"table table-sm table-bordered mt-2\">\n<thead><tr><th>Character Level</th><th>Spells</th></tr></thead>\n<tbody>\n<tr class=\"table-success\"><td>3</td><td>\u2713 Guiding Bolt, Magic Weapon, Shield of Faith, Spiritual Weapon</td></tr>\n<tr class=\"table-secondary\"><td>5</td><td>\ud83d\udd12 Crusader's Mantle, Spirit Guardians</td></tr>\n<tr class=\"table-secondary\"><td>7</td><td>\ud83d\udd12 Fire Shield, Freedom of Movement</td></tr>\n<tr class=\"table-secondary\"><td>9</td><td>\ud83d\udd12 Hold Monster, Steel Wind Strike</td></tr>\n</tbody>\n</table>",
         "level": 9,
         "name": "War Domain Spells",
-        "source": "War Domain"
-      },
-      {
-        "description": "As a Bonus Action, you can make one attack with a weapon or an Unarmed Strike. You can use this Bonus Action a number of times equal to your Wisdom modifier (minimum of once). You regain all expended uses when you finish a Short or Long Rest.",
-        "level": 3,
-        "name": "War Priest",
         "source": "War Domain"
       }
     ]
@@ -1705,6 +1705,24 @@
         "casting_time": "1 action",
         "classes": [
           "Cleric",
+          "Druid"
+        ],
+        "components": "V, S",
+        "concentration": true,
+        "description": "You touch one willing creature. Once before the spell ends, the target can roll a d4 and add the number rolled to one ability check of its choice.",
+        "duration": "Concentration, up to 1 minute",
+        "level": 0,
+        "name": "Guidance",
+        "range": "Touch",
+        "ritual": false,
+        "school": "Divination",
+        "source": "Selected"
+      },
+      {
+        "always_prepared": false,
+        "casting_time": "1 action",
+        "classes": [
+          "Cleric",
           "Warlock",
           "Wizard"
         ],
@@ -1736,64 +1754,32 @@
         "ritual": false,
         "school": "Evocation",
         "source": "Selected"
-      },
-      {
-        "always_prepared": false,
-        "casting_time": "1 action",
-        "classes": [
-          "Cleric",
-          "Druid"
-        ],
-        "components": "V, S",
-        "concentration": true,
-        "description": "You touch one willing creature. Once before the spell ends, the target can roll a d4 and add the number rolled to one ability check of its choice.",
-        "duration": "Concentration, up to 1 minute",
-        "level": 0,
-        "name": "Guidance",
-        "range": "Touch",
-        "ritual": false,
-        "school": "Divination",
-        "source": "Selected"
       }
     ],
     "known": {},
     "level_1": [
       {
-        "always_prepared": true,
+        "always_prepared": false,
         "casting_time": "1 action",
         "classes": [
-          "Cleric"
+          "Bard",
+          "Cleric",
+          "Druid",
+          "Paladin",
+          "Ranger",
+          "Sorcerer",
+          "Wizard"
         ],
         "components": "V, S",
-        "concentration": false,
-        "description": "You hurl a bolt of light toward a creature within range. Make a ranged spell attack against the target. On a hit, it takes 4d6 Radiant damage, and the next attack roll made against it before the end of your next turn has Advantage. Using a Higher-Level Spell Slot. The damage increases by 1d6 for each spell slot level above 1.",
-        "duration": "1 round",
-        "level": 1,
-        "name": "Guiding Bolt",
-        "once_per_day": false,
-        "range": "120 feet",
-        "ritual": false,
-        "school": "Evocation",
-        "source": "War Domain"
-      },
-      {
-        "always_prepared": true,
-        "casting_time": "1 bonus action",
-        "classes": [
-          "Cleric",
-          "Paladin"
-        ],
-        "components": "V, S, M",
         "concentration": true,
-        "description": "A shimmering field appears and surrounds a creature of your choice within range, granting it a +2 bonus to AC for the duration.",
+        "description": "For the duration, you can sense the presence of magic nearby and learn its general nature.",
         "duration": "Concentration, up to 10 minutes",
         "level": 1,
-        "name": "Shield of Faith",
-        "once_per_day": false,
-        "range": "60 feet",
-        "ritual": false,
-        "school": "Abjuration",
-        "source": "War Domain"
+        "name": "Detect Magic",
+        "range": "Self",
+        "ritual": true,
+        "school": "Divination",
+        "source": "Selected"
       },
       {
         "always_prepared": false,
@@ -1833,27 +1819,41 @@
         "source": "Selected"
       },
       {
-        "always_prepared": false,
+        "always_prepared": true,
         "casting_time": "1 action",
         "classes": [
-          "Bard",
-          "Cleric",
-          "Druid",
-          "Paladin",
-          "Ranger",
-          "Sorcerer",
-          "Wizard"
+          "Cleric"
         ],
         "components": "V, S",
+        "concentration": false,
+        "description": "You hurl a bolt of light toward a creature within range. Make a ranged spell attack against the target. On a hit, it takes 4d6 Radiant damage, and the next attack roll made against it before the end of your next turn has Advantage. Using a Higher-Level Spell Slot. The damage increases by 1d6 for each spell slot level above 1.",
+        "duration": "1 round",
+        "level": 1,
+        "name": "Guiding Bolt",
+        "once_per_day": false,
+        "range": "120 feet",
+        "ritual": false,
+        "school": "Evocation",
+        "source": "War Domain"
+      },
+      {
+        "always_prepared": true,
+        "casting_time": "1 bonus action",
+        "classes": [
+          "Cleric",
+          "Paladin"
+        ],
+        "components": "V, S, M",
         "concentration": true,
-        "description": "For the duration, you can sense the presence of magic nearby and learn its general nature.",
+        "description": "A shimmering field appears and surrounds a creature of your choice within range, granting it a +2 bonus to AC for the duration.",
         "duration": "Concentration, up to 10 minutes",
         "level": 1,
-        "name": "Detect Magic",
-        "range": "Self",
-        "ritual": true,
-        "school": "Divination",
-        "source": "Selected"
+        "name": "Shield of Faith",
+        "once_per_day": false,
+        "range": "60 feet",
+        "ritual": false,
+        "school": "Abjuration",
+        "source": "War Domain"
       }
     ],
     "prepared": {
@@ -1880,6 +1880,24 @@
         "casting_time": "1 action",
         "classes": [
           "Cleric",
+          "Druid"
+        ],
+        "components": "V, S",
+        "concentration": true,
+        "description": "You touch one willing creature. Once before the spell ends, the target can roll a d4 and add the number rolled to one ability check of its choice.",
+        "duration": "Concentration, up to 1 minute",
+        "level": 0,
+        "name": "Guidance",
+        "range": "Touch",
+        "ritual": false,
+        "school": "Divination",
+        "source": "Selected"
+      },
+      {
+        "always_prepared": false,
+        "casting_time": "1 action",
+        "classes": [
+          "Cleric",
           "Warlock",
           "Wizard"
         ],
@@ -1911,63 +1929,31 @@
         "ritual": false,
         "school": "Evocation",
         "source": "Selected"
-      },
-      {
-        "always_prepared": false,
-        "casting_time": "1 action",
-        "classes": [
-          "Cleric",
-          "Druid"
-        ],
-        "components": "V, S",
-        "concentration": true,
-        "description": "You touch one willing creature. Once before the spell ends, the target can roll a d4 and add the number rolled to one ability check of its choice.",
-        "duration": "Concentration, up to 1 minute",
-        "level": 0,
-        "name": "Guidance",
-        "range": "Touch",
-        "ritual": false,
-        "school": "Divination",
-        "source": "Selected"
       }
     ],
     "1": [
       {
-        "always_prepared": true,
+        "always_prepared": false,
         "casting_time": "1 action",
         "classes": [
-          "Cleric"
+          "Bard",
+          "Cleric",
+          "Druid",
+          "Paladin",
+          "Ranger",
+          "Sorcerer",
+          "Wizard"
         ],
         "components": "V, S",
-        "concentration": false,
-        "description": "You hurl a bolt of light toward a creature within range. Make a ranged spell attack against the target. On a hit, it takes 4d6 Radiant damage, and the next attack roll made against it before the end of your next turn has Advantage. Using a Higher-Level Spell Slot. The damage increases by 1d6 for each spell slot level above 1.",
-        "duration": "1 round",
-        "level": 1,
-        "name": "Guiding Bolt",
-        "once_per_day": false,
-        "range": "120 feet",
-        "ritual": false,
-        "school": "Evocation",
-        "source": "War Domain"
-      },
-      {
-        "always_prepared": true,
-        "casting_time": "1 bonus action",
-        "classes": [
-          "Cleric",
-          "Paladin"
-        ],
-        "components": "V, S, M",
         "concentration": true,
-        "description": "A shimmering field appears and surrounds a creature of your choice within range, granting it a +2 bonus to AC for the duration.",
+        "description": "For the duration, you can sense the presence of magic nearby and learn its general nature.",
         "duration": "Concentration, up to 10 minutes",
         "level": 1,
-        "name": "Shield of Faith",
-        "once_per_day": false,
-        "range": "60 feet",
-        "ritual": false,
-        "school": "Abjuration",
-        "source": "War Domain"
+        "name": "Detect Magic",
+        "range": "Self",
+        "ritual": true,
+        "school": "Divination",
+        "source": "Selected"
       },
       {
         "always_prepared": false,
@@ -2007,6 +1993,64 @@
         "source": "Selected"
       },
       {
+        "always_prepared": true,
+        "casting_time": "1 action",
+        "classes": [
+          "Cleric"
+        ],
+        "components": "V, S",
+        "concentration": false,
+        "description": "You hurl a bolt of light toward a creature within range. Make a ranged spell attack against the target. On a hit, it takes 4d6 Radiant damage, and the next attack roll made against it before the end of your next turn has Advantage. Using a Higher-Level Spell Slot. The damage increases by 1d6 for each spell slot level above 1.",
+        "duration": "1 round",
+        "level": 1,
+        "name": "Guiding Bolt",
+        "once_per_day": false,
+        "range": "120 feet",
+        "ritual": false,
+        "school": "Evocation",
+        "source": "War Domain"
+      },
+      {
+        "always_prepared": true,
+        "casting_time": "1 bonus action",
+        "classes": [
+          "Cleric",
+          "Paladin"
+        ],
+        "components": "V, S, M",
+        "concentration": true,
+        "description": "A shimmering field appears and surrounds a creature of your choice within range, granting it a +2 bonus to AC for the duration.",
+        "duration": "Concentration, up to 10 minutes",
+        "level": 1,
+        "name": "Shield of Faith",
+        "once_per_day": false,
+        "range": "60 feet",
+        "ritual": false,
+        "school": "Abjuration",
+        "source": "War Domain"
+      }
+    ],
+    "2": [
+      {
+        "always_prepared": false,
+        "casting_time": "1 action or Ritual",
+        "classes": [
+          "Bard",
+          "Cleric",
+          "Ranger"
+        ],
+        "components": "V, S",
+        "concentration": true,
+        "description": "For the duration, no sound can be created within or pass through a 20-foot-radius Sphere centered on a point you choose within range. Any creature or object entirely inside the sphere is immune to Thunder damage, and creatures are Deafened while entirely inside it. Casting a spell that includes a verbal component is impossible there.",
+        "duration": "Concentration, up to 10 minutes",
+        "level": 2,
+        "name": "Silence",
+        "range": "120 feet",
+        "ritual": true,
+        "school": "Illusion",
+        "source": "Selected"
+      },
+      {
         "always_prepared": false,
         "casting_time": "1 action",
         "classes": [
@@ -2014,23 +2058,43 @@
           "Cleric",
           "Druid",
           "Paladin",
-          "Ranger",
+          "Ranger"
+        ],
+        "components": "V, S, M",
+        "concentration": false,
+        "description": "Choose up to three creatures within range. Each target's Hit Point maximum and current Hit Points increase by 5 for the duration. At Higher Levels. When you cast this spell using a spell slot of 3rd level or higher, each target's Hit Points increase by 5 for each slot level above 2nd.",
+        "duration": "8 hours",
+        "level": 2,
+        "material": "a tiny strip of white cloth",
+        "name": "Aid",
+        "range": "30 feet",
+        "ritual": false,
+        "school": "Abjuration",
+        "source": "Selected"
+      },
+      {
+        "always_prepared": false,
+        "casting_time": "1 action",
+        "classes": [
+          "Bard",
+          "Cleric",
+          "Druid",
           "Sorcerer",
+          "Warlock",
           "Wizard"
         ],
-        "components": "V, S",
+        "components": "V, S, M",
         "concentration": true,
-        "description": "For the duration, you can sense the presence of magic nearby and learn its general nature.",
-        "duration": "Concentration, up to 10 minutes",
-        "level": 1,
-        "name": "Detect Magic",
-        "range": "Self",
-        "ritual": true,
-        "school": "Divination",
+        "description": "Choose a humanoid that you can see within range. The target must succeed on a Wisdom saving throw or be paralyzed for the duration. At the end of each of its turns, the target can make another Wisdom saving throw. On a success, the spell ends on the target. At Higher Levels. When you cast this spell using a spell slot of 3rd level or higher, you can target one additional humanoid for each slot level above 2nd. The humanoids must be within 30 feet of each other when you target them.",
+        "duration": "Concentration, up to 1 minute",
+        "level": 2,
+        "material": "a small, straight piece of iron",
+        "name": "Hold Person",
+        "range": "60 feet",
+        "ritual": false,
+        "school": "Enchantment",
         "source": "Selected"
-      }
-    ],
-    "2": [
+      },
       {
         "always_prepared": true,
         "casting_time": "1 bonus action",
@@ -2070,70 +2134,6 @@
         "ritual": false,
         "school": "Evocation",
         "source": "War Domain"
-      },
-      {
-        "always_prepared": false,
-        "casting_time": "1 action",
-        "classes": [
-          "Bard",
-          "Cleric",
-          "Druid",
-          "Sorcerer",
-          "Warlock",
-          "Wizard"
-        ],
-        "components": "V, S, M",
-        "concentration": true,
-        "description": "Choose a humanoid that you can see within range. The target must succeed on a Wisdom saving throw or be paralyzed for the duration. At the end of each of its turns, the target can make another Wisdom saving throw. On a success, the spell ends on the target. At Higher Levels. When you cast this spell using a spell slot of 3rd level or higher, you can target one additional humanoid for each slot level above 2nd. The humanoids must be within 30 feet of each other when you target them.",
-        "duration": "Concentration, up to 1 minute",
-        "level": 2,
-        "material": "a small, straight piece of iron",
-        "name": "Hold Person",
-        "range": "60 feet",
-        "ritual": false,
-        "school": "Enchantment",
-        "source": "Selected"
-      },
-      {
-        "always_prepared": false,
-        "casting_time": "1 action",
-        "classes": [
-          "Bard",
-          "Cleric",
-          "Druid",
-          "Paladin",
-          "Ranger"
-        ],
-        "components": "V, S, M",
-        "concentration": false,
-        "description": "Choose up to three creatures within range. Each target's Hit Point maximum and current Hit Points increase by 5 for the duration. At Higher Levels. When you cast this spell using a spell slot of 3rd level or higher, each target's Hit Points increase by 5 for each slot level above 2nd.",
-        "duration": "8 hours",
-        "level": 2,
-        "material": "a tiny strip of white cloth",
-        "name": "Aid",
-        "range": "30 feet",
-        "ritual": false,
-        "school": "Abjuration",
-        "source": "Selected"
-      },
-      {
-        "always_prepared": false,
-        "casting_time": "1 action or Ritual",
-        "classes": [
-          "Bard",
-          "Cleric",
-          "Ranger"
-        ],
-        "components": "V, S",
-        "concentration": true,
-        "description": "For the duration, no sound can be created within or pass through a 20-foot-radius Sphere centered on a point you choose within range. Any creature or object entirely inside the sphere is immune to Thunder damage, and creatures are Deafened while entirely inside it. Casting a spell that includes a verbal component is impossible there.",
-        "duration": "Concentration, up to 10 minutes",
-        "level": 2,
-        "name": "Silence",
-        "range": "120 feet",
-        "ritual": true,
-        "school": "Illusion",
-        "source": "Selected"
       }
     ]
   },

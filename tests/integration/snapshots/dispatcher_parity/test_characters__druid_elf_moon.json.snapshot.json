@@ -14,10 +14,6 @@
       "description": "You know the Druidcraft cantrip. You also always have certain spells prepared and can cast them once per day without expending a spell slot. You can also cast them using spell slots you have of the appropriate level.",
       "effects": [
         {
-          "spell": "Druidcraft",
-          "type": "grant_cantrip"
-        },
-        {
           "min_level": 3,
           "spell": "Longstrider",
           "type": "grant_spell"
@@ -26,6 +22,10 @@
           "min_level": 5,
           "spell": "Pass without Trace",
           "type": "grant_spell"
+        },
+        {
+          "spell": "Druidcraft",
+          "type": "grant_cantrip"
         }
       ]
     }
@@ -102,18 +102,18 @@
   },
   "ac_options": [
     {
-      "ac": 14,
-      "armor": "Leather Armor",
-      "equipped_armor": "Leather Armor",
-      "formula": "Armor base (11) + Dex modifier (1) + Shield (2)",
-      "notes": [],
-      "shield": true
-    },
-    {
       "ac": 13,
       "armor": null,
       "equipped_armor": null,
       "formula": "10 + Dex modifier (1) + Shield (2)",
+      "notes": [],
+      "shield": true
+    },
+    {
+      "ac": 14,
+      "armor": "Leather Armor",
+      "equipped_armor": "Leather Armor",
+      "formula": "Armor base (11) + Dex modifier (1) + Shield (2)",
       "notes": [],
       "shield": true
     }
@@ -126,6 +126,21 @@
   ],
   "attack_combinations": [],
   "attacks": [
+    {
+      "ability": "STR",
+      "attack_bonus": 1,
+      "attack_bonus_display": "+1",
+      "avg_crit": 0.0,
+      "avg_damage": 0.0,
+      "damage": "0",
+      "damage_notes": [],
+      "damage_type": "Bludgeoning",
+      "icon": "/static/images/weapons/strike.svg",
+      "mastery": null,
+      "name": "Unarmed Strike",
+      "proficient": true,
+      "properties": []
+    },
     {
       "ability": "STR",
       "attack_bonus": 1,
@@ -163,21 +178,6 @@
       "properties": [
         "Versatile (1d8)"
       ]
-    },
-    {
-      "ability": "STR",
-      "attack_bonus": 1,
-      "attack_bonus_display": "+1",
-      "avg_crit": 0.0,
-      "avg_damage": 0.0,
-      "damage": "0",
-      "damage_notes": [],
-      "damage_type": "Bludgeoning",
-      "icon": "/static/images/weapons/strike.svg",
-      "mastery": null,
-      "name": "Unarmed Strike",
-      "proficient": true,
-      "properties": []
     }
   ],
   "background": "Farmer",
@@ -197,15 +197,15 @@
     "description": "You grew up close to the land. Years tending animals and cultivating the earth rewarded you with patience and good health. You have a keen appreciation for nature's bounty alongside a healthy respect for nature's wrath.",
     "effects": [
       {
+        "feat": "Tough",
+        "type": "grant_origin_feat"
+      },
+      {
         "skills": [
           "Animal Handling",
           "Nature"
         ],
         "type": "grant_skill_proficiency"
-      },
-      {
-        "feat": "Tough",
-        "type": "grant_origin_feat"
       },
       {
         "tools": [
@@ -337,12 +337,12 @@
         "scaling": {
           "improved_text": [
             {
-              "min_level": 7,
-              "value": ""
-            },
-            {
               "min_level": 15,
               "value": "When you cast a Druid cantrip with a range of 10 feet or greater, the spell's range increases by 300 feet."
+            },
+            {
+              "min_level": 7,
+              "value": ""
             }
           ]
         }
@@ -352,12 +352,12 @@
         "scaling": {
           "strike_dice": [
             {
-              "min_level": 7,
-              "value": "1d8"
-            },
-            {
               "min_level": 15,
               "value": "2d8"
+            },
+            {
+              "min_level": 7,
+              "value": "1d8"
             }
           ]
         }
@@ -369,15 +369,15 @@
           "description": "You know Druidic, the secret language of druids. You can speak the language and use it to leave hidden messages. You always have the Speak with Animals spell prepared.",
           "effects": [
             {
-              "min_level": 1,
-              "spell": "Speak with Animals",
-              "type": "grant_spell"
-            },
-            {
               "languages": [
                 "Druidic"
               ],
               "type": "grant_language"
+            },
+            {
+              "min_level": 1,
+              "spell": "Speak with Animals",
+              "type": "grant_spell"
             }
           ]
         },
@@ -572,12 +572,6 @@
         "description": "You know one extra cantrip from the Druid spell list. In addition, your mystical connection to nature gives you a bonus to your Intelligence (Arcana or Nature) checks. The bonus equals your Wisdom modifier (minimum bonus of +1).",
         "effects": [
           {
-            "category": "always_prepared",
-            "count": 1,
-            "counts_against_limit": false,
-            "type": "grant_cantrip_choice"
-          },
-          {
             "ability": "Intelligence",
             "minimum": 1,
             "skills": [
@@ -586,6 +580,12 @@
             ],
             "type": "ability_bonus",
             "value": "wisdom_modifier"
+          },
+          {
+            "category": "always_prepared",
+            "count": 1,
+            "counts_against_limit": false,
+            "type": "grant_cantrip_choice"
           }
         ]
       },
@@ -944,12 +944,6 @@
   "darkvision": 60,
   "effects": [
     {
-      "range": 60,
-      "source": "Darkvision",
-      "source_type": "species",
-      "type": "grant_darkvision"
-    },
-    {
       "condition": "Charmed",
       "display": "Advantage vs Charmed condition",
       "source": "Fey Ancestry",
@@ -957,31 +951,10 @@
       "type": "grant_save_advantage"
     },
     {
-      "feature_group": "wood_elf_increased_speed",
-      "source": "Increased Speed",
-      "source_type": "lineage",
-      "type": "increase_speed",
-      "value": 5
-    },
-    {
-      "source": "Wood Elf Spells",
-      "source_type": "lineage",
-      "spell": "Druidcraft",
-      "type": "grant_cantrip"
-    },
-    {
-      "min_level": 3,
-      "source": "Wood Elf Spells",
-      "source_type": "lineage",
-      "spell": "Longstrider",
-      "type": "grant_spell"
-    },
-    {
-      "min_level": 5,
-      "source": "Wood Elf Spells",
-      "source_type": "lineage",
-      "spell": "Pass without Trace",
-      "type": "grant_spell"
+      "feat": "Tough",
+      "source": "Farmer",
+      "source_type": "background",
+      "type": "grant_origin_feat"
     },
     {
       "feature_group": "wood_elf_increased_speed",
@@ -991,32 +964,11 @@
       "value": 5
     },
     {
-      "source": "Wood Elf Spells",
+      "feature_group": "wood_elf_increased_speed",
+      "source": "Increased Speed",
       "source_type": "lineage",
-      "spell": "Druidcraft",
-      "type": "grant_cantrip"
-    },
-    {
-      "min_level": 3,
-      "source": "Wood Elf Spells",
-      "source_type": "lineage",
-      "spell": "Longstrider",
-      "type": "grant_spell"
-    },
-    {
-      "min_level": 5,
-      "source": "Wood Elf Spells",
-      "source_type": "lineage",
-      "spell": "Pass without Trace",
-      "type": "grant_spell"
-    },
-    {
-      "min_level": 1,
-      "source": "Druidic",
-      "source_class_name": "Druid",
-      "source_type": "class",
-      "spell": "Speak with Animals",
-      "type": "grant_spell"
+      "type": "increase_speed",
+      "value": 5
     },
     {
       "languages": [
@@ -1028,11 +980,12 @@
       "type": "grant_language"
     },
     {
-      "source": "Circle of the Moon Spells",
+      "min_level": 1,
+      "source": "Druidic",
       "source_class_name": "Druid",
-      "source_type": "subclass",
-      "spell": "Starry Wisp",
-      "type": "grant_cantrip"
+      "source_type": "class",
+      "spell": "Speak with Animals",
+      "type": "grant_spell"
     },
     {
       "min_level": 3,
@@ -1051,11 +1004,39 @@
       "type": "grant_spell"
     },
     {
+      "min_level": 3,
+      "source": "Wood Elf Spells",
+      "source_type": "lineage",
+      "spell": "Longstrider",
+      "type": "grant_spell"
+    },
+    {
+      "min_level": 3,
+      "source": "Wood Elf Spells",
+      "source_type": "lineage",
+      "spell": "Longstrider",
+      "type": "grant_spell"
+    },
+    {
       "min_level": 5,
       "source": "Circle of the Moon Spells",
       "source_class_name": "Druid",
       "source_type": "subclass",
       "spell": "Conjure Animals",
+      "type": "grant_spell"
+    },
+    {
+      "min_level": 5,
+      "source": "Wood Elf Spells",
+      "source_type": "lineage",
+      "spell": "Pass without Trace",
+      "type": "grant_spell"
+    },
+    {
+      "min_level": 5,
+      "source": "Wood Elf Spells",
+      "source_type": "lineage",
+      "spell": "Pass without Trace",
       "type": "grant_spell"
     },
     {
@@ -1075,36 +1056,6 @@
       "type": "grant_spell"
     },
     {
-      "skills": [
-        "Animal Handling",
-        "Nature"
-      ],
-      "source": "Farmer",
-      "source_type": "background",
-      "type": "grant_skill_proficiency"
-    },
-    {
-      "scaling": "per_level",
-      "source": "Tough",
-      "source_type": "feat",
-      "type": "bonus_hp",
-      "value": 2
-    },
-    {
-      "feat": "Tough",
-      "source": "Farmer",
-      "source_type": "background",
-      "type": "grant_origin_feat"
-    },
-    {
-      "source": "Farmer",
-      "source_type": "background",
-      "tools": [
-        "Carpenter's Tools"
-      ],
-      "type": "grant_tool_proficiency"
-    },
-    {
       "proficiencies": [
         "Martial weapons"
       ],
@@ -1119,6 +1070,55 @@
       "source": "Warden",
       "source_type": "class_choice",
       "type": "grant_armor_proficiency"
+    },
+    {
+      "range": 60,
+      "source": "Darkvision",
+      "source_type": "species",
+      "type": "grant_darkvision"
+    },
+    {
+      "scaling": "per_level",
+      "source": "Tough",
+      "source_type": "feat",
+      "type": "bonus_hp",
+      "value": 2
+    },
+    {
+      "skills": [
+        "Animal Handling",
+        "Nature"
+      ],
+      "source": "Farmer",
+      "source_type": "background",
+      "type": "grant_skill_proficiency"
+    },
+    {
+      "source": "Circle of the Moon Spells",
+      "source_class_name": "Druid",
+      "source_type": "subclass",
+      "spell": "Starry Wisp",
+      "type": "grant_cantrip"
+    },
+    {
+      "source": "Farmer",
+      "source_type": "background",
+      "tools": [
+        "Carpenter's Tools"
+      ],
+      "type": "grant_tool_proficiency"
+    },
+    {
+      "source": "Wood Elf Spells",
+      "source_type": "lineage",
+      "spell": "Druidcraft",
+      "type": "grant_cantrip"
+    },
+    {
+      "source": "Wood Elf Spells",
+      "source_type": "lineage",
+      "spell": "Druidcraft",
+      "type": "grant_cantrip"
     }
   ],
   "eldritch_invocation_stats": {
@@ -1151,24 +1151,6 @@
     ],
     "weapons": [
       {
-        "display_name": "Sickle",
-        "name": "Sickle",
-        "properties": {
-          "category": "Simple Melee",
-          "cost": "1 gp",
-          "damage": "1d4",
-          "damage_type": "Slashing",
-          "mastery": "Nick",
-          "proficiency_required": "Simple weapons",
-          "properties": [
-            "Light"
-          ],
-          "weight": 2
-        },
-        "quantity": 1,
-        "source": "Class"
-      },
-      {
         "display_name": "Druidic Focus (Quarterstaff)",
         "name": "Quarterstaff",
         "properties": {
@@ -1185,6 +1167,24 @@
         },
         "quantity": 1,
         "source": "Class"
+      },
+      {
+        "display_name": "Sickle",
+        "name": "Sickle",
+        "properties": {
+          "category": "Simple Melee",
+          "cost": "1 gp",
+          "damage": "1d4",
+          "damage_type": "Slashing",
+          "mastery": "Nick",
+          "proficiency_required": "Simple weapons",
+          "properties": [
+            "Light"
+          ],
+          "weight": 2
+        },
+        "quantity": 1,
+        "source": "Class"
       }
     ]
   },
@@ -1192,15 +1192,9 @@
     "background": [],
     "class": [
       {
-        "description": "You can cast spells using Wisdom as your spellcasting ability. You prepare a number of spells from the Druid spell list each day. You can use a Druidic Focus as your Spellcasting Focus. You can cast any prepared Druid spell as a ritual if it has the Ritual tag.",
-        "level": 1,
-        "name": "Spellcasting",
-        "source": "Druid"
-      },
-      {
-        "description": "You know Druidic, the secret language of druids. You can speak the language and use it to leave hidden messages. You always have the Speak with Animals spell prepared.\n\nSpells Always Prepared: Speak with Animals",
-        "level": 1,
-        "name": "Druidic",
+        "description": "As a Bonus Action, you magically assume the shape of a beast you have seen. You can use this feature a number of times equal to your Wisdom modifier (minimum of once), and you regain all expended uses when you finish a Long Rest. You stay in beast form for a number of hours equal to half your Druid level (rounded down). Your temporary hit points in beast form equal your Druid level. You revert if you drop to 0 temporary hit points, use a Bonus Action, or are incapacitated. While in beast form, your game statistics are replaced by the beast's, but you retain your alignment, personality, Intelligence, Wisdom, and Charisma scores. You can't cast spells in beast form (until Beast Spells at level 18). Known forms start at a limited number and grow as you level.",
+        "level": 2,
+        "name": "Wild Shape",
         "source": "Druid"
       },
       {
@@ -1210,15 +1204,21 @@
         "source": "Druid"
       },
       {
-        "description": "As a Bonus Action, you magically assume the shape of a beast you have seen. You can use this feature a number of times equal to your Wisdom modifier (minimum of once), and you regain all expended uses when you finish a Long Rest. You stay in beast form for a number of hours equal to half your Druid level (rounded down). Your temporary hit points in beast form equal your Druid level. You revert if you drop to 0 temporary hit points, use a Bonus Action, or are incapacitated. While in beast form, your game statistics are replaced by the beast's, but you retain your alignment, personality, Intelligence, Wisdom, and Charisma scores. You can't cast spells in beast form (until Beast Spells at level 18). Known forms start at a limited number and grow as you level.",
-        "level": 2,
-        "name": "Wild Shape",
+        "description": "You can cast spells using Wisdom as your spellcasting ability. You prepare a number of spells from the Druid spell list each day. You can use a Druidic Focus as your Spellcasting Focus. You can cast any prepared Druid spell as a ritual if it has the Ritual tag.",
+        "level": 1,
+        "name": "Spellcasting",
         "source": "Druid"
       },
       {
         "description": "You can expend a spell slot or a use of Wild Shape (no action required) to cast Find Familiar without Material components. The familiar is a Fey and disappears after a number of hours equal to half your Druid level.",
         "level": 2,
         "name": "Wild Companion",
+        "source": "Druid"
+      },
+      {
+        "description": "You know Druidic, the secret language of druids. You can speak the language and use it to leave hidden messages. You always have the Speak with Animals spell prepared.\n\nSpells Always Prepared: Speak with Animals",
+        "level": 1,
+        "name": "Druidic",
         "source": "Druid"
       }
     ],
@@ -1231,26 +1231,26 @@
     ],
     "lineage": [
       {
-        "description": "Your Speed increases to 35 feet.",
-        "name": "Increased Speed",
-        "source": "Wood Elf"
-      },
-      {
         "description": "You know the Druidcraft cantrip. You also always have certain spells prepared and can cast them once per day without expending a spell slot. You can also cast them using spell slots you have of the appropriate level.\n\n<table class=\"table table-sm table-bordered mt-2\">\n<thead><tr><th>Character Level</th><th>Spells</th></tr></thead>\n<tbody>\n<tr class=\"table-success\"><td>3</td><td>\u2713 Longstrider</td></tr>\n<tr class=\"table-secondary\"><td>5</td><td>\ud83d\udd12 Pass without Trace</td></tr>\n</tbody>\n</table>",
         "level": 5,
         "name": "Wood Elf Spells",
+        "source": "Wood Elf"
+      },
+      {
+        "description": "Your Speed increases to 35 feet.",
+        "name": "Increased Speed",
         "source": "Wood Elf"
       }
     ],
     "species": [
       {
-        "description": "You have Darkvision with a range of 60 feet.",
-        "name": "Darkvision",
+        "description": "You are part of a lineage that grants you supernatural abilities. Intelligence, Wisdom of Charisma is your spellcasting ability for the spells you cast with this trait.",
+        "name": "Elven Lineage",
         "source": "Elf"
       },
       {
-        "description": "You are part of a lineage that grants you supernatural abilities. Intelligence, Wisdom of Charisma is your spellcasting ability for the spells you cast with this trait.",
-        "name": "Elven Lineage",
+        "description": "You don't need to sleep, and magic can't put you to sleep. You can finish a Long Rest in 4 hours if you spend those hours in a trancelike meditation, during which you retain consciousness.",
+        "name": "Trance",
         "source": "Elf"
       },
       {
@@ -1259,13 +1259,13 @@
         "source": "Elf"
       },
       {
-        "description": "You have proficiency in the Insight, Perception, or Survival skill.",
-        "name": "Keen Senses: Survival",
+        "description": "You have Darkvision with a range of 60 feet.",
+        "name": "Darkvision",
         "source": "Elf"
       },
       {
-        "description": "You don't need to sleep, and magic can't put you to sleep. You can finish a Long Rest in 4 hours if you spend those hours in a trancelike meditation, during which you retain consciousness.",
-        "name": "Trance",
+        "description": "You have proficiency in the Insight, Perception, or Survival skill.",
+        "name": "Keen Senses: Survival",
         "source": "Elf"
       }
     ],
@@ -1312,10 +1312,6 @@
         "description": "You know the Druidcraft cantrip. You also always have certain spells prepared and can cast them once per day without expending a spell slot. You can also cast them using spell slots you have of the appropriate level.",
         "effects": [
           {
-            "spell": "Druidcraft",
-            "type": "grant_cantrip"
-          },
-          {
             "min_level": 3,
             "spell": "Longstrider",
             "type": "grant_spell"
@@ -1324,6 +1320,10 @@
             "min_level": 5,
             "spell": "Pass without Trace",
             "type": "grant_spell"
+          },
+          {
+            "spell": "Druidcraft",
+            "type": "grant_cantrip"
           }
         ]
       }
@@ -1928,43 +1928,6 @@
     "background_spells": {},
     "cantrips": [
       {
-        "always_prepared": true,
-        "casting_time": "1 action",
-        "classes": [
-          "Druid"
-        ],
-        "components": "V, S",
-        "concentration": false,
-        "description": "You create a small nature-themed magical effect (predict weather, make a flower bloom, light/snuff a small flame, etc.).",
-        "duration": "Instantaneous",
-        "level": 0,
-        "name": "Druidcraft",
-        "once_per_day": false,
-        "range": "30 feet",
-        "ritual": false,
-        "school": "Transmutation",
-        "source": "Wood Elf"
-      },
-      {
-        "always_prepared": true,
-        "casting_time": "1 action",
-        "classes": [
-          "Bard",
-          "Druid"
-        ],
-        "components": "V, S",
-        "concentration": false,
-        "description": "You launch a mote of light at one creature or object within range. Make a ranged spell attack against the target. On a hit, the target takes 1d8 Radiant damage, and until the end of your next turn, it emits Dim Light in a 10-foot radius and can't benefit from the Invisible condition. The spell's damage increases by 1d8 when you reach 5th level (2d8), 11th level (3d8), and 17th level (4d8).",
-        "duration": "Instantaneous",
-        "level": 0,
-        "name": "Starry Wisp",
-        "once_per_day": false,
-        "range": "60 feet",
-        "ritual": false,
-        "school": "Evocation",
-        "source": "Circle of the Moon"
-      },
-      {
         "always_prepared": false,
         "casting_time": "1 action",
         "classes": [
@@ -1998,75 +1961,47 @@
         "ritual": false,
         "school": "Conjuration",
         "source": "Selected"
+      },
+      {
+        "always_prepared": true,
+        "casting_time": "1 action",
+        "classes": [
+          "Bard",
+          "Druid"
+        ],
+        "components": "V, S",
+        "concentration": false,
+        "description": "You launch a mote of light at one creature or object within range. Make a ranged spell attack against the target. On a hit, the target takes 1d8 Radiant damage, and until the end of your next turn, it emits Dim Light in a 10-foot radius and can't benefit from the Invisible condition. The spell's damage increases by 1d8 when you reach 5th level (2d8), 11th level (3d8), and 17th level (4d8).",
+        "duration": "Instantaneous",
+        "level": 0,
+        "name": "Starry Wisp",
+        "once_per_day": false,
+        "range": "60 feet",
+        "ritual": false,
+        "school": "Evocation",
+        "source": "Circle of the Moon"
+      },
+      {
+        "always_prepared": true,
+        "casting_time": "1 action",
+        "classes": [
+          "Druid"
+        ],
+        "components": "V, S",
+        "concentration": false,
+        "description": "You create a small nature-themed magical effect (predict weather, make a flower bloom, light/snuff a small flame, etc.).",
+        "duration": "Instantaneous",
+        "level": 0,
+        "name": "Druidcraft",
+        "once_per_day": false,
+        "range": "30 feet",
+        "ritual": false,
+        "school": "Transmutation",
+        "source": "Wood Elf"
       }
     ],
     "known": {},
     "level_1": [
-      {
-        "always_prepared": true,
-        "casting_time": "1 action",
-        "classes": [
-          "Bard",
-          "Druid",
-          "Ranger",
-          "Wizard"
-        ],
-        "components": "V, S, M",
-        "concentration": false,
-        "description": "You touch a creature. The target's Speed increases by 10 feet until the spell ends. You can target one additional creature for each spell slot above 1.",
-        "duration": "1 hour",
-        "level": 1,
-        "material": "a pinch of dirt",
-        "name": "Longstrider",
-        "once_per_day": true,
-        "range": "Touch",
-        "ritual": false,
-        "school": "Transmutation",
-        "source": "Wood Elf"
-      },
-      {
-        "always_prepared": true,
-        "casting_time": "1 action",
-        "classes": [
-          "Bard",
-          "Druid",
-          "Ranger",
-          "Warlock"
-        ],
-        "components": "V, S",
-        "concentration": false,
-        "description": "For the duration, you can comprehend and verbally communicate with Beasts, and you can use any of the Influence action's skill options with them. Most Beasts have little to say about topics that don't pertain to survival or companionship, but at minimum, a Beast can give you information about nearby locations and monsters, including whatever it has perceived within the past day.",
-        "duration": "10 minutes",
-        "level": 1,
-        "name": "Speak with Animals",
-        "once_per_day": false,
-        "range": "Self",
-        "ritual": true,
-        "school": "Divination",
-        "source": "Druid"
-      },
-      {
-        "always_prepared": true,
-        "casting_time": "1 action",
-        "classes": [
-          "Bard",
-          "Cleric",
-          "Druid",
-          "Paladin",
-          "Ranger"
-        ],
-        "components": "V, S",
-        "concentration": false,
-        "description": "A creature you touch regains a number of Hit Points equal to 2d8 plus your spellcasting ability modifier. This spell has no effect on Undead or Constructs. At Higher Levels. When you cast this spell using a spell slot of 2nd level or higher, the healing increases by 2d8 for each slot level above 1st.",
-        "duration": "Instantaneous",
-        "level": 1,
-        "name": "Cure Wounds",
-        "once_per_day": false,
-        "range": "Touch",
-        "ritual": false,
-        "school": "Abjuration",
-        "source": "Circle of the Moon"
-      },
       {
         "always_prepared": false,
         "casting_time": "1 action",
@@ -2094,6 +2029,24 @@
         "always_prepared": false,
         "casting_time": "1 action",
         "classes": [
+          "Bard",
+          "Druid"
+        ],
+        "components": "V",
+        "concentration": true,
+        "description": "Each creature/object in an area is outlined with light on a failed save; attacks against affected targets have advantage and affected creatures can't benefit from being Invisible.",
+        "duration": "Concentration, up to 1 minute",
+        "level": 1,
+        "name": "Faerie Fire",
+        "range": "60 feet",
+        "ritual": false,
+        "school": "Evocation",
+        "source": "Selected"
+      },
+      {
+        "always_prepared": false,
+        "casting_time": "1 action",
+        "classes": [
           "Druid",
           "Ranger"
         ],
@@ -2112,18 +2065,18 @@
         "always_prepared": false,
         "casting_time": "1 action",
         "classes": [
-          "Bard",
-          "Druid"
+          "Druid",
+          "Ranger"
         ],
-        "components": "V",
-        "concentration": true,
-        "description": "Each creature/object in an area is outlined with light on a failed save; attacks against affected targets have advantage and affected creatures can't benefit from being Invisible.",
-        "duration": "Concentration, up to 1 minute",
+        "components": "V, S, M (a sprig of mistletoe)",
+        "concentration": false,
+        "description": "Ten berries appear in your hand and are infused with magic for the duration. A creature can take a Bonus Action to eat one berry. Eating a berry restores 1 Hit Point, and the berry provides enough nourishment to sustain a creature for one day. Uneaten berries disappear when the spell ends.",
+        "duration": "24 hours",
         "level": 1,
-        "name": "Faerie Fire",
-        "range": "60 feet",
+        "name": "Goodberry",
+        "range": "Self",
         "ritual": false,
-        "school": "Evocation",
+        "school": "Conjuration",
         "source": "Selected"
       },
       {
@@ -2146,22 +2099,69 @@
         "source": "Selected"
       },
       {
-        "always_prepared": false,
+        "always_prepared": true,
         "casting_time": "1 action",
         "classes": [
+          "Bard",
+          "Cleric",
           "Druid",
+          "Paladin",
           "Ranger"
         ],
-        "components": "V, S, M (a sprig of mistletoe)",
+        "components": "V, S",
         "concentration": false,
-        "description": "Ten berries appear in your hand and are infused with magic for the duration. A creature can take a Bonus Action to eat one berry. Eating a berry restores 1 Hit Point, and the berry provides enough nourishment to sustain a creature for one day. Uneaten berries disappear when the spell ends.",
-        "duration": "24 hours",
+        "description": "A creature you touch regains a number of Hit Points equal to 2d8 plus your spellcasting ability modifier. This spell has no effect on Undead or Constructs. At Higher Levels. When you cast this spell using a spell slot of 2nd level or higher, the healing increases by 2d8 for each slot level above 1st.",
+        "duration": "Instantaneous",
         "level": 1,
-        "name": "Goodberry",
-        "range": "Self",
+        "name": "Cure Wounds",
+        "once_per_day": false,
+        "range": "Touch",
         "ritual": false,
-        "school": "Conjuration",
-        "source": "Selected"
+        "school": "Abjuration",
+        "source": "Circle of the Moon"
+      },
+      {
+        "always_prepared": true,
+        "casting_time": "1 action",
+        "classes": [
+          "Bard",
+          "Druid",
+          "Ranger",
+          "Warlock"
+        ],
+        "components": "V, S",
+        "concentration": false,
+        "description": "For the duration, you can comprehend and verbally communicate with Beasts, and you can use any of the Influence action's skill options with them. Most Beasts have little to say about topics that don't pertain to survival or companionship, but at minimum, a Beast can give you information about nearby locations and monsters, including whatever it has perceived within the past day.",
+        "duration": "10 minutes",
+        "level": 1,
+        "name": "Speak with Animals",
+        "once_per_day": false,
+        "range": "Self",
+        "ritual": true,
+        "school": "Divination",
+        "source": "Druid"
+      },
+      {
+        "always_prepared": true,
+        "casting_time": "1 action",
+        "classes": [
+          "Bard",
+          "Druid",
+          "Ranger",
+          "Wizard"
+        ],
+        "components": "V, S, M",
+        "concentration": false,
+        "description": "You touch a creature. The target's Speed increases by 10 feet until the spell ends. You can target one additional creature for each spell slot above 1.",
+        "duration": "1 hour",
+        "level": 1,
+        "material": "a pinch of dirt",
+        "name": "Longstrider",
+        "once_per_day": true,
+        "range": "Touch",
+        "ritual": false,
+        "school": "Transmutation",
+        "source": "Wood Elf"
       }
     ],
     "prepared": {
@@ -2183,43 +2183,6 @@
   "spells_by_level": {
     "0": [
       {
-        "always_prepared": true,
-        "casting_time": "1 action",
-        "classes": [
-          "Druid"
-        ],
-        "components": "V, S",
-        "concentration": false,
-        "description": "You create a small nature-themed magical effect (predict weather, make a flower bloom, light/snuff a small flame, etc.).",
-        "duration": "Instantaneous",
-        "level": 0,
-        "name": "Druidcraft",
-        "once_per_day": false,
-        "range": "30 feet",
-        "ritual": false,
-        "school": "Transmutation",
-        "source": "Wood Elf"
-      },
-      {
-        "always_prepared": true,
-        "casting_time": "1 action",
-        "classes": [
-          "Bard",
-          "Druid"
-        ],
-        "components": "V, S",
-        "concentration": false,
-        "description": "You launch a mote of light at one creature or object within range. Make a ranged spell attack against the target. On a hit, the target takes 1d8 Radiant damage, and until the end of your next turn, it emits Dim Light in a 10-foot radius and can't benefit from the Invisible condition. The spell's damage increases by 1d8 when you reach 5th level (2d8), 11th level (3d8), and 17th level (4d8).",
-        "duration": "Instantaneous",
-        "level": 0,
-        "name": "Starry Wisp",
-        "once_per_day": false,
-        "range": "60 feet",
-        "ritual": false,
-        "school": "Evocation",
-        "source": "Circle of the Moon"
-      },
-      {
         "always_prepared": false,
         "casting_time": "1 action",
         "classes": [
@@ -2253,74 +2216,46 @@
         "ritual": false,
         "school": "Conjuration",
         "source": "Selected"
-      }
-    ],
-    "1": [
+      },
       {
         "always_prepared": true,
         "casting_time": "1 action",
         "classes": [
           "Bard",
-          "Druid",
-          "Ranger",
-          "Wizard"
+          "Druid"
         ],
-        "components": "V, S, M",
+        "components": "V, S",
         "concentration": false,
-        "description": "You touch a creature. The target's Speed increases by 10 feet until the spell ends. You can target one additional creature for each spell slot above 1.",
-        "duration": "1 hour",
-        "level": 1,
-        "material": "a pinch of dirt",
-        "name": "Longstrider",
-        "once_per_day": true,
-        "range": "Touch",
+        "description": "You launch a mote of light at one creature or object within range. Make a ranged spell attack against the target. On a hit, the target takes 1d8 Radiant damage, and until the end of your next turn, it emits Dim Light in a 10-foot radius and can't benefit from the Invisible condition. The spell's damage increases by 1d8 when you reach 5th level (2d8), 11th level (3d8), and 17th level (4d8).",
+        "duration": "Instantaneous",
+        "level": 0,
+        "name": "Starry Wisp",
+        "once_per_day": false,
+        "range": "60 feet",
+        "ritual": false,
+        "school": "Evocation",
+        "source": "Circle of the Moon"
+      },
+      {
+        "always_prepared": true,
+        "casting_time": "1 action",
+        "classes": [
+          "Druid"
+        ],
+        "components": "V, S",
+        "concentration": false,
+        "description": "You create a small nature-themed magical effect (predict weather, make a flower bloom, light/snuff a small flame, etc.).",
+        "duration": "Instantaneous",
+        "level": 0,
+        "name": "Druidcraft",
+        "once_per_day": false,
+        "range": "30 feet",
         "ritual": false,
         "school": "Transmutation",
         "source": "Wood Elf"
-      },
-      {
-        "always_prepared": true,
-        "casting_time": "1 action",
-        "classes": [
-          "Bard",
-          "Druid",
-          "Ranger",
-          "Warlock"
-        ],
-        "components": "V, S",
-        "concentration": false,
-        "description": "For the duration, you can comprehend and verbally communicate with Beasts, and you can use any of the Influence action's skill options with them. Most Beasts have little to say about topics that don't pertain to survival or companionship, but at minimum, a Beast can give you information about nearby locations and monsters, including whatever it has perceived within the past day.",
-        "duration": "10 minutes",
-        "level": 1,
-        "name": "Speak with Animals",
-        "once_per_day": false,
-        "range": "Self",
-        "ritual": true,
-        "school": "Divination",
-        "source": "Druid"
-      },
-      {
-        "always_prepared": true,
-        "casting_time": "1 action",
-        "classes": [
-          "Bard",
-          "Cleric",
-          "Druid",
-          "Paladin",
-          "Ranger"
-        ],
-        "components": "V, S",
-        "concentration": false,
-        "description": "A creature you touch regains a number of Hit Points equal to 2d8 plus your spellcasting ability modifier. This spell has no effect on Undead or Constructs. At Higher Levels. When you cast this spell using a spell slot of 2nd level or higher, the healing increases by 2d8 for each slot level above 1st.",
-        "duration": "Instantaneous",
-        "level": 1,
-        "name": "Cure Wounds",
-        "once_per_day": false,
-        "range": "Touch",
-        "ritual": false,
-        "school": "Abjuration",
-        "source": "Circle of the Moon"
-      },
+      }
+    ],
+    "1": [
       {
         "always_prepared": false,
         "casting_time": "1 action",
@@ -2348,6 +2283,24 @@
         "always_prepared": false,
         "casting_time": "1 action",
         "classes": [
+          "Bard",
+          "Druid"
+        ],
+        "components": "V",
+        "concentration": true,
+        "description": "Each creature/object in an area is outlined with light on a failed save; attacks against affected targets have advantage and affected creatures can't benefit from being Invisible.",
+        "duration": "Concentration, up to 1 minute",
+        "level": 1,
+        "name": "Faerie Fire",
+        "range": "60 feet",
+        "ritual": false,
+        "school": "Evocation",
+        "source": "Selected"
+      },
+      {
+        "always_prepared": false,
+        "casting_time": "1 action",
+        "classes": [
           "Druid",
           "Ranger"
         ],
@@ -2366,18 +2319,18 @@
         "always_prepared": false,
         "casting_time": "1 action",
         "classes": [
-          "Bard",
-          "Druid"
+          "Druid",
+          "Ranger"
         ],
-        "components": "V",
-        "concentration": true,
-        "description": "Each creature/object in an area is outlined with light on a failed save; attacks against affected targets have advantage and affected creatures can't benefit from being Invisible.",
-        "duration": "Concentration, up to 1 minute",
+        "components": "V, S, M (a sprig of mistletoe)",
+        "concentration": false,
+        "description": "Ten berries appear in your hand and are infused with magic for the duration. A creature can take a Bonus Action to eat one berry. Eating a berry restores 1 Hit Point, and the berry provides enough nourishment to sustain a creature for one day. Uneaten berries disappear when the spell ends.",
+        "duration": "24 hours",
         "level": 1,
-        "name": "Faerie Fire",
-        "range": "60 feet",
+        "name": "Goodberry",
+        "range": "Self",
         "ritual": false,
-        "school": "Evocation",
+        "school": "Conjuration",
         "source": "Selected"
       },
       {
@@ -2400,43 +2353,72 @@
         "source": "Selected"
       },
       {
-        "always_prepared": false,
+        "always_prepared": true,
         "casting_time": "1 action",
         "classes": [
+          "Bard",
+          "Cleric",
           "Druid",
+          "Paladin",
           "Ranger"
         ],
-        "components": "V, S, M (a sprig of mistletoe)",
+        "components": "V, S",
         "concentration": false,
-        "description": "Ten berries appear in your hand and are infused with magic for the duration. A creature can take a Bonus Action to eat one berry. Eating a berry restores 1 Hit Point, and the berry provides enough nourishment to sustain a creature for one day. Uneaten berries disappear when the spell ends.",
-        "duration": "24 hours",
+        "description": "A creature you touch regains a number of Hit Points equal to 2d8 plus your spellcasting ability modifier. This spell has no effect on Undead or Constructs. At Higher Levels. When you cast this spell using a spell slot of 2nd level or higher, the healing increases by 2d8 for each slot level above 1st.",
+        "duration": "Instantaneous",
         "level": 1,
-        "name": "Goodberry",
-        "range": "Self",
+        "name": "Cure Wounds",
+        "once_per_day": false,
+        "range": "Touch",
         "ritual": false,
-        "school": "Conjuration",
-        "source": "Selected"
-      }
-    ],
-    "2": [
+        "school": "Abjuration",
+        "source": "Circle of the Moon"
+      },
       {
         "always_prepared": true,
         "casting_time": "1 action",
         "classes": [
-          "Druid"
+          "Bard",
+          "Druid",
+          "Ranger",
+          "Warlock"
         ],
-        "components": "V, S, M (several seeds of any moonseed plant and a piece of opalescent feldspar)",
-        "concentration": true,
-        "description": "A silvery beam of pale light shines down in a 5-foot-radius, 40-foot-high Cylinder centered on a point within range. Until the spell ends, Dim Light fills the Cylinder, and you can take a Magic action on later turns to move the Cylinder up to 60 feet. When a creature enters the Cylinder for the first time on a turn or starts its turn there, it makes a Constitution saving throw, taking 2d10 Radiant damage on a failed save or half as much damage on a successful one. Using a Higher-Level Spell Slot. The damage increases by 1d10 for each spell slot level above 2.",
-        "duration": "Concentration, up to 1 minute",
-        "level": 2,
-        "name": "Moonbeam",
+        "components": "V, S",
+        "concentration": false,
+        "description": "For the duration, you can comprehend and verbally communicate with Beasts, and you can use any of the Influence action's skill options with them. Most Beasts have little to say about topics that don't pertain to survival or companionship, but at minimum, a Beast can give you information about nearby locations and monsters, including whatever it has perceived within the past day.",
+        "duration": "10 minutes",
+        "level": 1,
+        "name": "Speak with Animals",
         "once_per_day": false,
-        "range": "120 feet",
-        "ritual": false,
-        "school": "Evocation",
-        "source": "Circle of the Moon"
+        "range": "Self",
+        "ritual": true,
+        "school": "Divination",
+        "source": "Druid"
       },
+      {
+        "always_prepared": true,
+        "casting_time": "1 action",
+        "classes": [
+          "Bard",
+          "Druid",
+          "Ranger",
+          "Wizard"
+        ],
+        "components": "V, S, M",
+        "concentration": false,
+        "description": "You touch a creature. The target's Speed increases by 10 feet until the spell ends. You can target one additional creature for each spell slot above 1.",
+        "duration": "1 hour",
+        "level": 1,
+        "material": "a pinch of dirt",
+        "name": "Longstrider",
+        "once_per_day": true,
+        "range": "Touch",
+        "ritual": false,
+        "school": "Transmutation",
+        "source": "Wood Elf"
+      }
+    ],
+    "2": [
       {
         "always_prepared": false,
         "casting_time": "1 action",
@@ -2454,6 +2436,24 @@
         "ritual": false,
         "school": "Transmutation",
         "source": "Selected"
+      },
+      {
+        "always_prepared": true,
+        "casting_time": "1 action",
+        "classes": [
+          "Druid"
+        ],
+        "components": "V, S, M (several seeds of any moonseed plant and a piece of opalescent feldspar)",
+        "concentration": true,
+        "description": "A silvery beam of pale light shines down in a 5-foot-radius, 40-foot-high Cylinder centered on a point within range. Until the spell ends, Dim Light fills the Cylinder, and you can take a Magic action on later turns to move the Cylinder up to 60 feet. When a creature enters the Cylinder for the first time on a turn or starts its turn there, it makes a Constitution saving throw, taking 2d10 Radiant damage on a failed save or half as much damage on a successful one. Using a Higher-Level Spell Slot. The damage increases by 1d10 for each spell slot level above 2.",
+        "duration": "Concentration, up to 1 minute",
+        "level": 2,
+        "name": "Moonbeam",
+        "once_per_day": false,
+        "range": "120 feet",
+        "ritual": false,
+        "school": "Evocation",
+        "source": "Circle of the Moon"
       }
     ]
   },
@@ -2474,10 +2474,6 @@
         "Circle of the Moon Spells": {
           "description": "You always have certain spells prepared. These spells can also be cast while in Wild Shape form.",
           "effects": [
-            {
-              "spell": "Starry Wisp",
-              "type": "grant_cantrip"
-            },
             {
               "min_level": 3,
               "spell": "Cure Wounds",
@@ -2502,6 +2498,10 @@
               "min_level": 9,
               "spell": "Mass Cure Wounds",
               "type": "grant_spell"
+            },
+            {
+              "spell": "Starry Wisp",
+              "type": "grant_cantrip"
             }
           ]
         }

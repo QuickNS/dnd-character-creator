@@ -1,5 +1,5 @@
-import { useMemo } from "react";
-import { Check, Info, Sparkles, Wand2 } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Check, ChevronDown, ChevronUp, Info, Sparkles, Wand2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -203,7 +203,7 @@ function useDerived(choicesMade: Loose, view: string) {
       choicesMade.classes,
     ],
     queryFn: () => api.character.derived(choicesMade, view),
-    enabled: !!choicesMade["class"],
+    enabled: Array.isArray(choicesMade["classes"]) && (choicesMade["classes"] as unknown[]).length > 0,
     retry: false,
   });
 }
@@ -227,7 +227,7 @@ function getApplicableData(
 
 // ---------- Spells ----------
 
-function SpellPicker({
+export function SpellPicker({
   data,
   inspectedSpellName,
   onInspectSpell,
@@ -609,15 +609,39 @@ function normalizeCurrent(raw: Loose): CurrentSpellSelections {
 
 // ---------- Weapon Masteries ----------
 
-function MasteryPicker({ data }: { data: Loose }) {
+interface MasteryProperty {
+  name: string;
+  description: string;
+  weapons: string[];
+}
+
+export function MasteryPicker({ data }: { data: Loose }) {
   const setChoice = useCharacterStore((s) => s.setChoice);
   const choicesMade = useCharacterStore((s) => s.choicesMade);
   const max = num(data.max_masteries) ?? 0;
   const available = arr<string>(data.available_weapons);
   const masteries = rec(data.weapon_masteries);
+  const masteryProperties = rec(data.mastery_properties);
   const current =
     (choicesMade["weapon_mastery_selections"] as string[] | undefined) ??
     arr<string>(data.current_masteries);
+
+  const [expandedProp, setExpandedProp] = useState<string | null>(null);
+
+  const propertyList = useMemo<MasteryProperty[]>(
+    () =>
+      Object.values(masteryProperties)
+        .map((v) => {
+          const p = rec(v as Loose);
+          const name = str(p.name);
+          const description = str(p.description);
+          if (!name || !description) return null;
+          return { name, description, weapons: arr<string>(p.weapons) };
+        })
+        .filter((p): p is MasteryProperty => p !== null)
+        .sort((a, b) => a.name.localeCompare(b.name)),
+    [masteryProperties],
+  );
 
   function toggle(name: string) {
     const list = current;
@@ -640,45 +664,92 @@ function MasteryPicker({ data }: { data: Loose }) {
           {current.length}/{max} chosen
         </p>
       </header>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
-        {available.map((weapon) => {
-          const isSelected = current.includes(weapon);
-          const mastery = str(masteries[weapon]);
-          return (
-            <button
-              key={weapon}
-              type="button"
-              onClick={() => toggle(weapon)}
-              aria-pressed={isSelected}
-              className={cn(
-                "flex items-center justify-between gap-3 rounded-lg border px-3 py-2 text-left text-sm transition-all duration-200",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-                isSelected
-                  ? "border-primary bg-muted/60 shadow-sm ring-1 ring-primary/20"
-                  : "border-border bg-background/70 hover:border-primary/30 hover:bg-secondary/60",
-              )}
-            >
-              <span className="min-w-0">
-                <span>{weapon}</span>
-                {mastery && (
-                  <span className="ml-2 text-xs text-muted-foreground">
-                    {mastery}
+
+      <div className="flex gap-4">
+        {/* Weapon grid */}
+        <div className="flex-1 min-w-0">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
+            {available.map((weapon) => {
+              const isSelected = current.includes(weapon);
+              const mastery = str(masteries[weapon]);
+              return (
+                <button
+                  key={weapon}
+                  type="button"
+                  onClick={() => toggle(weapon)}
+                  aria-pressed={isSelected}
+                  className={cn(
+                    "flex items-center justify-between gap-3 rounded-lg border px-3 py-2 text-left text-sm transition-all duration-200",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                    isSelected
+                      ? "border-primary bg-muted/60 shadow-sm ring-1 ring-primary/20"
+                      : "border-border bg-background/70 hover:border-primary/30 hover:bg-secondary/60",
+                  )}
+                >
+                  <span className="min-w-0">
+                    <span>{weapon}</span>
+                    {mastery && (
+                      <span className="ml-2 text-xs text-muted-foreground">
+                        {mastery}
+                      </span>
+                    )}
                   </span>
-                )}
-              </span>
-              <span
-                className={cn(
-                  "inline-flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full border",
-                  isSelected
-                    ? "border-primary bg-background text-primary"
-                    : "border-border bg-background text-transparent",
-                )}
-              >
-                <Check className="h-3 w-3" />
-              </span>
-            </button>
-          );
-        })}
+                  <span
+                    className={cn(
+                      "inline-flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full border",
+                      isSelected
+                        ? "border-primary bg-background text-primary"
+                        : "border-border bg-background text-transparent",
+                    )}
+                  >
+                    <Check className="h-3 w-3" />
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Mastery properties accordion */}
+        {propertyList.length > 0 && (
+          <div className="w-44 shrink-0">
+            <p className="mb-1.5 text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">
+              Properties
+            </p>
+            <div className="flex flex-col gap-1">
+              {propertyList.map((prop) => {
+                const isOpen = expandedProp === prop.name;
+                return (
+                  <div key={prop.name} className="rounded-lg border border-border/60 bg-background/50">
+                    <button
+                      type="button"
+                      onClick={() => setExpandedProp(isOpen ? null : prop.name)}
+                      className="flex w-full items-center justify-between gap-2 px-3 py-1.5 text-left"
+                    >
+                      <span className="text-xs font-semibold text-foreground">{prop.name}</span>
+                      {isOpen ? (
+                        <ChevronUp className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                      ) : (
+                        <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                      )}
+                    </button>
+                    {isOpen && (
+                      <div className="px-3 pb-2.5 space-y-1.5">
+                        <p className="text-xs text-foreground/90">{prop.description}</p>
+                        {prop.weapons.length > 0 && (
+                          <p className="text-[10px] text-muted-foreground">
+                            <span className="font-semibold">Used by: </span>
+                            {prop.weapons.sort().join(", ")}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -686,7 +757,7 @@ function MasteryPicker({ data }: { data: Loose }) {
 
 // ---------- Eldritch Invocations ----------
 
-function InvocationPicker({ data }: { data: Loose }) {
+export function InvocationPicker({ data }: { data: Loose }) {
   const setChoice = useCharacterStore((s) => s.setChoice);
   const choicesMade = useCharacterStore((s) => s.choicesMade);
   const max = num(data.max_invocations) ?? 0;
@@ -707,6 +778,8 @@ function InvocationPicker({ data }: { data: Loose }) {
     }
   }
 
+  const [expandedInv, setExpandedInv] = useState<string | null>(null);
+
   if (max === 0) return null;
   return (
     <div className="rounded-xl border border-border/70 bg-background/70 p-4 shadow-sm sm:p-5">
@@ -719,44 +792,62 @@ function InvocationPicker({ data }: { data: Loose }) {
           {current.length}/{max} chosen
         </p>
       </header>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+      <div className="flex flex-col gap-1">
         {available.map((inv, i) => {
           const name = str(inv.name) ?? `Invocation ${i}`;
           const description = str(inv.description);
           const isSelected = current.includes(name);
+          const isOpen = expandedInv === name;
           return (
-            <button
+            <div
               key={`${name}-${i}`}
-              type="button"
-              onClick={() => toggle(name)}
-              aria-pressed={isSelected}
               className={cn(
-                "rounded-lg border p-3 text-left transition-all duration-200",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                "rounded-lg border transition-colors",
                 isSelected
-                  ? "border-primary bg-muted/60 shadow-sm ring-1 ring-primary/20"
-                  : "border-border bg-background/70 hover:border-primary/30 hover:bg-secondary/60",
+                  ? "border-primary bg-muted/60 ring-1 ring-primary/20"
+                  : "border-border bg-background/70",
               )}
             >
-              <div className="flex items-start justify-between gap-3">
-                <div className="text-sm font-medium">{name}</div>
-                <span
+              {/* Row: select checkbox + name + expand toggle */}
+              <div className="flex items-center gap-2 px-3 py-2">
+                <button
+                  type="button"
+                  onClick={() => toggle(name)}
+                  aria-pressed={isSelected}
                   className={cn(
-                    "inline-flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full border",
+                    "inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
                     isSelected
                       ? "border-primary bg-background text-primary"
-                      : "border-border bg-background text-transparent",
+                      : "border-border bg-background text-transparent hover:border-primary/50",
                   )}
+                  aria-label={isSelected ? `Deselect ${name}` : `Select ${name}`}
                 >
                   <Check className="h-3 w-3" />
-                </span>
+                </button>
+                <span className="flex-1 text-sm font-medium text-foreground">{name}</span>
+                {description && (
+                  <button
+                    type="button"
+                    onClick={() => setExpandedInv(isOpen ? null : name)}
+                    className="shrink-0 text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 rounded"
+                    aria-label={isOpen ? "Hide description" : "Show description"}
+                  >
+                    {isOpen ? (
+                      <ChevronUp className="h-4 w-4" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4" />
+                    )}
+                  </button>
+                )}
               </div>
-              {description && (
-                <div className="text-xs text-muted-foreground line-clamp-3 mt-1">
-                  {description}
+              {/* Accordion body */}
+              {isOpen && description && (
+                <div className="px-3 pb-3 pt-0">
+                  <p className="text-xs text-foreground/90 whitespace-pre-line">{description}</p>
                 </div>
               )}
-            </button>
+            </div>
           );
         })}
       </div>

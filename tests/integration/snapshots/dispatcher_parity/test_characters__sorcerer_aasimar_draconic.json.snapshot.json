@@ -71,6 +71,14 @@
   },
   "ac_options": [
     {
+      "ac": 11,
+      "armor": null,
+      "equipped_armor": null,
+      "formula": "10 + Dex modifier (1)",
+      "notes": [],
+      "shield": false
+    },
+    {
       "ac": 14,
       "armor": null,
       "equipped_armor": null,
@@ -78,14 +86,6 @@
       "notes": [
         "Draconic Resilience"
       ],
-      "shield": false
-    },
-    {
-      "ac": 11,
-      "armor": null,
-      "equipped_armor": null,
-      "formula": "10 + Dex modifier (1)",
-      "notes": [],
       "shield": false
     }
   ],
@@ -117,6 +117,21 @@
     }
   ],
   "attacks": [
+    {
+      "ability": "STR",
+      "attack_bonus": 1,
+      "attack_bonus_display": "+1",
+      "avg_crit": 0.0,
+      "avg_damage": 0.0,
+      "damage": "0",
+      "damage_notes": [],
+      "damage_type": "Bludgeoning",
+      "icon": "/static/images/weapons/strike.svg",
+      "mastery": null,
+      "name": "Unarmed Strike",
+      "proficient": true,
+      "properties": []
+    },
     {
       "ability": "STR",
       "attack_bonus": 1,
@@ -161,21 +176,6 @@
         "Thrown (range 20/60)"
       ],
       "throw_damage": "1d4 + 1"
-    },
-    {
-      "ability": "STR",
-      "attack_bonus": 1,
-      "attack_bonus_display": "+1",
-      "avg_crit": 0.0,
-      "avg_damage": 0.0,
-      "damage": "0",
-      "damage_notes": [],
-      "damage_type": "Bludgeoning",
-      "icon": "/static/images/weapons/strike.svg",
-      "mastery": null,
-      "name": "Unarmed Strike",
-      "proficient": true,
-      "properties": []
     }
   ],
   "background": "Noble",
@@ -195,15 +195,15 @@
     "description": "You understand wealth, power, and privilege. You carry a noble title, and your family owns land, collects taxes, and wields significant political influence. You might be a pampered aristocrat unfamiliar with work or discomfort, a former merchant just elevated to the nobility, or a disinherited scoundrel with a disproportionate sense of entitlement.",
     "effects": [
       {
+        "feat": "Skilled",
+        "type": "grant_origin_feat"
+      },
+      {
         "skills": [
           "History",
           "Persuasion"
         ],
         "type": "grant_skill_proficiency"
-      },
-      {
-        "feat": "Skilled",
-        "type": "grant_origin_feat"
       },
       {
         "tools": [
@@ -861,38 +861,6 @@
   "darkvision": 60,
   "effects": [
     {
-      "damage_type": "Necrotic",
-      "source": "Celestial Resistance",
-      "source_type": "species",
-      "type": "grant_damage_resistance"
-    },
-    {
-      "damage_type": "Radiant",
-      "source": "Celestial Resistance",
-      "source_type": "species",
-      "type": "grant_damage_resistance"
-    },
-    {
-      "range": 60,
-      "source": "Darkvision",
-      "source_type": "species",
-      "type": "grant_darkvision"
-    },
-    {
-      "source": "Light Bearer",
-      "source_type": "species",
-      "spell": "Light",
-      "type": "grant_cantrip"
-    },
-    {
-      "scaling": "per_level",
-      "source": "Draconic Resilience",
-      "source_class_name": "Sorcerer",
-      "source_type": "subclass",
-      "type": "bonus_hp",
-      "value": 1
-    },
-    {
       "base": 10,
       "condition": "no_armor",
       "modifiers": [
@@ -995,6 +963,38 @@
       "type": "grant_spell"
     },
     {
+      "damage_type": "Necrotic",
+      "source": "Celestial Resistance",
+      "source_type": "species",
+      "type": "grant_damage_resistance"
+    },
+    {
+      "damage_type": "Radiant",
+      "source": "Celestial Resistance",
+      "source_type": "species",
+      "type": "grant_damage_resistance"
+    },
+    {
+      "feat": "Skilled",
+      "source": "Noble",
+      "source_type": "background",
+      "type": "grant_origin_feat"
+    },
+    {
+      "range": 60,
+      "source": "Darkvision",
+      "source_type": "species",
+      "type": "grant_darkvision"
+    },
+    {
+      "scaling": "per_level",
+      "source": "Draconic Resilience",
+      "source_class_name": "Sorcerer",
+      "source_type": "subclass",
+      "type": "bonus_hp",
+      "value": 1
+    },
+    {
       "skills": [
         "History",
         "Persuasion"
@@ -1004,10 +1004,10 @@
       "type": "grant_skill_proficiency"
     },
     {
-      "feat": "Skilled",
-      "source": "Noble",
-      "source_type": "background",
-      "type": "grant_origin_feat"
+      "source": "Light Bearer",
+      "source_type": "species",
+      "spell": "Light",
+      "type": "grant_cantrip"
     },
     {
       "source": "Noble",
@@ -1039,25 +1039,6 @@
     ],
     "weapons": [
       {
-        "display_name": "Spear",
-        "name": "Spear",
-        "properties": {
-          "category": "Simple Melee",
-          "cost": "1 gp",
-          "damage": "1d6",
-          "damage_type": "Piercing",
-          "mastery": "Sap",
-          "proficiency_required": "Simple weapons",
-          "properties": [
-            "Thrown (range 20/60)",
-            "Versatile (1d8)"
-          ],
-          "weight": 3
-        },
-        "quantity": 1,
-        "source": "Class"
-      },
-      {
         "display_name": "Dagger (2)",
         "name": "Dagger",
         "properties": {
@@ -1076,6 +1057,25 @@
         },
         "quantity": 2,
         "source": "Class"
+      },
+      {
+        "display_name": "Spear",
+        "name": "Spear",
+        "properties": {
+          "category": "Simple Melee",
+          "cost": "1 gp",
+          "damage": "1d6",
+          "damage_type": "Piercing",
+          "mastery": "Sap",
+          "proficiency_required": "Simple weapons",
+          "properties": [
+            "Thrown (range 20/60)",
+            "Versatile (1d8)"
+          ],
+          "weight": 3
+        },
+        "quantity": 1,
+        "source": "Class"
       }
     ]
   },
@@ -1083,15 +1083,15 @@
     "background": [],
     "class": [
       {
-        "description": "An event in your past left an indelible mark on you, infusing you with simmering magic. You are a Sorcerer, and you can cast Sorcerer spells using Charisma as your spellcasting ability. You know four cantrips from the Sorcerer spell list and have two 1st-level Sorcerer spells prepared.",
-        "level": 1,
-        "name": "Spellcasting",
-        "source": "Sorcerer"
-      },
-      {
         "description": "An event in your past left an indelible mark on you, infusing you with simmering magic. As a Bonus Action, you can unleash that magic for 1 minute, during which you gain the following benefits:\n\nThe spell save DC of your Sorcerer spells increases by 1.\nYou have Advantage on the attack rolls of Sorcerer spells you cast.\n\nYou can use this feature twice, and you regain all expended uses of it when you finish a Long Rest.",
         "level": 1,
         "name": "Innate Sorcery",
+        "source": "Sorcerer"
+      },
+      {
+        "description": "An event in your past left an indelible mark on you, infusing you with simmering magic. You are a Sorcerer, and you can cast Sorcerer spells using Charisma as your spellcasting ability. You know four cantrips from the Sorcerer spell list and have two 1st-level Sorcerer spells prepared.",
+        "level": 1,
+        "name": "Spellcasting",
         "source": "Sorcerer"
       },
       {
@@ -1117,8 +1117,13 @@
     "lineage": [],
     "species": [
       {
-        "description": "You have Resistance to Necrotic damage and Radiant damage.",
-        "name": "Celestial Resistance",
+        "description": "As a Magic action, you touch a creature and roll a number of d4s equal to your Proficiency Bonus. The creature regains a number of Hit Points equal to the total rolled. Once you use this trait, you can't use it again until you finish a Long Rest.",
+        "name": "Healing Hands",
+        "source": "Aasimar"
+      },
+      {
+        "description": "When you reach character level 3, you can transform as a Bonus Action using one of the options below (choose the option each time you transform). The transformation lasts for 1 minute or until you end it (no action required). Once you transform, you can't do so again until you finish a Long Rest. Once on each of your turns before the transformation ends, you can deal extra damage to one target when you deal damage to it with an attack or a spell. The extra damage equals your Proficiency Bonus, and the extra damage's type is either Necrotic for Necrotic Shroud or Radiant for Heavenly Wings and Inner Radiance.<div class=\"mt-2\"><div class=\"mt-1\"><strong class=\"text-secondary\">Heavenly Wings:</strong> <span>Two spectral wings sprout from your back temporarily. Until the transformation ends, you have a Fly Speed equal to your Speed.</span></div><div class=\"mt-1\"><strong class=\"text-secondary\">Inner Radiance:</strong> <span>Searing light temporarily radiates from your eyes and mouth. For the duration, you shed Bright Light in a 10-foot radius and Dim Light for an additional 10 feet, and at the end of each of your turns, each creature within 10 feet of you takes Radiant damage equal to your Proficiency Bonus.</span></div><div class=\"mt-1\"><strong class=\"text-secondary\">Necrotic Shroud:</strong> <span>Your eyes briefly become pools of darkness, and flightless wings sprout from your back temporarily. Creatures other than your allies within 10 feet of you must succeed on a Charisma saving throw (DC 8 plus your Charisma modifier and Proficiency Bonus) or have the Frightened condition until the end of your next turn.</span></div></div>",
+        "name": "Celestial Revelation",
         "source": "Aasimar"
       },
       {
@@ -1127,18 +1132,13 @@
         "source": "Aasimar"
       },
       {
-        "description": "As a Magic action, you touch a creature and roll a number of d4s equal to your Proficiency Bonus. The creature regains a number of Hit Points equal to the total rolled. Once you use this trait, you can't use it again until you finish a Long Rest.",
-        "name": "Healing Hands",
+        "description": "You have Resistance to Necrotic damage and Radiant damage.",
+        "name": "Celestial Resistance",
         "source": "Aasimar"
       },
       {
         "description": "You know the Light cantrip. Charisma is your spellcasting ability for it.",
         "name": "Light Bearer",
-        "source": "Aasimar"
-      },
-      {
-        "description": "When you reach character level 3, you can transform as a Bonus Action using one of the options below (choose the option each time you transform). The transformation lasts for 1 minute or until you end it (no action required). Once you transform, you can't do so again until you finish a Long Rest. Once on each of your turns before the transformation ends, you can deal extra damage to one target when you deal damage to it with an attack or a spell. The extra damage equals your Proficiency Bonus, and the extra damage's type is either Necrotic for Necrotic Shroud or Radiant for Heavenly Wings and Inner Radiance.<div class=\"mt-2\"><div class=\"mt-1\"><strong class=\"text-secondary\">Heavenly Wings:</strong> <span>Two spectral wings sprout from your back temporarily. Until the transformation ends, you have a Fly Speed equal to your Speed.</span></div><div class=\"mt-1\"><strong class=\"text-secondary\">Inner Radiance:</strong> <span>Searing light temporarily radiates from your eyes and mouth. For the duration, you shed Bright Light in a 10-foot radius and Dim Light for an additional 10 feet, and at the end of each of your turns, each creature within 10 feet of you takes Radiant damage equal to your Proficiency Bonus.</span></div><div class=\"mt-1\"><strong class=\"text-secondary\">Necrotic Shroud:</strong> <span>Your eyes briefly become pools of darkness, and flightless wings sprout from your back temporarily. Creatures other than your allies within 10 feet of you must succeed on a Charisma saving throw (DC 8 plus your Charisma modifier and Proficiency Bonus) or have the Frightened condition until the end of your next turn.</span></div></div>",
-        "name": "Celestial Revelation",
         "source": "Aasimar"
       }
     ],
@@ -1731,43 +1731,23 @@
     "background_spells": {},
     "cantrips": [
       {
-        "always_prepared": true,
-        "casting_time": "1 action",
-        "classes": [
-          "Bard",
-          "Cleric",
-          "Sorcerer",
-          "Wizard"
-        ],
-        "components": "V, M",
-        "concentration": false,
-        "description": "You touch one object that is no larger than 10 feet in any dimension. Until the spell ends, the object sheds bright light in a 20-foot radius and dim light for an additional 20 feet.",
-        "duration": "1 hour",
-        "level": 0,
-        "material": "a firefly or phosphorescent moss",
-        "name": "Light",
-        "once_per_day": false,
-        "range": "Touch",
-        "ritual": false,
-        "school": "Evocation",
-        "source": "Aasimar"
-      },
-      {
         "always_prepared": false,
         "casting_time": "1 action",
         "classes": [
+          "Bard",
           "Sorcerer",
+          "Warlock",
           "Wizard"
         ],
         "components": "V, S",
         "concentration": false,
-        "description": "You hurl a mote of fire at a creature or object within range. Make a ranged spell attack against the target. On a hit, the target takes 1d10 fire damage. A flammable object hit by this spell ignites if it isn't being worn or carried. This spell's damage increases by 1d10 when you reach 5th level (2d10), 11th level (3d10), and 17th level (4d10).",
-        "duration": "Instantaneous",
+        "description": "A spectral, floating hand appears at a point you choose within range. The hand lasts for the duration. The hand vanishes if it is ever more than 30 feet away from you or if you cast this spell again. You can use your action to control the hand. You can use the hand to manipulate an object, open an unlocked door or container, stow or retrieve an item from an open container, or pour the contents out of a vial. You can move the hand up to 30 feet each time you use it. The hand can't attack, activate magic items, or carry more than 10 pounds.",
+        "duration": "1 minute",
         "level": 0,
-        "name": "Fire Bolt",
-        "range": "120 feet",
+        "name": "Mage Hand",
+        "range": "30 feet",
         "ritual": false,
-        "school": "Evocation",
+        "school": "Conjuration",
         "source": "Selected"
       },
       {
@@ -1793,43 +1773,19 @@
         "always_prepared": false,
         "casting_time": "1 action",
         "classes": [
-          "Bard",
           "Sorcerer",
-          "Warlock",
           "Wizard"
         ],
         "components": "V, S",
         "concentration": false,
-        "description": "A spectral, floating hand appears at a point you choose within range. The hand lasts for the duration. The hand vanishes if it is ever more than 30 feet away from you or if you cast this spell again. You can use your action to control the hand. You can use the hand to manipulate an object, open an unlocked door or container, stow or retrieve an item from an open container, or pour the contents out of a vial. You can move the hand up to 30 feet each time you use it. The hand can't attack, activate magic items, or carry more than 10 pounds.",
-        "duration": "1 minute",
-        "level": 0,
-        "name": "Mage Hand",
-        "range": "30 feet",
-        "ritual": false,
-        "school": "Conjuration",
-        "source": "Selected"
-      }
-    ],
-    "known": {},
-    "level_1": [
-      {
-        "always_prepared": true,
-        "casting_time": "1 action",
-        "classes": [
-          "Sorcerer",
-          "Wizard"
-        ],
-        "components": "V, S, M (a diamond worth 50+ GP)",
-        "concentration": false,
-        "description": "You hurl an orb of energy at a target within range. Choose Acid, Cold, Fire, Lightning, Poison, or Thunder for the type of orb you create, and then make a ranged spell attack against the target. On a hit, the target takes 3d8 damage of the chosen type. If you roll the same number on two or more of the d8s, the orb leaps to a different target of your choice within 30 feet of the target. Make an attack roll against the new target, and make a new damage roll. The orb can't leap again unless you cast the spell with a level 2+ spell slot.",
+        "description": "You hurl a mote of fire at a creature or object within range. Make a ranged spell attack against the target. On a hit, the target takes 1d10 fire damage. A flammable object hit by this spell ignites if it isn't being worn or carried. This spell's damage increases by 1d10 when you reach 5th level (2d10), 11th level (3d10), and 17th level (4d10).",
         "duration": "Instantaneous",
-        "level": 1,
-        "name": "Chromatic Orb",
-        "once_per_day": false,
-        "range": "90 feet",
+        "level": 0,
+        "name": "Fire Bolt",
+        "range": "120 feet",
         "ritual": false,
         "school": "Evocation",
-        "source": "Draconic Sorcery"
+        "source": "Selected"
       },
       {
         "always_prepared": true,
@@ -1837,20 +1793,25 @@
         "classes": [
           "Bard",
           "Cleric",
-          "Paladin"
+          "Sorcerer",
+          "Wizard"
         ],
-        "components": "V",
+        "components": "V, M",
         "concentration": false,
-        "description": "You speak a one-word command to a creature you can see within range. The target must succeed on a Wisdom saving throw or follow the command on its next turn. The spell has no effect if the target is Undead, if the target doesn't understand your language, or if the command is directly harmful to it. Some typical commands and their effects follow. Approach. The target moves toward you by the shortest and most direct route, ending its turn if it moves within 5 feet of you. Drop. The target drops whatever it is holding and then ends its turn. Flee. The target spends its turn moving away from you by the fastest available means. Grovel. The target falls Prone and then ends its turn. Halt. The target doesn't move and takes no action. At Higher Levels. When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional creature for each slot level above 1st.",
-        "duration": "Instantaneous",
-        "level": 1,
-        "name": "Command",
+        "description": "You touch one object that is no larger than 10 feet in any dimension. Until the spell ends, the object sheds bright light in a 20-foot radius and dim light for an additional 20 feet.",
+        "duration": "1 hour",
+        "level": 0,
+        "material": "a firefly or phosphorescent moss",
+        "name": "Light",
         "once_per_day": false,
-        "range": "60 feet",
+        "range": "Touch",
         "ritual": false,
-        "school": "Enchantment",
-        "source": "Draconic Sorcery"
-      },
+        "school": "Evocation",
+        "source": "Aasimar"
+      }
+    ],
+    "known": {},
+    "level_1": [
       {
         "always_prepared": false,
         "casting_time": "1 action",
@@ -1887,6 +1848,45 @@
         "ritual": false,
         "school": "Necromancy",
         "source": "Selected"
+      },
+      {
+        "always_prepared": true,
+        "casting_time": "1 action",
+        "classes": [
+          "Bard",
+          "Cleric",
+          "Paladin"
+        ],
+        "components": "V",
+        "concentration": false,
+        "description": "You speak a one-word command to a creature you can see within range. The target must succeed on a Wisdom saving throw or follow the command on its next turn. The spell has no effect if the target is Undead, if the target doesn't understand your language, or if the command is directly harmful to it. Some typical commands and their effects follow. Approach. The target moves toward you by the shortest and most direct route, ending its turn if it moves within 5 feet of you. Drop. The target drops whatever it is holding and then ends its turn. Flee. The target spends its turn moving away from you by the fastest available means. Grovel. The target falls Prone and then ends its turn. Halt. The target doesn't move and takes no action. At Higher Levels. When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional creature for each slot level above 1st.",
+        "duration": "Instantaneous",
+        "level": 1,
+        "name": "Command",
+        "once_per_day": false,
+        "range": "60 feet",
+        "ritual": false,
+        "school": "Enchantment",
+        "source": "Draconic Sorcery"
+      },
+      {
+        "always_prepared": true,
+        "casting_time": "1 action",
+        "classes": [
+          "Sorcerer",
+          "Wizard"
+        ],
+        "components": "V, S, M (a diamond worth 50+ GP)",
+        "concentration": false,
+        "description": "You hurl an orb of energy at a target within range. Choose Acid, Cold, Fire, Lightning, Poison, or Thunder for the type of orb you create, and then make a ranged spell attack against the target. On a hit, the target takes 3d8 damage of the chosen type. If you roll the same number on two or more of the d8s, the orb leaps to a different target of your choice within 30 feet of the target. Make an attack roll against the new target, and make a new damage roll. The orb can't leap again unless you cast the spell with a level 2+ spell slot.",
+        "duration": "Instantaneous",
+        "level": 1,
+        "name": "Chromatic Orb",
+        "once_per_day": false,
+        "range": "90 feet",
+        "ritual": false,
+        "school": "Evocation",
+        "source": "Draconic Sorcery"
       }
     ],
     "prepared": {
@@ -1906,43 +1906,23 @@
   "spells_by_level": {
     "0": [
       {
-        "always_prepared": true,
-        "casting_time": "1 action",
-        "classes": [
-          "Bard",
-          "Cleric",
-          "Sorcerer",
-          "Wizard"
-        ],
-        "components": "V, M",
-        "concentration": false,
-        "description": "You touch one object that is no larger than 10 feet in any dimension. Until the spell ends, the object sheds bright light in a 20-foot radius and dim light for an additional 20 feet.",
-        "duration": "1 hour",
-        "level": 0,
-        "material": "a firefly or phosphorescent moss",
-        "name": "Light",
-        "once_per_day": false,
-        "range": "Touch",
-        "ritual": false,
-        "school": "Evocation",
-        "source": "Aasimar"
-      },
-      {
         "always_prepared": false,
         "casting_time": "1 action",
         "classes": [
+          "Bard",
           "Sorcerer",
+          "Warlock",
           "Wizard"
         ],
         "components": "V, S",
         "concentration": false,
-        "description": "You hurl a mote of fire at a creature or object within range. Make a ranged spell attack against the target. On a hit, the target takes 1d10 fire damage. A flammable object hit by this spell ignites if it isn't being worn or carried. This spell's damage increases by 1d10 when you reach 5th level (2d10), 11th level (3d10), and 17th level (4d10).",
-        "duration": "Instantaneous",
+        "description": "A spectral, floating hand appears at a point you choose within range. The hand lasts for the duration. The hand vanishes if it is ever more than 30 feet away from you or if you cast this spell again. You can use your action to control the hand. You can use the hand to manipulate an object, open an unlocked door or container, stow or retrieve an item from an open container, or pour the contents out of a vial. You can move the hand up to 30 feet each time you use it. The hand can't attack, activate magic items, or carry more than 10 pounds.",
+        "duration": "1 minute",
         "level": 0,
-        "name": "Fire Bolt",
-        "range": "120 feet",
+        "name": "Mage Hand",
+        "range": "30 feet",
         "ritual": false,
-        "school": "Evocation",
+        "school": "Conjuration",
         "source": "Selected"
       },
       {
@@ -1968,42 +1948,19 @@
         "always_prepared": false,
         "casting_time": "1 action",
         "classes": [
-          "Bard",
           "Sorcerer",
-          "Warlock",
           "Wizard"
         ],
         "components": "V, S",
         "concentration": false,
-        "description": "A spectral, floating hand appears at a point you choose within range. The hand lasts for the duration. The hand vanishes if it is ever more than 30 feet away from you or if you cast this spell again. You can use your action to control the hand. You can use the hand to manipulate an object, open an unlocked door or container, stow or retrieve an item from an open container, or pour the contents out of a vial. You can move the hand up to 30 feet each time you use it. The hand can't attack, activate magic items, or carry more than 10 pounds.",
-        "duration": "1 minute",
-        "level": 0,
-        "name": "Mage Hand",
-        "range": "30 feet",
-        "ritual": false,
-        "school": "Conjuration",
-        "source": "Selected"
-      }
-    ],
-    "1": [
-      {
-        "always_prepared": true,
-        "casting_time": "1 action",
-        "classes": [
-          "Sorcerer",
-          "Wizard"
-        ],
-        "components": "V, S, M (a diamond worth 50+ GP)",
-        "concentration": false,
-        "description": "You hurl an orb of energy at a target within range. Choose Acid, Cold, Fire, Lightning, Poison, or Thunder for the type of orb you create, and then make a ranged spell attack against the target. On a hit, the target takes 3d8 damage of the chosen type. If you roll the same number on two or more of the d8s, the orb leaps to a different target of your choice within 30 feet of the target. Make an attack roll against the new target, and make a new damage roll. The orb can't leap again unless you cast the spell with a level 2+ spell slot.",
+        "description": "You hurl a mote of fire at a creature or object within range. Make a ranged spell attack against the target. On a hit, the target takes 1d10 fire damage. A flammable object hit by this spell ignites if it isn't being worn or carried. This spell's damage increases by 1d10 when you reach 5th level (2d10), 11th level (3d10), and 17th level (4d10).",
         "duration": "Instantaneous",
-        "level": 1,
-        "name": "Chromatic Orb",
-        "once_per_day": false,
-        "range": "90 feet",
+        "level": 0,
+        "name": "Fire Bolt",
+        "range": "120 feet",
         "ritual": false,
         "school": "Evocation",
-        "source": "Draconic Sorcery"
+        "source": "Selected"
       },
       {
         "always_prepared": true,
@@ -2011,20 +1968,24 @@
         "classes": [
           "Bard",
           "Cleric",
-          "Paladin"
+          "Sorcerer",
+          "Wizard"
         ],
-        "components": "V",
+        "components": "V, M",
         "concentration": false,
-        "description": "You speak a one-word command to a creature you can see within range. The target must succeed on a Wisdom saving throw or follow the command on its next turn. The spell has no effect if the target is Undead, if the target doesn't understand your language, or if the command is directly harmful to it. Some typical commands and their effects follow. Approach. The target moves toward you by the shortest and most direct route, ending its turn if it moves within 5 feet of you. Drop. The target drops whatever it is holding and then ends its turn. Flee. The target spends its turn moving away from you by the fastest available means. Grovel. The target falls Prone and then ends its turn. Halt. The target doesn't move and takes no action. At Higher Levels. When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional creature for each slot level above 1st.",
-        "duration": "Instantaneous",
-        "level": 1,
-        "name": "Command",
+        "description": "You touch one object that is no larger than 10 feet in any dimension. Until the spell ends, the object sheds bright light in a 20-foot radius and dim light for an additional 20 feet.",
+        "duration": "1 hour",
+        "level": 0,
+        "material": "a firefly or phosphorescent moss",
+        "name": "Light",
         "once_per_day": false,
-        "range": "60 feet",
+        "range": "Touch",
         "ritual": false,
-        "school": "Enchantment",
-        "source": "Draconic Sorcery"
-      },
+        "school": "Evocation",
+        "source": "Aasimar"
+      }
+    ],
+    "1": [
       {
         "always_prepared": false,
         "casting_time": "1 action",
@@ -2061,9 +2022,67 @@
         "ritual": false,
         "school": "Necromancy",
         "source": "Selected"
+      },
+      {
+        "always_prepared": true,
+        "casting_time": "1 action",
+        "classes": [
+          "Bard",
+          "Cleric",
+          "Paladin"
+        ],
+        "components": "V",
+        "concentration": false,
+        "description": "You speak a one-word command to a creature you can see within range. The target must succeed on a Wisdom saving throw or follow the command on its next turn. The spell has no effect if the target is Undead, if the target doesn't understand your language, or if the command is directly harmful to it. Some typical commands and their effects follow. Approach. The target moves toward you by the shortest and most direct route, ending its turn if it moves within 5 feet of you. Drop. The target drops whatever it is holding and then ends its turn. Flee. The target spends its turn moving away from you by the fastest available means. Grovel. The target falls Prone and then ends its turn. Halt. The target doesn't move and takes no action. At Higher Levels. When you cast this spell using a spell slot of 2nd level or higher, you can affect one additional creature for each slot level above 1st.",
+        "duration": "Instantaneous",
+        "level": 1,
+        "name": "Command",
+        "once_per_day": false,
+        "range": "60 feet",
+        "ritual": false,
+        "school": "Enchantment",
+        "source": "Draconic Sorcery"
+      },
+      {
+        "always_prepared": true,
+        "casting_time": "1 action",
+        "classes": [
+          "Sorcerer",
+          "Wizard"
+        ],
+        "components": "V, S, M (a diamond worth 50+ GP)",
+        "concentration": false,
+        "description": "You hurl an orb of energy at a target within range. Choose Acid, Cold, Fire, Lightning, Poison, or Thunder for the type of orb you create, and then make a ranged spell attack against the target. On a hit, the target takes 3d8 damage of the chosen type. If you roll the same number on two or more of the d8s, the orb leaps to a different target of your choice within 30 feet of the target. Make an attack roll against the new target, and make a new damage roll. The orb can't leap again unless you cast the spell with a level 2+ spell slot.",
+        "duration": "Instantaneous",
+        "level": 1,
+        "name": "Chromatic Orb",
+        "once_per_day": false,
+        "range": "90 feet",
+        "ritual": false,
+        "school": "Evocation",
+        "source": "Draconic Sorcery"
       }
     ],
     "2": [
+      {
+        "always_prepared": false,
+        "casting_time": "1 action",
+        "classes": [
+          "Artificer",
+          "Sorcerer",
+          "Wizard"
+        ],
+        "components": "V",
+        "concentration": true,
+        "description": "Your body becomes blurred. For the duration, any creature has Disadvantage on attack rolls against you. An attacker is immune to this effect if it perceives you with Blindsight or Truesight.",
+        "duration": "Concentration, up to 1 minute",
+        "level": 2,
+        "name": "Blur",
+        "range": "Self",
+        "ritual": false,
+        "school": "Illusion",
+        "source": "Selected"
+      },
       {
         "always_prepared": true,
         "casting_time": "1 action",
@@ -2102,25 +2121,6 @@
         "ritual": false,
         "school": "Transmutation",
         "source": "Draconic Sorcery"
-      },
-      {
-        "always_prepared": false,
-        "casting_time": "1 action",
-        "classes": [
-          "Artificer",
-          "Sorcerer",
-          "Wizard"
-        ],
-        "components": "V",
-        "concentration": true,
-        "description": "Your body becomes blurred. For the duration, any creature has Disadvantage on attack rolls against you. An attacker is immune to this effect if it perceives you with Blindsight or Truesight.",
-        "duration": "Concentration, up to 1 minute",
-        "level": 2,
-        "name": "Blur",
-        "range": "Self",
-        "ritual": false,
-        "school": "Illusion",
-        "source": "Selected"
       }
     ]
   },
@@ -2141,11 +2141,6 @@
           "description": "The magic in your body manifests physical traits of your draconic gift. Your Hit Point maximum increases by 3, and it increases by 1 whenever you gain another Sorcerer level.\n\nParts of you are also covered by dragon-like scales. While you aren't wearing armor, your base Armor Class equals 10 plus your Dexterity and Charisma modifiers.",
           "effects": [
             {
-              "scaling": "per_level",
-              "type": "bonus_hp",
-              "value": 1
-            },
-            {
               "base": 10,
               "condition": "no_armor",
               "modifiers": [
@@ -2153,6 +2148,11 @@
                 "charisma"
               ],
               "type": "alternative_ac"
+            },
+            {
+              "scaling": "per_level",
+              "type": "bonus_hp",
+              "value": 1
             }
           ]
         },

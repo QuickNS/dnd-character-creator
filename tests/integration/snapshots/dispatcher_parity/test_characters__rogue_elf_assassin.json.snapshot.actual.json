@@ -4,6 +4,10 @@
       "description": "You know the Dancing Lights cantrip. You also always have certain spells prepared and can cast them once per day without expending a spell slot. You can also cast them using spell slots you have of the appropriate level.",
       "effects": [
         {
+          "spell": "Dancing Lights",
+          "type": "grant_cantrip"
+        },
+        {
           "min_level": 3,
           "spell": "Faerie Fire",
           "type": "grant_spell"
@@ -12,10 +16,6 @@
           "min_level": 5,
           "spell": "Darkness",
           "type": "grant_spell"
-        },
-        {
-          "spell": "Dancing Lights",
-          "type": "grant_cantrip"
         }
       ]
     },
@@ -101,18 +101,18 @@
   },
   "ac_options": [
     {
-      "ac": 13,
-      "armor": null,
-      "equipped_armor": null,
-      "formula": "10 + Dex modifier (3)",
-      "notes": [],
-      "shield": false
-    },
-    {
       "ac": 14,
       "armor": "Leather Armor",
       "equipped_armor": "Leather Armor",
       "formula": "Armor base (11) + Dex modifier (3)",
+      "notes": [],
+      "shield": false
+    },
+    {
+      "ac": 13,
+      "armor": null,
+      "equipped_armor": null,
+      "formula": "10 + Dex modifier (3)",
       "notes": [],
       "shield": false
     }
@@ -148,6 +148,23 @@
   ],
   "attacks": [
     {
+      "ability": "STR/DEX (DEX)",
+      "attack_bonus": 5,
+      "attack_bonus_display": "+5",
+      "avg_crit": 12.0,
+      "avg_damage": 7.5,
+      "damage": "1d8 + 3",
+      "damage_notes": [],
+      "damage_type": "Piercing",
+      "icon": "/static/images/weapons/rapier.svg",
+      "mastery": "Vex",
+      "name": "Rapier",
+      "proficient": true,
+      "properties": [
+        "Finesse"
+      ]
+    },
+    {
       "ability": "DEX",
       "attack_bonus": 5,
       "attack_bonus_display": "+5",
@@ -163,38 +180,6 @@
       "properties": [
         "Ammunition (range 80/320)",
         "Two-Handed"
-      ]
-    },
-    {
-      "ability": "STR",
-      "attack_bonus": 1,
-      "attack_bonus_display": "+1",
-      "avg_crit": 0.0,
-      "avg_damage": 0.0,
-      "damage": "0",
-      "damage_notes": [],
-      "damage_type": "Bludgeoning",
-      "icon": "/static/images/weapons/strike.svg",
-      "mastery": null,
-      "name": "Unarmed Strike",
-      "proficient": true,
-      "properties": []
-    },
-    {
-      "ability": "STR/DEX (DEX)",
-      "attack_bonus": 5,
-      "attack_bonus_display": "+5",
-      "avg_crit": 12.0,
-      "avg_damage": 7.5,
-      "damage": "1d8 + 3",
-      "damage_notes": [],
-      "damage_type": "Piercing",
-      "icon": "/static/images/weapons/rapier.svg",
-      "mastery": "Vex",
-      "name": "Rapier",
-      "proficient": true,
-      "properties": [
-        "Finesse"
       ]
     },
     {
@@ -217,6 +202,21 @@
         "Thrown (range 20/60)"
       ],
       "throw_damage": "1d4 + 3"
+    },
+    {
+      "ability": "STR",
+      "attack_bonus": 1,
+      "attack_bonus_display": "+1",
+      "avg_crit": 0.0,
+      "avg_damage": 0.0,
+      "damage": "0",
+      "damage_notes": [],
+      "damage_type": "Bludgeoning",
+      "icon": "/static/images/weapons/strike.svg",
+      "mastery": null,
+      "name": "Unarmed Strike",
+      "proficient": true,
+      "properties": []
     }
   ],
   "background": "Criminal",
@@ -236,15 +236,15 @@
     "description": "You are an experienced criminal with a history of breaking the law. You have spent a lot of time among other criminals and still have contacts within the criminal underworld.",
     "effects": [
       {
-        "feat": "Alert",
-        "type": "grant_origin_feat"
-      },
-      {
         "skills": [
           "Deception",
           "Stealth"
         ],
         "type": "grant_skill_proficiency"
+      },
+      {
+        "feat": "Alert",
+        "type": "grant_origin_feat"
       },
       {
         "tools": [
@@ -372,13 +372,13 @@
           "description": "You know Thieves' Cant and one other language of your choice.",
           "effects": [
             {
-              "from_choice": "thieves_cant_language",
-              "type": "grant_language"
-            },
-            {
               "languages": [
                 "Thieves' Cant"
               ],
+              "type": "grant_language"
+            },
+            {
+              "from_choice": "thieves_cant_language",
               "type": "grant_language"
             }
           ]
@@ -734,6 +734,12 @@
   "darkvision": 120,
   "effects": [
     {
+      "range": 60,
+      "source": "Darkvision",
+      "source_type": "species",
+      "type": "grant_darkvision"
+    },
+    {
       "condition": "Charmed",
       "display": "Advantage vs Charmed condition",
       "source": "Fey Ancestry",
@@ -741,10 +747,56 @@
       "type": "grant_save_advantage"
     },
     {
-      "feat": "Alert",
-      "source": "Criminal",
-      "source_type": "background",
-      "type": "grant_origin_feat"
+      "range": 120,
+      "source": "Extended Darkvision",
+      "source_type": "lineage",
+      "type": "grant_darkvision"
+    },
+    {
+      "source": "Drow Spells",
+      "source_type": "lineage",
+      "spell": "Dancing Lights",
+      "type": "grant_cantrip"
+    },
+    {
+      "min_level": 3,
+      "source": "Drow Spells",
+      "source_type": "lineage",
+      "spell": "Faerie Fire",
+      "type": "grant_spell"
+    },
+    {
+      "min_level": 5,
+      "source": "Drow Spells",
+      "source_type": "lineage",
+      "spell": "Darkness",
+      "type": "grant_spell"
+    },
+    {
+      "range": 120,
+      "source": "Extended Darkvision",
+      "source_type": "lineage",
+      "type": "grant_darkvision"
+    },
+    {
+      "source": "Drow Spells",
+      "source_type": "lineage",
+      "spell": "Dancing Lights",
+      "type": "grant_cantrip"
+    },
+    {
+      "min_level": 3,
+      "source": "Drow Spells",
+      "source_type": "lineage",
+      "spell": "Faerie Fire",
+      "type": "grant_spell"
+    },
+    {
+      "min_level": 5,
+      "source": "Drow Spells",
+      "source_type": "lineage",
+      "spell": "Darkness",
+      "type": "grant_spell"
     },
     {
       "from_choice": "rogue_expertise_skills_1",
@@ -752,25 +804,6 @@
       "source_class_name": "Rogue",
       "source_type": "class",
       "type": "grant_skill_expertise"
-    },
-    {
-      "from_choice": "rogue_expertise_skills_1",
-      "source": "Expertise",
-      "source_type": "class",
-      "type": "grant_skill_expertise"
-    },
-    {
-      "from_choice": "thieves_cant_language",
-      "source": "Thieves' Cant",
-      "source_class_name": "Rogue",
-      "source_type": "class",
-      "type": "grant_language"
-    },
-    {
-      "from_choice": "thieves_cant_language",
-      "source": "Thieves' Cant",
-      "source_type": "class",
-      "type": "grant_language"
     },
     {
       "languages": [
@@ -782,50 +815,21 @@
       "type": "grant_language"
     },
     {
-      "min_level": 3,
-      "source": "Drow Spells",
-      "source_type": "lineage",
-      "spell": "Faerie Fire",
-      "type": "grant_spell"
+      "from_choice": "thieves_cant_language",
+      "source": "Thieves' Cant",
+      "source_class_name": "Rogue",
+      "source_type": "class",
+      "type": "grant_language"
     },
     {
-      "min_level": 3,
-      "source": "Drow Spells",
-      "source_type": "lineage",
-      "spell": "Faerie Fire",
-      "type": "grant_spell"
-    },
-    {
-      "min_level": 5,
-      "source": "Drow Spells",
-      "source_type": "lineage",
-      "spell": "Darkness",
-      "type": "grant_spell"
-    },
-    {
-      "min_level": 5,
-      "source": "Drow Spells",
-      "source_type": "lineage",
-      "spell": "Darkness",
-      "type": "grant_spell"
-    },
-    {
-      "range": 120,
-      "source": "Extended Darkvision",
-      "source_type": "lineage",
-      "type": "grant_darkvision"
-    },
-    {
-      "range": 120,
-      "source": "Extended Darkvision",
-      "source_type": "lineage",
-      "type": "grant_darkvision"
-    },
-    {
-      "range": 60,
-      "source": "Darkvision",
-      "source_type": "species",
-      "type": "grant_darkvision"
+      "source": "Assassin's Tools",
+      "source_class_name": "Rogue",
+      "source_type": "subclass",
+      "tools": [
+        "Disguise Kit",
+        "Poisoner's Kit"
+      ],
+      "type": "grant_tool_proficiency"
     },
     {
       "skills": [
@@ -843,14 +847,10 @@
       "value": "proficiency"
     },
     {
-      "source": "Assassin's Tools",
-      "source_class_name": "Rogue",
-      "source_type": "subclass",
-      "tools": [
-        "Disguise Kit",
-        "Poisoner's Kit"
-      ],
-      "type": "grant_tool_proficiency"
+      "feat": "Alert",
+      "source": "Criminal",
+      "source_type": "background",
+      "type": "grant_origin_feat"
     },
     {
       "source": "Criminal",
@@ -861,16 +861,16 @@
       "type": "grant_tool_proficiency"
     },
     {
-      "source": "Drow Spells",
-      "source_type": "lineage",
-      "spell": "Dancing Lights",
-      "type": "grant_cantrip"
+      "from_choice": "rogue_expertise_skills_1",
+      "source": "Expertise",
+      "source_type": "class",
+      "type": "grant_skill_expertise"
     },
     {
-      "source": "Drow Spells",
-      "source_type": "lineage",
-      "spell": "Dancing Lights",
-      "type": "grant_cantrip"
+      "from_choice": "thieves_cant_language",
+      "source": "Thieves' Cant",
+      "source_type": "class",
+      "type": "grant_language"
     }
   ],
   "eldritch_invocation_stats": {
@@ -893,35 +893,15 @@
         "source": "Class"
       },
       {
-        "name": "Burglar's Pack",
+        "name": "Thieves' Tools",
         "source": "Class"
       },
       {
-        "name": "Thieves' Tools",
+        "name": "Burglar's Pack",
         "source": "Class"
       }
     ],
     "weapons": [
-      {
-        "display_name": "Dagger (2)",
-        "name": "Dagger",
-        "properties": {
-          "category": "Simple Melee",
-          "cost": "2 gp",
-          "damage": "1d4",
-          "damage_type": "Piercing",
-          "mastery": "Nick",
-          "proficiency_required": "Simple weapons",
-          "properties": [
-            "Finesse",
-            "Light",
-            "Thrown (range 20/60)"
-          ],
-          "weight": 1
-        },
-        "quantity": 2,
-        "source": "Class"
-      },
       {
         "display_name": "Rapier",
         "name": "Rapier",
@@ -958,18 +938,32 @@
         },
         "quantity": 1,
         "source": "Class"
+      },
+      {
+        "display_name": "Dagger (2)",
+        "name": "Dagger",
+        "properties": {
+          "category": "Simple Melee",
+          "cost": "2 gp",
+          "damage": "1d4",
+          "damage_type": "Piercing",
+          "mastery": "Nick",
+          "proficiency_required": "Simple weapons",
+          "properties": [
+            "Finesse",
+            "Light",
+            "Thrown (range 20/60)"
+          ],
+          "weight": 1
+        },
+        "quantity": 2,
+        "source": "Class"
       }
     ]
   },
   "features": {
     "background": [],
     "class": [
-      {
-        "description": "As a Bonus Action, give yourself Advantage on your next attack roll on the current turn. You can use this only if you haven't moved, and your Speed becomes 0 until the end of the turn.",
-        "level": 3,
-        "name": "Steady Aim",
-        "source": "Rogue"
-      },
       {
         "description": "Gain Expertise in two skills of your choice. Sleight of Hand and Stealth are recommended if you have proficiency in them.",
         "level": 1,
@@ -983,21 +977,27 @@
         "source": "Rogue"
       },
       {
-        "description": "Use mastery properties of two weapons of your choice with which you have proficiency.",
-        "level": 1,
-        "name": "Weapon Mastery",
-        "source": "Rogue"
-      },
-      {
         "description": "You know Thieves' Cant and one other language of your choice.",
         "level": 1,
         "name": "Thieves' Cant",
         "source": "Rogue"
       },
       {
+        "description": "Use mastery properties of two weapons of your choice with which you have proficiency.",
+        "level": 1,
+        "name": "Weapon Mastery",
+        "source": "Rogue"
+      },
+      {
         "description": "Your quick thinking and agility allow you to take Dash, Disengage, or Hide as a Bonus Action on your turn.",
         "level": 2,
         "name": "Cunning Action",
+        "source": "Rogue"
+      },
+      {
+        "description": "As a Bonus Action, give yourself Advantage on your next attack roll on the current turn. You can use this only if you haven't moved, and your Speed becomes 0 until the end of the turn.",
+        "level": 3,
+        "name": "Steady Aim",
         "source": "Rogue"
       }
     ],
@@ -1023,13 +1023,13 @@
     ],
     "species": [
       {
-        "description": "You are part of a lineage that grants you supernatural abilities. Intelligence, Wisdom of Charisma is your spellcasting ability for the spells you cast with this trait.",
-        "name": "Elven Lineage",
+        "description": "You have Darkvision with a range of 60 feet.",
+        "name": "Darkvision",
         "source": "Elf"
       },
       {
-        "description": "You don't need to sleep, and magic can't put you to sleep. You can finish a Long Rest in 4 hours if you spend those hours in a trancelike meditation, during which you retain consciousness.",
-        "name": "Trance",
+        "description": "You are part of a lineage that grants you supernatural abilities. Intelligence, Wisdom of Charisma is your spellcasting ability for the spells you cast with this trait.",
+        "name": "Elven Lineage",
         "source": "Elf"
       },
       {
@@ -1038,27 +1038,27 @@
         "source": "Elf"
       },
       {
-        "description": "You have Darkvision with a range of 60 feet.",
-        "name": "Darkvision",
+        "description": "You have proficiency in the Insight, Perception, or Survival skill.",
+        "name": "Keen Senses: Survival",
         "source": "Elf"
       },
       {
-        "description": "You have proficiency in the Insight, Perception, or Survival skill.",
-        "name": "Keen Senses: Survival",
+        "description": "You don't need to sleep, and magic can't put you to sleep. You can finish a Long Rest in 4 hours if you spend those hours in a trancelike meditation, during which you retain consciousness.",
+        "name": "Trance",
         "source": "Elf"
       }
     ],
     "subclass": [
       {
-        "description": "You gain a Disguise Kit and a Poisoner's Kit, and you have proficiency with them.",
-        "level": 3,
-        "name": "Assassin's Tools",
-        "source": "Assassin"
-      },
-      {
         "description": "You're adept at ambushing a target. Initiative: You have Advantage on Initiative rolls. Surprising Strikes: During the first round of each combat, you have Advantage on attack rolls against any creature that hasn't taken a turn. If your Sneak Attack hits any target during that round, the target takes extra damage of the weapon's type equal to your Rogue level.",
         "level": 3,
         "name": "Assassinate",
+        "source": "Assassin"
+      },
+      {
+        "description": "You gain a Disguise Kit and a Poisoner's Kit, and you have proficiency with them.",
+        "level": 3,
+        "name": "Assassin's Tools",
         "source": "Assassin"
       }
     ]
@@ -1082,6 +1082,10 @@
         "description": "You know the Dancing Lights cantrip. You also always have certain spells prepared and can cast them once per day without expending a spell slot. You can also cast them using spell slots you have of the appropriate level.",
         "effects": [
           {
+            "spell": "Dancing Lights",
+            "type": "grant_cantrip"
+          },
+          {
             "min_level": 3,
             "spell": "Faerie Fire",
             "type": "grant_spell"
@@ -1090,10 +1094,6 @@
             "min_level": 5,
             "spell": "Darkness",
             "type": "grant_spell"
-          },
-          {
-            "spell": "Dancing Lights",
-            "type": "grant_cantrip"
           }
         ]
       },

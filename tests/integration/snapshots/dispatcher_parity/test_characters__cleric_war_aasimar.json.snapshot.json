@@ -71,18 +71,18 @@
   },
   "ac_options": [
     {
-      "ac": 14,
-      "armor": "Chain Shirt",
-      "equipped_armor": "Chain Shirt",
-      "formula": "Armor base (13) + Dex modifier (-1) + Shield (2)",
-      "notes": [],
-      "shield": true
-    },
-    {
       "ac": 11,
       "armor": null,
       "equipped_armor": null,
       "formula": "10 + Dex modifier (-1) + Shield (2)",
+      "notes": [],
+      "shield": true
+    },
+    {
+      "ac": 14,
+      "armor": "Chain Shirt",
+      "equipped_armor": "Chain Shirt",
+      "formula": "Armor base (13) + Dex modifier (-1) + Shield (2)",
       "notes": [],
       "shield": true
     }
@@ -100,21 +100,6 @@
       "ability": "STR",
       "attack_bonus": 4,
       "attack_bonus_display": "+4",
-      "avg_crit": 9.0,
-      "avg_damage": 5.5,
-      "damage": "1d6 + 2",
-      "damage_notes": [],
-      "damage_type": "Bludgeoning",
-      "icon": "/static/images/weapons/mace.svg",
-      "mastery": "Sap",
-      "name": "Mace",
-      "proficient": true,
-      "properties": []
-    },
-    {
-      "ability": "STR",
-      "attack_bonus": 4,
-      "attack_bonus_display": "+4",
       "avg_crit": 3.0,
       "avg_damage": 3.0,
       "damage": "3",
@@ -123,6 +108,21 @@
       "icon": "/static/images/weapons/strike.svg",
       "mastery": null,
       "name": "Unarmed Strike",
+      "proficient": true,
+      "properties": []
+    },
+    {
+      "ability": "STR",
+      "attack_bonus": 4,
+      "attack_bonus_display": "+4",
+      "avg_crit": 9.0,
+      "avg_damage": 5.5,
+      "damage": "1d6 + 2",
+      "damage_notes": [],
+      "damage_type": "Bludgeoning",
+      "icon": "/static/images/weapons/mace.svg",
+      "mastery": "Sap",
+      "name": "Mace",
       "proficient": true,
       "properties": []
     }
@@ -144,15 +144,15 @@
     "description": "You grew up close to the land. Years tending animals and cultivating the earth rewarded you with patience and good health. You have a keen appreciation for nature's bounty alongside a healthy respect for nature's wrath.",
     "effects": [
       {
+        "feat": "Tough",
+        "type": "grant_origin_feat"
+      },
+      {
         "skills": [
           "Animal Handling",
           "Nature"
         ],
         "type": "grant_skill_proficiency"
-      },
-      {
-        "feat": "Tough",
-        "type": "grant_origin_feat"
       },
       {
         "tools": [
@@ -256,12 +256,12 @@
         "scaling": {
           "strike_dice": [
             {
-              "min_level": 7,
-              "value": "1d8"
-            },
-            {
               "min_level": 14,
               "value": "2d8"
+            },
+            {
+              "min_level": 7,
+              "value": "1d8"
             }
           ]
         }
@@ -271,12 +271,12 @@
         "scaling": {
           "improved_text": [
             {
-              "min_level": 7,
-              "value": ""
-            },
-            {
               "min_level": 14,
               "value": "When you cast a Cleric cantrip and deal damage to a creature with it, you can give vitality to yourself or another creature within 60 feet of yourself, granting a number of Temporary Hit Points equal to twice your Wisdom modifier."
+            },
+            {
+              "min_level": 7,
+              "value": ""
             }
           ]
         }
@@ -312,15 +312,15 @@
         "effects": [
           {
             "proficiencies": [
-              "Martial weapons"
-            ],
-            "type": "grant_weapon_proficiency"
-          },
-          {
-            "proficiencies": [
               "Heavy armor"
             ],
             "type": "grant_armor_proficiency"
+          },
+          {
+            "proficiencies": [
+              "Martial weapons"
+            ],
+            "type": "grant_weapon_proficiency"
           }
         ]
       },
@@ -339,12 +339,6 @@
         "description": "You know one extra cantrip from the Cleric spell list. In addition, your mystical connection to the divine gives you a bonus to your Intelligence (Arcana or Religion) checks. The bonus equals your Wisdom modifier (minimum of +1).",
         "effects": [
           {
-            "category": "always_prepared",
-            "count": 1,
-            "counts_against_limit": false,
-            "type": "grant_cantrip_choice"
-          },
-          {
             "ability": "Intelligence",
             "minimum": 1,
             "skills": [
@@ -353,6 +347,12 @@
             ],
             "type": "ability_bonus",
             "value": "wisdom_modifier"
+          },
+          {
+            "category": "always_prepared",
+            "count": 1,
+            "counts_against_limit": false,
+            "type": "grant_cantrip_choice"
           }
         ]
       }
@@ -430,23 +430,27 @@
           "scaling": {
             "spark_dice": [
               {
-                "min_level": 2,
-                "value": "1d8"
-              },
-              {
-                "min_level": 7,
-                "value": "2d8"
-              },
-              {
                 "min_level": 13,
                 "value": "3d8"
               },
               {
                 "min_level": 18,
                 "value": "4d8"
+              },
+              {
+                "min_level": 2,
+                "value": "1d8"
+              },
+              {
+                "min_level": 7,
+                "value": "2d8"
               }
             ],
             "uses": [
+              {
+                "min_level": 18,
+                "value": "4"
+              },
               {
                 "min_level": 2,
                 "value": "2"
@@ -454,10 +458,6 @@
               {
                 "min_level": 6,
                 "value": "3"
-              },
-              {
-                "min_level": 18,
-                "value": "4"
               }
             ]
           }
@@ -907,16 +907,10 @@
       "type": "grant_damage_resistance"
     },
     {
-      "range": 60,
-      "source": "Darkvision",
-      "source_type": "species",
-      "type": "grant_darkvision"
-    },
-    {
-      "source": "Light Bearer",
-      "source_type": "species",
-      "spell": "Light",
-      "type": "grant_cantrip"
+      "feat": "Tough",
+      "source": "Farmer",
+      "source_type": "background",
+      "type": "grant_origin_feat"
     },
     {
       "min_level": 3,
@@ -999,34 +993,12 @@
       "type": "grant_spell"
     },
     {
-      "skills": [
-        "Animal Handling",
-        "Nature"
+      "proficiencies": [
+        "Heavy armor"
       ],
-      "source": "Farmer",
-      "source_type": "background",
-      "type": "grant_skill_proficiency"
-    },
-    {
-      "scaling": "per_level",
-      "source": "Tough",
-      "source_type": "feat",
-      "type": "bonus_hp",
-      "value": 2
-    },
-    {
-      "feat": "Tough",
-      "source": "Farmer",
-      "source_type": "background",
-      "type": "grant_origin_feat"
-    },
-    {
-      "source": "Farmer",
-      "source_type": "background",
-      "tools": [
-        "Carpenter's Tools"
-      ],
-      "type": "grant_tool_proficiency"
+      "source": "Protector",
+      "source_type": "class_choice",
+      "type": "grant_armor_proficiency"
     },
     {
       "proficiencies": [
@@ -1037,12 +1009,40 @@
       "type": "grant_weapon_proficiency"
     },
     {
-      "proficiencies": [
-        "Heavy armor"
+      "range": 60,
+      "source": "Darkvision",
+      "source_type": "species",
+      "type": "grant_darkvision"
+    },
+    {
+      "scaling": "per_level",
+      "source": "Tough",
+      "source_type": "feat",
+      "type": "bonus_hp",
+      "value": 2
+    },
+    {
+      "skills": [
+        "Animal Handling",
+        "Nature"
       ],
-      "source": "Protector",
-      "source_type": "class_choice",
-      "type": "grant_armor_proficiency"
+      "source": "Farmer",
+      "source_type": "background",
+      "type": "grant_skill_proficiency"
+    },
+    {
+      "source": "Farmer",
+      "source_type": "background",
+      "tools": [
+        "Carpenter's Tools"
+      ],
+      "type": "grant_tool_proficiency"
+    },
+    {
+      "source": "Light Bearer",
+      "source_type": "species",
+      "spell": "Light",
+      "type": "grant_cantrip"
     }
   ],
   "eldritch_invocation_stats": {
@@ -1102,15 +1102,15 @@
         "source": "Cleric"
       },
       {
-        "description": "You gain proficiency with Martial weapons and training with Heavy armor.",
-        "level": 1,
-        "name": "Divine Order: Protector",
-        "source": "Cleric"
-      },
-      {
         "description": "You can channel divine energy directly from the Outer Planes to fuel magical effects. You start with two such effects: Divine Spark and Turn Undead. You can use this class's Channel Divinity 2 per Short/Long Rest. Divine Spark: Point your Holy Symbol at a creature within 30 feet, roll 1d8 + Wisdom modifier, restore HP or deal Necrotic/Radiant damage (Constitution save for half). Turn Undead: Present Holy Symbol, Undead within 30 feet make Wisdom save or be Frightened and Incapacitated for 1 minute.",
         "level": 2,
         "name": "Channel Divinity",
+        "source": "Cleric"
+      },
+      {
+        "description": "You gain proficiency with Martial weapons and training with Heavy armor.",
+        "level": 1,
+        "name": "Divine Order: Protector",
         "source": "Cleric"
       }
     ],
@@ -1124,8 +1124,13 @@
     "lineage": [],
     "species": [
       {
-        "description": "You have Resistance to Necrotic damage and Radiant damage.",
-        "name": "Celestial Resistance",
+        "description": "As a Magic action, you touch a creature and roll a number of d4s equal to your Proficiency Bonus. The creature regains a number of Hit Points equal to the total rolled. Once you use this trait, you can't use it again until you finish a Long Rest.",
+        "name": "Healing Hands",
+        "source": "Aasimar"
+      },
+      {
+        "description": "When you reach character level 3, you can transform as a Bonus Action using one of the options below (choose the option each time you transform). The transformation lasts for 1 minute or until you end it (no action required). Once you transform, you can't do so again until you finish a Long Rest. Once on each of your turns before the transformation ends, you can deal extra damage to one target when you deal damage to it with an attack or a spell. The extra damage equals your Proficiency Bonus, and the extra damage's type is either Necrotic for Necrotic Shroud or Radiant for Heavenly Wings and Inner Radiance.<div class=\"mt-2\"><div class=\"mt-1\"><strong class=\"text-secondary\">Heavenly Wings:</strong> <span>Two spectral wings sprout from your back temporarily. Until the transformation ends, you have a Fly Speed equal to your Speed.</span></div><div class=\"mt-1\"><strong class=\"text-secondary\">Inner Radiance:</strong> <span>Searing light temporarily radiates from your eyes and mouth. For the duration, you shed Bright Light in a 10-foot radius and Dim Light for an additional 10 feet, and at the end of each of your turns, each creature within 10 feet of you takes Radiant damage equal to your Proficiency Bonus.</span></div><div class=\"mt-1\"><strong class=\"text-secondary\">Necrotic Shroud:</strong> <span>Your eyes briefly become pools of darkness, and flightless wings sprout from your back temporarily. Creatures other than your allies within 10 feet of you must succeed on a Charisma saving throw (DC 8 plus your Charisma modifier and Proficiency Bonus) or have the Frightened condition until the end of your next turn.</span></div></div>",
+        "name": "Celestial Revelation",
         "source": "Aasimar"
       },
       {
@@ -1134,22 +1139,23 @@
         "source": "Aasimar"
       },
       {
-        "description": "As a Magic action, you touch a creature and roll a number of d4s equal to your Proficiency Bonus. The creature regains a number of Hit Points equal to the total rolled. Once you use this trait, you can't use it again until you finish a Long Rest.",
-        "name": "Healing Hands",
+        "description": "You have Resistance to Necrotic damage and Radiant damage.",
+        "name": "Celestial Resistance",
         "source": "Aasimar"
       },
       {
         "description": "You know the Light cantrip. Charisma is your spellcasting ability for it.",
         "name": "Light Bearer",
         "source": "Aasimar"
-      },
-      {
-        "description": "When you reach character level 3, you can transform as a Bonus Action using one of the options below (choose the option each time you transform). The transformation lasts for 1 minute or until you end it (no action required). Once you transform, you can't do so again until you finish a Long Rest. Once on each of your turns before the transformation ends, you can deal extra damage to one target when you deal damage to it with an attack or a spell. The extra damage equals your Proficiency Bonus, and the extra damage's type is either Necrotic for Necrotic Shroud or Radiant for Heavenly Wings and Inner Radiance.<div class=\"mt-2\"><div class=\"mt-1\"><strong class=\"text-secondary\">Heavenly Wings:</strong> <span>Two spectral wings sprout from your back temporarily. Until the transformation ends, you have a Fly Speed equal to your Speed.</span></div><div class=\"mt-1\"><strong class=\"text-secondary\">Inner Radiance:</strong> <span>Searing light temporarily radiates from your eyes and mouth. For the duration, you shed Bright Light in a 10-foot radius and Dim Light for an additional 10 feet, and at the end of each of your turns, each creature within 10 feet of you takes Radiant damage equal to your Proficiency Bonus.</span></div><div class=\"mt-1\"><strong class=\"text-secondary\">Necrotic Shroud:</strong> <span>Your eyes briefly become pools of darkness, and flightless wings sprout from your back temporarily. Creatures other than your allies within 10 feet of you must succeed on a Charisma saving throw (DC 8 plus your Charisma modifier and Proficiency Bonus) or have the Frightened condition until the end of your next turn.</span></div></div>",
-        "name": "Celestial Revelation",
-        "source": "Aasimar"
       }
     ],
     "subclass": [
+      {
+        "description": "As a Bonus Action, you can make one attack with a weapon or an Unarmed Strike. You can use this Bonus Action a number of times equal to your Wisdom modifier (minimum of once). You regain all expended uses when you finish a Short or Long Rest.",
+        "level": 3,
+        "name": "War Priest",
+        "source": "War Domain"
+      },
       {
         "description": "When you or a creature within 30 feet of you misses with an attack roll, you can expend one use of your Channel Divinity and give that roll a +10 bonus, potentially causing it to hit. When you use this feature to benefit another creature's attack roll, you must take a Reaction to do so.",
         "level": 3,
@@ -1160,12 +1166,6 @@
         "description": "You always have certain spells prepared.\n\n<table class=\"table table-sm table-bordered mt-2\">\n<thead><tr><th>Character Level</th><th>Spells</th></tr></thead>\n<tbody>\n<tr class=\"table-success\"><td>3</td><td>\u2713 Guiding Bolt, Magic Weapon, Shield of Faith, Spiritual Weapon</td></tr>\n<tr class=\"table-secondary\"><td>5</td><td>\ud83d\udd12 Crusader's Mantle, Spirit Guardians</td></tr>\n<tr class=\"table-secondary\"><td>7</td><td>\ud83d\udd12 Fire Shield, Freedom of Movement</td></tr>\n<tr class=\"table-secondary\"><td>9</td><td>\ud83d\udd12 Hold Monster, Steel Wind Strike</td></tr>\n</tbody>\n</table>",
         "level": 9,
         "name": "War Domain Spells",
-        "source": "War Domain"
-      },
-      {
-        "description": "As a Bonus Action, you can make one attack with a weapon or an Unarmed Strike. You can use this Bonus Action a number of times equal to your Wisdom modifier (minimum of once). You regain all expended uses when you finish a Short or Long Rest.",
-        "level": 3,
-        "name": "War Priest",
         "source": "War Domain"
       }
     ]
@@ -1707,26 +1707,22 @@
     "background_spells": {},
     "cantrips": [
       {
-        "always_prepared": true,
+        "always_prepared": false,
         "casting_time": "1 action",
         "classes": [
-          "Bard",
           "Cleric",
-          "Sorcerer",
-          "Wizard"
+          "Druid"
         ],
-        "components": "V, M",
-        "concentration": false,
-        "description": "You touch one object that is no larger than 10 feet in any dimension. Until the spell ends, the object sheds bright light in a 20-foot radius and dim light for an additional 20 feet.",
-        "duration": "1 hour",
+        "components": "V, S",
+        "concentration": true,
+        "description": "You touch one willing creature. Once before the spell ends, the target can roll a d4 and add the number rolled to one ability check of its choice.",
+        "duration": "Concentration, up to 1 minute",
         "level": 0,
-        "material": "a firefly or phosphorescent moss",
-        "name": "Light",
-        "once_per_day": false,
+        "name": "Guidance",
         "range": "Touch",
         "ritual": false,
-        "school": "Evocation",
-        "source": "Aasimar"
+        "school": "Divination",
+        "source": "Selected"
       },
       {
         "always_prepared": false,
@@ -1766,82 +1762,30 @@
         "source": "Selected"
       },
       {
-        "always_prepared": false,
+        "always_prepared": true,
         "casting_time": "1 action",
         "classes": [
+          "Bard",
           "Cleric",
-          "Druid"
+          "Sorcerer",
+          "Wizard"
         ],
-        "components": "V, S",
-        "concentration": true,
-        "description": "You touch one willing creature. Once before the spell ends, the target can roll a d4 and add the number rolled to one ability check of its choice.",
-        "duration": "Concentration, up to 1 minute",
+        "components": "V, M",
+        "concentration": false,
+        "description": "You touch one object that is no larger than 10 feet in any dimension. Until the spell ends, the object sheds bright light in a 20-foot radius and dim light for an additional 20 feet.",
+        "duration": "1 hour",
         "level": 0,
-        "name": "Guidance",
+        "material": "a firefly or phosphorescent moss",
+        "name": "Light",
+        "once_per_day": false,
         "range": "Touch",
         "ritual": false,
-        "school": "Divination",
-        "source": "Selected"
+        "school": "Evocation",
+        "source": "Aasimar"
       }
     ],
     "known": {},
     "level_1": [
-      {
-        "always_prepared": true,
-        "casting_time": "1 action",
-        "classes": [
-          "Cleric"
-        ],
-        "components": "V, S",
-        "concentration": false,
-        "description": "You hurl a bolt of light toward a creature within range. Make a ranged spell attack against the target. On a hit, it takes 4d6 Radiant damage, and the next attack roll made against it before the end of your next turn has Advantage. Using a Higher-Level Spell Slot. The damage increases by 1d6 for each spell slot level above 1.",
-        "duration": "1 round",
-        "level": 1,
-        "name": "Guiding Bolt",
-        "once_per_day": false,
-        "range": "120 feet",
-        "ritual": false,
-        "school": "Evocation",
-        "source": "War Domain"
-      },
-      {
-        "always_prepared": true,
-        "casting_time": "1 bonus action",
-        "classes": [
-          "Cleric",
-          "Paladin"
-        ],
-        "components": "V, S, M",
-        "concentration": true,
-        "description": "A shimmering field appears and surrounds a creature of your choice within range, granting it a +2 bonus to AC for the duration.",
-        "duration": "Concentration, up to 10 minutes",
-        "level": 1,
-        "name": "Shield of Faith",
-        "once_per_day": false,
-        "range": "60 feet",
-        "ritual": false,
-        "school": "Abjuration",
-        "source": "War Domain"
-      },
-      {
-        "always_prepared": false,
-        "casting_time": "1 bonus action",
-        "classes": [
-          "Bard",
-          "Cleric",
-          "Druid"
-        ],
-        "components": "V",
-        "concentration": false,
-        "description": "A creature of your choice that you can see within range regains Hit Points equal to 2d4 plus your spellcasting ability modifier. This spell has no effect on Undead or Constructs. At Higher Levels. When you cast this spell using a spell slot of 2nd level or higher, the healing increases by 2d4 for each slot level above 1st.",
-        "duration": "Instantaneous",
-        "level": 1,
-        "name": "Healing Word",
-        "range": "60 feet",
-        "ritual": false,
-        "school": "Abjuration",
-        "source": "Selected"
-      },
       {
         "always_prepared": false,
         "casting_time": "1 action",
@@ -1882,6 +1826,62 @@
         "ritual": false,
         "school": "Enchantment",
         "source": "Selected"
+      },
+      {
+        "always_prepared": false,
+        "casting_time": "1 bonus action",
+        "classes": [
+          "Bard",
+          "Cleric",
+          "Druid"
+        ],
+        "components": "V",
+        "concentration": false,
+        "description": "A creature of your choice that you can see within range regains Hit Points equal to 2d4 plus your spellcasting ability modifier. This spell has no effect on Undead or Constructs. At Higher Levels. When you cast this spell using a spell slot of 2nd level or higher, the healing increases by 2d4 for each slot level above 1st.",
+        "duration": "Instantaneous",
+        "level": 1,
+        "name": "Healing Word",
+        "range": "60 feet",
+        "ritual": false,
+        "school": "Abjuration",
+        "source": "Selected"
+      },
+      {
+        "always_prepared": true,
+        "casting_time": "1 action",
+        "classes": [
+          "Cleric"
+        ],
+        "components": "V, S",
+        "concentration": false,
+        "description": "You hurl a bolt of light toward a creature within range. Make a ranged spell attack against the target. On a hit, it takes 4d6 Radiant damage, and the next attack roll made against it before the end of your next turn has Advantage. Using a Higher-Level Spell Slot. The damage increases by 1d6 for each spell slot level above 1.",
+        "duration": "1 round",
+        "level": 1,
+        "name": "Guiding Bolt",
+        "once_per_day": false,
+        "range": "120 feet",
+        "ritual": false,
+        "school": "Evocation",
+        "source": "War Domain"
+      },
+      {
+        "always_prepared": true,
+        "casting_time": "1 bonus action",
+        "classes": [
+          "Cleric",
+          "Paladin"
+        ],
+        "components": "V, S, M",
+        "concentration": true,
+        "description": "A shimmering field appears and surrounds a creature of your choice within range, granting it a +2 bonus to AC for the duration.",
+        "duration": "Concentration, up to 10 minutes",
+        "level": 1,
+        "name": "Shield of Faith",
+        "once_per_day": false,
+        "range": "60 feet",
+        "ritual": false,
+        "school": "Abjuration",
+        "source": "War Domain"
       }
     ],
     "prepared": {
@@ -1904,26 +1904,22 @@
   "spells_by_level": {
     "0": [
       {
-        "always_prepared": true,
+        "always_prepared": false,
         "casting_time": "1 action",
         "classes": [
-          "Bard",
           "Cleric",
-          "Sorcerer",
-          "Wizard"
+          "Druid"
         ],
-        "components": "V, M",
-        "concentration": false,
-        "description": "You touch one object that is no larger than 10 feet in any dimension. Until the spell ends, the object sheds bright light in a 20-foot radius and dim light for an additional 20 feet.",
-        "duration": "1 hour",
+        "components": "V, S",
+        "concentration": true,
+        "description": "You touch one willing creature. Once before the spell ends, the target can roll a d4 and add the number rolled to one ability check of its choice.",
+        "duration": "Concentration, up to 1 minute",
         "level": 0,
-        "material": "a firefly or phosphorescent moss",
-        "name": "Light",
-        "once_per_day": false,
+        "name": "Guidance",
         "range": "Touch",
         "ritual": false,
-        "school": "Evocation",
-        "source": "Aasimar"
+        "school": "Divination",
+        "source": "Selected"
       },
       {
         "always_prepared": false,
@@ -1963,81 +1959,29 @@
         "source": "Selected"
       },
       {
-        "always_prepared": false,
-        "casting_time": "1 action",
-        "classes": [
-          "Cleric",
-          "Druid"
-        ],
-        "components": "V, S",
-        "concentration": true,
-        "description": "You touch one willing creature. Once before the spell ends, the target can roll a d4 and add the number rolled to one ability check of its choice.",
-        "duration": "Concentration, up to 1 minute",
-        "level": 0,
-        "name": "Guidance",
-        "range": "Touch",
-        "ritual": false,
-        "school": "Divination",
-        "source": "Selected"
-      }
-    ],
-    "1": [
-      {
         "always_prepared": true,
         "casting_time": "1 action",
-        "classes": [
-          "Cleric"
-        ],
-        "components": "V, S",
-        "concentration": false,
-        "description": "You hurl a bolt of light toward a creature within range. Make a ranged spell attack against the target. On a hit, it takes 4d6 Radiant damage, and the next attack roll made against it before the end of your next turn has Advantage. Using a Higher-Level Spell Slot. The damage increases by 1d6 for each spell slot level above 1.",
-        "duration": "1 round",
-        "level": 1,
-        "name": "Guiding Bolt",
-        "once_per_day": false,
-        "range": "120 feet",
-        "ritual": false,
-        "school": "Evocation",
-        "source": "War Domain"
-      },
-      {
-        "always_prepared": true,
-        "casting_time": "1 bonus action",
-        "classes": [
-          "Cleric",
-          "Paladin"
-        ],
-        "components": "V, S, M",
-        "concentration": true,
-        "description": "A shimmering field appears and surrounds a creature of your choice within range, granting it a +2 bonus to AC for the duration.",
-        "duration": "Concentration, up to 10 minutes",
-        "level": 1,
-        "name": "Shield of Faith",
-        "once_per_day": false,
-        "range": "60 feet",
-        "ritual": false,
-        "school": "Abjuration",
-        "source": "War Domain"
-      },
-      {
-        "always_prepared": false,
-        "casting_time": "1 bonus action",
         "classes": [
           "Bard",
           "Cleric",
-          "Druid"
+          "Sorcerer",
+          "Wizard"
         ],
-        "components": "V",
+        "components": "V, M",
         "concentration": false,
-        "description": "A creature of your choice that you can see within range regains Hit Points equal to 2d4 plus your spellcasting ability modifier. This spell has no effect on Undead or Constructs. At Higher Levels. When you cast this spell using a spell slot of 2nd level or higher, the healing increases by 2d4 for each slot level above 1st.",
-        "duration": "Instantaneous",
-        "level": 1,
-        "name": "Healing Word",
-        "range": "60 feet",
+        "description": "You touch one object that is no larger than 10 feet in any dimension. Until the spell ends, the object sheds bright light in a 20-foot radius and dim light for an additional 20 feet.",
+        "duration": "1 hour",
+        "level": 0,
+        "material": "a firefly or phosphorescent moss",
+        "name": "Light",
+        "once_per_day": false,
+        "range": "Touch",
         "ritual": false,
-        "school": "Abjuration",
-        "source": "Selected"
-      },
+        "school": "Evocation",
+        "source": "Aasimar"
+      }
+    ],
+    "1": [
       {
         "always_prepared": false,
         "casting_time": "1 action",
@@ -2078,9 +2022,129 @@
         "ritual": false,
         "school": "Enchantment",
         "source": "Selected"
+      },
+      {
+        "always_prepared": false,
+        "casting_time": "1 bonus action",
+        "classes": [
+          "Bard",
+          "Cleric",
+          "Druid"
+        ],
+        "components": "V",
+        "concentration": false,
+        "description": "A creature of your choice that you can see within range regains Hit Points equal to 2d4 plus your spellcasting ability modifier. This spell has no effect on Undead or Constructs. At Higher Levels. When you cast this spell using a spell slot of 2nd level or higher, the healing increases by 2d4 for each slot level above 1st.",
+        "duration": "Instantaneous",
+        "level": 1,
+        "name": "Healing Word",
+        "range": "60 feet",
+        "ritual": false,
+        "school": "Abjuration",
+        "source": "Selected"
+      },
+      {
+        "always_prepared": true,
+        "casting_time": "1 action",
+        "classes": [
+          "Cleric"
+        ],
+        "components": "V, S",
+        "concentration": false,
+        "description": "You hurl a bolt of light toward a creature within range. Make a ranged spell attack against the target. On a hit, it takes 4d6 Radiant damage, and the next attack roll made against it before the end of your next turn has Advantage. Using a Higher-Level Spell Slot. The damage increases by 1d6 for each spell slot level above 1.",
+        "duration": "1 round",
+        "level": 1,
+        "name": "Guiding Bolt",
+        "once_per_day": false,
+        "range": "120 feet",
+        "ritual": false,
+        "school": "Evocation",
+        "source": "War Domain"
+      },
+      {
+        "always_prepared": true,
+        "casting_time": "1 bonus action",
+        "classes": [
+          "Cleric",
+          "Paladin"
+        ],
+        "components": "V, S, M",
+        "concentration": true,
+        "description": "A shimmering field appears and surrounds a creature of your choice within range, granting it a +2 bonus to AC for the duration.",
+        "duration": "Concentration, up to 10 minutes",
+        "level": 1,
+        "name": "Shield of Faith",
+        "once_per_day": false,
+        "range": "60 feet",
+        "ritual": false,
+        "school": "Abjuration",
+        "source": "War Domain"
       }
     ],
     "2": [
+      {
+        "always_prepared": false,
+        "casting_time": "1 action or Ritual",
+        "classes": [
+          "Bard",
+          "Cleric",
+          "Ranger"
+        ],
+        "components": "V, S",
+        "concentration": true,
+        "description": "For the duration, no sound can be created within or pass through a 20-foot-radius Sphere centered on a point you choose within range. Any creature or object entirely inside the sphere is immune to Thunder damage, and creatures are Deafened while entirely inside it. Casting a spell that includes a verbal component is impossible there.",
+        "duration": "Concentration, up to 10 minutes",
+        "level": 2,
+        "name": "Silence",
+        "range": "120 feet",
+        "ritual": true,
+        "school": "Illusion",
+        "source": "Selected"
+      },
+      {
+        "always_prepared": false,
+        "casting_time": "1 action",
+        "classes": [
+          "Bard",
+          "Cleric",
+          "Druid",
+          "Paladin",
+          "Ranger"
+        ],
+        "components": "V, S, M",
+        "concentration": false,
+        "description": "Choose up to three creatures within range. Each target's Hit Point maximum and current Hit Points increase by 5 for the duration. At Higher Levels. When you cast this spell using a spell slot of 3rd level or higher, each target's Hit Points increase by 5 for each slot level above 2nd.",
+        "duration": "8 hours",
+        "level": 2,
+        "material": "a tiny strip of white cloth",
+        "name": "Aid",
+        "range": "30 feet",
+        "ritual": false,
+        "school": "Abjuration",
+        "source": "Selected"
+      },
+      {
+        "always_prepared": false,
+        "casting_time": "1 action",
+        "classes": [
+          "Bard",
+          "Cleric",
+          "Druid",
+          "Sorcerer",
+          "Warlock",
+          "Wizard"
+        ],
+        "components": "V, S, M",
+        "concentration": true,
+        "description": "Choose a humanoid that you can see within range. The target must succeed on a Wisdom saving throw or be paralyzed for the duration. At the end of each of its turns, the target can make another Wisdom saving throw. On a success, the spell ends on the target. At Higher Levels. When you cast this spell using a spell slot of 3rd level or higher, you can target one additional humanoid for each slot level above 2nd. The humanoids must be within 30 feet of each other when you target them.",
+        "duration": "Concentration, up to 1 minute",
+        "level": 2,
+        "material": "a small, straight piece of iron",
+        "name": "Hold Person",
+        "range": "60 feet",
+        "ritual": false,
+        "school": "Enchantment",
+        "source": "Selected"
+      },
       {
         "always_prepared": true,
         "casting_time": "1 bonus action",
@@ -2120,70 +2184,6 @@
         "ritual": false,
         "school": "Evocation",
         "source": "War Domain"
-      },
-      {
-        "always_prepared": false,
-        "casting_time": "1 action",
-        "classes": [
-          "Bard",
-          "Cleric",
-          "Druid",
-          "Sorcerer",
-          "Warlock",
-          "Wizard"
-        ],
-        "components": "V, S, M",
-        "concentration": true,
-        "description": "Choose a humanoid that you can see within range. The target must succeed on a Wisdom saving throw or be paralyzed for the duration. At the end of each of its turns, the target can make another Wisdom saving throw. On a success, the spell ends on the target. At Higher Levels. When you cast this spell using a spell slot of 3rd level or higher, you can target one additional humanoid for each slot level above 2nd. The humanoids must be within 30 feet of each other when you target them.",
-        "duration": "Concentration, up to 1 minute",
-        "level": 2,
-        "material": "a small, straight piece of iron",
-        "name": "Hold Person",
-        "range": "60 feet",
-        "ritual": false,
-        "school": "Enchantment",
-        "source": "Selected"
-      },
-      {
-        "always_prepared": false,
-        "casting_time": "1 action",
-        "classes": [
-          "Bard",
-          "Cleric",
-          "Druid",
-          "Paladin",
-          "Ranger"
-        ],
-        "components": "V, S, M",
-        "concentration": false,
-        "description": "Choose up to three creatures within range. Each target's Hit Point maximum and current Hit Points increase by 5 for the duration. At Higher Levels. When you cast this spell using a spell slot of 3rd level or higher, each target's Hit Points increase by 5 for each slot level above 2nd.",
-        "duration": "8 hours",
-        "level": 2,
-        "material": "a tiny strip of white cloth",
-        "name": "Aid",
-        "range": "30 feet",
-        "ritual": false,
-        "school": "Abjuration",
-        "source": "Selected"
-      },
-      {
-        "always_prepared": false,
-        "casting_time": "1 action or Ritual",
-        "classes": [
-          "Bard",
-          "Cleric",
-          "Ranger"
-        ],
-        "components": "V, S",
-        "concentration": true,
-        "description": "For the duration, no sound can be created within or pass through a 20-foot-radius Sphere centered on a point you choose within range. Any creature or object entirely inside the sphere is immune to Thunder damage, and creatures are Deafened while entirely inside it. Casting a spell that includes a verbal component is impossible there.",
-        "duration": "Concentration, up to 10 minutes",
-        "level": 2,
-        "name": "Silence",
-        "range": "120 feet",
-        "ritual": true,
-        "school": "Illusion",
-        "source": "Selected"
       }
     ]
   },

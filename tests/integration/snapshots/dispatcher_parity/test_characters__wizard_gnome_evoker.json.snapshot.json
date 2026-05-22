@@ -129,25 +129,19 @@
   ],
   "attacks": [
     {
-      "ability": "STR/DEX (DEX)",
-      "attack_bonus": 3,
-      "attack_bonus_display": "+3",
-      "avg_crit": 6.0,
-      "avg_damage": 3.5,
-      "avg_throw_damage": 3.5,
-      "damage": "1d4 + 1",
+      "ability": "STR",
+      "attack_bonus": 1,
+      "attack_bonus_display": "+1",
+      "avg_crit": 0.0,
+      "avg_damage": 0.0,
+      "damage": "0",
       "damage_notes": [],
-      "damage_type": "Piercing",
-      "icon": "/static/images/weapons/dagger.svg",
-      "mastery": "Nick",
-      "name": "Dagger",
+      "damage_type": "Bludgeoning",
+      "icon": "/static/images/weapons/strike.svg",
+      "mastery": null,
+      "name": "Unarmed Strike",
       "proficient": true,
-      "properties": [
-        "Finesse",
-        "Light",
-        "Thrown (range 20/60)"
-      ],
-      "throw_damage": "1d4 + 1"
+      "properties": []
     },
     {
       "ability": "STR",
@@ -171,19 +165,25 @@
       ]
     },
     {
-      "ability": "STR",
-      "attack_bonus": 1,
-      "attack_bonus_display": "+1",
-      "avg_crit": 0.0,
-      "avg_damage": 0.0,
-      "damage": "0",
+      "ability": "STR/DEX (DEX)",
+      "attack_bonus": 3,
+      "attack_bonus_display": "+3",
+      "avg_crit": 6.0,
+      "avg_damage": 3.5,
+      "avg_throw_damage": 3.5,
+      "damage": "1d4 + 1",
       "damage_notes": [],
-      "damage_type": "Bludgeoning",
-      "icon": "/static/images/weapons/strike.svg",
-      "mastery": null,
-      "name": "Unarmed Strike",
+      "damage_type": "Piercing",
+      "icon": "/static/images/weapons/dagger.svg",
+      "mastery": "Nick",
+      "name": "Dagger",
       "proficient": true,
-      "properties": []
+      "properties": [
+        "Finesse",
+        "Light",
+        "Thrown (range 20/60)"
+      ],
+      "throw_damage": "1d4 + 1"
     }
   ],
   "background": "Scribe",
@@ -203,15 +203,15 @@
     "description": "You spent formative years in a scriptorium, a monastery dedicated to the preservation of knowledge, or a government agency, where you learned to write with a clear hand and produce finely written texts. Perhaps you scribed government documents or copied tomes of literature. You might have some skill as a writer of poetry, narrative, or scholarly research. Above all, you have a careful attention to detail, helping you avoid introducing mistakes to the documents you copy and create.",
     "effects": [
       {
+        "feat": "Skilled",
+        "type": "grant_origin_feat"
+      },
+      {
         "skills": [
           "Investigation",
           "Perception"
         ],
         "type": "grant_skill_proficiency"
-      },
-      {
-        "feat": "Skilled",
-        "type": "grant_origin_feat"
       },
       {
         "tools": [
@@ -969,12 +969,6 @@
   "darkvision": 60,
   "effects": [
     {
-      "range": 60,
-      "source": "Darkvision",
-      "source_type": "species",
-      "type": "grant_darkvision"
-    },
-    {
       "abilities": [
         "Intelligence",
         "Wisdom",
@@ -986,30 +980,10 @@
       "type": "grant_save_advantage"
     },
     {
-      "source": "Natural Illusionist",
-      "source_type": "lineage",
-      "spell": "Minor Illusion",
-      "type": "grant_cantrip"
-    },
-    {
-      "min_level": 1,
-      "source": "Speak with Animals",
-      "source_type": "lineage",
-      "spell": "Speak with Animals",
-      "type": "grant_spell"
-    },
-    {
-      "source": "Natural Illusionist",
-      "source_type": "lineage",
-      "spell": "Minor Illusion",
-      "type": "grant_cantrip"
-    },
-    {
-      "min_level": 1,
-      "source": "Speak with Animals",
-      "source_type": "lineage",
-      "spell": "Speak with Animals",
-      "type": "grant_spell"
+      "feat": "Skilled",
+      "source": "Scribe",
+      "source_type": "background",
+      "type": "grant_origin_feat"
     },
     {
       "from_choice": "wizard_scholar_skill",
@@ -1017,6 +991,32 @@
       "source_class_name": "Wizard",
       "source_type": "class",
       "type": "grant_skill_expertise"
+    },
+    {
+      "from_choice": "wizard_scholar_skill",
+      "source": "Scholar",
+      "source_type": "class",
+      "type": "grant_skill_expertise"
+    },
+    {
+      "min_level": 1,
+      "source": "Speak with Animals",
+      "source_type": "lineage",
+      "spell": "Speak with Animals",
+      "type": "grant_spell"
+    },
+    {
+      "min_level": 1,
+      "source": "Speak with Animals",
+      "source_type": "lineage",
+      "spell": "Speak with Animals",
+      "type": "grant_spell"
+    },
+    {
+      "range": 60,
+      "source": "Darkvision",
+      "source_type": "species",
+      "type": "grant_darkvision"
     },
     {
       "skills": [
@@ -1028,10 +1028,16 @@
       "type": "grant_skill_proficiency"
     },
     {
-      "feat": "Skilled",
-      "source": "Scribe",
-      "source_type": "background",
-      "type": "grant_origin_feat"
+      "source": "Natural Illusionist",
+      "source_type": "lineage",
+      "spell": "Minor Illusion",
+      "type": "grant_cantrip"
+    },
+    {
+      "source": "Natural Illusionist",
+      "source_type": "lineage",
+      "spell": "Minor Illusion",
+      "type": "grant_cantrip"
     },
     {
       "source": "Scribe",
@@ -1040,12 +1046,6 @@
         "Calligrapher's Supplies"
       ],
       "type": "grant_tool_proficiency"
-    },
-    {
-      "from_choice": "wizard_scholar_skill",
-      "source": "Scholar",
-      "source_type": "class",
-      "type": "grant_skill_expertise"
     }
   ],
   "eldritch_invocation_stats": {
@@ -1063,11 +1063,11 @@
         "source": "Class"
       },
       {
-        "name": "Spellbook",
+        "name": "Scholar's Pack",
         "source": "Class"
       },
       {
-        "name": "Scholar's Pack",
+        "name": "Spellbook",
         "source": "Class"
       }
     ],
@@ -1116,15 +1116,9 @@
     "background": [],
     "class": [
       {
-        "description": "You have learned to cast spells through study of arcane magic. You know three Wizard cantrips (Light, Mage Hand, and Ray of Frost are recommended). Your spellbook starts with six level 1 Wizard spells (Detect Magic, Feather Fall, Mage Armor, Magic Missile, Sleep, and Thunderwave are recommended). You prepare spells from your spellbook and can change your prepared spells when you finish a Long Rest.",
-        "level": 1,
-        "name": "Spellcasting",
-        "source": "Wizard"
-      },
-      {
-        "description": "You can cast any spell as a Ritual if that spell has the Ritual tag and the spell is in your spellbook. You needn't have the spell prepared, but you must read from the book to cast a spell in this way.",
-        "level": 1,
-        "name": "Ritual Adept",
+        "description": "Choose one of the following skills in which you have proficiency: Arcana, History, Investigation, Medicine, Nature, or Religion. You have Expertise in the chosen skill.",
+        "level": 2,
+        "name": "Scholar",
         "source": "Wizard"
       },
       {
@@ -1134,9 +1128,15 @@
         "source": "Wizard"
       },
       {
-        "description": "Choose one of the following skills in which you have proficiency: Arcana, History, Investigation, Medicine, Nature, or Religion. You have Expertise in the chosen skill.",
-        "level": 2,
-        "name": "Scholar",
+        "description": "You can cast any spell as a Ritual if that spell has the Ritual tag and the spell is in your spellbook. You needn't have the spell prepared, but you must read from the book to cast a spell in this way.",
+        "level": 1,
+        "name": "Ritual Adept",
+        "source": "Wizard"
+      },
+      {
+        "description": "You have learned to cast spells through study of arcane magic. You know three Wizard cantrips (Light, Mage Hand, and Ray of Frost are recommended). Your spellbook starts with six level 1 Wizard spells (Detect Magic, Feather Fall, Mage Armor, Magic Missile, Sleep, and Thunderwave are recommended). You prepare spells from your spellbook and can change your prepared spells when you finish a Long Rest.",
+        "level": 1,
+        "name": "Spellcasting",
         "source": "Wizard"
       }
     ],
@@ -1149,20 +1149,20 @@
     ],
     "lineage": [
       {
-        "description": "You know the Minor Illusion cantrip.",
-        "name": "Natural Illusionist",
+        "description": "You always have Speak with Animals prepared. You can cast it without a spell slot a number of times equal to your Proficiency Bonus, and you regain all expended uses when you finish a Long Rest. You can also use any spell slots you have to cast the spell.\n\nSpells Always Prepared: Speak with Animals",
+        "name": "Speak with Animals",
         "source": "Forest Gnome"
       },
       {
-        "description": "You always have Speak with Animals prepared. You can cast it without a spell slot a number of times equal to your Proficiency Bonus, and you regain all expended uses when you finish a Long Rest. You can also use any spell slots you have to cast the spell.\n\nSpells Always Prepared: Speak with Animals",
-        "name": "Speak with Animals",
+        "description": "You know the Minor Illusion cantrip.",
+        "name": "Natural Illusionist",
         "source": "Forest Gnome"
       }
     ],
     "species": [
       {
-        "description": "You have Darkvision with a range of 60 feet.",
-        "name": "Darkvision",
+        "description": "You are part of a lineage that grants you supernatural abilities. Choose Forest Gnome or Rock Gnome. Intelligence, Wisdom, or Charisma is your spellcasting ability for the spells you cast with this trait.",
+        "name": "Gnomish Lineage",
         "source": "Gnome"
       },
       {
@@ -1171,8 +1171,8 @@
         "source": "Gnome"
       },
       {
-        "description": "You are part of a lineage that grants you supernatural abilities. Choose Forest Gnome or Rock Gnome. Intelligence, Wisdom, or Charisma is your spellcasting ability for the spells you cast with this trait.",
-        "name": "Gnomish Lineage",
+        "description": "You have Darkvision with a range of 60 feet.",
+        "name": "Darkvision",
         "source": "Gnome"
       }
     ],
@@ -1822,46 +1822,6 @@
     "background_spells": {},
     "cantrips": [
       {
-        "always_prepared": true,
-        "casting_time": "1 action",
-        "classes": [
-          "Bard",
-          "Sorcerer",
-          "Warlock",
-          "Wizard"
-        ],
-        "components": "S, M",
-        "concentration": false,
-        "description": "You create a sound or an image of an object within range that lasts for the duration. The illusion ends if you cast this spell again. If a creature takes a Study action to examine the sound or image, the creature can determine that it is an illusion with a successful Intelligence (Investigation) check against your spell save DC. If a creature discerns the illusion for what it is, the illusion becomes faint to the creature.",
-        "duration": "1 minute",
-        "level": 0,
-        "material": "a bit of fleece",
-        "name": "Minor Illusion",
-        "once_per_day": false,
-        "range": "30 feet",
-        "ritual": false,
-        "school": "Illusion",
-        "source": "Forest Gnome"
-      },
-      {
-        "always_prepared": false,
-        "casting_time": "1 action",
-        "classes": [
-          "Sorcerer",
-          "Wizard"
-        ],
-        "components": "V, S",
-        "concentration": false,
-        "description": "You hurl a mote of fire at a creature or object within range. Make a ranged spell attack against the target. On a hit, the target takes 1d10 fire damage. A flammable object hit by this spell ignites if it isn't being worn or carried. This spell's damage increases by 1d10 when you reach 5th level (2d10), 11th level (3d10), and 17th level (4d10).",
-        "duration": "Instantaneous",
-        "level": 0,
-        "name": "Fire Bolt",
-        "range": "120 feet",
-        "ritual": false,
-        "school": "Evocation",
-        "source": "Selected"
-      },
-      {
         "always_prepared": false,
         "casting_time": "1 action",
         "classes": [
@@ -1899,30 +1859,72 @@
         "ritual": false,
         "school": "Conjuration",
         "source": "Selected"
-      }
-    ],
-    "known": {},
-    "level_1": [
+      },
+      {
+        "always_prepared": false,
+        "casting_time": "1 action",
+        "classes": [
+          "Sorcerer",
+          "Wizard"
+        ],
+        "components": "V, S",
+        "concentration": false,
+        "description": "You hurl a mote of fire at a creature or object within range. Make a ranged spell attack against the target. On a hit, the target takes 1d10 fire damage. A flammable object hit by this spell ignites if it isn't being worn or carried. This spell's damage increases by 1d10 when you reach 5th level (2d10), 11th level (3d10), and 17th level (4d10).",
+        "duration": "Instantaneous",
+        "level": 0,
+        "name": "Fire Bolt",
+        "range": "120 feet",
+        "ritual": false,
+        "school": "Evocation",
+        "source": "Selected"
+      },
       {
         "always_prepared": true,
         "casting_time": "1 action",
         "classes": [
           "Bard",
+          "Sorcerer",
+          "Warlock",
+          "Wizard"
+        ],
+        "components": "S, M",
+        "concentration": false,
+        "description": "You create a sound or an image of an object within range that lasts for the duration. The illusion ends if you cast this spell again. If a creature takes a Study action to examine the sound or image, the creature can determine that it is an illusion with a successful Intelligence (Investigation) check against your spell save DC. If a creature discerns the illusion for what it is, the illusion becomes faint to the creature.",
+        "duration": "1 minute",
+        "level": 0,
+        "material": "a bit of fleece",
+        "name": "Minor Illusion",
+        "once_per_day": false,
+        "range": "30 feet",
+        "ritual": false,
+        "school": "Illusion",
+        "source": "Forest Gnome"
+      }
+    ],
+    "known": {},
+    "level_1": [
+      {
+        "always_prepared": false,
+        "casting_time": "1 action",
+        "classes": [
+          "Bard",
+          "Cleric",
           "Druid",
+          "Paladin",
           "Ranger",
-          "Warlock"
+          "Sorcerer",
+          "Wizard"
         ],
         "components": "V, S",
-        "concentration": false,
-        "description": "For the duration, you can comprehend and verbally communicate with Beasts, and you can use any of the Influence action's skill options with them. Most Beasts have little to say about topics that don't pertain to survival or companionship, but at minimum, a Beast can give you information about nearby locations and monsters, including whatever it has perceived within the past day.",
-        "duration": "10 minutes",
+        "concentration": true,
+        "description": "For the duration, you can sense the presence of magic nearby and learn its general nature.",
+        "duration": "Concentration, up to 10 minutes",
         "level": 1,
-        "name": "Speak with Animals",
-        "once_per_day": true,
+        "name": "Detect Magic",
         "range": "Self",
         "ritual": true,
         "school": "Divination",
-        "source": "Forest Gnome"
+        "source": "Selected"
       },
       {
         "always_prepared": false,
@@ -1962,29 +1964,6 @@
       },
       {
         "always_prepared": false,
-        "casting_time": "1 action",
-        "classes": [
-          "Bard",
-          "Cleric",
-          "Druid",
-          "Paladin",
-          "Ranger",
-          "Sorcerer",
-          "Wizard"
-        ],
-        "components": "V, S",
-        "concentration": true,
-        "description": "For the duration, you can sense the presence of magic nearby and learn its general nature.",
-        "duration": "Concentration, up to 10 minutes",
-        "level": 1,
-        "name": "Detect Magic",
-        "range": "Self",
-        "ritual": true,
-        "school": "Divination",
-        "source": "Selected"
-      },
-      {
-        "always_prepared": false,
         "casting_time": "1 minute or Ritual",
         "classes": [
           "Artificer",
@@ -2001,6 +1980,27 @@
         "ritual": true,
         "school": "Abjuration",
         "source": "Selected"
+      },
+      {
+        "always_prepared": true,
+        "casting_time": "1 action",
+        "classes": [
+          "Bard",
+          "Druid",
+          "Ranger",
+          "Warlock"
+        ],
+        "components": "V, S",
+        "concentration": false,
+        "description": "For the duration, you can comprehend and verbally communicate with Beasts, and you can use any of the Influence action's skill options with them. Most Beasts have little to say about topics that don't pertain to survival or companionship, but at minimum, a Beast can give you information about nearby locations and monsters, including whatever it has perceived within the past day.",
+        "duration": "10 minutes",
+        "level": 1,
+        "name": "Speak with Animals",
+        "once_per_day": true,
+        "range": "Self",
+        "ritual": true,
+        "school": "Divination",
+        "source": "Forest Gnome"
       }
     ],
     "prepared": {
@@ -2023,46 +2023,6 @@
   "spells_by_level": {
     "0": [
       {
-        "always_prepared": true,
-        "casting_time": "1 action",
-        "classes": [
-          "Bard",
-          "Sorcerer",
-          "Warlock",
-          "Wizard"
-        ],
-        "components": "S, M",
-        "concentration": false,
-        "description": "You create a sound or an image of an object within range that lasts for the duration. The illusion ends if you cast this spell again. If a creature takes a Study action to examine the sound or image, the creature can determine that it is an illusion with a successful Intelligence (Investigation) check against your spell save DC. If a creature discerns the illusion for what it is, the illusion becomes faint to the creature.",
-        "duration": "1 minute",
-        "level": 0,
-        "material": "a bit of fleece",
-        "name": "Minor Illusion",
-        "once_per_day": false,
-        "range": "30 feet",
-        "ritual": false,
-        "school": "Illusion",
-        "source": "Forest Gnome"
-      },
-      {
-        "always_prepared": false,
-        "casting_time": "1 action",
-        "classes": [
-          "Sorcerer",
-          "Wizard"
-        ],
-        "components": "V, S",
-        "concentration": false,
-        "description": "You hurl a mote of fire at a creature or object within range. Make a ranged spell attack against the target. On a hit, the target takes 1d10 fire damage. A flammable object hit by this spell ignites if it isn't being worn or carried. This spell's damage increases by 1d10 when you reach 5th level (2d10), 11th level (3d10), and 17th level (4d10).",
-        "duration": "Instantaneous",
-        "level": 0,
-        "name": "Fire Bolt",
-        "range": "120 feet",
-        "ritual": false,
-        "school": "Evocation",
-        "source": "Selected"
-      },
-      {
         "always_prepared": false,
         "casting_time": "1 action",
         "classes": [
@@ -2100,29 +2060,71 @@
         "ritual": false,
         "school": "Conjuration",
         "source": "Selected"
-      }
-    ],
-    "1": [
+      },
+      {
+        "always_prepared": false,
+        "casting_time": "1 action",
+        "classes": [
+          "Sorcerer",
+          "Wizard"
+        ],
+        "components": "V, S",
+        "concentration": false,
+        "description": "You hurl a mote of fire at a creature or object within range. Make a ranged spell attack against the target. On a hit, the target takes 1d10 fire damage. A flammable object hit by this spell ignites if it isn't being worn or carried. This spell's damage increases by 1d10 when you reach 5th level (2d10), 11th level (3d10), and 17th level (4d10).",
+        "duration": "Instantaneous",
+        "level": 0,
+        "name": "Fire Bolt",
+        "range": "120 feet",
+        "ritual": false,
+        "school": "Evocation",
+        "source": "Selected"
+      },
       {
         "always_prepared": true,
         "casting_time": "1 action",
         "classes": [
           "Bard",
+          "Sorcerer",
+          "Warlock",
+          "Wizard"
+        ],
+        "components": "S, M",
+        "concentration": false,
+        "description": "You create a sound or an image of an object within range that lasts for the duration. The illusion ends if you cast this spell again. If a creature takes a Study action to examine the sound or image, the creature can determine that it is an illusion with a successful Intelligence (Investigation) check against your spell save DC. If a creature discerns the illusion for what it is, the illusion becomes faint to the creature.",
+        "duration": "1 minute",
+        "level": 0,
+        "material": "a bit of fleece",
+        "name": "Minor Illusion",
+        "once_per_day": false,
+        "range": "30 feet",
+        "ritual": false,
+        "school": "Illusion",
+        "source": "Forest Gnome"
+      }
+    ],
+    "1": [
+      {
+        "always_prepared": false,
+        "casting_time": "1 action",
+        "classes": [
+          "Bard",
+          "Cleric",
           "Druid",
+          "Paladin",
           "Ranger",
-          "Warlock"
+          "Sorcerer",
+          "Wizard"
         ],
         "components": "V, S",
-        "concentration": false,
-        "description": "For the duration, you can comprehend and verbally communicate with Beasts, and you can use any of the Influence action's skill options with them. Most Beasts have little to say about topics that don't pertain to survival or companionship, but at minimum, a Beast can give you information about nearby locations and monsters, including whatever it has perceived within the past day.",
-        "duration": "10 minutes",
+        "concentration": true,
+        "description": "For the duration, you can sense the presence of magic nearby and learn its general nature.",
+        "duration": "Concentration, up to 10 minutes",
         "level": 1,
-        "name": "Speak with Animals",
-        "once_per_day": true,
+        "name": "Detect Magic",
         "range": "Self",
         "ritual": true,
         "school": "Divination",
-        "source": "Forest Gnome"
+        "source": "Selected"
       },
       {
         "always_prepared": false,
@@ -2162,29 +2164,6 @@
       },
       {
         "always_prepared": false,
-        "casting_time": "1 action",
-        "classes": [
-          "Bard",
-          "Cleric",
-          "Druid",
-          "Paladin",
-          "Ranger",
-          "Sorcerer",
-          "Wizard"
-        ],
-        "components": "V, S",
-        "concentration": true,
-        "description": "For the duration, you can sense the presence of magic nearby and learn its general nature.",
-        "duration": "Concentration, up to 10 minutes",
-        "level": 1,
-        "name": "Detect Magic",
-        "range": "Self",
-        "ritual": true,
-        "school": "Divination",
-        "source": "Selected"
-      },
-      {
-        "always_prepared": false,
         "casting_time": "1 minute or Ritual",
         "classes": [
           "Artificer",
@@ -2201,6 +2180,27 @@
         "ritual": true,
         "school": "Abjuration",
         "source": "Selected"
+      },
+      {
+        "always_prepared": true,
+        "casting_time": "1 action",
+        "classes": [
+          "Bard",
+          "Druid",
+          "Ranger",
+          "Warlock"
+        ],
+        "components": "V, S",
+        "concentration": false,
+        "description": "For the duration, you can comprehend and verbally communicate with Beasts, and you can use any of the Influence action's skill options with them. Most Beasts have little to say about topics that don't pertain to survival or companionship, but at minimum, a Beast can give you information about nearby locations and monsters, including whatever it has perceived within the past day.",
+        "duration": "10 minutes",
+        "level": 1,
+        "name": "Speak with Animals",
+        "once_per_day": true,
+        "range": "Self",
+        "ritual": true,
+        "school": "Divination",
+        "source": "Forest Gnome"
       }
     ],
     "2": [
