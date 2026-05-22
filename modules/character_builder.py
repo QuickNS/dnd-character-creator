@@ -4406,7 +4406,28 @@ class CharacterBuilder:
                     result["effective_caster_level"] = (class_level + 1) // 2
                 elif progression == "third":
                     result["effective_caster_level"] = class_level // 3
-                # pact and none leave effective_caster_level as 0
+                elif progression == "pact":
+                    pact_table = {}
+                    if isinstance(spellcasting_source, dict):
+                        pact_table = spellcasting_source.get("pact_magic_slots_by_level") or {}
+                    pact_row = pact_table.get(str(class_level), []) if isinstance(pact_table, dict) else []
+                    pact_entry: Dict[str, Any] = {
+                        "class_name": row.get("class_name", ""),
+                        "class_level": class_level,
+                        "subclass": row.get("subclass"),
+                    }
+                    if isinstance(pact_row, list) and len(pact_row) >= 2:
+                        try:
+                            pact_entry["slots"] = int(pact_row[0])
+                            pact_entry["slot_level"] = int(pact_row[1])
+                        except (TypeError, ValueError):
+                            pact_entry["slots"] = 0
+                            pact_entry["slot_level"] = 0
+                    else:
+                        pact_entry["slots"] = 0
+                        pact_entry["slot_level"] = 0
+                    result["pact_magic_slots"].append(pact_entry)
+                # none leaves effective_caster_level as 0
             return result
 
         effective_caster_level = 0

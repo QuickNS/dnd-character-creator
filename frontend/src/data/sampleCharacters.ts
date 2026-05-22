@@ -579,13 +579,12 @@ export const SAMPLE_CHARACTERS: SampleCharacter[] = [
       background_bonuses: { Charisma: 2, Constitution: 1 },
       skill_choices: ["Intimidation", "Arcana"],
       spell_selections: {
-        cantrips: ["Eldritch Blast", "Minor Illusion", "Mage Hand"],
+        cantrips: ["Eldritch Blast", "Minor Illusion"],
         spells: [
           "Armor of Agathys",
           "Hellish Rebuke",
           "Hex",
           "Darkness",
-          "Hold Person",
         ],
         background_cantrips: [],
         background_spells: [],

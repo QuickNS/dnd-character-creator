@@ -205,7 +205,7 @@ class TestSampleCharacters:
         assert character["subclass"] == "The Fiend"
         assert "Intimidation" in character["proficiencies"]["skills"]
         assert character["spellcasting_stats"]["has_spellcasting"] is True
-        assert character["spell_slots"]
+        assert character["pact_magic_slots"]  # Warlocks use Pact Magic, not standard spell slots
 
     # ------------------------------------------------------------------
     # 12. Wizard — Pip Runebright (Forest Gnome, Evoker)
