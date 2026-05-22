@@ -40,15 +40,14 @@ class ChoicesValidationError(ValueError):
 # ==================== Multiclass nested-choice filtering ====================
 #
 # Per D&D 2024 multiclassing rules, a secondary class entry grants proficiencies
-# listed in that class's `multiclassing` block. Some classes also explicitly
-# grant specific level-1 feature pickers on multiclass entry; those can be
-# allow-listed via `multiclassing.feature_choices`. The wizard's level-up step
-# pipeline naively produces every nested choice the class would offer at level 1,
-# so for secondary rows we filter that list down to:
+# listed in that class's `multiclassing` block while still granting the class's
+# level-1 features. The wizard's level-up step pipeline naively produces every
+# nested choice the class would offer at level 1, so for secondary rows we:
 #   - skill picks (if `multiclassing.skill_proficiencies` is a non-null dict)
 #   - tool picks  (if any `multiclassing.tool_training` entry is a wildcard
 #                  like "Musical Instrument (1 of your choice)")
-#   - explicit feature picks listed in `multiclassing.feature_choices`
+#   - all non-skill/tool nested choices unchanged (feature choices, spell picks,
+#     fighting styles, mastery choices, etc.)
 # Subclass selection is handled by `available_subclasses` / `needs_subclass`
 # on the response and is always allowed for any class row.
 
@@ -105,10 +104,11 @@ def _filter_nested_choices_for_secondary_class(
     nested_choices: List[Dict[str, Any]],
     class_data: Dict[str, Any],
 ) -> List[Dict[str, Any]]:
-    """Drop everything except the proficiency picks the multiclass block allows.
+    """Apply multiclass proficiency narrowing while preserving level-1 features.
 
-    For surviving skill/tool pickers, narrow count and options to match the
-    multiclass entry (e.g. Rogue multiclass = 1 skill from a constrained list).
+    Skill/tool pickers are narrowed to the multiclass entry (e.g. Rogue
+    multiclass = 1 skill from a constrained list). All other nested choices are
+    preserved as-is for level-1 class features.
     """
     multiclass = class_data.get("multiclassing") or {}
 
@@ -117,58 +117,51 @@ def _filter_nested_choices_for_secondary_class(
 
     tool_wildcard = _parse_tool_wildcard(multiclass.get("tool_training") or [])
     allow_tool = tool_wildcard is not None
-    allow_feature_choices = {
-        name.strip().lower()
-        for name in (multiclass.get("feature_choices") or [])
-        if isinstance(name, str) and name.strip()
-    }
-
     filtered: List[Dict[str, Any]] = []
     for choice in nested_choices:
         kind = _classify_choice_for_multiclass(choice)
 
-        if kind == "skill" and allow_skill:
-            narrowed = dict(choice)
-            mc_options = skill_block.get("options")
-            # "any" (Bard) → keep the existing full-skill list the builder
-            # already expanded. A constrained list (Rogue, Ranger) → use the
-            # multiclass list directly as the authoritative set; do NOT
-            # intersect with the primary class's skill_options, which may be
-            # narrower than the multiclass-entry list per RAW.
-            if isinstance(mc_options, list) and mc_options:
-                narrowed["options"] = list(mc_options)
-            mc_count = skill_block.get("count")
-            if isinstance(mc_count, int) and mc_count > 0:
-                narrowed["count"] = mc_count
-                noun = "proficiency" if mc_count == 1 else "proficiencies"
-                narrowed["description"] = (
-                    f"Choose {mc_count} skill {noun} (multiclass)."
-                )
-            filtered.append(narrowed)
+        if kind == "skill":
+            if allow_skill:
+                narrowed = dict(choice)
+                mc_options = skill_block.get("options")
+                # "any" (Bard) → keep the existing full-skill list the builder
+                # already expanded. A constrained list (Rogue, Ranger) → use the
+                # multiclass list directly as the authoritative set; do NOT
+                # intersect with the primary class's skill_options, which may be
+                # narrower than the multiclass-entry list per RAW.
+                if isinstance(mc_options, list) and mc_options:
+                    narrowed["options"] = list(mc_options)
+                mc_count = skill_block.get("count")
+                if isinstance(mc_count, int) and mc_count > 0:
+                    narrowed["count"] = mc_count
+                    noun = "proficiency" if mc_count == 1 else "proficiencies"
+                    narrowed["description"] = (
+                        f"Choose {mc_count} skill {noun} (multiclass)."
+                    )
+                filtered.append(narrowed)
+            continue
 
-        elif kind == "tool" and allow_tool:
-            narrowed = dict(choice)
-            narrowed["count"] = tool_wildcard["count"]
-            # The primary class's tool_options usually already enumerates the
-            # category (e.g. Bard's instrument list). If empty, fall back to
-            # the label as a single non-selectable entry.
-            if not narrowed.get("options"):
-                narrowed["options"] = [tool_wildcard["label"]]
-                # TODO: enumerate the category from a shared data source once
-                # one exists for tool categories beyond Musical Instrument.
-                narrowed["_todo"] = (
-                    "Multiclass tool picker has no options list; using label fallback."
-                )
-            filtered.append(narrowed)
+        if kind == "tool":
+            if allow_tool:
+                narrowed = dict(choice)
+                narrowed["count"] = tool_wildcard["count"]
+                # The primary class's tool_options usually already enumerates the
+                # category (e.g. Bard's instrument list). If empty, fall back to
+                # the label as a single non-selectable entry.
+                if not narrowed.get("options"):
+                    narrowed["options"] = [tool_wildcard["label"]]
+                    # TODO: enumerate the category from a shared data source once
+                    # one exists for tool categories beyond Musical Instrument.
+                    narrowed["_todo"] = (
+                        "Multiclass tool picker has no options list; using label fallback."
+                    )
+                filtered.append(narrowed)
+            continue
 
-        elif (
-            str(choice.get("feature_name") or "").strip().lower()
-            in allow_feature_choices
-        ):
+        # Preserve all non-proficiency level-1 nested choices.
+        else:
             filtered.append(dict(choice))
-
-        # All other categories (fighting style, expertise, spells, cantrips,
-        # weapon mastery, invocations, etc.) are dropped.
 
     return filtered
 

@@ -270,15 +270,15 @@ Every `class` preview response carries a `row_context` object describing which r
 
 Resolution: the server matches the request's previewed class (case-insensitive) against `choices_made.classes` and returns the first matching row. Single-class payloads (`class` / `level` without a `classes` array) always receive `{"row_index": 0, "is_primary": true, "total_class_rows": 1}` with `nested_choices` unfiltered.
 
-When `is_primary` is `false`, `nested_choices` is filtered **server-side** to only the proficiency picks D&D 2024 multiclassing actually grants on entry. The filter consults the class's `multiclassing` block (see [DataFiles.md](DataFiles.md#multiclassing-block)) and:
+When `is_primary` is `false`, `nested_choices` is filtered **server-side** only for multiclass proficiency narrowing. The filter consults the class's `multiclassing` block (see [DataFiles.md](DataFiles.md#multiclassing-block)) and:
 
 | Category in `nested_choices`                | Kept on secondary rows? | Conditions                                                                                              |
 |---------------------------------------------|-------------------------|---------------------------------------------------------------------------------------------------------|
 | Skill picker                                | Only when allowed       | `multiclassing.skill_proficiencies` is non-null (Bard, Rogue, Ranger). `count` and `options` are narrowed to the multiclass entry — Bard = any skill, Rogue / Ranger = their constrained lists. |
 | Tool picker                                 | Only when allowed       | `multiclassing.tool_training` contains a wildcard "(N of your choice)" entry (e.g. Bard musical instrument). `count` and `options` reflect the wildcard. |
-| Feature picker                              | Only when allow-listed  | Choice `feature_name` appears in `multiclassing.feature_choices` (e.g. Druid `Primal Order`). |
+| Feature picker / non-proficiency level-1 choices | Always preserved        | Level-1 feature-driven choices (for example class feature pickers) are returned unchanged on secondary rows. |
 | Subclass selection (`needs_subclass` / `available_subclasses`) | Always              | Reported via top-level fields, independent of `nested_choices` filtering. Always allowed at the subclass-unlock level for every row. |
-| Fighting style, expertise, bonus cantrip, weapon mastery, eldritch invocations, any other non-allow-listed category | Dropped                 | Not granted by multiclass entry unless explicitly allow-listed.                                         |
+| Fighting style, expertise, bonus cantrip, weapon mastery, eldritch invocations, other non-proficiency level-1 categories | Always preserved | Level-1 class features still apply when that class is taken as a multiclass row. |
 
 Example secondary-row payload (`choices_made.classes = [{Wizard, 5}, {Rogue, 1}]`, previewing Rogue):
 
