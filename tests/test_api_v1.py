@@ -915,6 +915,20 @@ class TestCharacterBuild:
         assert "deft_explorer_expertise" in feature_keys
         assert "fighting_style" in feature_keys
 
+        deft_explorer = next(
+            c for c in nested if (c.get("choice_key") or "").lower() == "deft_explorer_expertise"
+        )
+        assert deft_explorer.get("count") == 1
+        assert isinstance(deft_explorer.get("options"), list)
+        assert len(deft_explorer["options"]) >= 1
+
+        fighting_style = next(
+            c for c in nested if (c.get("choice_key") or "").lower() == "fighting_style"
+        )
+        assert fighting_style.get("count") == 1
+        assert isinstance(fighting_style.get("options"), list)
+        assert len(fighting_style["options"]) >= 1
+
     def test_preview_class_secondary_fighter_keeps_fighting_style_and_drops_skills(self, client):
         choices = self._basics_for_preview()
         choices["classes"] = [
