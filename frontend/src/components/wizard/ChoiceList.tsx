@@ -68,6 +68,13 @@ function normalize(opt: string | Option): { value: string; label: string; descri
   return { value, label, description: opt.description };
 }
 
+function normalizeSingleSelectValue(value: unknown): string {
+  if (Array.isArray(value)) {
+    return typeof value[0] === "string" ? value[0] : "";
+  }
+  return typeof value === "string" ? value : "";
+}
+
 export function ChoiceList({
   choiceKey,
   parentKey,
@@ -83,7 +90,7 @@ export function ChoiceList({
   inspectedOption,
   hideOptionDescriptions = false,
 }: Props) {
-  const storesSingleTopLevelProficiencyAsArray =
+  const shouldStoreAsArray =
     !parentKey && (choiceKey === "skill_choices" || choiceKey === "tool_choices");
   const value = useCharacterStore((s) => {
     if (parentKey) {
@@ -99,12 +106,10 @@ export function ChoiceList({
   const setNestedChoice = useCharacterStore((s) => s.setNestedChoice);
 
   function writeValue(next: unknown) {
-    const normalizedNext =
-      storesSingleTopLevelProficiencyAsArray && !Array.isArray(next)
-        ? typeof next === "string" && next
-          ? [next]
-          : []
-        : next;
+    let normalizedNext = next;
+    if (shouldStoreAsArray && !Array.isArray(next)) {
+      normalizedNext = typeof next === "string" && next ? [next] : [];
+    }
     if (parentKey) {
       setNestedChoice(parentKey, choiceKey, normalizedNext);
     } else {
@@ -122,19 +127,16 @@ export function ChoiceList({
     return n;
   });
   const isMulti = count > 1;
+  const singleSelectValue = normalizeSingleSelectValue(value);
 
   const selected = new Set<string>(
     isMulti
       ? Array.isArray(value)
         ? (value as string[])
         : []
-      : Array.isArray(value)
-        ? typeof value[0] === "string" && value[0]
-          ? [value[0]]
-          : []
-        : typeof value === "string" && value
-          ? [value]
-          : [],
+      : singleSelectValue
+        ? [singleSelectValue]
+        : [],
   );
 
   // Items the user has already selected in THIS choice are excluded from the
@@ -161,11 +163,7 @@ export function ChoiceList({
 
   const selectedCount = selected.size;
   const remainingCount = Math.max(count - selectedCount, 0);
-  const selectedValue = !isMulti
-    ? Array.isArray(value)
-      ? (typeof value[0] === "string" ? value[0] : "")
-      : (typeof value === "string" ? value : "")
-    : "";
+  const selectedValue = !isMulti ? singleSelectValue : "";
   const selectedOption = !isMulti
     ? normalized.find((opt) => opt.value === selectedValue)
     : undefined;
