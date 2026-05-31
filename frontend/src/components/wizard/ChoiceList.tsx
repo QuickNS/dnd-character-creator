@@ -49,6 +49,8 @@ interface Props {
   hideOptionDescriptions?: boolean;
 }
 
+const ARRAY_BACKED_SINGLE_SELECT_KEYS = new Set(["skill_choices", "tool_choices"]);
+
 function counterTone(selectedCount: number, requiredCount: number) {
   if (selectedCount === requiredCount) {
     return "border-primary/40 bg-muted/60 text-primary";
@@ -91,7 +93,7 @@ export function ChoiceList({
   hideOptionDescriptions = false,
 }: Props) {
   const shouldStoreAsArray =
-    !parentKey && (choiceKey === "skill_choices" || choiceKey === "tool_choices");
+    !parentKey && ARRAY_BACKED_SINGLE_SELECT_KEYS.has(choiceKey);
   const value = useCharacterStore((s) => {
     if (parentKey) {
       const parent = s.choicesMade[parentKey];
