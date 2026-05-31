@@ -83,6 +83,8 @@ export function ChoiceList({
   inspectedOption,
   hideOptionDescriptions = false,
 }: Props) {
+  const storesSingleTopLevelProficiencyAsArray =
+    !parentKey && (choiceKey === "skill_choices" || choiceKey === "tool_choices");
   const value = useCharacterStore((s) => {
     if (parentKey) {
       const parent = s.choicesMade[parentKey];
@@ -97,10 +99,16 @@ export function ChoiceList({
   const setNestedChoice = useCharacterStore((s) => s.setNestedChoice);
 
   function writeValue(next: unknown) {
+    const normalizedNext =
+      storesSingleTopLevelProficiencyAsArray && !Array.isArray(next)
+        ? typeof next === "string" && next
+          ? [next]
+          : []
+        : next;
     if (parentKey) {
-      setNestedChoice(parentKey, choiceKey, next);
+      setNestedChoice(parentKey, choiceKey, normalizedNext);
     } else {
-      setChoice(choiceKey, next);
+      setChoice(choiceKey, normalizedNext);
     }
   }
 
@@ -120,9 +128,13 @@ export function ChoiceList({
       ? Array.isArray(value)
         ? (value as string[])
         : []
-      : typeof value === "string" && value
-        ? [value]
-        : [],
+      : Array.isArray(value)
+        ? typeof value[0] === "string" && value[0]
+          ? [value[0]]
+          : []
+        : typeof value === "string" && value
+          ? [value]
+          : [],
   );
 
   // Items the user has already selected in THIS choice are excluded from the
@@ -149,7 +161,11 @@ export function ChoiceList({
 
   const selectedCount = selected.size;
   const remainingCount = Math.max(count - selectedCount, 0);
-  const selectedValue = !isMulti ? (typeof value === "string" ? value : "") : "";
+  const selectedValue = !isMulti
+    ? Array.isArray(value)
+      ? (typeof value[0] === "string" ? value[0] : "")
+      : (typeof value === "string" ? value : "")
+    : "";
   const selectedOption = !isMulti
     ? normalized.find((opt) => opt.value === selectedValue)
     : undefined;

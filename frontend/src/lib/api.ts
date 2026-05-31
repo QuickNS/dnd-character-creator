@@ -279,6 +279,11 @@ const SpellSelectionsSchema = z.object({
   background_spells: z.array(z.string()).optional(),
 }).catchall(z.array(z.string()).optional());
 
+const StringArrayChoiceSchema = z.preprocess(
+  (value) => (typeof value === "string" ? (value ? [value] : []) : value),
+  z.array(z.string()).optional(),
+);
+
 export const ChoicesMadeSchema = z.object({
   character_name: z.string().optional(),
   classes: z.array(ClassAllocationSchema).optional(),
@@ -289,8 +294,8 @@ export const ChoicesMadeSchema = z.object({
   ability_scores: z.record(z.number()).optional(),
   additional_ability_modifiers: z.record(z.number()).optional(),
   background_bonuses: z.record(z.number()).optional(),
-  skill_choices: z.array(z.string()).optional(),
-  tool_choices: z.array(z.string()).optional(),
+  skill_choices: StringArrayChoiceSchema,
+  tool_choices: StringArrayChoiceSchema,
   languages: z.array(z.string()).optional(),
   fighting_style: z.string().optional(),
   maneuvers: z.array(z.string()).optional(),
