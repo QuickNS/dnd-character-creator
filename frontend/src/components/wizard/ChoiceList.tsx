@@ -49,6 +49,8 @@ interface Props {
   hideOptionDescriptions?: boolean;
 }
 
+const ARRAY_BACKED_SINGLE_SELECT_KEYS = new Set(["skill_choices", "tool_choices"]);
+
 function counterTone(selectedCount: number, requiredCount: number) {
   if (selectedCount === requiredCount) {
     return "border-primary/40 bg-muted/60 text-primary";
@@ -68,6 +70,13 @@ function normalize(opt: string | Option): { value: string; label: string; descri
   return { value, label, description: opt.description };
 }
 
+function normalizeSingleSelectValue(value: unknown): string {
+  if (Array.isArray(value)) {
+    return typeof value[0] === "string" ? value[0] : "";
+  }
+  return typeof value === "string" ? value : "";
+}
+
 export function ChoiceList({
   choiceKey,
   parentKey,
@@ -83,6 +92,8 @@ export function ChoiceList({
   inspectedOption,
   hideOptionDescriptions = false,
 }: Props) {
+  const shouldStoreAsArray =
+    !parentKey && ARRAY_BACKED_SINGLE_SELECT_KEYS.has(choiceKey);
   const value = useCharacterStore((s) => {
     if (parentKey) {
       const parent = s.choicesMade[parentKey];
@@ -97,10 +108,14 @@ export function ChoiceList({
   const setNestedChoice = useCharacterStore((s) => s.setNestedChoice);
 
   function writeValue(next: unknown) {
+    let normalizedNext = next;
+    if (shouldStoreAsArray && !Array.isArray(next)) {
+      normalizedNext = typeof next === "string" && next ? [next] : [];
+    }
     if (parentKey) {
-      setNestedChoice(parentKey, choiceKey, next);
+      setNestedChoice(parentKey, choiceKey, normalizedNext);
     } else {
-      setChoice(choiceKey, next);
+      setChoice(choiceKey, normalizedNext);
     }
   }
 
@@ -114,14 +129,15 @@ export function ChoiceList({
     return n;
   });
   const isMulti = count > 1;
+  const singleSelectValue = normalizeSingleSelectValue(value);
 
   const selected = new Set<string>(
     isMulti
       ? Array.isArray(value)
         ? (value as string[])
         : []
-      : typeof value === "string" && value
-        ? [value]
+      : singleSelectValue
+        ? [singleSelectValue]
         : [],
   );
 
@@ -149,7 +165,7 @@ export function ChoiceList({
 
   const selectedCount = selected.size;
   const remainingCount = Math.max(count - selectedCount, 0);
-  const selectedValue = !isMulti ? (typeof value === "string" ? value : "") : "";
+  const selectedValue = !isMulti ? singleSelectValue : "";
   const selectedOption = !isMulti
     ? normalized.find((opt) => opt.value === selectedValue)
     : undefined;
