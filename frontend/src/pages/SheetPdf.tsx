@@ -146,6 +146,7 @@ export function SheetPdf() {
   return (
     <Frame>
       <Toolbar c={c} />
+      <PrintInstructions />
       <Page1 c={c} damageCantrips={damageCantrips} />
       <Page2 c={c} />
     </Frame>
@@ -202,6 +203,24 @@ function Toolbar({ c }: { c: Char }) {
         🖨️ Print to PDF
       </button>
     </div>
+  );
+}
+
+function PrintInstructions() {
+  return (
+    <section className="sheet-print-instructions no-print print:hidden">
+      <p className="sheet-print-instructions-title">Print checklist</p>
+      <ol>
+        <li>Open your browser print dialog (Ctrl+P / Cmd+P or Print to PDF).</li>
+        <li>
+          Enable <strong>Background graphics</strong> (Chrome/Edge) or{" "}
+          <strong>Print backgrounds</strong> (Firefox).
+        </li>
+        <li>
+          Set <strong>Headers and Footers</strong> to <strong>None</strong>.
+        </li>
+      </ol>
+    </section>
   );
 }
 
@@ -1093,6 +1112,28 @@ const SHEET_CSS = `
 }
 .sheet-tool-print { background-color: #28a745; }
 .sheet-tool-back { background-color: #6c757d; display: inline-flex; align-items: center; }
+
+.sheet-print-instructions {
+  width: 8.5in;
+  margin: 20px auto 0;
+  background: #fff8db;
+  border: 1px solid #facc15;
+  border-radius: 6px;
+  box-shadow: 0 1px 5px rgba(0,0,0,0.08);
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  line-height: 1.45;
+  padding: 12px 16px;
+}
+.sheet-print-instructions-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+}
+.sheet-print-instructions ol {
+  margin: 6px 0 0;
+  padding-left: 18px;
+}
 
 .sheet-container {
   position: relative;
