@@ -550,6 +550,8 @@ function Page2({ c }: { c: Char }) {
   const slots = rec(c.spell_slots);
 
   // Pact magic slots (Warlock): [{slot_level: 1, slots: 2}, ...]
+  // The backend may nest this under spellcasting_stats OR at the top level; try both
+  // (tracked as a known API inconsistency — prefer spellcasting_stats location).
   const statsPactMagic = arr<Record<string, unknown>>(stats.pact_magic_slots);
   const topPactMagic = arr<Record<string, unknown>>(c.pact_magic_slots);
   const pactMagicSlots = statsPactMagic.length > 0 ? statsPactMagic : topPactMagic;
@@ -576,9 +578,11 @@ function Page2({ c }: { c: Char }) {
   const [equipmentText, setEquipmentText] = useState("");
 
   // Cantrips table row layout (CSS pixels)
+  const PAGE2_HEIGHT_PX = 1040; // usable height of the sheet-container in CSS px
   const ROW_START = 241;
   const ROW_H = 26.5;
-  const MAX_ROWS = Math.floor((1040 - ROW_START) / ROW_H);
+  const CELL_H = ROW_H - 2;
+  const MAX_ROWS = Math.floor((PAGE2_HEIGHT_PX - ROW_START) / ROW_H);
 
   return (
     <div className="sheet-container">
@@ -662,24 +666,24 @@ function Page2({ c }: { c: Char }) {
           return (
             <Fragment key={`spell-${i}`}>
               <BoxField
-                style={{ top, left: 11, width: 18, height: ROW_H - 2, fontSize: 7 }}
+                style={{ top, left: 11, width: 18, height: CELL_H, fontSize: 7 }}
                 value={lvlDisplay}
               />
               <BoxField
-                style={{ top, left: 29, width: 128, height: ROW_H - 2, fontSize: 7, textAlign: "left" }}
+                style={{ top, left: 29, width: 128, height: CELL_H, fontSize: 7, textAlign: "left" }}
                 value={name}
               />
               <BoxField
-                style={{ top, left: 157, width: 67, height: ROW_H - 2, fontSize: 7 }}
+                style={{ top, left: 157, width: 67, height: CELL_H, fontSize: 7 }}
                 value={castTime}
               />
               <BoxField
-                style={{ top, left: 224, width: 58, height: ROW_H - 2, fontSize: 7 }}
+                style={{ top, left: 224, width: 58, height: CELL_H, fontSize: 7 }}
                 value={range}
               />
               {notes && (
                 <BoxField
-                  style={{ top, left: 453, width: 175, height: ROW_H - 2, fontSize: 7, textAlign: "left" }}
+                  style={{ top, left: 453, width: 175, height: CELL_H, fontSize: 7, textAlign: "left" }}
                   value={notes}
                 />
               )}
