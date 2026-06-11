@@ -521,15 +521,15 @@ function Page1({ c, damageCantrips }: { c: Char; damageCantrips: Row[] }) {
 
 // Ordinal slot key → [css-top, css-left, css-width] inside the Spell Slots box
 const SLOT_POS: Record<string, [number, number, number]> = {
-  "1st": [108, 244, 28],
-  "2nd": [127, 244, 28],
-  "3rd": [146, 244, 28],
-  "4th": [108, 362, 28],
-  "5th": [127, 362, 28],
-  "6th": [146, 362, 28],
-  "7th": [108, 469, 28],
-  "8th": [127, 469, 28],
-  "9th": [146, 469, 28],
+  "1st": [112, 241, 28],
+  "2nd": [132, 241, 28],
+  "3rd": [152, 241, 28],
+  "4th": [112, 361, 28],
+  "5th": [132, 361, 28],
+  "6th": [152, 361, 28],
+  "7th": [112, 468, 28],
+  "8th": [132, 468, 28],
+  "9th": [152, 468, 28],
 };
 
 // Pact magic slot level (integer) → ordinal key used in SLOT_POS
@@ -579,7 +579,7 @@ function Page2({ c }: { c: Char }) {
 
   // Cantrips table row layout (CSS pixels)
   const PAGE2_HEIGHT_PX = 1040; // usable height of the sheet-container in CSS px
-  const ROW_START = 241;
+  const ROW_START = 246;
   const ROW_H = 26.5;
   const CELL_H = ROW_H - 2;
   const MAX_ROWS = Math.floor((PAGE2_HEIGHT_PX - ROW_START) / ROW_H);
@@ -599,17 +599,17 @@ function Page2({ c }: { c: Char }) {
             />
             {/* Spellcasting Modifier — left value cell of row 2 */}
             <BoxField
-              style={{ top: 43, left: 10, width: 50, height: 42, fontSize: 16 }}
+              style={{ top: 64, left: 13, width: 50, height: 42, fontSize: 14 }}
               value={castingMod !== undefined ? signed(castingMod) : ""}
             />
             {/* Spell Save DC — left value cell of row 3 */}
             <BoxField
-              style={{ top: 85, left: 10, width: 50, height: 36, fontSize: 16 }}
+              style={{ top: 103, left: 13, width: 50, height: 36, fontSize: 14 }}
               value={saveDC !== undefined ? String(saveDC) : ""}
             />
             {/* Spell Attack Bonus — left value cell of row 4 */}
             <BoxField
-              style={{ top: 121, left: 10, width: 50, height: 63, fontSize: 16 }}
+              style={{ top: 140, left: 13, width: 50, height: 63, fontSize: 14 }}
               value={attackBonus !== undefined ? signed(attackBonus) : ""}
             />
           </>
@@ -654,36 +654,43 @@ function Page2({ c }: { c: Char }) {
           const top = ROW_START + i * ROW_H;
           const lvlDisplay = level === "0" ? "C" : level;
           const name = str(sp.name) ?? "";
-          const castTime = str(sp.casting_time) ?? "";
-          const range = str(sp.range) ?? "";
+          const castTime = (str(sp.casting_time) ?? "")
+            .replace(/\b1 bonus action\b/gi, "Bonus")
+            .replace(/\b1 action\b/gi, "Action");
+          const rawRange = str(sp.range) ?? "";
+          const selfMatch = rawRange.match(/^Self\s*\(([^)]+)\)$/i);
+          const range = selfMatch ? "Self" : rawRange;
+          const rangeNote = selfMatch ? selfMatch[1] : null;
           const conc = sp.concentration === true;
           const ritual = sp.ritual === true;
-          const extras: string[] = [];
-          if (conc) extras.push("Conc");
-          if (ritual) extras.push("Ritual");
-          const notes = extras.join(", ");
+          const notes = rangeNote ?? "";
+          const checkTop = top + (CELL_H - 29) / 2;
 
           return (
             <Fragment key={`spell-${i}`}>
               <BoxField
-                style={{ top, left: 11, width: 18, height: CELL_H, fontSize: 7 }}
+                style={{ top, left: 24, width: 18, height: CELL_H, fontSize: 7 }}
                 value={lvlDisplay}
               />
               <BoxField
-                style={{ top, left: 29, width: 128, height: CELL_H, fontSize: 7, textAlign: "left" }}
+                style={{ top, left: 55, width: 128, height: CELL_H, fontSize: 7, textAlign: "left" }}
                 value={name}
               />
               <BoxField
-                style={{ top, left: 157, width: 67, height: CELL_H, fontSize: 7 }}
+                style={{ top, left: 195, width: 67, height: CELL_H, fontSize: 7 }}
                 value={castTime}
               />
               <BoxField
-                style={{ top, left: 224, width: 58, height: CELL_H, fontSize: 7 }}
+                style={{ top, left: 251, width: 58, height: CELL_H, fontSize: 7 }}
                 value={range}
               />
+              {/* Concentration marker */}
+              <Check style={{ top: checkTop, left: 321.5 }} checked={conc} />
+              {/* Ritual marker */}
+              <Check style={{ top: checkTop, left: 351.5 }} checked={ritual} />
               {notes && (
                 <BoxField
-                  style={{ top, left: 453, width: 175, height: CELL_H, fontSize: 7, textAlign: "left" }}
+                  style={{ top, left: 415, width: 175, height: CELL_H, fontSize: 7, textAlign: "left" }}
                   value={notes}
                 />
               )}
@@ -695,14 +702,14 @@ function Page2({ c }: { c: Char }) {
 
         {/* Appearance — editable free-text area */}
         <EditableBoxField
-          style={{ top: 42, left: 648, width: 132, height: 102, fontSize: 7, textAlign: "left", whiteSpace: "pre-wrap" }}
+          style={{ top: 45, left: 557, width: 238, height: 95, fontSize: 7, textAlign: "left", whiteSpace: "pre-wrap" }}
           value={appearance}
           onCommit={setAppearance}
         />
 
         {/* Backstory & Personality — editable free-text area */}
         <EditableBoxField
-          style={{ top: 186, left: 648, width: 132, height: 254, fontSize: 7, textAlign: "left", whiteSpace: "pre-wrap" }}
+          style={{ top: 186, left: 557, width: 238, height: 190, fontSize: 7, textAlign: "left", whiteSpace: "pre-wrap" }}
           value={backstory}
           onCommit={setBackstory}
         />
@@ -710,7 +717,7 @@ function Page2({ c }: { c: Char }) {
         {/* Alignment — from character data */}
         {alignment && (
           <BoxField
-            style={{ top: 462, left: 648, width: 132, height: 20, fontSize: 8, textAlign: "left" }}
+            style={{ top: 462, left: 557, width: 238, height: 20, fontSize: 8, textAlign: "left" }}
             value={alignment}
           />
         )}
@@ -718,7 +725,7 @@ function Page2({ c }: { c: Char }) {
         {/* Languages — from character data */}
         {languages.length > 0 && (
           <BoxField
-            style={{ top: 488, left: 648, width: 132, height: 60, fontSize: 7, textAlign: "left" }}
+            style={{ top: 480, left: 557, width: 238, height: 60, fontSize: 7, textAlign: "left" }}
             value={languages.join(", ")}
             multiline
           />
