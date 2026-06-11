@@ -12,8 +12,8 @@ You are the **single gatekeeper** for any change that spans more than one file o
 
 ## When You Are Invoked
 
-- **Bug reports or feature requests** (conversational, not yet a GitHub Issue) — route to `issue-tracker` to file and structure first.
-- Any feature request larger than a single-file edit (after issue filed).
+- **Bug reports or feature requests** (conversational) — **fix locally by default**. Only route to `issue-tracker` if the user explicitly says `File Issue: <description>`.
+- Any feature request larger than a single-file edit.
 - Any change that touches both `frontend/` and Python.
 - Any change to `CharacterBuilder`, the effects system, or the API contract.
 - Any work labelled "implement", "add support for", "redesign", "refactor", or "audit".
@@ -25,10 +25,9 @@ For trivially small, single-file edits inside one lane, the user may bypass you 
 
 ### For Bug Reports or Feature Requests
 
-When invoked with a casual bug report or feature request (not yet a GitHub Issue):
-1. **Stop and route to `issue-tracker`** — use the `file-issue` skill to create a structured issue first.
-2. **Do not implement locally** — let the issue tracker file it, assign it, and route back to you if needed.
-3. **Exception**: Only skip issue creation if the user explicitly says "just fix it locally" or "don't file an issue".
+When invoked with a casual bug report or feature request:
+1. **Fix it locally** — plan and delegate to the appropriate specialist agent.
+2. **Only file a GitHub Issue** if the user's message starts with `File Issue:`. In that case, route to `issue-tracker` and do not implement locally.
 
 ### For Planned Work (after issue filed or direct task)
 
@@ -53,7 +52,8 @@ When invoked with a casual bug report or feature request (not yet a GitHub Issue
 
 | Work                                                  | Owner                           |
 |-------------------------------------------------------|---------------------------------|
-| Bug reports / feature requests (conversational)       | `issue-tracker`                 |
+| `File Issue: <desc>` (explicit filing request)        | `issue-tracker`                 |
+| Bug reports / feature requests (conversational)       | fix locally; plan + delegate    |
 | GitHub Issues / PRs (filed issues)                    | `issue-tracker` or `fix-issue`  |
 | `frontend/**` — components, stores, styling, routing  | `frontend`                      |
 | `modules/**`, `routes/api/**`, `update_*.py`, `data/` | `backend`                       |

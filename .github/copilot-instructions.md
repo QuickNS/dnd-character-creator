@@ -151,7 +151,8 @@ Routing rules:
 - Any **multi-file or cross-layer change** must be planned by `architect` first.
 - `architect` invokes the specialist agents (and read-only `Explore`) as subagents.
 - Agents stay in their lane: `frontend` never edits Python; `backend` never edits `frontend/`.
-- Bug reports and feature requests start with `issue-tracker` (or the `file-issue` skill).
+- Bug reports and feature requests are **fixed locally by default** — plan and delegate directly.
+- Only route to `issue-tracker` when the user explicitly says `File Issue: <description>`.
 - Fixing a known issue uses the `fix-issue` skill, orchestrated by `architect`.
 
 Model assignment is declared in each agent file's YAML frontmatter (`model:` field) and mirrored in this table.
