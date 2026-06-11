@@ -930,6 +930,7 @@ function Attacks({
   onChooseMasteries?: () => void;
 }) {
   const attacks = arr<Record<string, unknown>>(c.attacks);
+  const attackCombinations = arr<Record<string, unknown>>(c.attack_combinations);
   return (
     <Section
       title="Attacks"
@@ -1118,6 +1119,85 @@ function Attacks({
             );
           })}
         </ul>
+      )}
+
+      {attackCombinations.length > 0 && (
+        <>
+          <h3 className="mt-4 mb-2 text-sm font-semibold text-primary">
+            Two-Weapon Fighting
+          </h3>
+          <ul className="space-y-3 text-sm">
+            {attackCombinations.map((combo, i) => {
+              const name = str(combo.name) ?? "Dual Wield";
+              const notes = arr<string>(combo.notes);
+              const mh = rec(combo.mainhand);
+              const oh = rec(combo.offhand);
+
+              const mhName = str(mh.name) ?? "Mainhand";
+              const mhBonus = str(mh.attack_bonus_display) ?? signed(num(mh.attack_bonus));
+              const mhDamage = str(mh.damage);
+              const mhDamageType = str(mh.damage_type);
+              const mhAvg = num(mh.avg_damage);
+
+              const ohName = str(oh.name) ?? "Offhand";
+              const ohBonus = str(oh.attack_bonus_display) ?? signed(num(oh.attack_bonus));
+              const ohDamage = str(oh.damage);
+              const ohDamageType = str(oh.damage_type);
+              const ohAvg = num(oh.avg_damage);
+
+              return (
+                <li
+                  key={i}
+                  className="rounded border border-border bg-background/40 p-3"
+                >
+                  <span className="font-semibold text-foreground">{name}</span>
+
+                  <dl className="mt-2 space-y-1 text-xs">
+                    <div className="flex flex-wrap gap-x-2">
+                      <dt className="font-semibold text-muted-foreground w-full">
+                        {mhName} (Mainhand):
+                      </dt>
+                      <dd className="text-foreground">{mhBonus} to hit</dd>
+                      {mhDamage && (
+                        <dd className="text-foreground">
+                          {mhDamage}
+                          {mhDamageType ? ` ${mhDamageType}` : ""}
+                        </dd>
+                      )}
+                      {mhAvg !== undefined && (
+                        <dd className="text-muted-foreground">(Avg: {mhAvg})</dd>
+                      )}
+                    </div>
+
+                    <div className="flex flex-wrap gap-x-2">
+                      <dt className="font-semibold text-muted-foreground w-full">
+                        {ohName} (Offhand):
+                      </dt>
+                      <dd className="text-foreground">{ohBonus} to hit</dd>
+                      {ohDamage && (
+                        <dd className="text-foreground">
+                          {ohDamage}
+                          {ohDamageType ? ` ${ohDamageType}` : ""}
+                        </dd>
+                      )}
+                      {ohAvg !== undefined && (
+                        <dd className="text-muted-foreground">(Avg: {ohAvg})</dd>
+                      )}
+                    </div>
+                  </dl>
+
+                  {notes.length > 0 && (
+                    <ul className="mt-2 space-y-0.5 text-[11px] text-amber-400/90">
+                      {notes.map((n, j) => (
+                        <li key={j}><span aria-hidden="true">ℹ</span> {n}</li>
+                      ))}
+                    </ul>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </>
       )}
     </Section>
   );
