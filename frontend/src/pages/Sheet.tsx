@@ -930,6 +930,74 @@ function Attacks({
   onChooseMasteries?: () => void;
 }) {
   const attacks = arr<Record<string, unknown>>(c.attacks);
+  const combinations = arr<Record<string, unknown>>(c.attack_combinations);
+
+  const bestCombination = combinations
+    .map((combo, index) => {
+      const mainhand = rec(combo.mainhand);
+      const offhand = rec(combo.offhand);
+      const mainAvg = num(mainhand.avg_damage) ?? 0;
+      const offAvg = num(offhand.avg_damage) ?? 0;
+      const mainBonus = num(mainhand.attack_bonus) ?? 0;
+      const offBonus = num(offhand.attack_bonus) ?? 0;
+
+      return {
+        combo,
+        index,
+        avgScore: mainAvg + offAvg,
+        bonusScore: mainBonus + offBonus,
+      };
+    })
+    .reduce<
+      | {
+          combo: Record<string, unknown>;
+          index: number;
+          avgScore: number;
+          bonusScore: number;
+        }
+      | undefined
+    >((best, current) => {
+      if (!best) return current;
+      if (current.avgScore > best.avgScore) return current;
+      if (current.avgScore < best.avgScore) return best;
+      if (current.bonusScore > best.bonusScore) return current;
+      if (current.bonusScore < best.bonusScore) return best;
+      return best;
+    }, undefined)?.combo;
+
+  const bestMainhand = rec(bestCombination?.mainhand);
+  const bestOffhand = rec(bestCombination?.offhand);
+  const bestCombinationName = str(bestCombination?.name) ?? "Combination";
+  const comboNotes = arr<string>(bestCombination?.notes);
+
+  function renderCombinationWeaponLine(
+    label: string,
+    weapon: Record<string, unknown>,
+  ) {
+    const weaponName = str(weapon.name) ?? label;
+    const attackBonusDisplay =
+      str(weapon.attack_bonus_display) ?? signed(num(weapon.attack_bonus));
+    const damage = str(weapon.damage) ?? str(weapon.damage_string);
+    const damageType = str(weapon.damage_type);
+    const avgDamage = num(weapon.avg_damage);
+
+    return (
+      <div className="rounded border border-border/60 bg-background/30 p-2">
+        <div className="text-xs font-semibold text-foreground">
+          {label}: {weaponName}
+        </div>
+        <div className="mt-1 text-xs text-foreground">{attackBonusDisplay} to hit</div>
+        {damage && (
+          <div className="text-xs text-foreground/90">
+            {damage}
+            {damageType ? ` ${damageType}` : ""}
+            {avgDamage !== undefined ? ` (Avg: ${avgDamage})` : ""}
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <Section
       title="Attacks"
@@ -945,179 +1013,203 @@ function Attacks({
       {attacks.length === 0 ? (
         <p className="text-xs text-muted-foreground">No weapon attacks.</p>
       ) : (
-        <ul className="space-y-3 text-sm">
-          {attacks.map((a, i) => {
-            const name = str(a.name) ?? str(a.weapon) ?? "Attack";
-            const bonus = num(a.attack_bonus) ?? num(a.bonus);
-            const bonusDisplay = str(a.attack_bonus_display) ?? signed(bonus);
-            const damage = str(a.damage) ?? str(a.damage_string);
-            const damageType = str(a.damage_type);
-            const avgDamage = num(a.avg_damage);
-            const avgCrit = num(a.avg_crit);
-            const range = str(a.range);
-            const ability = str(a.ability);
-            const properties = arr<string>(a.properties);
-            const damageNotes = arr<string>(a.damage_notes);
-            const mastery = str(a.mastery);
-            const weaponName = str(a.weapon ?? a.name) ?? "";
-            const masteryIsSelected =
-              masteryApplicable === true &&
-              Array.isArray(choicesMade?.weapon_mastery_selections) &&
-              (choicesMade!.weapon_mastery_selections as string[]).includes(
-                weaponName,
-              );
-            const proficient = a.proficient !== false;
-            const throwDamage = str(a.throw_damage);
-            const avgThrow = num(a.avg_throw_damage);
-            const oneHanded = str(a.damage_one_handed);
-            const twoHanded = str(a.damage_two_handed);
-            const avgOne = num(a.avg_one_handed);
-            const avgTwo = num(a.avg_two_handed);
+        <>
+          <ul className="space-y-3 text-sm">
+            {attacks.map((a, i) => {
+              const name = str(a.name) ?? str(a.weapon) ?? "Attack";
+              const bonus = num(a.attack_bonus) ?? num(a.bonus);
+              const bonusDisplay = str(a.attack_bonus_display) ?? signed(bonus);
+              const damage = str(a.damage) ?? str(a.damage_string);
+              const damageType = str(a.damage_type);
+              const avgDamage = num(a.avg_damage);
+              const avgCrit = num(a.avg_crit);
+              const range = str(a.range);
+              const ability = str(a.ability);
+              const properties = arr<string>(a.properties);
+              const damageNotes = arr<string>(a.damage_notes);
+              const mastery = str(a.mastery);
+              const weaponName = str(a.weapon ?? a.name) ?? "";
+              const masteryIsSelected =
+                masteryApplicable === true &&
+                Array.isArray(choicesMade?.weapon_mastery_selections) &&
+                (choicesMade!.weapon_mastery_selections as string[]).includes(
+                  weaponName,
+                );
+              const proficient = a.proficient !== false;
+              const throwDamage = str(a.throw_damage);
+              const avgThrow = num(a.avg_throw_damage);
+              const oneHanded = str(a.damage_one_handed);
+              const twoHanded = str(a.damage_two_handed);
+              const avgOne = num(a.avg_one_handed);
+              const avgTwo = num(a.avg_two_handed);
 
-            return (
-              <li
-                key={i}
-                className="rounded border border-border bg-background/40 p-3"
-              >
-                <div className="flex items-baseline justify-between gap-2">
-                  <span className="font-semibold text-foreground">{name}</span>
-                  {ability && (
-                    <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                      {ability.slice(0, 3)}
-                    </span>
-                  )}
-                </div>
-
-                <dl className="mt-2 space-y-1 text-xs">
-                  <div className="flex flex-wrap gap-x-2">
-                    <dt className="font-semibold text-muted-foreground">
-                      Attack:
-                    </dt>
-                    <dd className="text-foreground">{bonusDisplay} to hit</dd>
-                    {range && (
-                      <dd className="text-muted-foreground">
-                        (Range: {range})
-                      </dd>
+              return (
+                <li
+                  key={i}
+                  className="rounded border border-border bg-background/40 p-3"
+                >
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className="font-semibold text-foreground">{name}</span>
+                    {ability && (
+                      <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                        {ability.slice(0, 3)}
+                      </span>
                     )}
                   </div>
 
-                  {damage && (
+                  <dl className="mt-2 space-y-1 text-xs">
                     <div className="flex flex-wrap gap-x-2">
                       <dt className="font-semibold text-muted-foreground">
-                        Damage:
+                        Attack:
                       </dt>
-                      <dd className="text-foreground">
-                        {damage}
-                        {damageType ? ` ${damageType}` : ""}
-                      </dd>
-                      {(avgDamage !== undefined || avgCrit !== undefined) && (
+                      <dd className="text-foreground">{bonusDisplay} to hit</dd>
+                      {range && (
                         <dd className="text-muted-foreground">
-                          (Avg: {avgDamage ?? "—"}
-                          {avgCrit !== undefined ? `, Crit: ${avgCrit}` : ""})
+                          (Range: {range})
                         </dd>
                       )}
                     </div>
-                  )}
 
-                  {throwDamage && (
-                    <div className="flex flex-wrap gap-x-2">
-                      <dt className="font-semibold text-muted-foreground">
-                        Throw:
-                      </dt>
-                      <dd className="text-foreground">
-                        {throwDamage}
-                        {damageType ? ` ${damageType}` : ""}
-                      </dd>
-                      {avgThrow !== undefined && (
-                        <dd className="text-muted-foreground">
-                          (Avg: {avgThrow})
-                        </dd>
-                      )}
-                    </div>
-                  )}
-
-                  {oneHanded && twoHanded && (
-                    <>
+                    {damage && (
                       <div className="flex flex-wrap gap-x-2">
                         <dt className="font-semibold text-muted-foreground">
-                          One-Handed:
+                          Damage:
                         </dt>
                         <dd className="text-foreground">
-                          {oneHanded}
+                          {damage}
                           {damageType ? ` ${damageType}` : ""}
                         </dd>
-                        {avgOne !== undefined && (
+                        {(avgDamage !== undefined || avgCrit !== undefined) && (
                           <dd className="text-muted-foreground">
-                            (Avg: {avgOne})
+                            (Avg: {avgDamage ?? "—"}
+                            {avgCrit !== undefined ? `, Crit: ${avgCrit}` : ""})
                           </dd>
                         )}
                       </div>
+                    )}
+
+                    {throwDamage && (
                       <div className="flex flex-wrap gap-x-2">
                         <dt className="font-semibold text-muted-foreground">
-                          Two-Handed:
+                          Throw:
                         </dt>
                         <dd className="text-foreground">
-                          {twoHanded}
+                          {throwDamage}
                           {damageType ? ` ${damageType}` : ""}
                         </dd>
-                        {avgTwo !== undefined && (
+                        {avgThrow !== undefined && (
                           <dd className="text-muted-foreground">
-                            (Avg: {avgTwo})
+                            (Avg: {avgThrow})
                           </dd>
                         )}
                       </div>
-                    </>
-                  )}
+                    )}
 
-                  {properties.length > 0 && (
-                    <div className="flex flex-wrap gap-x-2">
-                      <dt className="font-semibold text-muted-foreground">
-                        Properties:
-                      </dt>
-                      <dd className="text-muted-foreground">
-                        {properties.join(", ")}
-                      </dd>
-                    </div>
-                  )}
-
-                  {masteryApplicable && mastery && (
-                    <div className="flex flex-wrap items-center gap-x-2">
-                      <dt className="font-semibold text-muted-foreground">
-                        Mastery:
-                      </dt>
-                      <dd>
-                        <span
-                          className={cn(
-                            "rounded border px-1.5 py-0.5 text-[10px] uppercase tracking-wide",
-                            masteryIsSelected
-                              ? "border-primary bg-primary/15 text-primary font-semibold"
-                              : "border-border bg-secondary/60 text-muted-foreground",
+                    {oneHanded && twoHanded && (
+                      <>
+                        <div className="flex flex-wrap gap-x-2">
+                          <dt className="font-semibold text-muted-foreground">
+                            One-Handed:
+                          </dt>
+                          <dd className="text-foreground">
+                            {oneHanded}
+                            {damageType ? ` ${damageType}` : ""}
+                          </dd>
+                          {avgOne !== undefined && (
+                            <dd className="text-muted-foreground">
+                              (Avg: {avgOne})
+                            </dd>
                           )}
-                        >
-                          {mastery}
-                        </span>
-                      </dd>
+                        </div>
+                        <div className="flex flex-wrap gap-x-2">
+                          <dt className="font-semibold text-muted-foreground">
+                            Two-Handed:
+                          </dt>
+                          <dd className="text-foreground">
+                            {twoHanded}
+                            {damageType ? ` ${damageType}` : ""}
+                          </dd>
+                          {avgTwo !== undefined && (
+                            <dd className="text-muted-foreground">
+                              (Avg: {avgTwo})
+                            </dd>
+                          )}
+                        </div>
+                      </>
+                    )}
+
+                    {properties.length > 0 && (
+                      <div className="flex flex-wrap gap-x-2">
+                        <dt className="font-semibold text-muted-foreground">
+                          Properties:
+                        </dt>
+                        <dd className="text-muted-foreground">
+                          {properties.join(", ")}
+                        </dd>
+                      </div>
+                    )}
+
+                    {masteryApplicable && mastery && (
+                      <div className="flex flex-wrap items-center gap-x-2">
+                        <dt className="font-semibold text-muted-foreground">
+                          Mastery:
+                        </dt>
+                        <dd>
+                          <span
+                            className={cn(
+                              "rounded border px-1.5 py-0.5 text-[10px] uppercase tracking-wide",
+                              masteryIsSelected
+                                ? "border-primary bg-primary/15 text-primary font-semibold"
+                                : "border-border bg-secondary/60 text-muted-foreground",
+                            )}
+                          >
+                            {mastery}
+                          </span>
+                        </dd>
+                      </div>
+                    )}
+                  </dl>
+
+                  {damageNotes.length > 0 && (
+                    <ul className="mt-2 space-y-0.5 text-[11px] text-emerald-400/90">
+                      {damageNotes.map((n, j) => (
+                        <li key={j}>+ {n}</li>
+                      ))}
+                    </ul>
+                  )}
+
+                  {!proficient && (
+                    <div className="mt-2 text-[11px] text-amber-400">
+                      ⚠ Not proficient — no proficiency bonus applied
                     </div>
                   )}
-                </dl>
+                </li>
+              );
+            })}
+          </ul>
 
-                {damageNotes.length > 0 && (
-                  <ul className="mt-2 space-y-0.5 text-[11px] text-emerald-400/90">
-                    {damageNotes.map((n, j) => (
-                      <li key={j}>+ {n}</li>
-                    ))}
-                  </ul>
-                )}
-
-                {!proficient && (
-                  <div className="mt-2 text-[11px] text-amber-400">
-                    ⚠ Not proficient — no proficiency bonus applied
-                  </div>
-                )}
-              </li>
-            );
-          })}
-        </ul>
+          {bestCombination && (
+            <div className="mt-3 rounded border border-border bg-background/40 p-3">
+              <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Two-Weapon Combination
+              </div>
+              <div className="mt-1 text-sm font-semibold text-foreground">
+                {bestCombinationName}
+              </div>
+              <div className="mt-2 grid gap-2">
+                {renderCombinationWeaponLine("Mainhand", bestMainhand)}
+                {renderCombinationWeaponLine("Offhand (Bonus Action)", bestOffhand)}
+              </div>
+              {comboNotes.length > 0 && (
+                <ul className="mt-2 space-y-0.5 text-[11px] text-emerald-400/90">
+                  {comboNotes.map((note, idx) => (
+                    <li key={idx}>+ {note}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+        </>
       )}
     </Section>
   );
