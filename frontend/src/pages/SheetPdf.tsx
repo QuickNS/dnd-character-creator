@@ -208,7 +208,7 @@ function Toolbar({ c }: { c: Char }) {
 
 function PrintInstructions() {
   return (
-    <section className="sheet-print-instructions no-print print:hidden">
+    <section className="sheet-print-instructions no-print">
       <p className="sheet-print-instructions-title">Print checklist</p>
       <ol>
         <li>Open your browser print dialog (Ctrl+P / Cmd+P or Print to PDF).</li>
