@@ -1509,6 +1509,10 @@ class CharacterBuilder:
         elif effect_type == "grant_skill_proficiency":
             skills = effect.get("skills", [])
             for skill in skills:
+                if not isinstance(skill, str) or (
+                    skill.startswith("__") and skill.endswith("__")
+                ):
+                    continue
                 if skill not in self.character_data["proficiencies"]["skills"]:
                     self.character_data["proficiencies"]["skills"].append(skill)
                     # Track the source of this skill proficiency

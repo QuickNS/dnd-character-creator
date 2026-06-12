@@ -143,6 +143,24 @@ function parentKeyVariants(key: string): string[] {
 const CLASS_FEAT_ASI_OPTION_KEY_RE =
   /^(class_feat_\d+)_(asi_option|ability_plus_2|abilities_plus_1)$/;
 
+function groupedFeatureName(choice: PreviewChoice): string | null {
+  if (!choice.feature_name || !choice.choice_key) return null;
+  const suffix = `_${choice.choice_key}`;
+  return choice.feature_name.endsWith(suffix)
+    ? choice.feature_name.slice(0, -suffix.length)
+    : null;
+}
+
+function groupedChoiceTitle(choice: PreviewChoice, groupName: string): string {
+  const rawTitle =
+    choice.title ?? choice.name ?? choice.choice_key ?? groupName;
+  const withoutMeta = rawTitle.replace(/\s+\([^)]*\)\s*$/, "");
+  const prefix = `${groupName} - `;
+  return withoutMeta.startsWith(prefix)
+    ? withoutMeta.slice(prefix.length)
+    : withoutMeta;
+}
+
 function featureLevelEntries(
   featuresByLevel: SubclassDetail["features_by_level"],
   classData?: Record<string, unknown>,
@@ -1820,6 +1838,41 @@ function ClassDetail({
     const key = choice.choice_key ?? choice.feature_name ?? choice.name ?? "";
     return !asiChoiceKeys.has(key);
   });
+  const visibleNestedChoices = useMemo(() => {
+    return displayNestedChoices.filter((choice) => {
+      const key = choice.choice_key ?? choice.feature_name ?? choice.name ?? "";
+
+      // Feat sub-choices are rendered inside FeatDropdownPicker — skip here
+      if (key.startsWith("feat_") && !isClassFeatChoiceKey(key)) return false;
+
+      // ASI sub-choices (class_feat_N_asi_option etc.) are rendered inside
+      // ClassFeatAsiPicker which is inlined after FeatDropdownPicker — skip here
+      if (asiChoiceKeys.has(key)) return false;
+
+      // Feat sub-choices keyed as class_feat_N_<name> (e.g. class_feat_4_ability)
+      // are rendered inside FeatDropdownPicker — skip them at the top level
+      if (!isClassFeatChoiceKey(key) && /^class_feat_\d+_/.test(key)) return false;
+
+      if (!choice.depends_on) return true;
+
+      const variants = parentKeyVariants(choice.depends_on);
+      const parent = variants.map((k) => choicesMade[k]).find((v) => v !== undefined);
+      return choice.depends_on_value == null
+        ? Boolean(parent)
+        : Array.isArray(parent)
+          ? parent.includes(choice.depends_on_value)
+          : parent === choice.depends_on_value;
+    });
+  }, [asiChoiceKeys, choicesMade, displayNestedChoices]);
+  const groupedChoiceCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const choice of visibleNestedChoices) {
+      const groupName = groupedFeatureName(choice);
+      if (!groupName) continue;
+      counts.set(groupName, (counts.get(groupName) ?? 0) + 1);
+    }
+    return counts;
+  }, [visibleNestedChoices]);
   const featPrerequisiteWarnings = useMemo<
     ClassFeatPrerequisiteWarning[]
   >(() => {
@@ -1855,6 +1908,86 @@ function ClassDetail({
     }
     return warnings;
   }, [choicesMade, combinedScores, featDefinitions, nestedChoices, totalLevel]);
+  const renderChoiceControl = (
+    choice: PreviewChoice,
+    idx: number,
+    overrides?: { title?: string; description?: string },
+  ): ReactNode => {
+    const key =
+      choice.choice_key ??
+      choice.feature_name ??
+      choice.name ??
+      `class_choice_${idx}`;
+
+    if (isClassFeatChoiceKey(key)) {
+      const slotLevel = Number(key.replace("class_feat_", "")) || 0;
+      const selectedFeat =
+        typeof choicesMade[key] === "string" ? String(choicesMade[key]) : "";
+      const subChoicesForSlot = selectedFeat
+        ? displayNestedChoices.filter((sc) => {
+            const scKey =
+              sc.choice_key ?? sc.feature_name ?? sc.name ?? "";
+            return scKey.startsWith(`${key}_`) && !asiChoiceKeys.has(scKey);
+          })
+        : [];
+      const warningsForFeat = featPrerequisiteWarnings
+        .filter((w) => w.featName === selectedFeat)
+        .flatMap((w) => w.messages);
+      const asiGroup = asiChoiceGroups.find((g) => g.slotKey === key);
+      return (
+        <FeatDropdownPicker
+          key={key}
+          choiceKey={key}
+          slotLevel={slotLevel}
+          title={overrides?.title ?? choice.title ?? `Feat (Level ${slotLevel})`}
+          description={overrides?.description ?? choice.description}
+          generalFeats={featDefinitions}
+          originFeats={originFeatDefinitions}
+          featSubChoices={subChoicesForSlot}
+          choicesMade={choicesMade}
+          prerequisiteWarning={warningsForFeat}
+          asiChoiceGroup={asiGroup}
+          onInspectSpell={onInspectSpell}
+          inspectedSpellName={inspectedSpellName}
+        />
+      );
+    }
+
+    const opts = (choice.options ?? []) as Array<unknown>;
+    if (opts.length === 0) return null;
+    if (isSpellLikeChoice(choice, opts)) {
+      return (
+        <SpellChoiceList
+          key={key}
+          choiceKey={key}
+          title={overrides?.title ?? choice.title ?? choice.name ?? key}
+          description={overrides?.description ?? choice.description}
+          options={opts}
+          count={choice.count ?? 1}
+          onInspectSpell={onInspectSpell}
+          inspectedSpellName={inspectedSpellName}
+        />
+      );
+    }
+    const grantedLanguages =
+      choice.choice_category === "languages"
+        ? ((previewData["granted_languages"] as string[] | undefined) ?? [])
+        : undefined;
+    return (
+      <ChoiceList
+        key={key}
+        choiceKey={key}
+        title={overrides?.title ?? choice.title ?? choice.name ?? key}
+        description={overrides?.description ?? choice.description}
+        options={opts as Array<string | { name?: string }>}
+        optionDescriptions={choice.option_descriptions}
+        count={choice.count ?? 1}
+        disabledOptions={grantedLanguages}
+        disabledReason="Already known"
+      />
+    );
+  };
+  const renderedFeatureGroups = new Set<string>();
 
   return (
     <div className="space-y-6">
@@ -2016,117 +2149,45 @@ function ClassDetail({
           )}
 
           <div className="space-y-4">
-            {displayNestedChoices.map((choice, idx) => {
-              const key =
-                choice.choice_key ??
-                choice.feature_name ??
-                choice.name ??
-                `class_choice_${idx}`;
+            {visibleNestedChoices.map((choice, idx) => {
+              const groupName = groupedFeatureName(choice);
+              const shouldGroup =
+                Boolean(groupName) && (groupedChoiceCounts.get(groupName ?? "") ?? 0) > 1;
 
-              // Feat sub-choices are rendered inside FeatDropdownPicker — skip here
-              if (key.startsWith("feat_") && !isClassFeatChoiceKey(key))
-                return null;
-
-              // ASI sub-choices (class_feat_N_asi_option etc.) are rendered inside
-              // ClassFeatAsiPicker which is inlined after FeatDropdownPicker — skip here
-              if (asiChoiceKeys.has(key)) return null;
-
-              // Feat sub-choices keyed as class_feat_N_<name> (e.g. class_feat_4_ability)
-              // are rendered inside FeatDropdownPicker — skip them at the top level
-              if (!isClassFeatChoiceKey(key) && /^class_feat_\d+_/.test(key))
-                return null;
-
-              // Honor depends_on / depends_on_value
-              // Treat null the same as undefined: show whenever the parent has any truthy value
-              if (choice.depends_on) {
-                const variants = parentKeyVariants(choice.depends_on);
-                const parent = variants
-                  .map((k) => choicesMade[k])
-                  .find((v) => v !== undefined);
-                const matches =
-                  choice.depends_on_value == null
-                    ? Boolean(parent)
-                    : Array.isArray(parent)
-                      ? parent.includes(choice.depends_on_value)
-                      : parent === choice.depends_on_value;
-                if (!matches) return null;
-              }
-
-              if (isClassFeatChoiceKey(key)) {
-                const slotLevel = Number(key.replace("class_feat_", "")) || 0;
-                const selectedFeat =
-                  typeof choicesMade[key] === "string"
-                    ? String(choicesMade[key])
-                    : "";
-                // Sub-choices are keyed as class_feat_N_<name> by the backend
-                const subChoicesForSlot = selectedFeat
-                  ? displayNestedChoices.filter((sc) => {
-                      const scKey =
-                        sc.choice_key ?? sc.feature_name ?? sc.name ?? "";
-                      return (
-                        scKey.startsWith(`${key}_`) && !asiChoiceKeys.has(scKey)
-                      );
-                    })
-                  : [];
-                const warningsForFeat = featPrerequisiteWarnings
-                  .filter((w) => w.featName === selectedFeat)
-                  .flatMap((w) => w.messages);
-                // ASI group for this slot (present when "Ability Score Improvement" is selected)
-                const asiGroup = asiChoiceGroups.find((g) => g.slotKey === key);
+              if (groupName && shouldGroup) {
+                if (renderedFeatureGroups.has(groupName)) return null;
+                renderedFeatureGroups.add(groupName);
+                const groupedChoices = visibleNestedChoices.filter(
+                  (candidate) => groupedFeatureName(candidate) === groupName,
+                );
                 return (
-                  <FeatDropdownPicker
-                    key={key}
-                    choiceKey={key}
-                    slotLevel={slotLevel}
-                    title={choice.title ?? `Feat (Level ${slotLevel})`}
-                    description={choice.description}
-                    generalFeats={featDefinitions}
-                    originFeats={originFeatDefinitions}
-                    featSubChoices={subChoicesForSlot}
-                    choicesMade={choicesMade}
-                    prerequisiteWarning={warningsForFeat}
-                    asiChoiceGroup={asiGroup}
-                    onInspectSpell={onInspectSpell}
-                    inspectedSpellName={inspectedSpellName}
-                  />
+                  <section
+                    key={groupName}
+                    className="rounded-xl border border-border/70 bg-card/70 p-4 shadow-sm sm:p-5"
+                  >
+                    <div className="mb-4 space-y-2">
+                      <h4 className="text-base font-semibold text-foreground">
+                        {groupName}
+                      </h4>
+                      {choice.description && (
+                        <p className="text-sm text-muted-foreground">
+                          {choice.description}
+                        </p>
+                      )}
+                    </div>
+                    <div className="space-y-3">
+                      {groupedChoices.map((groupedChoice, groupedIdx) =>
+                        renderChoiceControl(groupedChoice, idx + groupedIdx, {
+                          title: groupedChoiceTitle(groupedChoice, groupName),
+                          description: undefined,
+                        }),
+                      )}
+                    </div>
+                  </section>
                 );
               }
 
-              const opts = (choice.options ?? []) as Array<unknown>;
-              if (opts.length === 0) return null;
-              if (isSpellLikeChoice(choice, opts)) {
-                return (
-                  <SpellChoiceList
-                    key={key}
-                    choiceKey={key}
-                    title={choice.title ?? choice.name ?? key}
-                    description={choice.description}
-                    options={opts}
-                    count={choice.count ?? 1}
-                    onInspectSpell={onInspectSpell}
-                    inspectedSpellName={inspectedSpellName}
-                  />
-                );
-              }
-              const grantedLanguages =
-                choice.choice_category === "languages"
-                  ? ((previewData["granted_languages"] as
-                      | string[]
-                      | undefined) ?? [])
-                  : undefined;
-              return (
-                <ChoiceList
-                  key={key}
-                  choiceKey={key}
-                  title={choice.title ?? choice.name ?? key}
-                  description={choice.description}
-                  options={opts as Array<string | { name?: string }>}
-                  optionDescriptions={choice.option_descriptions}
-                  count={choice.count ?? 1}
-                  disabledOptions={grantedLanguages}
-                  disabledReason="Already known"
-                />
-              );
+              return renderChoiceControl(choice, idx);
             })}
           </div>
         </section>

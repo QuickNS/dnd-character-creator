@@ -7,6 +7,10 @@ import json
 from pathlib import Path
 
 
+def _is_unresolved_placeholder(value: object) -> bool:
+    return isinstance(value, str) and value.startswith("__") and value.endswith("__")
+
+
 def resolve_choice_options(
     choices_data: dict,
     character: dict,
@@ -62,11 +66,19 @@ def resolve_choice_options(
         return [option for option in fixed_options if option in proficient]
     elif source_type == "proficient_skills":
         # Skills the character is currently proficient in
-        return list(character.get("proficiencies", {}).get("skills", []))
+        return [
+            skill
+            for skill in character.get("proficiencies", {}).get("skills", [])
+            if not _is_unresolved_placeholder(skill)
+        ]
     elif source_type == "computed":
         from_value = source.get("from", "")
         if from_value == "skill_proficiencies":
-            skills = list(character.get("proficiencies", {}).get("skills", []))
+            skills = [
+                skill
+                for skill in character.get("proficiencies", {}).get("skills", [])
+                if not _is_unresolved_placeholder(skill)
+            ]
             if not skills and class_data:
                 # Fall back to the class's available skill options when
                 # proficiencies haven't been resolved yet (e.g. during
