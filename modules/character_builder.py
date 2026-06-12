@@ -41,7 +41,11 @@ import math
 
 if str(Path(__file__).parent.parent) not in sys.path:
     sys.path.insert(0, str(Path(__file__).parent.parent))
-from utils.choice_resolver import resolve_choice_options, get_option_descriptions
+from utils.choice_resolver import (
+    resolve_choice_options,
+    get_option_descriptions,
+    is_unresolved_placeholder,
+)
 
 
 def _humanize(snake: str) -> str:
@@ -1509,9 +1513,7 @@ class CharacterBuilder:
         elif effect_type == "grant_skill_proficiency":
             skills = effect.get("skills", [])
             for skill in skills:
-                if not isinstance(skill, str) or (
-                    skill.startswith("__") and skill.endswith("__")
-                ):
+                if not isinstance(skill, str) or is_unresolved_placeholder(skill):
                     continue
                 if skill not in self.character_data["proficiencies"]["skills"]:
                     self.character_data["proficiencies"]["skills"].append(skill)

@@ -7,8 +7,12 @@ import json
 from pathlib import Path
 
 
-def _is_unresolved_placeholder(value: object) -> bool:
-    return isinstance(value, str) and value.startswith("__") and value.endswith("__")
+def is_unresolved_placeholder(skill_value: object) -> bool:
+    return (
+        isinstance(skill_value, str)
+        and skill_value.startswith("__")
+        and skill_value.endswith("__")
+    )
 
 
 def resolve_choice_options(
@@ -69,7 +73,7 @@ def resolve_choice_options(
         return [
             skill
             for skill in character.get("proficiencies", {}).get("skills", [])
-            if not _is_unresolved_placeholder(skill)
+            if not is_unresolved_placeholder(skill)
         ]
     elif source_type == "computed":
         from_value = source.get("from", "")
@@ -77,7 +81,7 @@ def resolve_choice_options(
             skills = [
                 skill
                 for skill in character.get("proficiencies", {}).get("skills", [])
-                if not _is_unresolved_placeholder(skill)
+                if not is_unresolved_placeholder(skill)
             ]
             if not skills and class_data:
                 # Fall back to the class's available skill options when

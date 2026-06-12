@@ -143,6 +143,11 @@ function parentKeyVariants(key: string): string[] {
 const CLASS_FEAT_ASI_OPTION_KEY_RE =
   /^(class_feat_\d+)_(asi_option|ability_plus_2|abilities_plus_1)$/;
 
+/**
+ * Collapses list-based backend feature choices into a shared feature header.
+ * Example: `feature_name="Deft Explorer_deft_explorer_expertise"` with
+ * `choice_key="deft_explorer_expertise"` groups under `"Deft Explorer"`.
+ */
 function groupedFeatureName(choice: PreviewChoice): string | null {
   if (!choice.feature_name || !choice.choice_key) return null;
   const suffix = `_${choice.choice_key}`;
