@@ -8,6 +8,7 @@ import { StepSidebar } from "@/components/wizard/StepSidebar";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { useBugReportUrl } from "@/hooks/useBugReportUrl";
+import { AdBanner } from "@/components/AdBanner";
 
 export function WizardLayout() {
   const navigate = useNavigate();
@@ -214,6 +215,9 @@ export function WizardLayout() {
               </div>
               <div className="flex-1 overflow-y-auto min-h-0">
                 <StepSidebar steps={steps} currentStepId={stepId ?? null} />
+              </div>
+              <div className="border-t border-border p-2 bg-card/50">
+                <AdBanner slot="3643995441" className="w-full bg-background" />
               </div>
             </>
           )}

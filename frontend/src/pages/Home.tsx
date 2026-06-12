@@ -10,6 +10,7 @@ import { summarizeChoices } from "@/lib/persistence";
 import { useIsDark } from "@/hooks/useIsDark";
 import { SAMPLE_CHARACTERS } from "@/data/sampleCharacters";
 import { useBugReportUrl } from "@/hooks/useBugReportUrl";
+import { AdBanner } from "@/components/AdBanner";
 
 export function Home() {
   const navigate = useNavigate();
@@ -519,7 +520,11 @@ export function Home() {
           </section>
 
         </div>
-      </div>
+
+          <div className="mt-10 max-w-4xl mx-auto">
+            <AdBanner slot="7068774135" className="w-full bg-background" />
+          </div>
+        </div>
 
       </div>{/* end content wrapper */}
 
