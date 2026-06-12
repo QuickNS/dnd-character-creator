@@ -58,6 +58,9 @@ def test_defense_fighting_style_with_armor():
     assert chain_mail_ac["ac"] == 17, (
         f"Expected AC 17 (16 base + 1 Defense), got {chain_mail_ac['ac']}"
     )
+    assert "Defense (+1)" in chain_mail_ac["formula"], (
+        f"Expected Defense bonus in formula, got {chain_mail_ac['formula']}"
+    )
     # Check that Defense is noted
     assert any("Defense" in note for note in chain_mail_ac.get("notes", [])), (
         "Defense bonus should be noted"

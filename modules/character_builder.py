@@ -2913,13 +2913,14 @@ class CharacterBuilder:
         # Check for bonus_ac effects (e.g., Defense fighting style)
         # Phase 6: read from structured field, not applied_effects.
         ac_bonus = 0
-        ac_bonus_sources = []
+        ac_bonus_entries = []
         for entry in self.character_data.get("ac_bonuses", []):
             # Condition checking is done per option (e.g. "wearing armor" only
             # applies when armor is equipped). For now we accumulate the raw
             # bonus value and the calling code applies it only to armored options.
-            ac_bonus += entry.get("value", 0)
-            ac_bonus_sources.append(entry.get("source", "Unknown"))
+            bonus_value = entry.get("value", 0)
+            ac_bonus += bonus_value
+            ac_bonus_entries.append((entry.get("source", "Unknown"), bonus_value))
 
         # Handle case where equipment is None (like in tests)
         if equipment is None:
@@ -2984,8 +2985,10 @@ class CharacterBuilder:
                 # Apply bonus_ac if wearing armor
                 if ac_bonus > 0:
                     ac_option["ac"] += ac_bonus
-                    for source in ac_bonus_sources:
-                        ac_option["notes"].append(f"+{ac_bonus} from {source}")
+                    for source, value in ac_bonus_entries:
+                        if value > 0:
+                            ac_option["notes"].append(f"+{value} from {source}")
+                            ac_option["formula"] += f" + {source} (+{value})"
 
                 ac_options.append(ac_option)
 
