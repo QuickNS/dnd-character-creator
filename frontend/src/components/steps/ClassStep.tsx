@@ -1873,6 +1873,32 @@ function ClassDetail({
     }
     return counts;
   }, [visibleNestedChoices]);
+  const groupedChoiceBlocks = useMemo(() => {
+    const blocks: Array<{ groupName?: string; choices: PreviewChoice[] }> = [];
+    const groupedNames = new Set<string>();
+
+    for (const choice of visibleNestedChoices) {
+      const groupName = groupedFeatureName(choice);
+      const shouldGroup =
+        Boolean(groupName) && (groupedChoiceCounts.get(groupName ?? "") ?? 0) > 1;
+
+      if (groupName && shouldGroup) {
+        if (groupedNames.has(groupName)) continue;
+        groupedNames.add(groupName);
+        blocks.push({
+          groupName,
+          choices: visibleNestedChoices.filter(
+            (candidate) => groupedFeatureName(candidate) === groupName,
+          ),
+        });
+        continue;
+      }
+
+      blocks.push({ choices: [choice] });
+    }
+
+    return blocks;
+  }, [groupedChoiceCounts, visibleNestedChoices]);
   const featPrerequisiteWarnings = useMemo<
     ClassFeatPrerequisiteWarning[]
   >(() => {
@@ -1987,7 +2013,6 @@ function ClassDetail({
       />
     );
   };
-  const renderedFeatureGroups = new Set<string>();
 
   return (
     <div className="space-y-6">
@@ -2149,17 +2174,9 @@ function ClassDetail({
           )}
 
           <div className="space-y-4">
-            {visibleNestedChoices.map((choice, idx) => {
-              const groupName = groupedFeatureName(choice);
-              const shouldGroup =
-                Boolean(groupName) && (groupedChoiceCounts.get(groupName ?? "") ?? 0) > 1;
-
-              if (groupName && shouldGroup) {
-                if (renderedFeatureGroups.has(groupName)) return null;
-                renderedFeatureGroups.add(groupName);
-                const groupedChoices = visibleNestedChoices.filter(
-                  (candidate) => groupedFeatureName(candidate) === groupName,
-                );
+            {groupedChoiceBlocks.map((block, idx) => {
+              if (block.groupName) {
+                const groupName = block.groupName;
                 return (
                   <section
                     key={groupName}
@@ -2169,14 +2186,14 @@ function ClassDetail({
                       <h4 className="text-base font-semibold text-foreground">
                         {groupName}
                       </h4>
-                      {choice.description && (
+                      {block.choices[0]?.description && (
                         <p className="text-sm text-muted-foreground">
-                          {choice.description}
+                          {block.choices[0].description}
                         </p>
                       )}
                     </div>
                     <div className="space-y-3">
-                      {groupedChoices.map((groupedChoice, groupedIdx) =>
+                      {block.choices.map((groupedChoice, groupedIdx) =>
                         renderChoiceControl(groupedChoice, idx + groupedIdx, {
                           title: groupedChoiceTitle(groupedChoice, groupName),
                           description: undefined,
@@ -2187,7 +2204,7 @@ function ClassDetail({
                 );
               }
 
-              return renderChoiceControl(choice, idx);
+              return renderChoiceControl(block.choices[0], idx);
             })}
           </div>
         </section>

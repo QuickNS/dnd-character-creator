@@ -314,7 +314,7 @@ class TestRangerExpertiseChoices:
         assert "__otherworldly_glamour_skill__" not in deft_choice["options"]
         assert "__otherworldly_glamour_skill__" not in builder.to_character()["proficiencies"]["skills"]
 
-
+    def test_level_9_has_expertise_choice(self):
         builder = build_ranger_with_choices(9)
         features = builder.get_class_features_and_choices()
 
