@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 import { PrepareSpellsDialog } from "@/components/sheet/PrepareSpellsDialog";
 import { ChooseMasteriesDialog } from "@/components/sheet/ChooseMasteriesDialog";
 import { InvocationsDialog } from "@/components/sheet/InvocationsDialog";
+import { AdBanner } from "@/components/AdBanner";
 
 // `to_character()` is too sprawling to fully type at the boundary.
 // We treat it as a loose record and narrow only where we read.
@@ -344,6 +345,7 @@ export function Sheet() {
         onPrepareSpells={() => setSpellDialogOpen(true)}
       />
       <Features c={c} />
+      <AdBanner slot="8070325619" className="mt-8 w-full bg-background" />
       <PrepareSpellsDialog
         open={spellDialogOpen}
         onClose={() => setSpellDialogOpen(false)}
