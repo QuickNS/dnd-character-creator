@@ -4,7 +4,7 @@
   "description": "High elves are known for their keen intellect and mastery of magic. They often pursue scholarly and arcane endeavors, and their societies are rich with culture and tradition.",
   "traits": {
     "High Elf Cantrip": {
-      "description": "You know one cantrip of your choice from the Wizard spell list. Whenever you finish a Long Rest, you can replace that cantrip with a different cantrip from the Wizard spell list.",
+      "description": "You know one cantrip of your choice from the Wizard spell list. Whenever you finish a Long rest, you can replace that cantrip with a different cantrip from the Wizard spell list.",
       "type": "choice",
       "choices": {
         "type": "select_single",
