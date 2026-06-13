@@ -138,6 +138,8 @@ class TestWizard:
         assert "spells" in deps["classes"]
         assert "skill_choices" in deps["classes"]
         assert "tool_choices" in deps["classes"]
+        assert "background_skill_replacement" in deps["classes"]
+        assert "equipment_selections" in deps["classes"]
         # Species change must invalidate lineage
         assert "lineage" in deps["species"]
 
