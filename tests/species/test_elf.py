@@ -238,6 +238,7 @@ class TestElfLineages:
         builder = CharacterBuilder()
         builder.set_species("Elf")
         result = builder.set_lineage("High Elf", "Intelligence")
+        builder.apply_choice("High Elf Cantrip", "Prestidigitation")
 
         assert result is True
         char_data = builder.character_data
@@ -330,6 +331,7 @@ class TestElfLineages:
         builder = CharacterBuilder()
         builder.set_species("Elf")
         builder.set_lineage("High Elf", "Intelligence")
+        builder.apply_choice("High Elf Cantrip", "Prestidigitation")
 
         applied_effects = getattr(builder, "applied_effects", [])
         spell_effects = [
@@ -353,6 +355,18 @@ class TestElfLineages:
         assert "Detect Magic" in spell_names
         assert "Misty Step" in spell_names
 
+    def test_high_elf_cantrip_choice_is_available(self):
+        """High Elf exposes a selectable lineage cantrip choice."""
+        builder = CharacterBuilder()
+        builder.set_species("Elf")
+        builder.set_lineage("High Elf", "Intelligence")
+
+        trait_choices = builder.get_species_trait_choices()
+        assert "High Elf Cantrip" in trait_choices
+        options = trait_choices["High Elf Cantrip"]["options"]
+        assert "Prestidigitation" in options
+        assert "Mage Hand" in options
+
 
 class TestElfLineageCantrips:
     """Test that elf lineages properly grant cantrips"""
@@ -362,6 +376,7 @@ class TestElfLineageCantrips:
         builder = CharacterBuilder()
         builder.set_species("Elf")
         result = builder.set_lineage("High Elf", "Intelligence")
+        builder.apply_choice("High Elf Cantrip", "Prestidigitation")
 
         assert result is True
         char_data = builder.character_data
@@ -382,8 +397,19 @@ class TestElfLineageCantrips:
                 break
 
         assert prestidigitation_effect is not None
-        assert prestidigitation_effect["source_type"] == "lineage"
-        assert prestidigitation_effect["source"] == "High Elf Spells"
+        assert prestidigitation_effect["source_type"] == "species_choice"
+        assert prestidigitation_effect["source"] == "High Elf Cantrip: Prestidigitation"
+
+    def test_high_elf_cantrip_can_be_swapped(self):
+        """Regression for #193: High Elf cantrip choice can replace Prestidigitation."""
+        builder = CharacterBuilder()
+        builder.set_species("Elf")
+        builder.set_lineage("High Elf", "Intelligence")
+        builder.apply_choice("High Elf Cantrip", "Mage Hand")
+
+        always_prepared = builder.character_data["spells"]["always_prepared"]
+        assert "Mage Hand" in always_prepared
+        assert "Prestidigitation" not in always_prepared
 
     def test_wood_elf_grants_druidcraft_cantrip(self):
         """Test that Wood Elf lineage grants Druidcraft cantrip"""
@@ -446,6 +472,7 @@ class TestElfLineageCantrips:
         builder = CharacterBuilder()
         builder.set_species("Elf")
         builder.set_lineage("High Elf", "Intelligence")
+        builder.apply_choice("High Elf Cantrip", "Prestidigitation")
 
         # Set a class that also grants cantrips
         builder.set_class("Wizard", 1)
@@ -476,10 +503,10 @@ class TestElfLineageCantrips:
         # Should have at least the lineage cantrip effect
         assert len(cantrip_effects) >= 1
 
-        # Check that at least one cantrip comes from lineage
+        # Check that at least one cantrip comes from lineage choice
         lineage_cantrip_found = False
         for effect in cantrip_effects:
-            if effect["source_type"] == "lineage":
+            if effect["source_type"] == "species_choice":
                 lineage_cantrip_found = True
                 break
 
@@ -530,6 +557,7 @@ class TestElfIntegration:
         builder = CharacterBuilder()
         builder.set_species("Elf")
         builder.set_lineage("High Elf", "Intelligence")
+        builder.apply_choice("High Elf Cantrip", "Prestidigitation")
         builder.set_class("Wizard", 1)
 
         char_data = builder.character_data
@@ -568,6 +596,7 @@ class TestElfIntegration:
         builder = CharacterBuilder()
         builder.set_species("Elf")
         builder.set_lineage("High Elf", "Intelligence")
+        builder.apply_choice("High Elf Cantrip", "Prestidigitation")
 
         applied_effects = getattr(builder, "applied_effects", [])
 
@@ -576,10 +605,11 @@ class TestElfIntegration:
 
         # Check effect sources are correct
         for effect_data in applied_effects:
-            assert effect_data["source_type"] in ["species", "lineage"]
+            assert effect_data["source_type"] in ["species", "lineage", "species_choice"]
             assert effect_data["source"] in [
                 "Darkvision",
                 "Fey Ancestry",
+                "High Elf Cantrip: Prestidigitation",
                 "High Elf Spells",
             ]
 
