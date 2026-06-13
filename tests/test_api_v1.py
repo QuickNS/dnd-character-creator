@@ -746,6 +746,45 @@ class TestCharacterBuild:
         assert r.status_code == 200
         assert r.get_json()["needs_subclass"] is False
 
+    def test_preview_class_fey_wanderer_filters_unresolved_skill_placeholder(self, client):
+        choices = {
+            "character_name": "Preview Ranger",
+            "level": 3,
+            "class": "Ranger",
+            "subclass": "Fey Wanderer",
+            "species": "Human",
+            "background": "Soldier",
+            "skill_choices": ["Stealth", "Perception", "Survival"],
+            "fighting_style": "Archery",
+            "ability_scores": {
+                "Strength": 10,
+                "Dexterity": 15,
+                "Constitution": 14,
+                "Intelligence": 10,
+                "Wisdom": 14,
+                "Charisma": 8,
+            },
+            "background_bonuses": {"Strength": 2, "Constitution": 1},
+        }
+
+        r = client.post(
+            "/api/v1/character/preview-step",
+            json={"step": "class", "choices_made": choices},
+        )
+
+        assert r.status_code == 200
+        data = r.get_json()
+        deft_explorer = next(
+            (
+                choice
+                for choice in data["nested_choices"]
+                if choice.get("choice_key") == "deft_explorer_expertise"
+            ),
+            None,
+        )
+        assert deft_explorer is not None
+        assert "__otherworldly_glamour_skill__" not in deft_explorer["options"]
+
     # ---------- preview-step: multiclass row_context + nested_choices filtering ----------
 
     @staticmethod

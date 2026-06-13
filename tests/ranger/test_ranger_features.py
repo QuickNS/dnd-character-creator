@@ -279,7 +279,42 @@ class TestRangerExpertiseChoices:
         assert "deft_explorer_languages" not in language_choice["title"]
         assert "Languages" in language_choice["title"]
 
+    def test_fey_wanderer_otherworldly_glamour_placeholder_not_exposed(self):
+        """Regression test for Issue #189: unresolved placeholders must not leak into expertise options."""
+        builder = CharacterBuilder()
+        builder.apply_choices(
+            {
+                "character_name": "Test Ranger",
+                "level": 3,
+                "class": "Ranger",
+                "subclass": "Fey Wanderer",
+                "species": "Human",
+                "background": "Soldier",
+                "skill_choices": ["Stealth", "Perception", "Survival"],
+                "fighting_style": "Archery",
+                "ability_scores": {
+                    "Strength": 10,
+                    "Dexterity": 15,
+                    "Constitution": 14,
+                    "Intelligence": 10,
+                    "Wisdom": 14,
+                    "Charisma": 8,
+                },
+                "background_bonuses": {"Strength": 2, "Constitution": 1},
+            }
+        )
 
+        features = builder.get_class_features_and_choices()
+        deft_choice = next(
+            (c for c in features["choices"] if c.get("choice_key") == "deft_explorer_expertise"),
+            None,
+        )
+
+        assert deft_choice is not None
+        assert "__otherworldly_glamour_skill__" not in deft_choice["options"]
+        assert "__otherworldly_glamour_skill__" not in builder.to_character()["proficiencies"]["skills"]
+
+    def test_level_9_has_expertise_choice(self):
         builder = build_ranger_with_choices(9)
         features = builder.get_class_features_and_choices()
 
