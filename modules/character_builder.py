@@ -7430,21 +7430,27 @@ class CharacterBuilder:
         if not species_data or "traits" not in species_data:
             return {}
 
-        # Find trait choices and extract options
         trait_choices = {}
-        for trait_name, trait_data in species_data["traits"].items():
-            if isinstance(trait_data, dict) and trait_data.get("type") == "choice":
-                # Extract options from the nested structure
-                choices_data = trait_data.get("choices", {})
-                source_data = choices_data.get("source", {})
-                options = source_data.get("options", [])
 
-                # Create simplified structure
-                trait_choices[trait_name] = {
-                    "description": trait_data.get("description", ""),
-                    "options": options,
-                    "count": choices_data.get("count", 1),
-                }
+        def _collect_choice_traits(traits: Dict[str, Any]) -> None:
+            for trait_name, trait_data in traits.items():
+                if isinstance(trait_data, dict) and trait_data.get("type") == "choice":
+                    choices_data = trait_data.get("choices", {})
+                    source_data = choices_data.get("source", {})
+                    options = source_data.get("options", [])
+                    trait_choices[trait_name] = {
+                        "description": trait_data.get("description", ""),
+                        "options": options,
+                        "count": choices_data.get("count", 1),
+                    }
+
+        _collect_choice_traits(species_data.get("traits", {}))
+
+        lineage_name = self.character_data.get("lineage")
+        if lineage_name:
+            lineage_data = self._load_lineage_data(species_name, lineage_name)
+            if isinstance(lineage_data, dict):
+                _collect_choice_traits(lineage_data.get("traits", {}))
 
         return trait_choices
 
