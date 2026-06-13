@@ -82,6 +82,10 @@ _DEPENDENCIES = {
         "spells",
         "cantrips",
         "class_features",
+        "skill_choices",
+        "tool_choices",
+        "background_skill_replacement",
+        "equipment_selections",
     ],
     "level": ["subclass", "spells", "cantrips", "fighting_style", "maneuvers", "class_features"],
     "class": [
