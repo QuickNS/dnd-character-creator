@@ -105,6 +105,16 @@ def test_api_build_rejects_unknown_choice(client):
     assert response.get_json()["error"]["code"] == "unknown_field"
 
 
+def test_api_preview_requires_step_with_a_field_error(client):
+    response = client.post(
+        "/api/v1/character/preview-step",
+        json={"choices_made": _choices()},
+    )
+
+    assert response.status_code == 400
+    assert response.get_json()["error"]["field"] == "step"
+
+
 def test_api_build_rejects_oversized_collection(client):
     response = client.post(
         "/api/v1/character/build",

@@ -257,8 +257,10 @@ def _require_request(endpoint: str) -> Dict[str, Any]:
         )
     missing = allowed - set(body)
     if missing:
+        field = sorted(missing)[0]
         raise ChoicesValidationError(
             f"Missing required request fields: {', '.join(sorted(missing))}",
+            field,
             code="missing_field",
         )
     if not isinstance(body["choices_made"], dict):
@@ -316,7 +318,10 @@ def _canonical_subclass_identifier(
             name for name in subclasses
             if name.casefold().startswith(f"{requested} ")
             or name.casefold().endswith(f" {requested}")
-            or name.casefold().split()[0] == requested.split()[0]
+            or (
+                len(requested.split()) > 1
+                and name.casefold().split()[0] == requested.split()[0]
+            )
         ]
         if len(matches) == 1:
             return matches[0]
