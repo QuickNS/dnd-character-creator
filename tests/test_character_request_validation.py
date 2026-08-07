@@ -44,7 +44,7 @@ def test_api_character_endpoints_reject_invalid_level_consistently(client, endpo
     assert response.get_json()["error"] == {
         "code": "out_of_bounds",
         "field": "choices_made.level",
-        "message": "Must be between 1 and 20",
+        "message": "Invalid character request",
     }
 
 

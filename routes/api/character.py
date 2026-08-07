@@ -240,7 +240,13 @@ def _resolve_class_row_context(
 
 
 def _validation_response(exc: ChoicesValidationError):
-    return jsonify(exc.to_response()), 400
+    error: Dict[str, Any] = {
+        "code": exc.code,
+        "message": "Invalid character request",
+    }
+    if exc.field:
+        error["field"] = exc.field
+    return jsonify({"error": error}), 400
 
 
 def _require_request(endpoint: str) -> Dict[str, Any]:
