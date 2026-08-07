@@ -15,7 +15,7 @@ from typing import Any, Dict, List
 from flask import Blueprint, jsonify, request
 
 from modules.ability_scores import validate_point_buy
-from modules.character_builder import CharacterBuilder
+from modules.character_builder import CharacterBuilder, content_slug
 from modules.derived_stats import (
     build_damage_cantrip_rows,
     build_invocation_management_view,
@@ -346,6 +346,42 @@ def _normalize_choices_for_builder(
     return normalized
 
 
+def _validate_content_selections(
+    choices: Dict[str, Any], builder: CharacterBuilder
+) -> None:
+    """Reject selections that do not name canonical game content.
+
+    Class, species, lineage and background selections address JSON files on
+    disk, so only canonical content identifiers are accepted. Traversal
+    segments, absolute paths and unknown names are rejected here with a
+    sanitized message that never echoes the submitted value.
+    """
+    for key in ("species", "lineage", "background"):
+        value = choices.get(key)
+        if value is None or (isinstance(value, str) and not value.strip()):
+            continue
+        if not builder.content_selection_exists(key, value):
+            raise ChoicesValidationError(f"Unknown or invalid '{key}' selection")
+
+    for index, entry in enumerate(choices.get("classes") or []):
+        class_name = entry.get("class_name") if isinstance(entry, dict) else None
+        if class_name is None:
+            continue
+        if not builder.content_selection_exists("class", class_name):
+            raise ChoicesValidationError(
+                f"Unknown or invalid 'classes[{index}].class_name' selection"
+            )
+        subclass = entry.get("subclass")
+        if subclass is not None and content_slug(subclass) is None:
+            raise ChoicesValidationError(
+                f"Unknown or invalid 'classes[{index}].subclass' selection"
+            )
+
+    subclass = choices.get("subclass")
+    if isinstance(subclass, str) and subclass.strip() and content_slug(subclass) is None:
+        raise ChoicesValidationError("Unknown or invalid 'subclass' selection")
+
+
 def _build(
     choices_made: Dict[str, Any],
     *,
@@ -356,6 +392,7 @@ def _build(
         choices_made,
         preserve_explicit_class_context=preserve_explicit_class_context,
     )
+    _validate_content_selections(normalized_choices, builder)
     builder.apply_choices(normalized_choices)
     return builder
 

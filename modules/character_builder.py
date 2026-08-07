@@ -68,6 +68,43 @@ _CLASS_FEAT_SLOT_RE = re.compile(r"^class_feat_\d+$")
 _CLASS_FEAT_SUB_RE = re.compile(r"^(class_feat_\d+)_(.+)$")
 
 
+# ==================== Canonical content identifiers ====================
+#
+# Every game-content file in ``data/`` is named with a canonical slug made of
+# lowercase letters, digits, underscores and hyphens. Player selections that
+# arrive from the API are converted to such a slug before they may touch the
+# filesystem; anything else (path separators, traversal segments, absolute
+# paths, NUL bytes, encoded traversal) fails the pattern and is rejected.
+_CONTENT_SLUG_RE = re.compile(r"^[a-z0-9][a-z0-9_-]*$")
+
+# Substitutions applied before validation. Content names are title-cased
+# display strings ("Wood Elf", "Fighter: Champion"), so a small, fixed set of
+# separators maps onto the canonical filename form.
+CONTENT_SLUG_SUBSTITUTIONS = ((" ", "_"), (":", "-"))
+SPELL_SLUG_SUBSTITUTIONS = ((" ", "_"), ("'", ""), ("/", "_"))
+
+
+def content_slug(
+    identifier: Any,
+    substitutions: Tuple[Tuple[str, str], ...] = CONTENT_SLUG_SUBSTITUTIONS,
+) -> Optional[str]:
+    """Return the canonical file slug for *identifier*, or None if malformed.
+
+    A malformed identifier is one that cannot possibly name a content file:
+    a non-string, an empty string, or anything containing characters outside
+    the canonical slug alphabet once the display-name substitutions above have
+    been applied.
+    """
+    if not isinstance(identifier, str):
+        return None
+    slug = identifier.strip().lower()
+    for old, new in substitutions:
+        slug = slug.replace(old, new)
+    if not _CONTENT_SLUG_RE.match(slug):
+        return None
+    return slug
+
+
 class CharacterBuilder:
     """
     Stateful builder for D&D 2024 character creation.
@@ -125,6 +162,15 @@ class CharacterBuilder:
         "Undercommon",
     ]
     REQUIRED_LANGUAGE_SELECTION_COUNT = 2
+
+    # Content kind → directory under ``data/`` holding one JSON file per
+    # canonical identifier. Used by :py:meth:`content_selection_exists`.
+    CONTENT_DIRECTORIES = {
+        "species": "species",
+        "lineage": "species_variants",
+        "class": "classes",
+        "background": "backgrounds",
+    }
 
     def __init__(self, data_dir: str = None):
         """
@@ -306,24 +352,74 @@ class CharacterBuilder:
             print(f"Error loading {file_path}: {e}")
             return None
 
+    def _content_file_path(
+        self,
+        subdir: str,
+        *identifiers: str,
+        substitutions: Tuple[Tuple[str, str], ...] = CONTENT_SLUG_SUBSTITUTIONS,
+    ) -> Optional[Path]:
+        """Resolve a content JSON path from canonical identifiers.
+
+        ``subdir`` is a trusted literal (e.g. ``"species"`` or
+        ``"spells/definitions"``). ``identifiers`` are player-supplied names;
+        every one of them must slugify to a canonical content id. The last
+        identifier names the JSON file, any preceding ones name nested content
+        directories.
+
+        Returns None when an identifier is malformed or when the resolved path
+        escapes the expected content directory (defense in depth against
+        traversal), so callers behave exactly as they do for missing files.
+        """
+        slugs = [content_slug(identifier, substitutions) for identifier in identifiers]
+        if not slugs or any(slug is None for slug in slugs):
+            return None
+
+        base_dir = (self.data_dir / subdir).resolve()
+        candidate = base_dir
+        for slug in slugs[:-1]:
+            candidate = candidate / slug
+        candidate = (candidate / f"{slugs[-1]}.json").resolve()
+
+        if candidate != base_dir and base_dir not in candidate.parents:
+            return None
+        return candidate
+
+    def _external_data_path(self, file_name: str) -> Optional[Path]:
+        """Resolve a data-relative file reference, rejecting escapes from ``data/``.
+
+        ``file_name`` normally comes from an authored ``source.file`` entry in a
+        JSON data file, but some references are assembled from player choices,
+        so containment is verified before the file is opened.
+        """
+        if not isinstance(file_name, str) or not file_name:
+            return None
+        base_dir = self.data_dir.resolve()
+        candidate = (base_dir / file_name).resolve()
+        if base_dir not in candidate.parents:
+            return None
+        return candidate
+
     def _load_species_data(self, species_name: str) -> Optional[Dict[str, Any]]:
         """Load species data from JSON file."""
-        filename = species_name.lower().replace(" ", "_")
-        file_path = self.data_dir / "species" / f"{filename}.json"
+        file_path = self._content_file_path("species", species_name)
+        if file_path is None:
+            return None
         return self._load_json_file(file_path)
 
     def _load_lineage_data(
         self, species_name: str, lineage_name: str
     ) -> Optional[Dict[str, Any]]:
         """Load lineage/variant data from JSON file."""
-        filename = lineage_name.lower().replace(" ", "_")
-        file_path = self.data_dir / "species_variants" / f"{filename}.json"
+        file_path = self._content_file_path("species_variants", lineage_name)
+        if file_path is None:
+            return None
         return self._load_json_file(file_path)
 
     def _load_class_data(self, class_name: str) -> Optional[Dict[str, Any]]:
         """Load class data from JSON file."""
-        filename = class_name.lower().replace(" ", "_")
-        file_path = self.data_dir / "classes" / f"{filename}.json"
+        file_path = self._content_file_path("classes", class_name)
+        if file_path is None:
+            return None
         return self._load_json_file(file_path)
 
     def _load_subclass_data(
@@ -337,13 +433,13 @@ class CharacterBuilder:
         handles cases where file names differ from the subclass's display name
         (e.g. evocation.json whose "name" is "Evoker").
         """
-        class_folder = class_name.lower().replace(" ", "_")
-        subclass_dir = self.data_dir / "subclasses" / class_folder
-        filename = subclass_name.lower().replace(" ", "_").replace(":", "-")
-        file_path = subclass_dir / f"{filename}.json"
+        file_path = self._content_file_path("subclasses", class_name, subclass_name)
+        if file_path is None:
+            return None
         if file_path.exists():
             return self._load_json_file(file_path)
         # Fallback: scan folder and match by the "name" field
+        subclass_dir = file_path.parent
         if subclass_dir.exists():
             for json_file in sorted(subclass_dir.glob("*.json")):
                 data = self._load_json_file(json_file)
@@ -353,9 +449,23 @@ class CharacterBuilder:
 
     def _load_background_data(self, background_name: str) -> Optional[Dict[str, Any]]:
         """Load background data from JSON file."""
-        filename = background_name.lower().replace(" ", "_")
-        file_path = self.data_dir / "backgrounds" / f"{filename}.json"
+        file_path = self._content_file_path("backgrounds", background_name)
+        if file_path is None:
+            return None
         return self._load_json_file(file_path)
+
+    def content_selection_exists(self, kind: str, identifier: Any) -> bool:
+        """True when *identifier* names an existing content file of *kind*.
+
+        ``kind`` is one of the keys in :py:attr:`CONTENT_DIRECTORIES`. This is
+        the canonical-identifier check used by the API to reject unknown or
+        malformed selections before any file access is attempted.
+        """
+        subdir = self.CONTENT_DIRECTORIES.get(kind)
+        if subdir is None:
+            raise ValueError(f"Unknown content kind: {kind}")
+        file_path = self._content_file_path(subdir, identifier)
+        return file_path is not None and file_path.is_file()
 
     @staticmethod
     def _background_feat_name(background_data: Optional[Dict[str, Any]]) -> Optional[str]:
@@ -1062,8 +1172,8 @@ class CharacterBuilder:
 
                     if external_file and choice_list_name:
                         try:
-                            external_path = self.data_dir / external_file
-                            if external_path.exists():
+                            external_path = self._external_data_path(external_file)
+                            if external_path is not None and external_path.exists():
                                 with open(external_path, "r") as f:
                                     external_data = json.load(f)
                                     choice_list = external_data.get(
@@ -2784,9 +2894,14 @@ class CharacterBuilder:
         if spell_name in self._spell_definitions_cache:
             return self._spell_definitions_cache[spell_name]
 
-        # Convert spell name to filename format (lowercase with underscores)
-        filename = spell_name.lower().replace(" ", "_").replace("'", "").replace("/", "_")
-        spell_file = self.data_dir / "spells" / "definitions" / f"{filename}.json"
+        # Convert spell name to canonical filename format
+        spell_file = self._content_file_path(
+            "spells/definitions",
+            spell_name,
+            substitutions=SPELL_SLUG_SUBSTITUTIONS,
+        )
+        if spell_file is None:
+            return self._minimal_spell_definition(spell_name)
 
         try:
             with open(spell_file, "r") as f:
@@ -2808,13 +2923,18 @@ class CharacterBuilder:
             print(
                 f"Warning: Could not load spell definition for '{spell_name}' from {spell_file}: {e}"
             )
-            return {
-                "name": spell_name,
-                "level": 0,
-                "description": "Spell definition not available.",
-                "source": "Unknown",
-                "concentration": False,
-            }
+            return self._minimal_spell_definition(spell_name)
+
+    @staticmethod
+    def _minimal_spell_definition(spell_name: str) -> Dict[str, Any]:
+        """Placeholder spell definition used when no definition file loads."""
+        return {
+            "name": spell_name,
+            "level": 0,
+            "description": "Spell definition not available.",
+            "source": "Unknown",
+            "concentration": False,
+        }
 
     def _get_weapon_properties(self, weapon_name: str) -> Dict[str, Any]:
         """Get weapon properties from loaded weapon data."""
@@ -3629,10 +3749,10 @@ class CharacterBuilder:
 
                                     if external_file and external_list:
                                         try:
-                                            external_path = (
-                                                self.data_dir / external_file
+                                            external_path = self._external_data_path(
+                                                external_file
                                             )
-                                            if external_path.exists():
+                                            if external_path is not None and external_path.exists():
                                                 import json
 
                                                 with open(external_path, "r") as f:
@@ -3770,8 +3890,8 @@ class CharacterBuilder:
             """Load and return the option-data dict for ``key`` from an external file."""
             if not file_name or not list_name or not isinstance(key, str):
                 return None
-            external_path = self.data_dir / file_name
-            if not external_path.exists():
+            external_path = self._external_data_path(file_name)
+            if external_path is None or not external_path.exists():
                 return None
             try:
                 with open(external_path, "r") as f:
@@ -5266,10 +5386,8 @@ class CharacterBuilder:
             spell_list_override = spellcasting_source.get("spell_list")
             if spell_list_override:
                 spell_list_name = spell_list_override.lower()
-        spell_list_path = (
-            self.data_dir / "spells" / "class_lists" / f"{spell_list_name}.json"
-        )
-        if spell_list_path.exists():
+        spell_list_path = self._content_file_path("spells/class_lists", spell_list_name)
+        if spell_list_path is not None and spell_list_path.exists():
             try:
                 import json
 
@@ -7059,12 +7177,9 @@ class CharacterBuilder:
                 spells_by_level[0] = []
 
             # Load class cantrip list
-            class_lower = class_name.lower()
-            spell_file = (
-                self.data_dir / "spells" / "class_lists" / f"{class_lower}.json"
-            )
+            spell_file = self._content_file_path("spells/class_lists", class_name)
 
-            if spell_file.exists():
+            if spell_file is not None and spell_file.exists():
                 spell_data = self._load_json_file(spell_file)
                 if spell_data:
                     available_cantrips = spell_data.get("cantrips", [])
@@ -7126,15 +7241,12 @@ class CharacterBuilder:
                                                     spell_list = effect.get(
                                                         "spell_list", class_name
                                                     )
-                                                    class_lower = spell_list.lower()
-                                                    spell_file = (
-                                                        self.data_dir
-                                                        / "spells"
-                                                        / "class_lists"
-                                                        / f"{class_lower}.json"
+                                                    spell_file = self._content_file_path(
+                                                        "spells/class_lists",
+                                                        spell_list,
                                                     )
 
-                                                    if spell_file.exists():
+                                                    if spell_file is not None and spell_file.exists():
                                                         spell_data = (
                                                             self._load_json_file(
                                                                 spell_file
@@ -7219,13 +7331,10 @@ class CharacterBuilder:
                 features_by_level = subclass_data.get("features_by_level", {})
 
                 # Load class cantrip list once for efficiency
-                class_lower = class_name.lower()
-                spell_file = (
-                    self.data_dir / "spells" / "class_lists" / f"{class_lower}.json"
-                )
+                spell_file = self._content_file_path("spells/class_lists", class_name)
                 available_cantrips = []
 
-                if spell_file.exists():
+                if spell_file is not None and spell_file.exists():
                     spell_data = self._load_json_file(spell_file)
                     if spell_data:
                         available_cantrips = spell_data.get("cantrips", [])
