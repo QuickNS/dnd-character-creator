@@ -6409,12 +6409,14 @@ class CharacterBuilder:
         standard_available: Dict[str, List[int]] = {}
         for ability in ABILITIES:
             current = scores.get(ability)
-            used_by_others = {
-                int(scores.get(other))
-                for other in ABILITIES
-                if other != ability
-                and isinstance(scores.get(other), (int, float))
-            }
+            used_by_others = set()
+            for other in ABILITIES:
+                if other == ability:
+                    continue
+                try:
+                    used_by_others.add(int(scores.get(other)))
+                except (TypeError, ValueError):
+                    continue
             standard_available[ability] = [
                 value
                 for value in standard_array
