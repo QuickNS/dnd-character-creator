@@ -209,7 +209,6 @@ class CharacterBuilder:
                     "cantrips": {},
                     "spells": {},
                 },  # User-selected prepared spells (can change on long rest)
-                "spellbook": {},  # Wizard spells known in the spellbook
                 "known": {},  # Permanently known spells (for known casters)
                 "background_spells": {},  # Special background spells (Magic Initiate, etc.)
                 "slots": {},
@@ -3521,13 +3520,20 @@ class CharacterBuilder:
                 # Mastery select from the book, not merely today's preparations.
                 spellbook = choice_value.get("spellbook", [])
                 if isinstance(spellbook, dict):
-                    self.character_data["spells"]["spellbook"] = dict(spellbook)
+                    if spellbook:
+                        self.character_data["spells"]["spellbook"] = dict(spellbook)
+                    elif "spellbook" in choice_value:
+                        self.character_data["spells"].pop("spellbook", None)
                 elif isinstance(spellbook, list):
-                    self.character_data["spells"]["spellbook"] = {
+                    spellbook_entries = {
                         spell: {}
                         for spell in spellbook
                         if isinstance(spell, str) and spell
                     }
+                    if spellbook_entries:
+                        self.character_data["spells"]["spellbook"] = spellbook_entries
+                    elif "spellbook" in choice_value:
+                        self.character_data["spells"].pop("spellbook", None)
 
                 # Restore background spells if any
                 bg_cantrips = choice_value.get("background_cantrips", [])
@@ -6829,7 +6835,6 @@ class CharacterBuilder:
         spell_selections = {
             "cantrips": list(prepared.get("cantrips", {}).keys()),
             "spells": list(prepared.get("spells", {}).keys()),
-            "spellbook": list(spells.get("spellbook", {}).keys()),
             "background_cantrips": [
                 name
                 for name, data in background_spells.items()
@@ -6841,6 +6846,9 @@ class CharacterBuilder:
                 if data.get("level", 1) > 0
             ],
         }
+        spellbook = spells.get("spellbook", {})
+        if isinstance(spellbook, dict) and spellbook:
+            spell_selections["spellbook"] = list(spellbook.keys())
 
         # Only include if there are any spell selections
         if any(spell_selections.values()):
