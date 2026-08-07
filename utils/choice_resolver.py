@@ -4,7 +4,6 @@ Handles resolving choice options from various source types.
 """
 
 import json
-import re
 from pathlib import Path
 
 
@@ -29,27 +28,19 @@ def _spellbook_entries(spellbook: object) -> list[tuple[str, dict]]:
 
 def _spell_definition(name: str) -> dict:
     """Load the canonical definition used to filter a spellbook choice."""
-    # Spellbook entries are request-provided.  Permit the punctuation used by
-    # canonical spell names, but reject path syntax before deriving a filename.
-    if not isinstance(name, str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9 /'-]*", name):
+    if not isinstance(name, str):
         return {}
 
-    filename = name.lower().replace(" ", "_").replace("'", "").replace("/", "_")
-    if not re.fullmatch(r"[a-z0-9_]+", filename):
-        return {}
-
-    definitions_dir = (
-        Path(__file__).parent.parent / "data" / "spells" / "definitions"
-    ).resolve()
-    path = (definitions_dir / f"{filename}.json").resolve()
-    if not path.is_relative_to(definitions_dir):
-        return {}
-
-    try:
-        with path.open("r", encoding="utf-8") as f:
-            return json.load(f)
-    except (OSError, json.JSONDecodeError):
-        return {}
+    definitions_dir = Path(__file__).parent.parent / "data" / "spells" / "definitions"
+    for definition_path in definitions_dir.glob("*.json"):
+        try:
+            with definition_path.open("r", encoding="utf-8") as f:
+                definition = json.load(f)
+        except (OSError, json.JSONDecodeError):
+            continue
+        if isinstance(definition, dict) and definition.get("name") == name:
+            return definition
+    return {}
 
 
 def _matches_filter(entry: dict, filters: object) -> bool:
