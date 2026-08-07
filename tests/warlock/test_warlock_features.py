@@ -299,7 +299,9 @@ class TestWarlockInvocationEffects:
         find_familiar = character["spells"]["always_prepared"]["Find Familiar"]
         assert find_familiar["source"] == "Pact of the Chain"
         assert find_familiar["counts_against_limit"] is False
-        assert character["eldritch_invocation_stats"]["cantrip_choice_descriptors"] == []
+        assert character["eldritch_invocation_stats"].get(
+            "cantrip_choice_descriptors", []
+        ) == []
 
 
 # ===========================================================================

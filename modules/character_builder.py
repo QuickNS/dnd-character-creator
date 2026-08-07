@@ -1363,7 +1363,6 @@ class CharacterBuilder:
         if effect_type == "grant_cantrip":
             spell_name = effect.get("spell")
             counts_against_limit = effect.get("counts_against_limit", False)
-            category = effect.get("category", "always_prepared")
 
             # Resolve choice reference if present
             resolved_spell = None
@@ -1391,7 +1390,6 @@ class CharacterBuilder:
                     "source": display_source,
                     "always_prepared": True,
                     "counts_against_limit": counts_against_limit,
-                    "category": category,
                 }
 
                 # Also track in spell_metadata for compatibility
@@ -1401,7 +1399,6 @@ class CharacterBuilder:
                     "always_prepared": True,
                     "once_per_day": False,
                     "counts_against_limit": counts_against_limit,
-                    "category": category,
                 }
 
         elif effect_type == "grant_cantrip_choice":
@@ -5543,9 +5540,6 @@ class CharacterBuilder:
                                     "counts_against_limit": effect.get(
                                         "counts_against_limit", False
                                     ),
-                                    "category": effect.get(
-                                        "category", "always_prepared"
-                                    ),
                                 },
                                 name,
                                 "invocation",
@@ -5563,7 +5557,6 @@ class CharacterBuilder:
             "max_invocations": 0,
             "current_invocations": [],
             "available_invocations": [],
-            "cantrip_choice_descriptors": [],
         }
 
         class_name = self.character_data.get("class")
@@ -5592,13 +5585,13 @@ class CharacterBuilder:
         ) or {"selected": [], "cantrip_choices": {}}
         current_invocations = invocation_selections["selected"]
         stats["current_invocations"] = current_invocations
-        stats["cantrip_choice_descriptors"] = (
-            self._eldritch_invocation_cantrip_choice_descriptors(
-                current_invocations,
-                invocation_selections["cantrip_choices"],
-                all_invocations,
-            )
+        cantrip_choice_descriptors = self._eldritch_invocation_cantrip_choice_descriptors(
+            current_invocations,
+            invocation_selections["cantrip_choices"],
+            all_invocations,
         )
+        if cantrip_choice_descriptors:
+            stats["cantrip_choice_descriptors"] = cantrip_choice_descriptors
 
         # Filter available invocations based on character level and prerequisites
         available: list[Dict[str, Any]] = []
