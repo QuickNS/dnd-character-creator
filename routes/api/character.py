@@ -706,8 +706,8 @@ def preview_step():
         # that class — not the first entry in the `classes` array (which would
         # surface the wrong class's features, e.g. Cleric's Divine Order for Druid).
         builder = _build(body["choices_made"], preserve_explicit_class_context=True)
-    except ChoicesValidationError as exc:
-        return jsonify({"error": str(exc)}), 400
+    except ChoicesValidationError:
+        return jsonify({"error": "Invalid choices_made"}), 400
     except Exception as exc:
         return _internal_error_response("preparing step preview", exc)
 
@@ -898,8 +898,8 @@ def derived_view():
 
     try:
         builder = _build(body["choices_made"], preserve_explicit_class_context=True)
-    except ChoicesValidationError as exc:
-        return jsonify({"error": str(exc)}), 400
+    except ChoicesValidationError:
+        return jsonify({"error": "Invalid choices_made"}), 400
     except Exception as exc:
         return _internal_error_response("building derived view", exc)
 
