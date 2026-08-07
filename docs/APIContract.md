@@ -187,6 +187,23 @@ Response (200):
 
 Errors:
 - `400` `{ "error": "Body must be JSON with 'choices_made'" }`
+- `400` for invalid submitted managed selections (spell selections, weapon masteries, eldritch invocations):
+
+```json
+{
+  "error": "Submitted spell selections are not valid for this character",
+  "selection_family": "spell_selections",
+  "code": "invalid_selection",
+  "violations": [
+    {
+      "field": "spell_selections.spells",
+      "reason": "unavailable_selection",
+      "selections": ["Cure Wounds"]
+    }
+  ]
+}
+```
+
 - `500` `{ "error": "<message>", "traceback": "<python traceback>" }`
 
 ### `POST /character/validate`

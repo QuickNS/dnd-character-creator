@@ -33,6 +33,7 @@ from .ability_scores import AbilityScores
 from .feature_manager import FeatureManager
 from .hp_calculator import HPCalculator
 from .variant_manager import VariantManager
+from .derived_stats import build_spell_management_view
 from . import strict_mode
 
 # Import choice resolver for feature processing
@@ -66,6 +67,32 @@ def _humanize(snake: str) -> str:
 # here so all callers share the same compiled pattern.
 _CLASS_FEAT_SLOT_RE = re.compile(r"^class_feat_\d+$")
 _CLASS_FEAT_SUB_RE = re.compile(r"^(class_feat_\d+)_(.+)$")
+
+
+class SelectionValidationError(ValueError):
+    """Raised when submitted post-creation selections are not valid."""
+
+    def __init__(
+        self,
+        *,
+        family: str,
+        code: str,
+        message: str,
+        violations: Optional[List[Dict[str, Any]]] = None,
+    ):
+        super().__init__(message)
+        self.family = family
+        self.code = code
+        self.message = message
+        self.violations = violations or []
+
+    def to_error_payload(self) -> Dict[str, Any]:
+        return {
+            "error": self.message,
+            "selection_family": self.family,
+            "code": self.code,
+            "violations": self.violations,
+        }
 
 
 class CharacterBuilder:
@@ -3162,6 +3189,379 @@ class CharacterBuilder:
 
     # ==================== Choice Application Methods ====================
 
+    def _validate_selection_list(
+        self,
+        *,
+        family: str,
+        field: str,
+        value: Any,
+    ) -> List[str]:
+        """Validate a selection field as a list of unique non-empty strings."""
+        if value is None:
+            return []
+        if not isinstance(value, list):
+            raise SelectionValidationError(
+                family=family,
+                code="invalid_payload_type",
+                message=f"'{field}' must be a list of strings",
+                violations=[{"field": field, "reason": "must_be_list"}],
+            )
+        normalized: List[str] = []
+        seen = set()
+        duplicates = set()
+        for idx, raw in enumerate(value):
+            if not isinstance(raw, str) or not raw.strip():
+                raise SelectionValidationError(
+                    family=family,
+                    code="invalid_selection_type",
+                    message=f"'{field}[{idx}]' must be a non-empty string",
+                    violations=[{"field": f"{field}[{idx}]", "reason": "must_be_non_empty_string"}],
+                )
+            name = raw.strip()
+            if name in seen:
+                duplicates.add(name)
+                continue
+            seen.add(name)
+            normalized.append(name)
+        if duplicates:
+            raise SelectionValidationError(
+                family=family,
+                code="duplicate_selection",
+                message=f"'{field}' contains duplicate selections",
+                violations=[
+                    {
+                        "field": field,
+                        "reason": "duplicate_values",
+                        "duplicates": sorted(duplicates),
+                    }
+                ],
+            )
+        return normalized
+
+    def _load_eldritch_invocations_catalog(self) -> Dict[str, Any]:
+        invocations_file = self.data_dir / "eldritch_invocations.json"
+        if not invocations_file.exists():
+            return {}
+        try:
+            with open(invocations_file, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                return data if isinstance(data, dict) else {}
+        except (json.JSONDecodeError, IOError):
+            return {}
+
+    def _validate_spell_selections(self, choice_value: Any) -> Dict[str, List[str]]:
+        family = "spell_selections"
+        if not isinstance(choice_value, dict):
+            raise SelectionValidationError(
+                family=family,
+                code="invalid_payload_type",
+                message="'spell_selections' must be an object",
+                violations=[{"field": "spell_selections", "reason": "must_be_object"}],
+            )
+
+        cantrips = self._validate_selection_list(
+            family=family, field="spell_selections.cantrips", value=choice_value.get("cantrips", [])
+        )
+        spells = self._validate_selection_list(
+            family=family, field="spell_selections.spells", value=choice_value.get("spells", [])
+        )
+        background_cantrips = self._validate_selection_list(
+            family=family,
+            field="spell_selections.background_cantrips",
+            value=choice_value.get("background_cantrips", []),
+        )
+        background_spells = self._validate_selection_list(
+            family=family,
+            field="spell_selections.background_spells",
+            value=choice_value.get("background_spells", []),
+        )
+
+        try:
+            spell_view = build_spell_management_view(self)
+        except ValueError as exc:
+            if isinstance(exc, SelectionValidationError):
+                raise
+            if cantrips or spells or background_cantrips or background_spells:
+                raise SelectionValidationError(
+                    family=family,
+                    code="character_not_spellcaster",
+                    message="Character cannot select prepared spells",
+                    violations=[
+                        {
+                            "field": "spell_selections",
+                            "reason": "not_available_for_character",
+                        }
+                    ],
+                )
+            return {
+                "cantrips": [],
+                "spells": [],
+                "background_cantrips": [],
+                "background_spells": [],
+            }
+
+        violations: List[Dict[str, Any]] = []
+
+        available_cantrips = {
+            str(entry.get("name"))
+            for entry in spell_view.get("available_cantrips", [])
+            if isinstance(entry, dict) and entry.get("name")
+        }
+        available_spells = {
+            str(entry.get("name"))
+            for level_entries in (spell_view.get("available_spells", {}) or {}).values()
+            for entry in (level_entries or [])
+            if isinstance(entry, dict) and entry.get("name")
+        }
+        limits = spell_view.get("limits", {}) or {}
+        max_cantrips = int(limits.get("cantrips", 0) or 0)
+        max_spells = int(limits.get("spells", 0) or 0)
+
+        if len(cantrips) > max_cantrips:
+            violations.append(
+                {
+                    "field": "spell_selections.cantrips",
+                    "reason": "max_exceeded",
+                    "submitted_count": len(cantrips),
+                    "max_allowed": max_cantrips,
+                }
+            )
+        if len(spells) > max_spells:
+            violations.append(
+                {
+                    "field": "spell_selections.spells",
+                    "reason": "max_exceeded",
+                    "submitted_count": len(spells),
+                    "max_allowed": max_spells,
+                }
+            )
+
+        unavailable_cantrips = sorted([name for name in cantrips if name not in available_cantrips])
+        if unavailable_cantrips:
+            violations.append(
+                {
+                    "field": "spell_selections.cantrips",
+                    "reason": "unavailable_selection",
+                    "selections": unavailable_cantrips,
+                }
+            )
+
+        unavailable_spells = sorted([name for name in spells if name not in available_spells])
+        if unavailable_spells:
+            violations.append(
+                {
+                    "field": "spell_selections.spells",
+                    "reason": "unavailable_selection",
+                    "selections": unavailable_spells,
+                }
+            )
+
+        bg_requirements = spell_view.get("background_requirements") or {}
+        bg_cantrip_req = bg_requirements.get("cantrips") if isinstance(bg_requirements, dict) else None
+        bg_spells_req = bg_requirements.get("spells") if isinstance(bg_requirements, dict) else None
+
+        bg_cantrip_allowed = {
+            str(entry.get("name"))
+            for entry in (bg_cantrip_req or {}).get("available", [])
+            if isinstance(entry, dict) and entry.get("name")
+        }
+        bg_spell_allowed = {
+            str(entry.get("name"))
+            for entry in (bg_spells_req or {}).get("available", [])
+            if isinstance(entry, dict) and entry.get("name")
+        }
+        max_bg_cantrips = int((bg_cantrip_req or {}).get("count", 0) or 0)
+        max_bg_spells = int((bg_spells_req or {}).get("count", 0) or 0)
+
+        if len(background_cantrips) > max_bg_cantrips:
+            violations.append(
+                {
+                    "field": "spell_selections.background_cantrips",
+                    "reason": "max_exceeded",
+                    "submitted_count": len(background_cantrips),
+                    "max_allowed": max_bg_cantrips,
+                }
+            )
+        if len(background_spells) > max_bg_spells:
+            violations.append(
+                {
+                    "field": "spell_selections.background_spells",
+                    "reason": "max_exceeded",
+                    "submitted_count": len(background_spells),
+                    "max_allowed": max_bg_spells,
+                }
+            )
+
+        unavailable_bg_cantrips = sorted(
+            [name for name in background_cantrips if name not in bg_cantrip_allowed]
+        )
+        if unavailable_bg_cantrips:
+            violations.append(
+                {
+                    "field": "spell_selections.background_cantrips",
+                    "reason": "unavailable_selection",
+                    "selections": unavailable_bg_cantrips,
+                }
+            )
+
+        unavailable_bg_spells = sorted(
+            [name for name in background_spells if name not in bg_spell_allowed]
+        )
+        if unavailable_bg_spells:
+            violations.append(
+                {
+                    "field": "spell_selections.background_spells",
+                    "reason": "unavailable_selection",
+                    "selections": unavailable_bg_spells,
+                }
+            )
+
+        if violations:
+            raise SelectionValidationError(
+                family=family,
+                code="invalid_selection",
+                message="Submitted spell selections are not valid for this character",
+                violations=violations,
+            )
+
+        return {
+            "cantrips": cantrips,
+            "spells": spells,
+            "background_cantrips": background_cantrips,
+            "background_spells": background_spells,
+        }
+
+    def _validate_weapon_mastery_selections(self, choice_value: Any) -> List[str]:
+        family = "weapon_mastery_selections"
+        selected = self._validate_selection_list(
+            family=family,
+            field="weapon_mastery_selections",
+            value=choice_value,
+        )
+        stats = self.calculate_weapon_mastery_stats()
+        if not stats.get("has_mastery"):
+            if selected:
+                raise SelectionValidationError(
+                    family=family,
+                    code="not_available_for_character",
+                    message="Character cannot select weapon masteries",
+                    violations=[{"field": "weapon_mastery_selections", "reason": "not_available_for_character"}],
+                )
+            return []
+
+        available = set(stats.get("available_weapons", []))
+        max_masteries = int(stats.get("max_masteries", 0) or 0)
+        violations: List[Dict[str, Any]] = []
+
+        if len(selected) > max_masteries:
+            violations.append(
+                {
+                    "field": "weapon_mastery_selections",
+                    "reason": "max_exceeded",
+                    "submitted_count": len(selected),
+                    "max_allowed": max_masteries,
+                }
+            )
+        unavailable = sorted([name for name in selected if name not in available])
+        if unavailable:
+            violations.append(
+                {
+                    "field": "weapon_mastery_selections",
+                    "reason": "unavailable_selection",
+                    "selections": unavailable,
+                }
+            )
+
+        if violations:
+            raise SelectionValidationError(
+                family=family,
+                code="invalid_selection",
+                message="Submitted weapon mastery selections are not valid for this character",
+                violations=violations,
+            )
+        return selected
+
+    def _validate_eldritch_invocation_selections(self, choice_value: Any) -> List[str]:
+        family = "eldritch_invocation_selections"
+        selected = self._validate_selection_list(
+            family=family,
+            field="eldritch_invocation_selections",
+            value=choice_value,
+        )
+        stats = self.calculate_eldritch_invocation_stats()
+        if not stats.get("has_invocations"):
+            if selected:
+                raise SelectionValidationError(
+                    family=family,
+                    code="not_available_for_character",
+                    message="Character cannot select Eldritch Invocations",
+                    violations=[{"field": "eldritch_invocation_selections", "reason": "not_available_for_character"}],
+                )
+            return []
+
+        max_invocations = int(stats.get("max_invocations", 0) or 0)
+        level = self._get_primary_class_level()
+        selected_set = set(selected)
+        all_invocations = self._load_eldritch_invocations_catalog()
+
+        violations: List[Dict[str, Any]] = []
+        if len(selected) > max_invocations:
+            violations.append(
+                {
+                    "field": "eldritch_invocation_selections",
+                    "reason": "max_exceeded",
+                    "submitted_count": len(selected),
+                    "max_allowed": max_invocations,
+                }
+            )
+
+        for name in selected:
+            inv_data = all_invocations.get(name)
+            if not isinstance(inv_data, dict):
+                violations.append(
+                    {
+                        "field": "eldritch_invocation_selections",
+                        "reason": "unknown_invocation",
+                        "selection": name,
+                    }
+                )
+                continue
+            required_level = int(inv_data.get("prerequisite_level", 1) or 1)
+            if level < required_level:
+                violations.append(
+                    {
+                        "field": "eldritch_invocation_selections",
+                        "reason": "prerequisite_level_not_met",
+                        "selection": name,
+                        "required_level": required_level,
+                        "current_level": level,
+                    }
+                )
+            required_invocations = [
+                req
+                for req in inv_data.get("prerequisite_invocations", [])
+                if isinstance(req, str) and req.strip()
+            ]
+            missing_reqs = [req for req in required_invocations if req not in selected_set]
+            if missing_reqs:
+                violations.append(
+                    {
+                        "field": "eldritch_invocation_selections",
+                        "reason": "missing_prerequisite_invocations",
+                        "selection": name,
+                        "missing_prerequisites": missing_reqs,
+                    }
+                )
+
+        if violations:
+            raise SelectionValidationError(
+                family=family,
+                code="invalid_selection",
+                message="Submitted Eldritch Invocation selections are not valid for this character",
+                violations=violations,
+            )
+        return selected
+
     def apply_choice(self, choice_key: str, choice_value: Any) -> bool:
         """
         Apply a single choice and its effects to the character.
@@ -3415,35 +3815,34 @@ class CharacterBuilder:
 
         # Spell selections - restore user-selected prepared spells
         elif choice_key_lower == "spell_selections":
-            if isinstance(choice_value, dict):
-                # Restore prepared cantrips
-                cantrips = choice_value.get("cantrips", [])
-                if isinstance(cantrips, list):
-                    for cantrip in cantrips:
-                        self.character_data["spells"]["prepared"]["cantrips"][
-                            cantrip
-                        ] = {}
+            validated = self._validate_spell_selections(choice_value)
+            existing_prepared = self.character_data["spells"].get("prepared", {})
+            existing_cantrips = existing_prepared.get("cantrips", {})
+            existing_spells = existing_prepared.get("spells", {})
 
-                # Restore prepared spells
-                spells = choice_value.get("spells", [])
-                if isinstance(spells, list):
-                    for spell in spells:
-                        self.character_data["spells"]["prepared"]["spells"][spell] = {}
+            preserved_cantrips = {
+                name: data
+                for name, data in existing_cantrips.items()
+                if isinstance(data, dict) and data
+            }
+            preserved_spells = {
+                name: data
+                for name, data in existing_spells.items()
+                if isinstance(data, dict) and data
+            }
 
-                # Restore background spells if any
-                bg_cantrips = choice_value.get("background_cantrips", [])
-                if isinstance(bg_cantrips, list):
-                    for cantrip in bg_cantrips:
-                        self.character_data["spells"]["background_spells"][cantrip] = {
-                            "level": 0
-                        }
+            merged_cantrips = dict(preserved_cantrips)
+            merged_cantrips.update({name: {} for name in validated["cantrips"]})
+            self.character_data["spells"]["prepared"]["cantrips"] = merged_cantrips
 
-                bg_spells = choice_value.get("background_spells", [])
-                if isinstance(bg_spells, list):
-                    for spell in bg_spells:
-                        self.character_data["spells"]["background_spells"][spell] = {
-                            "level": 1
-                        }
+            merged_spells = dict(preserved_spells)
+            merged_spells.update({name: {} for name in validated["spells"]})
+            self.character_data["spells"]["prepared"]["spells"] = merged_spells
+            self.character_data["spells"]["background_spells"] = {}
+            for cantrip in validated["background_cantrips"]:
+                self.character_data["spells"]["background_spells"][cantrip] = {"level": 0}
+            for spell in validated["background_spells"]:
+                self.character_data["spells"]["background_spells"][spell] = {"level": 1}
             return True
 
         # Weapon Mastery - removed from creation wizard, managed post-creation
@@ -3457,21 +3856,22 @@ class CharacterBuilder:
 
         # Weapon mastery selections - restore user-selected masteries
         elif choice_key_lower == "weapon_mastery_selections":
-            if isinstance(choice_value, list):
-                self.character_data["weapon_masteries"]["selected"] = choice_value
+            self.character_data["weapon_masteries"]["selected"] = self._validate_weapon_mastery_selections(
+                choice_value
+            )
             return True
 
         # Eldritch Invocation selections - restore user-selected invocations
         elif choice_key_lower == "eldritch_invocation_selections":
-            if isinstance(choice_value, list):
-                if "eldritch_invocations" not in self.character_data:
-                    self.character_data["eldritch_invocations"] = {"selected": []}
-                self.character_data["eldritch_invocations"]["selected"] = choice_value
-                # Phase 7 (D0-1): route each chosen invocation through the
-                # single dispatcher. Sheet-affecting invocations carry an
-                # `effects` array in data/eldritch_invocations.json; we load
-                # the file once and apply effects per chosen invocation.
-                self._apply_eldritch_invocation_effects(choice_value)
+            selected_invocations = self._validate_eldritch_invocation_selections(choice_value)
+            if "eldritch_invocations" not in self.character_data:
+                self.character_data["eldritch_invocations"] = {"selected": []}
+            self.character_data["eldritch_invocations"]["selected"] = selected_invocations
+            # Phase 7 (D0-1): route each chosen invocation through the
+            # single dispatcher. Sheet-affecting invocations carry an
+            # `effects` array in data/eldritch_invocations.json; we load
+            # the file once and apply effects per chosen invocation.
+            self._apply_eldritch_invocation_effects(selected_invocations)
             return True
 
         # Nested bonus choices (e.g., Thaumaturge_bonus_cantrip)

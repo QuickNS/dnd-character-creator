@@ -8,7 +8,7 @@ introduced for classes that have weapon mastery (Fighter, Rogue, Paladin, Ranger
 
 import pytest
 from pathlib import Path
-from modules.character_builder import CharacterBuilder
+from modules.character_builder import CharacterBuilder, SelectionValidationError
 
 
 class TestWeaponMasterySystem:
@@ -264,3 +264,22 @@ class TestWeaponMasterySystem:
             # Every weapon listed must be in the fighter's available weapons
             for w in prop["weapons"]:
                 assert w in result["available_weapons"]
+
+    def test_mastery_rejects_unavailable_weapon(self, fighter_builder):
+        with pytest.raises(SelectionValidationError) as exc:
+            fighter_builder.apply_choice("weapon_mastery_selections", ["Dagger", "Quarterstaff", "Wand"])
+        assert exc.value.family == "weapon_mastery_selections"
+        assert exc.value.code == "invalid_selection"
+
+    def test_mastery_rejects_exceeding_limit(self, fighter_builder):
+        with pytest.raises(SelectionValidationError) as exc:
+            fighter_builder.apply_choice(
+                "weapon_mastery_selections",
+                ["Dagger", "Quarterstaff", "Longsword", "Longbow"],
+            )
+        assert any(v.get("reason") == "max_exceeded" for v in exc.value.violations)
+
+    def test_mastery_rejects_duplicates(self, fighter_builder):
+        with pytest.raises(SelectionValidationError) as exc:
+            fighter_builder.apply_choice("weapon_mastery_selections", ["Dagger", "Dagger"])
+        assert exc.value.code == "duplicate_selection"
