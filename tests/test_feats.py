@@ -1201,9 +1201,9 @@ class TestDualWielderArmorClass:
         assert unarmored_with_feat["ac"] == unarmored_without_feat["ac"] + 1
         assert "Dual Wielder" in unarmored_with_feat["formula"]
 
-    def test_bonus_does_not_apply_without_two_light_weapons(self):
-        without_feat = self._build_dual_wielder("option_a", include_feat=False)
-        with_feat = self._build_dual_wielder("option_a", include_feat=True)
+    def test_bonus_does_not_apply_with_only_one_melee_weapon(self):
+        without_feat = self._build_dual_wielder("option_c", include_feat=False)
+        with_feat = self._build_dual_wielder("option_c", include_feat=True)
 
         assert self._unarmored_option(with_feat)["ac"] == self._unarmored_option(
             without_feat

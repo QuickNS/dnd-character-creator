@@ -2981,11 +2981,18 @@ class CharacterBuilder:
         def _ac_bonuses_for(armored: bool) -> List[Tuple[str, int]]:
             """Resolve data-authored AC conditions for one equipment option."""
             weapons = (equipment or {}).get("weapons", [])
+
+            def _weapon_data(weapon: Dict[str, Any]) -> Dict[str, Any]:
+                """Read direct weapon fields or the legacy catalog-entry wrapper."""
+                properties = weapon.get("properties")
+                return properties if isinstance(properties, dict) else weapon
+
             wieldable_weapon_count = sum(
                 max(int(weapon.get("quantity", 1) or 1), 1)
                 for weapon in weapons
                 if isinstance(weapon, dict)
-                and "Light" in weapon.get("properties", {}).get("properties", [])
+                and "Melee" in _weapon_data(weapon).get("category", "")
+                and "Two-Handed" not in _weapon_data(weapon).get("properties", [])
             )
             entries = []
             for entry in self.character_data.get("ac_bonuses", []):

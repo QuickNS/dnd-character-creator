@@ -4,6 +4,7 @@ Handles resolving choice options from various source types.
 """
 
 import json
+from functools import lru_cache
 from pathlib import Path
 
 
@@ -26,21 +27,28 @@ def _spellbook_entries(spellbook: object) -> list[tuple[str, dict]]:
     return []
 
 
-def _spell_definition(name: str) -> dict:
-    """Load the canonical definition used to filter a spellbook choice."""
-    if not isinstance(name, str):
-        return {}
-
+@lru_cache(maxsize=1)
+def _spell_definitions_by_name() -> dict[str, dict]:
+    """Index trusted spell definitions once for computed spellbook choices."""
     definitions_dir = Path(__file__).parent.parent / "data" / "spells" / "definitions"
+    definitions = {}
     for definition_path in definitions_dir.glob("*.json"):
         try:
             with definition_path.open("r", encoding="utf-8") as f:
                 definition = json.load(f)
         except (OSError, json.JSONDecodeError):
             continue
-        if isinstance(definition, dict) and definition.get("name") == name:
-            return definition
-    return {}
+        if isinstance(definition, dict) and isinstance(definition.get("name"), str):
+            # Retain the first glob-order match, as the former per-name scan did.
+            definitions.setdefault(definition["name"], definition)
+    return definitions
+
+
+def _spell_definition(name: str) -> dict:
+    """Return a canonical definition used to filter a spellbook choice."""
+    if not isinstance(name, str):
+        return {}
+    return _spell_definitions_by_name().get(name, {})
 
 
 def _matches_filter(entry: dict, filters: object) -> bool:

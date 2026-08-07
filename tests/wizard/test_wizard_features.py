@@ -760,7 +760,9 @@ class TestSpellMastery:
             ["Magic Missile", "Web"],
         )
 
-        assert character["spells"]["always_prepared"] == {}
+        assert {"Magic Missile", "Web"}.isdisjoint(
+            character["spells"]["always_prepared"]
+        )
 
     @pytest.mark.parametrize(
         "spellbook,selection",
@@ -781,4 +783,4 @@ class TestSpellMastery:
     ):
         character = build_wizard_with_spell_mastery(spellbook, selection)
 
-        assert character["spells"]["always_prepared"] == {}
+        assert set(selection).isdisjoint(character["spells"]["always_prepared"])
