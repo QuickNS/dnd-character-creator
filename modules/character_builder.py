@@ -29,7 +29,15 @@ from pathlib import Path
 from typing import Dict, List, Any, Optional, Tuple
 from copy import deepcopy
 
-from .ability_scores import AbilityScores
+from .ability_scores import (
+    ABILITIES,
+    POINT_BUY_COSTS,
+    POINT_BUY_MAX,
+    POINT_BUY_MIN,
+    POINT_BUY_TOTAL,
+    AbilityScores,
+    validate_point_buy,
+)
 from .feature_manager import FeatureManager
 from .hp_calculator import HPCalculator
 from .variant_manager import VariantManager
@@ -5990,6 +5998,19 @@ class CharacterBuilder:
                     )
                     combinations.append(combo)
 
+        combinations.sort(
+            key=lambda combo: (
+                (combo.get("mainhand", {}).get("avg_damage") or 0)
+                + (combo.get("offhand", {}).get("avg_damage") or 0),
+                (combo.get("mainhand", {}).get("attack_bonus") or 0)
+                + (combo.get("offhand", {}).get("attack_bonus") or 0),
+            ),
+            reverse=True,
+        )
+        for index, combo in enumerate(combinations, start=1):
+            combo["rank"] = index
+            combo["recommended"] = index == 1
+
         # Clean up temporary fields for all attacks
         for attack in attacks:
             attack.pop("_damage_dice", None)
@@ -6324,11 +6345,9 @@ class CharacterBuilder:
             proficiency_bonus,
         )
 
-        # Check if proficient in Perception
-        skill_proficiencies = self.character_data.get("proficiencies", {}).get(
-            "skills", []
+        perception_bonus = (
+            self.calculate_skills().get("perception", {}).get("modifier", wis_modifier)
         )
-        perception_proficient = "Perception" in skill_proficiencies
 
         best_option = ac_options[0] if ac_options else {}
         return {
@@ -6341,9 +6360,299 @@ class CharacterBuilder:
             "hit_points": {"current": max_hp, "maximum": max_hp, "temporary": 0},
             "hp_breakdown": hp_breakdown,
             "hit_dice": {"total": hit_dice_total, "spent": 0},
-            "passive_perception": 10
-            + wis_modifier
-            + (proficiency_bonus if perception_proficient else 0),
+            "passive_perception": 10 + perception_bonus,
+        }
+
+    @staticmethod
+    def _modifier_tone(modifier: int) -> str:
+        if modifier > 0:
+            return "positive"
+        if modifier < 0:
+            return "negative"
+        return "neutral"
+
+    @staticmethod
+    def _format_signed(value: int) -> str:
+        return f"+{value}" if value >= 0 else str(value)
+
+    def get_ability_generation_state(self) -> Dict[str, Any]:
+        """Return display/validation state for the frontend ability step."""
+        choices = self.character_data.get("choices_made", {})
+        method = choices.get("ability_scores_method", "standard_array")
+        raw_scores = choices.get("ability_scores")
+        scores = raw_scores if isinstance(raw_scores, dict) else {}
+
+        ability_rows: Dict[str, Dict[str, Any]] = {}
+        for ability in ABILITIES:
+            score = scores.get(ability, self.ability_scores.base_scores.get(ability, 8))
+            try:
+                score_int = int(score)
+            except (TypeError, ValueError):
+                score_int = 8
+            modifier = self.calculate_ability_modifier(score_int)
+            ability_rows[ability] = {
+                "score": score_int,
+                "modifier": modifier,
+                "modifier_display": self._format_signed(modifier),
+                "modifier_tone": self._modifier_tone(modifier),
+            }
+
+        standard_array = [15, 14, 13, 12, 10, 8]
+        selected = []
+        for ability in ABILITIES:
+            try:
+                selected.append(int(scores.get(ability)))
+            except (TypeError, ValueError):
+                pass
+        standard_complete = len(selected) == len(ABILITIES)
+        standard_valid = standard_complete and sorted(selected) == sorted(standard_array)
+        standard_available: Dict[str, List[int]] = {}
+        for ability in ABILITIES:
+            current = scores.get(ability)
+            used_by_others = {
+                int(scores.get(other))
+                for other in ABILITIES
+                if other != ability
+                and isinstance(scores.get(other), (int, float))
+            }
+            standard_available[ability] = [
+                value
+                for value in standard_array
+                if value == current or value not in used_by_others
+            ]
+
+        spent = 0
+        for ability in ABILITIES:
+            try:
+                spent += POINT_BUY_COSTS.get(int(scores.get(ability)), 0)
+            except (TypeError, ValueError):
+                pass
+        is_valid, point_buy_message = (
+            validate_point_buy(scores) if isinstance(scores, dict) else (False, "Missing scores")
+        )
+        point_controls: Dict[str, Dict[str, Any]] = {}
+        for ability in ABILITIES:
+            score = ability_rows[ability]["score"]
+            current_cost = POINT_BUY_COSTS.get(score, 0)
+            next_score = score + 1
+            prev_score = score - 1
+            next_cost = POINT_BUY_COSTS.get(next_score)
+            can_increment = (
+                next_cost is not None
+                and score < POINT_BUY_MAX
+                and spent + next_cost - current_cost <= POINT_BUY_TOTAL
+            )
+            can_decrement = prev_score in POINT_BUY_COSTS and score > POINT_BUY_MIN
+            point_controls[ability] = {
+                "current_cost": current_cost,
+                "can_increment": can_increment,
+                "can_decrement": can_decrement,
+                "increment_score": next_score if can_increment else None,
+                "decrement_score": prev_score if can_decrement else None,
+            }
+
+        asi = self.get_background_asi_options()
+        asi_total = int(asi.get("total_points", 0) or 0)
+        stored_bonuses = choices.get("background_bonuses")
+        stored_bonuses = stored_bonuses if isinstance(stored_bonuses, dict) else {}
+        asi_spent = 0
+        for value in stored_bonuses.values():
+            try:
+                asi_spent += max(0, int(value))
+            except (TypeError, ValueError):
+                pass
+        asi_options = asi.get("ability_options") or ABILITIES
+        asi_values_by_ability: Dict[str, List[int]] = {}
+        for ability in asi_options:
+            try:
+                current = int(stored_bonuses.get(ability, 0) or 0)
+            except (TypeError, ValueError):
+                current = 0
+            asi_values_by_ability[ability] = [
+                value
+                for value in range(0, 3)
+                if asi_spent - current + value <= asi_total
+            ]
+
+        return {
+            "method": method,
+            "abilities": ability_rows,
+            "standard_array": {
+                "values": standard_array,
+                "assigned_count": len(selected),
+                "complete": standard_complete,
+                "valid": standard_valid,
+                "available_values_by_ability": standard_available,
+            },
+            "point_buy": {
+                "total": POINT_BUY_TOTAL,
+                "min": POINT_BUY_MIN,
+                "max": POINT_BUY_MAX,
+                "spent": spent,
+                "remaining": POINT_BUY_TOTAL - spent,
+                "valid": is_valid,
+                "message": point_buy_message,
+                "controls": point_controls,
+            },
+            "manual": {"min": 3, "max": 18},
+            "background_asi": {
+                "spent": asi_spent,
+                "remaining": asi_total - asi_spent,
+                "values_by_ability": asi_values_by_ability,
+            },
+        }
+
+    def roll_ability_scores(self) -> List[Dict[str, Any]]:
+        """Roll six 4d6-drop-lowest ability score candidates for the UI."""
+        rolls = []
+        for _ in range(6):
+            dice = sorted((random.randint(1, 6) for _ in range(4)), reverse=True)
+            score = sum(dice[:3])
+            modifier = self.calculate_ability_modifier(score)
+            rolls.append({
+                "value": score,
+                "dice": dice,
+                "modifier": modifier,
+                "modifier_display": self._format_signed(modifier),
+                "modifier_tone": self._modifier_tone(modifier),
+            })
+        return rolls
+
+    @staticmethod
+    def _parse_primary_abilities(primary: Any) -> Dict[str, Any]:
+        if not isinstance(primary, str) or not primary.strip():
+            return {"kind": "and", "abilities": []}
+        trimmed = primary.strip()
+        or_re = r"\s+or\s+|\s*/\s*"
+        and_re = r"\s*&\s*|\s+and\s+"
+        if re.search(or_re, trimmed, re.IGNORECASE):
+            return {
+                "kind": "or",
+                "abilities": [p.strip() for p in re.split(or_re, trimmed, flags=re.IGNORECASE) if p.strip()],
+            }
+        if re.search(and_re, trimmed, re.IGNORECASE):
+            return {
+                "kind": "and",
+                "abilities": [p.strip() for p in re.split(and_re, trimmed, flags=re.IGNORECASE) if p.strip()],
+            }
+        return {"kind": "and", "abilities": [trimmed]}
+
+    def _current_prerequisite_scores(self) -> Dict[str, int] | None:
+        choices = self.character_data.get("choices_made", {})
+        if not isinstance(choices.get("ability_scores"), dict):
+            return None
+        processed = self.calculate_processed_ability_scores()
+        scores: Dict[str, int] = {}
+        for ability in ABILITIES:
+            row = processed.get(ability.lower()) or {}
+            scores[ability] = int(row.get("score", 0) or 0)
+        return scores
+
+    def evaluate_multiclass_prerequisites(
+        self,
+        candidate_class: Dict[str, Any],
+        all_classes: List[Dict[str, Any]],
+    ) -> Dict[str, Any]:
+        """Evaluate 2024 multiclass entry prerequisites for a candidate class."""
+        scores = self._current_prerequisite_scores()
+        if scores is None:
+            return {"ok": True, "missing": [], "messages": [], "abilities_unknown": True}
+
+        candidate_id = candidate_class.get("id") or candidate_class.get("name")
+        by_id = {
+            (entry.get("id") or entry.get("name")): entry
+            for entry in all_classes
+            if isinstance(entry, dict)
+        }
+        involved: List[Dict[str, Any]] = []
+        for row in self._normalize_multiclass_rows(self.character_data.get("choices_made", {}).get("classes")):
+            class_name = row.get("class_name")
+            if not class_name or class_name == candidate_id:
+                continue
+            existing = by_id.get(class_name) or self._load_class_data(class_name) or {}
+            if existing:
+                involved.append(existing)
+        involved.append(candidate_class)
+
+        missing: Dict[str, int] = {}
+        for cls in involved:
+            parsed = self._parse_primary_abilities(cls.get("primary_ability"))
+            abilities = parsed["abilities"]
+            if not abilities:
+                continue
+            checks = [scores.get(ability, 0) >= 13 for ability in abilities]
+            ok = any(checks) if parsed["kind"] == "or" else all(checks)
+            if not ok:
+                for ability in abilities:
+                    if scores.get(ability, 0) < 13:
+                        missing[ability] = scores.get(ability, 0)
+
+        messages = [
+            f"Requires {ability} 13+ (have {score})"
+            for ability, score in missing.items()
+        ]
+        return {
+            "ok": not missing,
+            "missing": list(missing.keys()),
+            "messages": messages,
+            "abilities_unknown": False,
+        }
+
+    def evaluate_feat_prerequisite(
+        self,
+        prerequisite: Any,
+        *,
+        level: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        """Evaluate display warnings for a feat prerequisite string."""
+        if not isinstance(prerequisite, str) or not prerequisite.strip():
+            return {"met": True, "messages": [], "abilities_unknown": False}
+
+        scores = self._current_prerequisite_scores()
+        abilities_unknown = scores is None
+        current_level = int(level or self.character_data.get("level", 1) or 1)
+        messages: List[str] = []
+
+        for part in [p.strip() for p in prerequisite.split(",") if p.strip()]:
+            level_match = re.search(r"(\d+)(?:st|nd|rd|th)?\s+level", part, re.IGNORECASE)
+            if level_match:
+                required_level = int(level_match.group(1))
+                if current_level < required_level:
+                    messages.append(
+                        f"Requires level {required_level}. Current level: {current_level}."
+                    )
+                continue
+
+            score_match = re.search(r"(\d+)\+", part)
+            if not score_match or abilities_unknown:
+                continue
+
+            required_score = int(score_match.group(1))
+            present = [
+                ability
+                for ability in ABILITIES
+                if re.search(rf"\b{re.escape(ability)}\b", part, re.IGNORECASE)
+            ]
+            if not present:
+                continue
+            if re.search(r"\bor\b", part, re.IGNORECASE):
+                if not any(scores.get(ability, 0) >= required_score for ability in present):
+                    current = ", ".join(f"{ability} {scores.get(ability, 0)}" for ability in present)
+                    messages.append(
+                        f"Requires {' or '.join(present)} {required_score}+. Current: {current}."
+                    )
+                continue
+            for ability in present:
+                current = scores.get(ability, 0)
+                if current < required_score:
+                    messages.append(
+                        f"Requires {ability} {required_score}+. Current {ability}: {current}."
+                    )
+
+        return {
+            "met": not messages,
+            "messages": messages,
+            "abilities_unknown": abilities_unknown,
         }
 
     def _extract_hp_bonuses(self) -> List[Dict[str, Any]]:
@@ -6452,6 +6761,17 @@ class CharacterBuilder:
         weapon_data = self.calculate_weapon_attacks()
         character_data["attacks"] = weapon_data.get("attacks", [])
         character_data["attack_combinations"] = weapon_data.get("combinations", [])
+        combinations = character_data["attack_combinations"]
+        if combinations:
+            character_data["best_attack_combination"] = max(
+                combinations,
+                key=lambda combo: (
+                    (combo.get("mainhand", {}).get("avg_damage") or 0)
+                    + (combo.get("offhand", {}).get("avg_damage") or 0),
+                    (combo.get("mainhand", {}).get("attack_bonus") or 0)
+                    + (combo.get("offhand", {}).get("attack_bonus") or 0),
+                ),
+            )
 
         # Add calculated AC options
         character_data["ac_options"] = self.calculate_ac_options()
