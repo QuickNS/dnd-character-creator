@@ -224,7 +224,14 @@
     "description": "As a Bonus Action, you can conjure a pact weapon in your hand—a Simple or Martial Melee weapon of your choice with which you bond—or create a bond with a magic weapon you touch; you can't bond with a magic weapon if someone else is attuned to it or another Warlock is bonded with it. Until the bond ends, you have proficiency with the weapon, and you can use it as a Spellcasting Focus. Whenever you attack with the bonded weapon, you can use your Charisma modifier for the attack and damage rolls instead of using Strength or Dexterity; and you can cause the weapon to deal Necrotic, Psychic, or Radiant damage or its normal damage type. Your bond with the weapon ends if you use this feature's Bonus Action again, if the weapon is more than 5 feet away from you for 1 minute or more, or if you die. A conjured weapon disappears when the bond ends.",
     "prerequisite_level": 1,
     "prerequisite_invocations": [],
-    "notes": "Enables Pact of the Blade invocations. TODO: model the Charisma-for-pact-weapon attack/damage override (currently prose-only; would require a new effect type or attack-mod store on the bonded weapon — out of scope for this patch)."
+    "notes": "Enables Pact of the Blade invocations. Set pact_weapon to the bonded weapon's name to apply its Charisma attack and damage override.",
+    "effects": [
+      {
+        "type": "attack_ability_override",
+        "ability": "Charisma",
+        "weapon_tag": "pact_weapon"
+      }
+    ]
   },
   "Pact of the Chain": {
     "description": "You learn the Find Familiar spell and can cast it as a Magic action without expending a spell slot. When you cast the spell, you choose one of the normal forms for your familiar or one of the following special forms: Imp, Pseudodragon, Quasit, Skeleton, Slaad Tadpole, Sphinx of Wonder, Sprite, or Venomous Snake. Additionally, when you take the Attack action, you can forgo one of your own attacks to allow your familiar to make one attack of its own with its Reaction.",

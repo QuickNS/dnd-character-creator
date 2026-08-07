@@ -57,6 +57,7 @@ def _violate(msg: str) -> None:
 
 KNOWN_EFFECT_TYPES: frozenset = frozenset({
     "ability_bonus",
+    "attack_ability_override",
     "alternative_ac",
     "bonus_ac",
     "bonus_attack",
@@ -178,6 +179,7 @@ KNOWN_CHOICE_KEYS: frozenset = frozenset({
     "weapon mastery",
     "weapon_mastery_selections",
     "eldritch_invocation_selections",
+    "pact_weapon",
     # Equipment
     "equipment_selections",
     # Backend-internal counters written into choices_made by the builder

@@ -54,6 +54,60 @@ def _effects(character):
     return character.get("effects", [])
 
 
+def test_pact_of_the_blade_uses_charisma_for_only_the_bonded_weapon():
+    builder = CharacterBuilder()
+    builder.apply_choices({
+        "character_name": "Bound Blade",
+        "level": 1,
+        "species": "Human",
+        "class": "Warlock",
+        "background": "Acolyte",
+        "ability_scores": {
+            "Strength": 10, "Dexterity": 14, "Constitution": 12,
+            "Intelligence": 8, "Wisdom": 10, "Charisma": 18,
+        },
+        "background_bonuses": {},
+        "eldritch_invocation_selections": ["Pact of the Blade"],
+        "pact_weapon": "Mace",
+    })
+    builder.character_data["equipment"] = {
+        "weapons": [
+            {
+                "name": "Mace",
+                "quantity": 1,
+                "properties": {
+                    "category": "Simple Melee",
+                    "damage": "1d6",
+                    "damage_type": "Bludgeoning",
+                    "properties": [],
+                },
+            },
+            {
+                "name": "Dagger",
+                "quantity": 1,
+                "properties": {
+                    "category": "Simple Melee",
+                    "damage": "1d4",
+                    "damage_type": "Piercing",
+                    "properties": ["Finesse", "Light"],
+                },
+            },
+        ],
+        "armor": [],
+        "items": [],
+        "gold": 0,
+    }
+
+    attacks = {
+        attack["name"]: attack for attack in builder.calculate_weapon_attacks()["attacks"]
+    }
+
+    assert attacks["Mace"]["ability"] == "CHA"
+    assert attacks["Mace"]["attack_bonus"] == 4
+    assert attacks["Mace"]["damage"] == "1d6 + 4"
+    assert attacks["Dagger"]["ability"] == "STR/DEX (DEX)"
+
+
 # ===========================================================================
 # Base Warlock Class
 # ===========================================================================
