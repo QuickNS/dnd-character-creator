@@ -4,6 +4,7 @@ Handles resolving choice options from various source types.
 """
 
 import json
+import os
 from pathlib import Path
 
 
@@ -25,11 +26,11 @@ def resolve_data_file_path(file_path: str) -> Path | None:
     """
     if not isinstance(file_path, str) or not file_path:
         return None
-    data_dir = (Path(__file__).parent.parent / "data").resolve()
-    candidate = (data_dir / file_path).resolve()
-    if data_dir not in candidate.parents:
+    data_dir = os.path.realpath(str(Path(__file__).parent.parent / "data"))
+    candidate = os.path.realpath(os.path.join(data_dir, file_path))
+    if not candidate.startswith(data_dir + os.sep):
         return None
-    return candidate
+    return Path(candidate)
 
 
 def resolve_choice_options(

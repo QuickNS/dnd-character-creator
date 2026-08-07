@@ -23,6 +23,7 @@ Usage:
 """
 
 import json
+import os
 import re
 import random
 from pathlib import Path
@@ -374,15 +375,14 @@ class CharacterBuilder:
         if not slugs or any(slug is None for slug in slugs):
             return None
 
-        base_dir = (self.data_dir / subdir).resolve()
-        candidate = base_dir
-        for slug in slugs[:-1]:
-            candidate = candidate / slug
-        candidate = (candidate / f"{slugs[-1]}.json").resolve()
+        base_dir = os.path.realpath(str(self.data_dir / subdir))
+        candidate = os.path.realpath(
+            os.path.join(base_dir, *slugs[:-1], f"{slugs[-1]}.json")
+        )
 
-        if candidate != base_dir and base_dir not in candidate.parents:
+        if not candidate.startswith(base_dir + os.sep):
             return None
-        return candidate
+        return Path(candidate)
 
     def _external_data_path(self, file_name: str) -> Optional[Path]:
         """Resolve a data-relative file reference, rejecting escapes from ``data/``.
@@ -393,11 +393,11 @@ class CharacterBuilder:
         """
         if not isinstance(file_name, str) or not file_name:
             return None
-        base_dir = self.data_dir.resolve()
-        candidate = (base_dir / file_name).resolve()
-        if base_dir not in candidate.parents:
+        base_dir = os.path.realpath(str(self.data_dir))
+        candidate = os.path.realpath(os.path.join(base_dir, file_name))
+        if not candidate.startswith(base_dir + os.sep):
             return None
-        return candidate
+        return Path(candidate)
 
     def _load_species_data(self, species_name: str) -> Optional[Dict[str, Any]]:
         """Load species data from JSON file."""
