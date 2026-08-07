@@ -28,6 +28,7 @@ export function InvocationsDialog({ open, onClose }: InvocationsDialogProps) {
       choicesMade.level,
       choicesMade.subclass,
       choicesMade.classes,
+      choicesMade.eldritch_invocation_selections,
     ],
     queryFn: () => api.character.derived(choicesMade as Loose, "invocation_management"),
     enabled: open && Array.isArray(choicesMade["classes"]) && (choicesMade["classes"] as unknown[]).length > 0,

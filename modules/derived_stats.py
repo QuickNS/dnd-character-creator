@@ -343,4 +343,5 @@ def build_invocation_management_view(builder) -> Dict[str, Any]:
         "available_invocations": stats.get("available_invocations", []),
         "max_invocations": stats.get("max_invocations", 0),
         "current_invocations": stats.get("current_invocations", []),
+        "cantrip_choice_descriptors": stats.get("cantrip_choice_descriptors", []),
     }

@@ -374,6 +374,13 @@ Allowed `view` values:
 | `mastery_management`    | `derived_stats.build_mastery_management_view` | Character has weapon mastery          |
 | `invocation_management` | `derived_stats.build_invocation_management_view` | Character is a Warlock             |
 
+For `invocation_management`, `data.cantrip_choice_descriptors` contains the
+server-validated pickers produced by selected invocation effects. Each
+descriptor has `{ id, invocation, count, spell_list, options, selected }`.
+Submit selections in the canonical nested shape
+`eldritch_invocation_selections: { selected: string[], cantrip_choices: { [id]: string[] } }`.
+Legacy `eldritch_invocation_selections: string[]` payloads remain accepted.
+
 Response (200):
 ```json
 {
@@ -565,7 +572,7 @@ The original nested `proficiencies` object is also preserved.
 |----------------------------------|-----------------------------------------------|
 | `spell_selections`               | Any cantrip/spell/background spell selected. Shape: `{ cantrips, spells, background_cantrips, background_spells }` (lists of names). |
 | `weapon_mastery_selections`      | Any weapon masteries selected.                |
-| `eldritch_invocation_selections` | Warlock with at least one invocation chosen.  |
+| `eldritch_invocation_selections` | Warlock with at least one invocation chosen. Shape: `{ selected, cantrip_choices }`, where `cantrip_choices` maps invocation effect descriptor IDs to selected cantrip names. |
 
 ### Other fields
 

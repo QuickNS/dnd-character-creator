@@ -1363,6 +1363,7 @@ class CharacterBuilder:
         if effect_type == "grant_cantrip":
             spell_name = effect.get("spell")
             counts_against_limit = effect.get("counts_against_limit", False)
+            category = effect.get("category", "always_prepared")
 
             # Resolve choice reference if present
             resolved_spell = None
@@ -1390,6 +1391,7 @@ class CharacterBuilder:
                     "source": display_source,
                     "always_prepared": True,
                     "counts_against_limit": counts_against_limit,
+                    "category": category,
                 }
 
                 # Also track in spell_metadata for compatibility
@@ -1399,6 +1401,7 @@ class CharacterBuilder:
                     "always_prepared": True,
                     "once_per_day": False,
                     "counts_against_limit": counts_against_limit,
+                    "category": category,
                 }
 
         elif effect_type == "grant_cantrip_choice":
@@ -3463,15 +3466,28 @@ class CharacterBuilder:
 
         # Eldritch Invocation selections - restore user-selected invocations
         elif choice_key_lower == "eldritch_invocation_selections":
-            if isinstance(choice_value, list):
-                if "eldritch_invocations" not in self.character_data:
-                    self.character_data["eldritch_invocations"] = {"selected": []}
-                self.character_data["eldritch_invocations"]["selected"] = choice_value
-                # Phase 7 (D0-1): route each chosen invocation through the
-                # single dispatcher. Sheet-affecting invocations carry an
-                # `effects` array in data/eldritch_invocations.json; we load
-                # the file once and apply effects per chosen invocation.
-                self._apply_eldritch_invocation_effects(choice_value)
+            invocation_selections = self._normalize_eldritch_invocation_selections(
+                choice_value
+            )
+            if invocation_selections is None:
+                return False
+            if not self._validate_eldritch_invocation_cantrip_choices(
+                invocation_selections
+            ):
+                return False
+
+            # Store and export one canonical shape.  List input remains accepted
+            # for saved characters created before cantrip choices were modeled.
+            self.character_data["choices_made"][choice_key] = invocation_selections
+            self.character_data["eldritch_invocations"] = invocation_selections
+
+            # Route each chosen invocation through the single dispatcher.  The
+            # cantrip-choice effects are materialized as grant_cantrip effects
+            # after their selections have been validated.
+            self._apply_eldritch_invocation_effects(
+                invocation_selections["selected"],
+                invocation_selections["cantrip_choices"],
+            )
             return True
 
         # Nested bonus choices (e.g., Thaumaturge_bonus_cantrip)
@@ -5364,7 +5380,132 @@ class CharacterBuilder:
 
         return stats
 
-    def _apply_eldritch_invocation_effects(self, invocation_names: List[str]) -> None:
+    @staticmethod
+    def _eldritch_invocation_choice_id(
+        invocation_name: str, effect_index: int
+    ) -> str:
+        """Return the stable id for an invocation effect's cantrip picker."""
+        invocation_id = re.sub(r"[^a-z0-9]+", "_", invocation_name.lower()).strip("_")
+        return f"eldritch_invocation_{invocation_id}_{effect_index}"
+
+    def _load_eldritch_invocations(self) -> Dict[str, Any]:
+        """Load the invocation data set, returning an empty map on cache errors."""
+        path = self.data_dir / "eldritch_invocations.json"
+        if not path.exists():
+            return {}
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            return data if isinstance(data, dict) else {}
+        except (OSError, json.JSONDecodeError):
+            return {}
+
+    def _normalize_eldritch_invocation_selections(
+        self, value: Any
+    ) -> Optional[Dict[str, Any]]:
+        """Accept legacy invocation lists and normalize to the canonical object."""
+        if isinstance(value, list):
+            selected, cantrip_choices = value, {}
+        elif isinstance(value, dict):
+            selected = value.get("selected", [])
+            cantrip_choices = value.get("cantrip_choices", {})
+        else:
+            return None
+
+        if not isinstance(selected, list) or not all(
+            isinstance(name, str) for name in selected
+        ):
+            return None
+        if not isinstance(cantrip_choices, dict):
+            return None
+
+        normalized_choices: Dict[str, List[str]] = {}
+        for choice_id, spells in cantrip_choices.items():
+            if not isinstance(choice_id, str) or not isinstance(spells, list):
+                return None
+            if not all(isinstance(spell, str) for spell in spells):
+                return None
+            normalized_choices[choice_id] = spells
+        return {"selected": selected, "cantrip_choices": normalized_choices}
+
+    def _eldritch_invocation_cantrip_choice_descriptors(
+        self,
+        invocation_names: List[str],
+        cantrip_choices: Dict[str, List[str]],
+        all_invocations: Optional[Dict[str, Any]] = None,
+    ) -> List[Dict[str, Any]]:
+        """Build data-driven cantrip pickers for selected invocation effects."""
+        all_invocations = (
+            all_invocations
+            if all_invocations is not None
+            else self._load_eldritch_invocations()
+        )
+        descriptors: List[Dict[str, Any]] = []
+        for invocation_name in invocation_names:
+            invocation = all_invocations.get(invocation_name)
+            if not isinstance(invocation, dict):
+                continue
+            effects = invocation.get("effects", [])
+            if not isinstance(effects, list):
+                continue
+            for effect_index, effect in enumerate(effects):
+                if not isinstance(effect, dict) or effect.get("type") != "grant_cantrip_choice":
+                    continue
+                spell_list = effect.get("spell_list")
+                if not isinstance(spell_list, str):
+                    continue
+                spell_list_data = self._load_json_file(
+                    self.data_dir / "spells" / "class_lists" / f"{spell_list.lower()}.json"
+                ) or {}
+                options = spell_list_data.get("cantrips", [])
+                if not isinstance(options, list):
+                    options = []
+                choice_id = self._eldritch_invocation_choice_id(
+                    invocation_name, effect_index
+                )
+                try:
+                    count = int(effect.get("count", 1))
+                except (TypeError, ValueError):
+                    count = 0
+                descriptors.append(
+                    {
+                        "id": choice_id,
+                        "invocation": invocation_name,
+                        "count": max(0, count),
+                        "spell_list": spell_list,
+                        "options": options,
+                        "selected": cantrip_choices.get(choice_id, []),
+                    }
+                )
+        return descriptors
+
+    def _validate_eldritch_invocation_cantrip_choices(
+        self, invocation_selections: Dict[str, Any]
+    ) -> bool:
+        """Ensure invocation cantrip picks use their effect's class list and cap."""
+        selected = invocation_selections["selected"]
+        cantrip_choices = invocation_selections["cantrip_choices"]
+        descriptors = self._eldritch_invocation_cantrip_choice_descriptors(
+            selected, cantrip_choices
+        )
+        descriptors_by_id = {descriptor["id"]: descriptor for descriptor in descriptors}
+        if any(choice_id not in descriptors_by_id for choice_id in cantrip_choices):
+            return False
+        for descriptor in descriptors:
+            choices = descriptor["selected"]
+            if (
+                len(choices) > descriptor["count"]
+                or len(choices) != len(set(choices))
+                or any(choice not in descriptor["options"] for choice in choices)
+            ):
+                return False
+        return True
+
+    def _apply_eldritch_invocation_effects(
+        self,
+        invocation_names: List[str],
+        cantrip_choices: Optional[Dict[str, List[str]]] = None,
+    ) -> None:
         """Phase 7 (D0-1): apply sheet-affecting invocation effects.
 
         Each chosen invocation may carry an ``effects`` array in
@@ -5380,24 +5521,35 @@ class CharacterBuilder:
         """
         if not invocation_names:
             return
-        import json as _json
-        from pathlib import Path as _Path
-        path = _Path(__file__).resolve().parent.parent / "data" / "eldritch_invocations.json"
-        if not path.exists():
-            return
-        try:
-            with open(path, "r", encoding="utf-8") as f:
-                all_invocations = _json.load(f)
-        except (OSError, _json.JSONDecodeError):
-            return
+        cantrip_choices = cantrip_choices or {}
+        all_invocations = self._load_eldritch_invocations()
         for name in invocation_names:
             inv = all_invocations.get(name) or {}
             effects = inv.get("effects") or []
             if not isinstance(effects, list):
                 continue
-            for effect in effects:
+            for effect_index, effect in enumerate(effects):
                 if isinstance(effect, dict):
                     self._apply_effect(effect, name, "invocation")
+                    if effect.get("type") == "grant_cantrip_choice":
+                        choice_id = self._eldritch_invocation_choice_id(
+                            name, effect_index
+                        )
+                        for spell_name in cantrip_choices.get(choice_id, []):
+                            self._apply_effect(
+                                {
+                                    "type": "grant_cantrip",
+                                    "spell": spell_name,
+                                    "counts_against_limit": effect.get(
+                                        "counts_against_limit", False
+                                    ),
+                                    "category": effect.get(
+                                        "category", "always_prepared"
+                                    ),
+                                },
+                                name,
+                                "invocation",
+                            )
 
     def calculate_eldritch_invocation_stats(self) -> Dict[str, Any]:
         """
@@ -5411,6 +5563,7 @@ class CharacterBuilder:
             "max_invocations": 0,
             "current_invocations": [],
             "available_invocations": [],
+            "cantrip_choice_descriptors": [],
         }
 
         class_name = self.character_data.get("class")
@@ -5430,24 +5583,22 @@ class CharacterBuilder:
         stats["has_invocations"] = True
         stats["max_invocations"] = max_invocations
 
-        # Load all invocations from data file
-        import json
-        from pathlib import Path
-
-        invocations_file = Path(__file__).parent.parent / "data" / "eldritch_invocations.json"
-        all_invocations: Dict[str, Any] = {}
-        if invocations_file.exists():
-            try:
-                with open(invocations_file, "r") as f:
-                    all_invocations = json.load(f)
-            except (json.JSONDecodeError, IOError):
-                pass
+        # Load all invocations from data file.
+        all_invocations = self._load_eldritch_invocations()
 
         # Get current invocation selections
-        current_invocations = self.character_data.get("eldritch_invocations", {}).get(
-            "selected", []
-        )
+        invocation_selections = self._normalize_eldritch_invocation_selections(
+            self.character_data.get("eldritch_invocations", {})
+        ) or {"selected": [], "cantrip_choices": {}}
+        current_invocations = invocation_selections["selected"]
         stats["current_invocations"] = current_invocations
+        stats["cantrip_choice_descriptors"] = (
+            self._eldritch_invocation_cantrip_choice_descriptors(
+                current_invocations,
+                invocation_selections["cantrip_choices"],
+                all_invocations,
+            )
+        )
 
         # Filter available invocations based on character level and prerequisites
         available: list[Dict[str, Any]] = []
@@ -6682,10 +6833,15 @@ class CharacterBuilder:
             )
 
         # Include Eldritch Invocation selections in choices_made for export/import
-        eldritch_invocations = character_data.get("eldritch_invocations", {})
-        selected_invocations = eldritch_invocations.get("selected", [])
+        eldritch_invocations = self._normalize_eldritch_invocation_selections(
+            character_data.get("eldritch_invocations", {})
+        ) or {"selected": [], "cantrip_choices": {}}
+        selected_invocations = eldritch_invocations["selected"]
         if selected_invocations:
-            character_data["choices_made"]["eldritch_invocation_selections"] = selected_invocations
+            character_data["choices_made"]["eldritch_invocation_selections"] = {
+                "selected": selected_invocations,
+                "cantrip_choices": eldritch_invocations["cantrip_choices"],
+            }
 
         return character_data
 

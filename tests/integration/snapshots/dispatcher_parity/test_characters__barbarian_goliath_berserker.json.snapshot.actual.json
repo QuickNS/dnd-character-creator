@@ -699,6 +699,7 @@
   ],
   "eldritch_invocation_stats": {
     "available_invocations": [],
+    "cantrip_choice_descriptors": [],
     "current_invocations": [],
     "has_invocations": false,
     "max_invocations": 0
