@@ -727,6 +727,8 @@ def preview_step():
         # that class — not the first entry in the `classes` array (which would
         # surface the wrong class's features, e.g. Cleric's Divine Order for Druid).
         builder = _build(body["choices_made"], preserve_explicit_class_context=True)
+    except ChoicesValidationError as exc:
+        return jsonify({"error": str(exc)}), 400
     except Exception as exc:
         return jsonify({"error": str(exc), "traceback": traceback.format_exc()}), 500
 
@@ -886,6 +888,8 @@ def random_languages():
     try:
         builder = _build(body["choices_made"])
         return jsonify({"languages": builder.roll_languages()})
+    except ChoicesValidationError as exc:
+        return jsonify({"error": str(exc)}), 400
     except Exception:
         return jsonify({"error": "Failed to generate random languages"}), 500
 
@@ -917,6 +921,8 @@ def derived_view():
 
     try:
         builder = _build(body["choices_made"], preserve_explicit_class_context=True)
+    except ChoicesValidationError as exc:
+        return jsonify({"error": str(exc)}), 400
     except Exception as exc:
         return jsonify({"error": str(exc), "traceback": traceback.format_exc()}), 500
 

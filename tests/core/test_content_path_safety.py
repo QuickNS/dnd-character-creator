@@ -171,3 +171,22 @@ class TestBuildApiRejectsTraversal:
         )
         assert r.status_code == 400
         assert "Unknown or invalid" in r.get_json()["error"]
+
+    def test_preview_step_endpoint_rejects_traversal(self, client):
+        r = client.post(
+            "/api/v1/character/preview-step",
+            json={"choices_made": {"species": "../../general_feats"}, "step": "species"},
+        )
+        assert r.status_code == 400
+        assert "Unknown or invalid" in r.get_json()["error"]
+
+    def test_derived_endpoint_rejects_traversal(self, client):
+        r = client.post(
+            "/api/v1/character/derived",
+            json={
+                "choices_made": {"class": "../../general_feats"},
+                "view": "spell_management",
+            },
+        )
+        assert r.status_code == 400
+        assert "Unknown or invalid" in r.get_json()["error"]
