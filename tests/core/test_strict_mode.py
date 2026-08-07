@@ -54,7 +54,7 @@ def test_effect_enum_has_expected_size():
     grant_magical_darkness_sight, grant_maneuver, grant_superiority_dice
     (+6 over the Phase 6 baseline of 28). Phase 10 (D2-3) added
     grant_spell_slots and grant_weapon_mastery (+2). This issue adds
-    bonus_initiative (+1)."""
+    attack_ability_override (+1)."""
     assert len(strict_mode.KNOWN_EFFECT_TYPES) == 38
 
 
