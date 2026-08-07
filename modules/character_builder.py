@@ -1441,12 +1441,10 @@ class CharacterBuilder:
                 else:
                     display_source = source_name
 
-                # Species/lineage spell grants and explicitly authored
-                # once-per-long-rest grants are free limited castings.
+                # Species/lineage grants retain the legacy once-per-day flag.
+                # Explicit long-rest grants carry their independent metadata.
                 once_per_long_rest = bool(effect.get("once_per_long_rest", False))
-                once_per_day = (
-                    source_type in ["species", "lineage"] or once_per_long_rest
-                )
+                once_per_day = source_type in ["species", "lineage"]
 
                 # Add to always_prepared dict with metadata
                 self.character_data["spells"]["always_prepared"][resolved_spell] = {

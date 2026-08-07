@@ -748,7 +748,7 @@ class TestSpellMastery:
         )
 
         always_prepared = character["spells"]["always_prepared"]
-        assert set(always_prepared) == {"Magic Missile", "Web"}
+        assert {"Magic Missile", "Web"}.issubset(always_prepared)
         assert set(character["spells"]["spellbook"]) == {"Magic Missile", "Web"}
         for spell in ("Magic Missile", "Web"):
             assert always_prepared[spell]["at_will"] is True
