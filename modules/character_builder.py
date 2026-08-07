@@ -6763,15 +6763,7 @@ class CharacterBuilder:
         character_data["attack_combinations"] = weapon_data.get("combinations", [])
         combinations = character_data["attack_combinations"]
         if combinations:
-            character_data["best_attack_combination"] = max(
-                combinations,
-                key=lambda combo: (
-                    (combo.get("mainhand", {}).get("avg_damage") or 0)
-                    + (combo.get("offhand", {}).get("avg_damage") or 0),
-                    (combo.get("mainhand", {}).get("attack_bonus") or 0)
-                    + (combo.get("offhand", {}).get("attack_bonus") or 0),
-                ),
-            )
+            character_data["best_attack_combination"] = combinations[0]
 
         # Add calculated AC options
         character_data["ac_options"] = self.calculate_ac_options()

@@ -8,6 +8,7 @@ frontend is the source of truth for in-progress choices, the Python
 
 from __future__ import annotations
 
+from functools import lru_cache
 import json
 import re
 import traceback
@@ -179,6 +180,7 @@ def _filter_nested_choices_for_secondary_class(
     return filtered
 
 
+@lru_cache(maxsize=None)
 def _load_feat_definitions() -> Dict[str, Dict[str, Any]]:
     """Load feat definitions needed for server-side prerequisite warnings."""
     data_dir = Path(__file__).resolve().parent.parent.parent / "data"
