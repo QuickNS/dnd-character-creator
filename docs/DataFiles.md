@@ -11,7 +11,7 @@ data/
 │   └── <class>/
 ├── species/                   # 10 species files
 ├── species_variants/          # 8 lineage / variant files
-├── backgrounds/               # 18 background files
+├── backgrounds/               # 16 active D&D 2024 backgrounds + retained tagged legacy files
 ├── equipment/                 # weapons, armor, gear, masteries
 ├── spells/
 │   ├── class_lists/           # 8 spellcasting-class lists
@@ -104,7 +104,16 @@ The catalog endpoint normalises these into a uniform `{ id, name, description, t
 
 ### Backgrounds (`data/backgrounds/`)
 
-18 files. In D&D 2024 every background grants an origin feat and ASI options — both are encoded here.
+18 files: 16 active D&D 2024 backgrounds plus retained 2014 legacy entries that are tagged but excluded from the default wizard catalog. In D&D 2024 every active background grants an origin feat and ASI options — both are encoded here.
+
+Each background carries catalog metadata validated by [models/background_schema.json](../models/background_schema.json):
+
+| Field | Values | Meaning |
+|-------|--------|---------|
+| `edition` | `"2024"` or `"2014"` | Rules edition the entry came from |
+| `status` | `"active"` or `"legacy"` | Whether the entry belongs in the default catalog |
+
+The default API/frontend catalog (`GET /api/v1/catalog/backgrounds`) returns only `edition: "2024"` + `status: "active"`. Retained legacy files such as `Folk Hero` and `Guild Artisan` remain loadable by direct name and through `?include_legacy=true` for explicit opt-in tooling.
 
 ### Equipment (`data/equipment/`)
 

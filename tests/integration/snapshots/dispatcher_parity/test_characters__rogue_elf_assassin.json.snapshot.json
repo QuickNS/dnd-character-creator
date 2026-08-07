@@ -234,6 +234,7 @@
       "total": 3
     },
     "description": "You are an experienced criminal with a history of breaking the law. You have spent a lot of time among other criminals and still have contacts within the criminal underworld.",
+    "edition": "2024",
     "effects": [
       {
         "feat": "Alert",
@@ -266,7 +267,8 @@
       "option_b": {
         "gold": 50
       }
-    }
+    },
+    "status": "active"
   },
   "choices_made": {
     "ability_scores": {
