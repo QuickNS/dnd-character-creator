@@ -8,8 +8,9 @@ frontend is the source of truth for in-progress choices, the Python
 
 from __future__ import annotations
 
+import logging
 import re
-import traceback
+import uuid
 from typing import Any, Dict, List
 
 from flask import Blueprint, jsonify, request
@@ -24,6 +25,7 @@ from modules.derived_stats import (
 )
 
 character_bp = Blueprint("character", __name__, url_prefix="/character")
+logger = logging.getLogger(__name__)
 
 _DERIVED_VIEWS = {
     "damage_cantrips",
@@ -36,6 +38,20 @@ _CORE_TRAIT_PROFICIENCY_KEYS = {"skill_choices", "tool_choices"}
 
 class ChoicesValidationError(ValueError):
     """Raised when API request choices are structurally invalid."""
+
+
+def _internal_error_response(action: str, exc: Exception):
+    correlation_id = uuid.uuid4().hex
+    logger.exception(
+        "Unhandled character API error while %s (correlation_id=%s, error_type=%s)",
+        action,
+        correlation_id,
+        exc.__class__.__name__,
+    )
+    return jsonify({
+        "error": "Internal server error",
+        "correlation_id": correlation_id,
+    }), 500
 
 
 # ==================== Multiclass nested-choice filtering ====================
@@ -431,7 +447,7 @@ def build_character():
     except ChoicesValidationError as exc:
         return jsonify({"error": str(exc)}), 400
     except Exception as exc:
-        return jsonify({"error": str(exc), "traceback": traceback.format_exc()}), 500
+        return _internal_error_response("building character", exc)
 
 
 # ==================== Validate ====================
@@ -660,7 +676,7 @@ def validate_character():
     except ChoicesValidationError as exc:
         return jsonify({"error": str(exc)}), 400
     except Exception as exc:
-        return jsonify({"error": str(exc), "traceback": traceback.format_exc()}), 500
+        return _internal_error_response("validating character", exc)
 
 
 # ==================== Preview step ====================
@@ -690,8 +706,10 @@ def preview_step():
         # that class — not the first entry in the `classes` array (which would
         # surface the wrong class's features, e.g. Cleric's Divine Order for Druid).
         builder = _build(body["choices_made"], preserve_explicit_class_context=True)
+    except ChoicesValidationError as exc:
+        return jsonify({"error": str(exc)}), 400
     except Exception as exc:
-        return jsonify({"error": str(exc), "traceback": traceback.format_exc()}), 500
+        return _internal_error_response("preparing step preview", exc)
 
     try:
         result: Dict[str, Any] = {"step": step, "choices_made": body["choices_made"]}
@@ -837,7 +855,7 @@ def preview_step():
 
         return jsonify(result)
     except Exception as exc:
-        return jsonify({"error": str(exc), "traceback": traceback.format_exc()}), 500
+        return _internal_error_response("rendering step preview", exc)
 
 
 @character_bp.post("/random-languages")
@@ -849,8 +867,8 @@ def random_languages():
     try:
         builder = _build(body["choices_made"])
         return jsonify({"languages": builder.roll_languages()})
-    except Exception:
-        return jsonify({"error": "Failed to generate random languages"}), 500
+    except Exception as exc:
+        return _internal_error_response("generating random languages", exc)
 
 
 # ==================== Derived views ====================
@@ -880,8 +898,10 @@ def derived_view():
 
     try:
         builder = _build(body["choices_made"], preserve_explicit_class_context=True)
+    except ChoicesValidationError as exc:
+        return jsonify({"error": str(exc)}), 400
     except Exception as exc:
-        return jsonify({"error": str(exc), "traceback": traceback.format_exc()}), 500
+        return _internal_error_response("building derived view", exc)
 
     try:
         if view == "damage_cantrips":
@@ -907,4 +927,4 @@ def derived_view():
             "data": None,
         })
     except Exception as exc:
-        return jsonify({"error": str(exc), "traceback": traceback.format_exc()}), 500
+        return _internal_error_response("rendering derived view", exc)

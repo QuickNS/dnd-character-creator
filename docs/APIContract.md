@@ -187,7 +187,7 @@ Response (200):
 
 Errors:
 - `400` `{ "error": "Body must be JSON with 'choices_made'" }`
-- `500` `{ "error": "<message>", "traceback": "<python traceback>" }`
+- `500` `{ "error": "Internal server error", "correlation_id": "<id>" }`
 
 ### `POST /character/validate`
 
@@ -354,7 +354,7 @@ Example secondary-row payload (`choices_made.classes = [{Wizard, 5}, {Rogue, 1}]
 
 Errors:
 - `400` `{ "error": "Body must be JSON with 'choices_made' and 'step'" }`
-- `500` `{ "error": "<message>", "traceback": "<python traceback>" }`
+- `500` `{ "error": "Internal server error", "correlation_id": "<id>" }`
 
 ### `POST /character/derived`
 
@@ -398,7 +398,7 @@ Response (200, valid view but not applicable):
 Errors:
 - `400` `{ "error": "Body must be JSON with 'choices_made' and 'view'" }`
 - `400` `{ "error": "Unknown view '<x>'", "allowed": ["damage_cantrips", "invocation_management", "mastery_management", "spell_management"] }`
-- `500` `{ "error": "<message>", "traceback": "<python traceback>" }`
+- `500` `{ "error": "Internal server error", "correlation_id": "<id>" }`
 
 ### `POST /character/random-languages`
 
@@ -416,7 +416,7 @@ Response (200):
 
 Errors:
 - `400` `{ "error": "Body must be JSON with 'choices_made'" }`
-- `500` `{ "error": "<message>", "traceback": "<python traceback>" }`
+- `500` `{ "error": "Internal server error", "correlation_id": "<id>" }`
 
 ## Canonical Request — `ChoicesMade`
 
