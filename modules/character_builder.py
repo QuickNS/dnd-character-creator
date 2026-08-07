@@ -3201,7 +3201,8 @@ class CharacterBuilder:
             # back into the nested object at the end of apply_choices().
             if isinstance(choice_value, dict):
                 for trait_name, trait_value in choice_value.items():
-                    self.apply_choice(trait_name, trait_value)
+                    if not self.apply_choice(trait_name, trait_value):
+                        return False
             return True
         elif choice_key_lower == "class":
             return self.set_class(choice_value, self.character_data.get("level", 1))
@@ -4891,7 +4892,8 @@ class CharacterBuilder:
                     # score reassignment over explicit ability_scores.
                     self.character_data["choices_made"][key] = choices[key]
                     continue
-                self.apply_choice(key, working_choices[key])
+                if not self.apply_choice(key, working_choices[key]):
+                    return False
 
         # Invariant: species and class must be loaded before remaining choices.
         assert self.character_data.get("species") or not working_choices.get("species"), \
@@ -4918,7 +4920,8 @@ class CharacterBuilder:
         # ascending, so 0 < 1 means parents are processed first.
         remaining_keys.sort(key=lambda k: (1 if _CLASS_FEAT_SUB_RE.match(k) else 0))
         for key in remaining_keys:
-            self.apply_choice(key, working_choices[key])
+            if not self.apply_choice(key, working_choices[key]):
+                return False
 
         # ── Multiclass block ─────────────────────────────────────────────────
         # Apply additional class tracks and recalculate totals.  Runs after
@@ -4947,9 +4950,10 @@ class CharacterBuilder:
         # Apply species_skill_replacements after trait effects so overlap
         # detection sees the full proficiency picture.
         if "species_skill_replacements" in choices:
-            self.apply_choice(
+            if not self.apply_choice(
                 "species_skill_replacements", choices["species_skill_replacements"]
-            )
+            ):
+                return False
 
         # ── Finalize ────────────────────────────────────────────────────────
         # Apply pending dynamic effects (e.g. damage_type_from_choice
