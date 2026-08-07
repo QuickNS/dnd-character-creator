@@ -422,6 +422,17 @@ Errors:
 
 The canonical `ChoicesMade` shape is defined in `frontend/src/lib/api.ts` and validated by `ChoicesMadeSchema` (Zod). All character endpoints accept this body.
 
+### Content identifiers
+
+`species`, `lineage`, `background`, `subclass` and `classes[].class_name` name
+game-content JSON files. Only canonical content identifiers are accepted — the
+display name of an existing entry (e.g. `"Wood Elf"`, `"Fighter"`). Unknown
+names, path separators, traversal segments and absolute paths are rejected by
+every `/character/*` endpoint with a sanitized response that does not echo the
+submitted value:
+
+- `400` `{ "error": "Unknown or invalid 'species' selection" }`
+
 ### Primary class carrier: `classes`
 
 `classes` is the authoritative way to specify class allocation. The client (post-Phase 11) always writes `classes` and never writes flat `class` / `level` / `subclass` keys. The server normalises legacy flat keys inbound (see `_normalize_multiclass_rows()`) for backward compatibility, but the client must not rely on that path for new builds.
