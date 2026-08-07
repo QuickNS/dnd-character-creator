@@ -40,11 +40,12 @@ class ChoicesValidationError(ValueError):
 
     def __init__(self, message: str, field: str | None = None, code: str = "invalid_request"):
         super().__init__(message)
+        self.message = message
         self.field = field
         self.code = code
 
     def to_response(self) -> Dict[str, Any]:
-        error: Dict[str, Any] = {"code": self.code, "message": str(self)}
+        error: Dict[str, Any] = {"code": self.code, "message": self.message}
         if self.field:
             error["field"] = self.field
         return {"error": error}
@@ -1156,4 +1157,4 @@ def derived_view():
             "data": None,
         })
     except Exception as exc:
-        return jsonify({"error": {"code": "internal_error", "message": str(exc)}}), 500
+        return jsonify({"error": {"code": "internal_error", "message": "Internal server error"}}), 500
