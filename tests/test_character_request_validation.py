@@ -134,3 +134,17 @@ def test_apply_choices_propagates_failed_setter():
     builder = CharacterBuilder()
 
     assert builder.apply_choices({"species": "Not A Species"}) is False
+
+
+def test_apply_choices_propagates_nested_choice_failure(monkeypatch):
+    builder = CharacterBuilder()
+    apply_choice = builder.apply_choice
+
+    def fail_nested_choice(key, value):
+        if key == "Trait":
+            return False
+        return apply_choice(key, value)
+
+    monkeypatch.setattr(builder, "apply_choice", fail_nested_choice)
+
+    assert builder.apply_choices({"species_trait_choices": {"Trait": "value"}}) is False
