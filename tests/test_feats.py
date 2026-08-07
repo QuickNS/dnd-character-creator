@@ -1105,6 +1105,111 @@ class TestMusicianChoices:
         assert len(options) == 10
 
 
+class TestSelectedOriginFeatToolEffects:
+    """Chosen Crafter and Musician tools must reach the exported character."""
+
+    @pytest.mark.parametrize(
+        "background,choice_key,selected_tools,unchosen_tool",
+        [
+            (
+                "Artisan",
+                "feat_Crafter_artisan_tools",
+                ["Smith's Tools", "Carpenter's Tools", "Alchemist's Supplies"],
+                "Brewer's Supplies",
+            ),
+            (
+                "Entertainer",
+                "feat_Musician_musical_instruments",
+                ["Lute", "Drum", "Flute"],
+                "Bagpipes",
+            ),
+        ],
+    )
+    def test_selected_tools_are_granted_in_to_character(
+        self, background, choice_key, selected_tools, unchosen_tool
+    ):
+        builder = CharacterBuilder()
+        builder.apply_choices(
+            {
+                "character_name": "Origin Feat Tool Test",
+                "level": 1,
+                "species": "Human",
+                "class": "Fighter",
+                "background": background,
+                "ability_scores": {
+                    "Strength": 14,
+                    "Dexterity": 14,
+                    "Constitution": 14,
+                    "Intelligence": 10,
+                    "Wisdom": 10,
+                    "Charisma": 10,
+                },
+                choice_key: selected_tools,
+            }
+        )
+
+        tools = builder.to_character()["proficiencies"]["tools"]
+        assert set(selected_tools).issubset(tools)
+        assert unchosen_tool not in tools
+
+
+class TestDualWielderArmorClass:
+    """Dual Wielder's AC bonus is conditional on actually wielding two weapons."""
+
+    @staticmethod
+    def _build_dual_wielder(class_equipment, include_feat):
+        choices = {
+            "character_name": "Dual Wielder AC Test",
+            "level": 4,
+            "species": "Human",
+            "class": "Fighter",
+            "background": "Soldier",
+            "ability_scores": {
+                "Strength": 14,
+                "Dexterity": 14,
+                "Constitution": 14,
+                "Intelligence": 10,
+                "Wisdom": 10,
+                "Charisma": 10,
+            },
+            "equipment_selections": {
+                "class_equipment": class_equipment,
+                "background_equipment": "option_a",
+            },
+        }
+        if include_feat:
+            choices["class_feat_4"] = "Dual Wielder"
+        builder = CharacterBuilder()
+        builder.apply_choices(choices)
+        return builder.to_character()
+
+    @staticmethod
+    def _unarmored_option(character):
+        return next(
+            option
+            for option in character["ac_options"]
+            if option["equipped_armor"] is None
+            and option["formula"].startswith("10 + Dex modifier")
+        )
+
+    def test_bonus_applies_to_unarmored_option_while_dual_wielding(self):
+        without_feat = self._build_dual_wielder("option_b", include_feat=False)
+        with_feat = self._build_dual_wielder("option_b", include_feat=True)
+
+        unarmored_without_feat = self._unarmored_option(without_feat)
+        unarmored_with_feat = self._unarmored_option(with_feat)
+        assert unarmored_with_feat["ac"] == unarmored_without_feat["ac"] + 1
+        assert "Dual Wielder" in unarmored_with_feat["formula"]
+
+    def test_bonus_does_not_apply_without_two_light_weapons(self):
+        without_feat = self._build_dual_wielder("option_a", include_feat=False)
+        with_feat = self._build_dual_wielder("option_a", include_feat=True)
+
+        assert self._unarmored_option(with_feat)["ac"] == self._unarmored_option(
+            without_feat
+        )["ac"]
+
+
 # ==================== 5. Choice-Dependent Effects (General Feats) ====================
 
 

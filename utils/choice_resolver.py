@@ -7,6 +7,50 @@ import json
 from pathlib import Path
 
 
+def _spellbook_entries(spellbook: object) -> list[tuple[str, dict]]:
+    """Normalize persisted spellbook names/entries for computed choices."""
+    if isinstance(spellbook, dict):
+        return [
+            (name, data if isinstance(data, dict) else {})
+            for name, data in spellbook.items()
+            if isinstance(name, str)
+        ]
+    if isinstance(spellbook, list):
+        entries = []
+        for item in spellbook:
+            if isinstance(item, str):
+                entries.append((item, {}))
+            elif isinstance(item, dict) and isinstance(item.get("name"), str):
+                entries.append((item["name"], item))
+        return entries
+    return []
+
+
+def _spell_definition(name: str) -> dict:
+    """Load the canonical definition used to filter a spellbook choice."""
+    filename = name.lower().replace(" ", "_").replace("'", "").replace("/", "_")
+    path = Path(__file__).parent.parent / "data" / "spells" / "definitions" / f"{filename}.json"
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except (OSError, json.JSONDecodeError):
+        return {}
+
+
+def _matches_filter(entry: dict, filters: object) -> bool:
+    """Return whether an entry satisfies every declarative source filter."""
+    if not isinstance(filters, dict):
+        return True
+    for key, expected in filters.items():
+        actual = entry.get(key)
+        if isinstance(expected, list):
+            if actual not in expected:
+                return False
+        elif actual != expected:
+            return False
+    return True
+
+
 def is_unresolved_placeholder(skill_value: object) -> bool:
     return (
         isinstance(skill_value, str)
@@ -93,6 +137,18 @@ def resolve_choice_options(
                 if isinstance(skill_options, list):
                     return [s for s in skill_options if s.lower() != "any"]
             return skills
+        if from_value == "spellbook":
+            filters = source.get("filter", {})
+            options = []
+            for name, stored_entry in _spellbook_entries(
+                character.get("spells", {}).get("spellbook", {})
+            ):
+                spell = _spell_definition(name)
+                if not spell:
+                    spell = stored_entry
+                if spell and _matches_filter(spell, filters):
+                    options.append(name)
+            return options
 
     return []
 

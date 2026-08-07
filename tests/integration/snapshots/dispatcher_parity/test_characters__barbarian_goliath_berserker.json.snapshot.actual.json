@@ -1159,7 +1159,8 @@
       "cantrips": {},
       "spells": {}
     },
-    "slots": {}
+    "slots": {},
+    "spellbook": {}
   },
   "spells_by_level": {},
   "step": "complete",

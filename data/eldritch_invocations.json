@@ -120,8 +120,9 @@
     "notes": "Warlock level 5+ required",
     "effects": [
       {
-        "type": "grant_spell_at_will",
-        "spell": "Water Breathing"
+        "type": "grant_spell",
+        "spell": "Water Breathing",
+        "once_per_long_rest": true
       }
     ]
   },
@@ -148,7 +149,20 @@
     "notes": "Warlock level 2+ required. Repeatable: each time you take it, choose a different Origin feat.",
     "effects": [
       {
-        "type": "grant_origin_feat"
+        "type": "grant_origin_feat",
+        "from_choice": "origin_feat",
+        "choice_field": "feat"
+      }
+    ],
+    "choices": [
+      {
+        "type": "select_single",
+        "name": "origin_feat",
+        "source": {
+          "type": "external",
+          "file": "origin_feats.json",
+          "list": "origin_feats"
+        }
       }
     ]
   },

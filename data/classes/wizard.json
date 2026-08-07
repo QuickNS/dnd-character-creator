@@ -204,6 +204,15 @@
     "18": {
       "Spell Mastery": {
         "description": "Choose a level 1 and a level 2 spell in your spellbook that have a casting time of an action. You always have those spells prepared, and you can cast them at their lowest level without expending a spell slot. You can replace one of those spells with an eligible spell of the same level when you finish a Long Rest.",
+        "effects": [
+          {
+            "type": "grant_spell_at_will",
+            "from_choice": "Spell Mastery",
+            "eligible_from": "spellbook",
+            "spell_levels": [1, 2],
+            "casting_time": "1 action"
+          }
+        ],
         "choices": {
           "type": "select_multiple",
           "count": 2,
@@ -219,7 +228,11 @@
               "casting_time": "1 action"
             }
           },
-          "restrictions": "Must select one level 1 spell and one level 2 spell"
+          "restrictions": {
+            "spell_levels": [1, 2],
+            "one_per_level": true,
+            "casting_time": "1 action"
+          }
         }
       }
     },
