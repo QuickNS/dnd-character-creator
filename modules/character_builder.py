@@ -4800,7 +4800,7 @@ class CharacterBuilder:
             choices["species_trait_choices"] = nested
         return choices
 
-    def apply_choices(self, choices: Dict[str, Any]) -> bool:
+    def apply_choices(self, choices: Dict[str, Any], *, fail_on_error: bool = False) -> bool:
         """
         Apply multiple choices at once from a choices dictionary.
         This is useful for batch operations like rebuilding from saved choices.
@@ -4892,7 +4892,8 @@ class CharacterBuilder:
                     # score reassignment over explicit ability_scores.
                     self.character_data["choices_made"][key] = choices[key]
                     continue
-                if not self.apply_choice(key, working_choices[key]):
+                applied = self.apply_choice(key, working_choices[key])
+                if fail_on_error and not applied:
                     return False
 
         # Invariant: species and class must be loaded before remaining choices.
@@ -4920,7 +4921,8 @@ class CharacterBuilder:
         # ascending, so 0 < 1 means parents are processed first.
         remaining_keys.sort(key=lambda k: (1 if _CLASS_FEAT_SUB_RE.match(k) else 0))
         for key in remaining_keys:
-            if not self.apply_choice(key, working_choices[key]):
+            applied = self.apply_choice(key, working_choices[key])
+            if fail_on_error and not applied:
                 return False
 
         # ── Multiclass block ─────────────────────────────────────────────────
@@ -4950,9 +4952,10 @@ class CharacterBuilder:
         # Apply species_skill_replacements after trait effects so overlap
         # detection sees the full proficiency picture.
         if "species_skill_replacements" in choices:
-            if not self.apply_choice(
+            applied = self.apply_choice(
                 "species_skill_replacements", choices["species_skill_replacements"]
-            ):
+            )
+            if fail_on_error and not applied:
                 return False
 
         # ── Finalize ────────────────────────────────────────────────────────

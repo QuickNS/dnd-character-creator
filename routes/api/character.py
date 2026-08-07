@@ -608,7 +608,7 @@ def _build(
         preserve_explicit_class_context=preserve_explicit_class_context,
     )
     builder = CharacterBuilder()
-    if not builder.apply_choices(normalized_choices):
+    if not builder.apply_choices(normalized_choices, fail_on_error=True):
         raise ChoicesValidationError(
             "A character choice could not be applied",
             code="choice_error",

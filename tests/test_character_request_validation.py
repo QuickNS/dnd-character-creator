@@ -143,7 +143,7 @@ def test_api_build_canonicalizes_identifiers(client):
 def test_apply_choices_propagates_failed_setter():
     builder = CharacterBuilder()
 
-    assert builder.apply_choices({"species": "Not A Species"}) is False
+    assert builder.apply_choices({"species": "Not A Species"}, fail_on_error=True) is False
 
 
 def test_apply_choices_propagates_nested_choice_failure(monkeypatch):
@@ -157,4 +157,6 @@ def test_apply_choices_propagates_nested_choice_failure(monkeypatch):
 
     monkeypatch.setattr(builder, "apply_choice", fail_nested_choice)
 
-    assert builder.apply_choices({"species_trait_choices": {"Trait": "value"}}) is False
+    assert builder.apply_choices(
+        {"species_trait_choices": {"Trait": "value"}}, fail_on_error=True
+    ) is False
