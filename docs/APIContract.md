@@ -144,6 +144,51 @@ See [docs/WizardFlow.md](WizardFlow.md) for the full step list, dependency map, 
 
 All character endpoints are `POST` with `Content-Type: application/json` and a body containing `choices_made` (and, where required, `step` or `view`).
 
+### Shared request validation
+
+All character endpoints validate their outer request envelope before processing. Envelopes are closed: unknown top-level fields return `400`. The permitted fields are:
+
+| Endpoint | Permitted request fields |
+|----------|--------------------------|
+| `/character/build`, `/character/validate`, `/character/random-languages` | `choices_made` |
+| `/character/preview-step` | `choices_made`, `step` |
+| `/character/derived` | `choices_made`, `view` |
+
+`choices_made` must be a JSON object. Its keys must be recognized static choices, data-driven choices, or supported dynamic choice keys; unknown choices are rejected. JSON arrays and objects are limited to 100 items, strings and object keys to 512 characters, and nesting to 8 levels. Class allocations have a separate maximum of 12 rows.
+
+Class levels must be JSON integers (not booleans) from `1` through `20`; the sum of all `classes[].level` values cannot exceed `20`. Each class row is a closed object with only `class_name`, `level`, and optional `subclass`.
+
+When supplied, `ability_scores` (or the legacy `abilities` alias) must be exactly:
+
+```json
+{
+  "Strength": 8,
+  "Dexterity": 8,
+  "Constitution": 8,
+  "Intelligence": 8,
+  "Wisdom": 8,
+  "Charisma": 8
+}
+```
+
+All six values must be integer (not boolean) scores from `1` through `20`.
+
+Class, subclass, species, background, and lineage identifiers are trimmed, matched case-insensitively against the catalog, and normalized to their canonical catalog spelling. Unknown identifiers are rejected.
+
+All request-validation failures use HTTP `400` and this envelope:
+
+```json
+{
+  "error": {
+    "code": "invalid_request",
+    "message": "Human-readable validation message",
+    "field": "choices_made.classes[0].level"
+  }
+}
+```
+
+`field` is omitted when the failure is not attributable to one field. Codes include `invalid_request`, `missing_field`, `unknown_field`, `unknown_identifier`, `out_of_bounds`, and `choice_error`.
+
 ### `POST /character/build`
 
 Build the complete calculated character.
@@ -189,8 +234,7 @@ Response (200):
 ```
 
 Errors:
-- `400` `{ "error": "Body must be JSON with 'choices_made'" }`
-- `500` `{ "error": "<message>", "traceback": "<python traceback>" }`
+- `400` request-validation errors use the [shared error envelope](#shared-request-validation).
 
 ### `POST /character/validate`
 
@@ -225,7 +269,7 @@ Response (200):
 
 `complete` is `all(s.complete for s in steps)`. Conditional checks: subclass when level qualifies, species/background skill-replacement when there is overlap, species trait choices, lineage when species has lineages, background ASI when offered, class feature `nested_choices`.
 
-Errors: same as `/build`.
+Errors: request-validation failures use the [shared error envelope](#shared-request-validation).
 
 > **Type drift to fix on the frontend:** `frontend/src/lib/api.ts` declares `ValidationResponse` as `{ valid, steps, missing_top_level }`, but the server returns `{ complete, steps }`. The frontend types must be updated to match.
 
@@ -373,8 +417,7 @@ Example secondary-row payload (`choices_made.classes = [{Wizard, 5}, {Rogue, 1}]
 ```
 
 Errors:
-- `400` `{ "error": "Body must be JSON with 'choices_made' and 'step'" }`
-- `500` `{ "error": "<message>", "traceback": "<python traceback>" }`
+- `400` request-validation errors use the [shared error envelope](#shared-request-validation).
 
 ### `POST /character/derived`
 
@@ -416,9 +459,7 @@ Response (200, valid view but not applicable):
 ```
 
 Errors:
-- `400` `{ "error": "Body must be JSON with 'choices_made' and 'view'" }`
-- `400` `{ "error": "Unknown view '<x>'", "allowed": ["damage_cantrips", "invocation_management", "mastery_management", "spell_management"] }`
-- `500` `{ "error": "<message>", "traceback": "<python traceback>" }`
+- `400` request-validation errors use the [shared error envelope](#shared-request-validation). For an unknown `view`, the response also includes `allowed` with the accepted values.
 
 ### `POST /character/random-languages`
 
@@ -435,8 +476,7 @@ Response (200):
 ```
 
 Errors:
-- `400` `{ "error": "Body must be JSON with 'choices_made'" }`
-- `500` `{ "error": "<message>", "traceback": "<python traceback>" }`
+- `400` request-validation errors use the [shared error envelope](#shared-request-validation).
 
 ### `POST /character/roll-abilities`
 
@@ -465,6 +505,11 @@ interface ClassAllocation {
   level: number;
   subclass?: string;
 }
+
+interface AbilityScores {
+  Strength: number; Dexterity: number; Constitution: number;
+  Intelligence: number; Wisdom: number; Charisma: number;
+}
 ```
 
 The `classes` array may contain multiple rows for multiclass characters. The **first row is the primary class** (full starting proficiencies and level-1 max-hit-die HP); subsequent rows are secondary classes (proficiencies limited to each class's `multiclassing` block). `proficiency_bonus` is computed from total character level (`sum(classes[].level)`).
@@ -480,7 +525,7 @@ interface ChoicesMade {
   species?: string;
   lineage?: string;
   ability_scores_method?: "standard_array" | "point_buy" | "manual" | "roll" | "recommended";
-  ability_scores?: Record<string, number>;
+  ability_scores?: AbilityScores; // each value is an integer from 1 through 20
   additional_ability_modifiers?: Record<string, number>;
   background_bonuses?: Record<string, number>;
   skill_choices?: string[];
@@ -497,8 +542,8 @@ interface ChoicesMade {
   // Multiclass: player's resolution of pending skill picks per secondary class
   multiclass_skill_choices?: Record<string, string[]>;
   // Dynamic keys: feat sub-choices, ASI variants, per-feature picks, etc.
-  // Validated by Zod's .catchall(z.unknown()) on the client; the backend
-  // resolves and normalises them via apply_choices() Pass 2.
+  // Only supported dynamic keys are accepted; the backend resolves and
+  // normalises them via apply_choices() Pass 2.
   [key: string]: unknown;
 }
 ```
