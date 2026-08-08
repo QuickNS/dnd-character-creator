@@ -8,8 +8,11 @@ frontend is the source of truth for in-progress choices, the Python
 
 from __future__ import annotations
 
+from functools import lru_cache
+import json
 import re
 import traceback
+from pathlib import Path
 from typing import Any, Dict, List
 
 from flask import Blueprint, jsonify, request
@@ -175,6 +178,67 @@ def _filter_nested_choices_for_secondary_class(
             filtered.append(dict(choice))
 
     return filtered
+
+
+@lru_cache(maxsize=None)
+def _load_feat_definitions() -> Dict[str, Dict[str, Any]]:
+    """Load feat definitions needed for server-side prerequisite warnings."""
+    data_dir = Path(__file__).resolve().parent.parent.parent / "data"
+    feats: Dict[str, Dict[str, Any]] = {}
+    for filename, wrapper_key in (
+        ("general_feats.json", "general_feats"),
+        ("origin_feats.json", "origin_feats"),
+    ):
+        path = data_dir / filename
+        try:
+            payload = json.loads(path.read_text())
+        except OSError:
+            continue
+        entries = payload.get(wrapper_key, {})
+        if isinstance(entries, dict):
+            feats.update({
+                name: data
+                for name, data in entries.items()
+                if isinstance(data, dict)
+            })
+    return feats
+
+
+def _class_feat_prerequisite_warnings(
+    builder: CharacterBuilder,
+    choices: Dict[str, Any],
+) -> List[Dict[str, Any]]:
+    feats = _load_feat_definitions()
+    total_level = 1
+    class_rows = choices.get("classes")
+    if isinstance(class_rows, list) and class_rows:
+        total_level = sum(
+            int(row.get("level", 0) or 0)
+            for row in class_rows
+            if isinstance(row, dict)
+        )
+    elif isinstance(choices.get("level"), int):
+        total_level = int(choices["level"])
+
+    warnings: List[Dict[str, Any]] = []
+    for key, selected_feat in choices.items():
+        if not re.match(r"^class_feat_\d+$", str(key)):
+            continue
+        if not isinstance(selected_feat, str) or not selected_feat:
+            continue
+        feat = feats.get(selected_feat)
+        prerequisite = feat.get("prerequisite") if isinstance(feat, dict) else None
+        evaluation = builder.evaluate_feat_prerequisite(
+            prerequisite,
+            level=total_level,
+        )
+        if not evaluation["met"] and evaluation["messages"]:
+            warnings.append({
+                "choice_key": key,
+                "feat_name": selected_feat,
+                "messages": evaluation["messages"],
+            })
+    return warnings
 
 
 def _resolve_class_row_context(
@@ -734,6 +798,11 @@ def preview_step():
                     class_name,
                 )
                 cdata = dl.classes.get(canonical_class, {})
+                class_summaries = [
+                    {"id": key, **value}
+                    for key, value in sorted(dl.classes.items())
+                    if isinstance(value, dict)
+                ]
                 sub_level = cdata.get("subclass_selection_level", 3)
                 result["needs_subclass"] = level >= sub_level
                 if result["needs_subclass"]:
@@ -759,6 +828,18 @@ def preview_step():
                         result["nested_choices"], cdata
                     )
                 result["row_context"] = row_context
+                result["multiclass_prerequisites"] = {
+                    "classes": {
+                        (entry.get("id") or entry.get("name")): builder.evaluate_multiclass_prerequisites(
+                            entry,
+                            class_summaries,
+                        )
+                        for entry in class_summaries
+                    }
+                }
+                result["class_feat_prerequisite_warnings"] = (
+                    _class_feat_prerequisite_warnings(builder, request_choices)
+                )
                 # Surface currently-known languages so the frontend can disable
                 # them in language choice pickers (e.g. Thieves' Cant).
                 result["granted_languages"] = character.get("languages", [])
@@ -816,6 +897,7 @@ def preview_step():
 
         elif step == "abilities":
             result["background_asi"] = builder.get_background_asi_options()
+            result["ability_generation"] = builder.get_ability_generation_state()
             class_name = character.get("class", "")
             if class_name:
                 from modules.data_loader import DataLoader
@@ -851,6 +933,16 @@ def random_languages():
         return jsonify({"languages": builder.roll_languages()})
     except Exception:
         return jsonify({"error": "Failed to generate random languages"}), 500
+
+
+@character_bp.post("/roll-abilities")
+def roll_abilities():
+    """Return server-rolled 4d6-drop-lowest ability score candidates."""
+    try:
+        builder = CharacterBuilder()
+        return jsonify({"rolls": builder.roll_ability_scores()})
+    except Exception:
+        return jsonify({"error": "Failed to roll ability scores"}), 500
 
 
 # ==================== Derived views ====================
