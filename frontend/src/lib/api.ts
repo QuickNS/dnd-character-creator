@@ -210,6 +210,8 @@ export interface BackgroundSummary {
   name: string;
   description?: string;
   feat?: string;
+  edition: "2024" | "2014";
+  status: "active" | "legacy";
 }
 
 export interface SpeciesSummary {

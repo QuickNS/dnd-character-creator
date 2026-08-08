@@ -31,7 +31,7 @@ Read-only access to game data. Cached aggressively on the client.
 | GET    | `/catalog/classes/<class_name>/subclasses/<subclass_name>`   | Full subclass JSON                                  |
 | GET    | `/catalog/species`                                           | `{ "species": SpeciesSummary[] }`                   |
 | GET    | `/catalog/species/<species_name>`                            | Full species JSON (with `lineages`, `traits`)       |
-| GET    | `/catalog/backgrounds`                                       | `{ "backgrounds": BackgroundSummary[] }`            |
+| GET    | `/catalog/backgrounds`                                       | `{ "backgrounds": BackgroundSummary[] }` (active D&D 2024 only by default; `?include_legacy=true` includes retained legacy entries) |
 | GET    | `/catalog/backgrounds/<background_name>`                     | Full background JSON                                |
 | GET    | `/catalog/feats?type=origin\|general`                        | `{ "feats": FeatSummary[] }` (optional filter)      |
 | GET    | `/catalog/feats/<feat_name>`                                 | Full feat JSON                                      |
@@ -59,6 +59,7 @@ interface SpeciesSummary {
 interface BackgroundSummary {
   id: string; name: string; description?: string;
   skill_proficiencies?: string[]; ability_scores?: string[]; feat?: string;
+  edition: "2024" | "2014"; status: "active" | "legacy";
 }
 
 interface FeatSummary {
@@ -66,6 +67,8 @@ interface FeatSummary {
   category?: "origin" | "general"; prerequisites?: unknown;
 }
 ```
+
+`GET /catalog/backgrounds` is the wizard/frontend default catalog and filters to backgrounds with `edition: "2024"` and `status: "active"`. Retained 2014 legacy backgrounds remain available by direct detail lookup and through `?include_legacy=true` for explicit opt-in tools.
 
 ### Errors
 

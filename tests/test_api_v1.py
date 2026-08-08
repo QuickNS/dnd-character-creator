@@ -81,8 +81,31 @@ class TestCatalogMisc:
     def test_list_backgrounds(self, client):
         r = client.get("/api/v1/catalog/backgrounds")
         assert r.status_code == 200
-        names = {b["name"] for b in r.get_json()["backgrounds"]}
+        backgrounds = r.get_json()["backgrounds"]
+        names = {b["name"] for b in backgrounds}
         assert "Acolyte" in names
+        assert "Folk Hero" not in names
+        assert "Guild Artisan" not in names
+        assert all(b["edition"] == "2024" for b in backgrounds)
+        assert all(b["status"] == "active" for b in backgrounds)
+
+    def test_list_backgrounds_include_legacy(self, client):
+        r = client.get("/api/v1/catalog/backgrounds?include_legacy=true")
+        assert r.status_code == 200
+        backgrounds = r.get_json()["backgrounds"]
+        by_name = {b["name"]: b for b in backgrounds}
+        assert by_name["Folk Hero"]["edition"] == "2014"
+        assert by_name["Folk Hero"]["status"] == "legacy"
+        assert by_name["Guild Artisan"]["edition"] == "2014"
+        assert by_name["Guild Artisan"]["status"] == "legacy"
+
+    def test_get_legacy_background_detail(self, client):
+        r = client.get("/api/v1/catalog/backgrounds/Folk%20Hero")
+        assert r.status_code == 200
+        data = r.get_json()
+        assert data["name"] == "Folk Hero"
+        assert data["edition"] == "2014"
+        assert data["status"] == "legacy"
 
     def test_list_feats(self, client):
         r = client.get("/api/v1/catalog/feats")
