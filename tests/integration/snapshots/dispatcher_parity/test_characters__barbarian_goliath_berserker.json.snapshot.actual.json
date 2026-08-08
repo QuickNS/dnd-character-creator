@@ -95,6 +95,7 @@
     "Medium armor",
     "Shields"
   ],
+  "attack_ability_overrides": [],
   "attack_combinations": [
     {
       "mainhand": {
@@ -211,6 +212,7 @@
       "total": 3
     },
     "description": "War has been your life for as long as you care to remember. You trained as a youth, studied the use of weapons and armor, learned basic survival techniques, including how to stay alive on the battlefield. You might have been part of a standing national army or a mercenary company, or perhaps a member of a local militia who rose to prominence during a recent war.",
+    "edition": "2024",
     "effects": [
       {
         "feat": "Savage Attacker",
@@ -248,7 +250,8 @@
       "option_b": {
         "gold": 50
       }
-    }
+    },
+    "status": "active"
   },
   "best_attack_combination": {
     "mainhand": {
@@ -726,7 +729,6 @@
   ],
   "eldritch_invocation_stats": {
     "available_invocations": [],
-    "cantrip_choice_descriptors": [],
     "current_invocations": [],
     "has_invocations": false,
     "max_invocations": 0
