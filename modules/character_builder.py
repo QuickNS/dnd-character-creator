@@ -268,6 +268,7 @@ class CharacterBuilder:
             "hp_bonuses": [],                # bonus_hp      (Tough feat, Hill Dwarf, ...)
             "initiative_bonuses": [],        # bonus_initiative (Alert feat, ...)
             "alternative_ac_options": [],    # alternative_ac (Monk/Barbarian Unarmored Defense)
+            "attack_ability_overrides": [],  # attack_ability_override (Pact of the Blade)
             "fighting_style_flags": {
                 "great_weapon_fighting": [],         # list of source names
                 "two_weapon_fighting_modifier": [],  # list of source names
@@ -1784,6 +1785,17 @@ class CharacterBuilder:
             # attack and damage rolls of monk weapons (Simple Melee, or
             # Martial Melee with Light property)
             self.character_data["monk_dexterous_attacks"] = True
+
+        elif effect_type == "attack_ability_override":
+            ability = effect.get("ability")
+            weapon_tag = effect.get("weapon_tag")
+            if isinstance(ability, str) and isinstance(weapon_tag, str):
+                self.character_data["attack_ability_overrides"].append({
+                    "ability": ability,
+                    "weapon_tag": weapon_tag,
+                    "source": source_name,
+                    "source_type": source_type,
+                })
 
         elif effect_type == "grant_language":
             # Resolve languages from a choice key if specified, otherwise use direct list
@@ -5665,6 +5677,18 @@ class CharacterBuilder:
                 else:
                     ability_mod = str_mod
                     ability_name = "STR"
+
+            for override in self.character_data.get("attack_ability_overrides", []):
+                selected_weapon = self.character_data["choices_made"].get(
+                    override["weapon_tag"]
+                )
+                if selected_weapon != weapon_name:
+                    continue
+                ability = override["ability"].lower()
+                override_mod = ability_scores.get(ability, {}).get("modifier", 0)
+                if override_mod > ability_mod:
+                    ability_mod = override_mod
+                    ability_name = override["ability"].upper()[:3]
 
             # Check proficiency
             is_proficient = self._has_weapon_proficiency(weapon_props, weapon_profs)
