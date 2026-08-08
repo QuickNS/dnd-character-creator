@@ -312,6 +312,79 @@ class TestWarlockInvocationCount:
         assert len(stats.get("available_invocations", [])) > 0
 
 
+class TestEldritchInvocationEffects:
+    """Invocation selections must apply their data-authored sheet effects."""
+
+    @staticmethod
+    def _build_with_invocations(selection):
+        builder = CharacterBuilder()
+        builder.apply_choices(
+            {
+                "character_name": "Invocation Test",
+                "level": 5,
+                "species": "Human",
+                "class": "Warlock",
+                "background": "Acolyte",
+                "ability_scores": {
+                    "Strength": 8,
+                    "Dexterity": 14,
+                    "Constitution": 14,
+                    "Intelligence": 10,
+                    "Wisdom": 10,
+                    "Charisma": 16,
+                },
+                "eldritch_invocation_selections": selection,
+            }
+        )
+        return builder.to_character()
+
+    def test_lessons_of_the_first_ones_applies_selected_origin_feat(self):
+        character = self._build_with_invocations(
+            {
+                "selected": ["Lessons of the First Ones"],
+                "choices": {
+                    "Lessons of the First Ones": {"origin_feat": "Alert"},
+                },
+            }
+        )
+
+        feat = next(
+            feature
+            for feature in character["features"]["feats"]
+            if feature["name"] == "Alert"
+        )
+        assert feat["source"] == "Lessons of the First Ones"
+
+    def test_lessons_of_the_first_ones_rejects_non_origin_feat(self):
+        character = self._build_with_invocations(
+            {
+                "selected": ["Lessons of the First Ones"],
+                "choices": {
+                    "Lessons of the First Ones": {"origin_feat": "Dual Wielder"},
+                },
+            }
+        )
+
+        assert "Dual Wielder" not in [
+            feature["name"] for feature in character["features"]["feats"]
+        ]
+
+    def test_gift_of_the_depths_water_breathing_is_once_per_long_rest(self):
+        character = self._build_with_invocations(["Gift of the Depths"])
+
+        spell = character["spells"]["always_prepared"]["Water Breathing"]
+        metadata = character["spell_metadata"]["Water Breathing"]
+        assert spell["once_per_long_rest"] is True
+        assert metadata["once_per_long_rest"] is True
+        assert spell.get("at_will") is not True
+        assert metadata.get("at_will") is not True
+
+    def test_water_breathing_is_absent_without_gift_of_the_depths(self):
+        character = self._build_with_invocations([])
+
+        assert "Water Breathing" not in character["spells"]["always_prepared"]
+
+
 # ===========================================================================
 # The Fiend Subclass
 # ===========================================================================

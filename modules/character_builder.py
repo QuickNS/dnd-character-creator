@@ -1450,7 +1450,9 @@ class CharacterBuilder:
                 else:
                     display_source = source_name
 
-                # Determine if spell is 1/day (for species/lineage spells)
+                # Species/lineage grants retain the legacy once-per-day flag.
+                # Explicit long-rest grants carry their independent metadata.
+                once_per_long_rest = bool(effect.get("once_per_long_rest", False))
                 once_per_day = source_type in ["species", "lineage"]
 
                 # Add to always_prepared dict with metadata
@@ -1459,6 +1461,7 @@ class CharacterBuilder:
                     "source": display_source,
                     "always_prepared": True,
                     "once_per_day": once_per_day,
+                    "once_per_long_rest": once_per_long_rest,
                     "counts_against_limit": counts_against_limit,
                 }
 
@@ -1467,6 +1470,7 @@ class CharacterBuilder:
                     "source": display_source,
                     "source_type": source_type,
                     "once_per_day": once_per_day,
+                    "once_per_long_rest": once_per_long_rest,
                     "always_prepared": True,
                     "counts_against_limit": counts_against_limit,
                 }
@@ -1504,8 +1508,16 @@ class CharacterBuilder:
                     )
 
         elif effect_type == "grant_tool_proficiency":
-            tools = effect.get("tools", [])
+            if "from_choice" in effect:
+                chosen = self.character_data.get("choices_made", {}).get(
+                    effect["from_choice"]
+                )
+                tools = chosen if isinstance(chosen, list) else [chosen] if chosen else []
+            else:
+                tools = effect.get("tools", [])
             for tool in tools:
+                if not isinstance(tool, str) or not tool:
+                    continue
                 if tool not in self.character_data["proficiencies"]["tools"]:
                     self.character_data["proficiencies"]["tools"].append(tool)
                     # Track the source of this tool proficiency
@@ -1520,7 +1532,13 @@ class CharacterBuilder:
                     )
 
         elif effect_type == "grant_skill_proficiency":
-            skills = effect.get("skills", [])
+            if "from_choice" in effect:
+                chosen = self.character_data.get("choices_made", {}).get(
+                    effect["from_choice"]
+                )
+                skills = chosen if isinstance(chosen, list) else [chosen] if chosen else []
+            else:
+                skills = effect.get("skills", [])
             for skill in skills:
                 if not isinstance(skill, str) or is_unresolved_placeholder(skill):
                     continue
@@ -1870,8 +1888,52 @@ class CharacterBuilder:
             # e.g. Armor of Shadows -> Mage Armor). Recorded in the same
             # `always_prepared` dict that `grant_spell` writes to, with an
             # `at_will: True` flag so renderers can annotate "(at will)".
-            spell_name = effect.get("spell")
-            if isinstance(spell_name, str) and spell_name:
+            if "from_choice" in effect:
+                chosen = self.character_data.get("choices_made", {}).get(
+                    effect["from_choice"]
+                )
+                spell_names = chosen if isinstance(chosen, list) else [chosen] if chosen else []
+            else:
+                spell_names = [effect.get("spell")]
+
+            eligible_from = effect.get("eligible_from")
+            if eligible_from == "spellbook":
+                spellbook = self.character_data["spells"].get("spellbook", {})
+                if isinstance(spellbook, dict):
+                    eligible_names = set(spellbook)
+                elif isinstance(spellbook, list):
+                    eligible_names = {
+                        item if isinstance(item, str) else item.get("name")
+                        for item in spellbook
+                        if isinstance(item, (str, dict))
+                    }
+                else:
+                    eligible_names = set()
+                spell_names = [name for name in spell_names if name in eligible_names]
+
+            required_casting_time = effect.get("casting_time")
+            if required_casting_time:
+                if any(
+                    not isinstance(name, str)
+                    or self._load_spell_definition(name).get("casting_time")
+                    != required_casting_time
+                    for name in spell_names
+                ):
+                    spell_names = []
+
+            required_levels = effect.get("spell_levels")
+            if isinstance(required_levels, list):
+                selected_levels = [
+                    self._load_spell_definition(name).get("level")
+                    for name in spell_names
+                    if isinstance(name, str)
+                ]
+                if sorted(selected_levels) != sorted(required_levels):
+                    spell_names = []
+
+            for spell_name in spell_names:
+                if not isinstance(spell_name, str) or not spell_name:
+                    continue
                 spell_def = self._load_spell_definition(spell_name) or {}
                 spell_level = spell_def.get("level", 0)
                 if source_type == "subclass":
@@ -2936,17 +2998,47 @@ class CharacterBuilder:
         equipment = self.character_data.get("equipment")
         proficiencies = self.character_data.get("proficiencies", {}).get("armor", [])
 
-        # Check for bonus_ac effects (e.g., Defense fighting style)
-        # Phase 6: read from structured field, not applied_effects.
-        ac_bonus = 0
-        ac_bonus_entries = []
-        for entry in self.character_data.get("ac_bonuses", []):
-            # Condition checking is done per option (e.g. "wearing armor" only
-            # applies when armor is equipped). For now we accumulate the raw
-            # bonus value and the calling code applies it only to armored options.
-            bonus_value = entry.get("value", 0)
-            ac_bonus += bonus_value
-            ac_bonus_entries.append((entry.get("source", "Unknown"), bonus_value))
+        def _ac_bonuses_for(armored: bool) -> List[Tuple[str, int]]:
+            """Resolve data-authored AC conditions for one equipment option."""
+            weapons = (equipment or {}).get("weapons", [])
+
+            def _weapon_data(weapon: Dict[str, Any]) -> Dict[str, Any]:
+                """Read direct weapon fields or the legacy catalog-entry wrapper."""
+                properties = weapon.get("properties")
+                return properties if isinstance(properties, dict) else weapon
+
+            wieldable_weapon_count = sum(
+                max(int(weapon.get("quantity", 1) or 1), 1)
+                for weapon in weapons
+                if isinstance(weapon, dict)
+                and "Melee" in _weapon_data(weapon).get("category", "")
+                and "Two-Handed" not in _weapon_data(weapon).get("properties", [])
+            )
+            entries = []
+            for entry in self.character_data.get("ac_bonuses", []):
+                condition = entry.get("condition", "")
+                applies = (
+                    not condition
+                    or (condition == "wearing armor" and armored)
+                    or (
+                        condition == "wielding two weapons"
+                        and wieldable_weapon_count >= 2
+                    )
+                )
+                if applies:
+                    entries.append(
+                        (entry.get("source", "Unknown"), entry.get("value", 0))
+                    )
+            return entries
+
+        def _apply_ac_bonuses(option: Dict[str, Any], armored: bool) -> None:
+            for source, value in _ac_bonuses_for(armored):
+                if not value:
+                    continue
+                option["ac"] += value
+                sign = "+" if value > 0 else "-"
+                option["notes"].append(f"{sign}{abs(value)} from {source}")
+                option["formula"] += f" + {source} ({sign}{abs(value)})"
 
         # Handle case where equipment is None (like in tests)
         if equipment is None:
@@ -2962,6 +3054,7 @@ class CharacterBuilder:
                     "equipped_armor": None,
                 }
             ]
+            _apply_ac_bonuses(ac_options[0], armored=False)
 
             # Check for alternative AC formulas (e.g., Monk/Barbarian Unarmored Defense)
             # Phase 6: read from structured field, not applied_effects.
@@ -2986,6 +3079,7 @@ class CharacterBuilder:
                     "notes": [source_name],
                     "equipped_armor": None,
                 }
+                _apply_ac_bonuses(alt_option, armored=False)
                 ac_options.append(alt_option)
 
             ac_options.sort(key=lambda x: x["ac"], reverse=True)
@@ -3008,13 +3102,7 @@ class CharacterBuilder:
                 )
                 ac_option["equipped_armor"] = armor_name
 
-                # Apply bonus_ac if wearing armor
-                if ac_bonus > 0:
-                    ac_option["ac"] += ac_bonus
-                    for source, value in ac_bonus_entries:
-                        if value > 0:
-                            ac_option["notes"].append(f"+{value} from {source}")
-                            ac_option["formula"] += f" + {source} (+{value})"
+                _apply_ac_bonuses(ac_option, armored=True)
 
                 ac_options.append(ac_option)
 
@@ -3035,6 +3123,7 @@ class CharacterBuilder:
             "notes": [],
             "equipped_armor": None,
         }
+        _apply_ac_bonuses(unarmored_option, armored=False)
         ac_options.append(unarmored_option)
 
         # Check for alternative AC formulas (e.g., Monk/Barbarian Unarmored Defense)
@@ -3071,6 +3160,7 @@ class CharacterBuilder:
                 "notes": [source_name],
                 "equipped_armor": None,
             }
+            _apply_ac_bonuses(alt_option, armored=False)
 
             # Replace default unarmored if this is better
             ac_options.append(alt_option)
@@ -3450,6 +3540,26 @@ class CharacterBuilder:
                     for spell in spells:
                         self.character_data["spells"]["prepared"]["spells"][spell] = {}
 
+                # Wizards retain a separate spellbook. It is intentionally not
+                # inferred from prepared spells: class features such as Spell
+                # Mastery select from the book, not merely today's preparations.
+                spellbook = choice_value.get("spellbook", [])
+                if isinstance(spellbook, dict):
+                    if spellbook:
+                        self.character_data["spells"]["spellbook"] = dict(spellbook)
+                    elif "spellbook" in choice_value:
+                        self.character_data["spells"].pop("spellbook", None)
+                elif isinstance(spellbook, list):
+                    spellbook_entries = {
+                        spell: {}
+                        for spell in spellbook
+                        if isinstance(spell, str) and spell
+                    }
+                    if spellbook_entries:
+                        self.character_data["spells"]["spellbook"] = spellbook_entries
+                    elif "spellbook" in choice_value:
+                        self.character_data["spells"].pop("spellbook", None)
+
                 # Restore background spells if any
                 bg_cantrips = choice_value.get("background_cantrips", [])
                 if isinstance(bg_cantrips, list):
@@ -3484,14 +3594,33 @@ class CharacterBuilder:
         # Eldritch Invocation selections - restore user-selected invocations
         elif choice_key_lower == "eldritch_invocation_selections":
             if isinstance(choice_value, list):
+                invocation_names = choice_value
+                invocation_choices = {}
+            elif isinstance(choice_value, dict):
+                invocation_names = choice_value.get("selected", [])
+                invocation_choices = choice_value.get("choices", {})
+            else:
+                invocation_names = []
+                invocation_choices = {}
+            if isinstance(invocation_names, list):
                 if "eldritch_invocations" not in self.character_data:
                     self.character_data["eldritch_invocations"] = {"selected": []}
-                self.character_data["eldritch_invocations"]["selected"] = choice_value
+                self.character_data["eldritch_invocations"]["selected"] = invocation_names
                 # Phase 7 (D0-1): route each chosen invocation through the
                 # single dispatcher. Sheet-affecting invocations carry an
                 # `effects` array in data/eldritch_invocations.json; we load
                 # the file once and apply effects per chosen invocation.
-                self._apply_eldritch_invocation_effects(choice_value)
+                self._apply_eldritch_invocation_effects(
+                    invocation_names,
+                    invocation_choices if isinstance(invocation_choices, dict) else {},
+                )
+                if isinstance(choice_value, dict):
+                    self.character_data["choices_made"][choice_key] = {
+                        "selected": invocation_names,
+                        "choices": invocation_choices
+                        if isinstance(invocation_choices, dict)
+                        else {},
+                    }
             return True
 
         # Nested bonus choices (e.g., Thaumaturge_bonus_cantrip)
@@ -3838,6 +3967,20 @@ class CharacterBuilder:
                 matches_by_choice_name = any(
                     c.get("name") == choice_key for c in choices_list
                 )
+
+                # A feature effect can reference the canonical persisted key
+                # for one of its choices (for example, a selected tool or
+                # spell). Resolve it here so direct apply_choice() calls and
+                # batch rebuilds use the same dispatcher path.
+                for effect in feature_data.get("effects", []):
+                    if (
+                        isinstance(effect, dict)
+                        and effect.get("from_choice") == choice_key
+                    ):
+                        results.append((effect, feature_name, "class_choice"))
+
+                if results:
+                    return results
 
                 if not (matches_by_feature_name or matches_by_choice_name):
                     continue
@@ -5010,11 +5153,17 @@ class CharacterBuilder:
                     if "damage_type_from_choice" in effect:
                         self._apply_effect(effect, trait_name, data_key.replace("_data", ""))
 
-        # Also scan class features for grant_skill_expertise effects that use from_choice.
-        # These must be re-applied after all choices are made because the expertise
-        # selection arrives in the second pass of apply_choices (after set_class runs).
-        class_data = self.character_data.get("class_data")
-        if isinstance(class_data, dict):
+        # Re-apply class and subclass effects whose payload comes from a later
+        # feature choice. Class features are initially walked before the second
+        # pass of apply_choices, so this is the generic deferred resolution
+        # point for all ``from_choice`` effects.
+        for data_key, source_type in (
+            ("class_data", "class"),
+            ("subclass_data", "subclass"),
+        ):
+            class_data = self.character_data.get(data_key)
+            if not isinstance(class_data, dict):
+                continue
             level = self.character_data.get("level", 1)
             for level_str, level_features in class_data.get("features_by_level", {}).items():
                 if not isinstance(level_features, dict):
@@ -5025,16 +5174,8 @@ class CharacterBuilder:
                     if not isinstance(feature_data, dict):
                         continue
                     for effect in feature_data.get("effects", []):
-                        if (
-                            effect.get("type") == "grant_skill_expertise"
-                            and "from_choice" in effect
-                        ):
-                            self._apply_effect(effect, feature_name, "class")
-                        elif (
-                            effect.get("type") == "grant_language"
-                            and "from_choice" in effect
-                        ):
-                            self._apply_effect(effect, feature_name, "class")
+                        if isinstance(effect, dict) and "from_choice" in effect:
+                            self._apply_effect(effect, feature_name, source_type)
 
     # ==================== Calculation Methods ====================
 
@@ -5384,7 +5525,11 @@ class CharacterBuilder:
 
         return stats
 
-    def _apply_eldritch_invocation_effects(self, invocation_names: List[str]) -> None:
+    def _apply_eldritch_invocation_effects(
+        self,
+        invocation_names: List[str],
+        invocation_choices: Optional[Dict[str, Dict[str, Any]]] = None,
+    ) -> None:
         """Phase 7 (D0-1): apply sheet-affecting invocation effects.
 
         Each chosen invocation may carry an ``effects`` array in
@@ -5410,14 +5555,50 @@ class CharacterBuilder:
                 all_invocations = _json.load(f)
         except (OSError, _json.JSONDecodeError):
             return
+        invocation_choices = invocation_choices or {}
         for name in invocation_names:
             inv = all_invocations.get(name) or {}
             effects = inv.get("effects") or []
             if not isinstance(effects, list):
                 continue
+
+            resolved_choices: Dict[str, Any] = {}
+            selected_choice_values = invocation_choices.get(name, {})
+            if not isinstance(selected_choice_values, dict):
+                selected_choice_values = {}
+            for choice in inv.get("choices", []):
+                if not isinstance(choice, dict):
+                    continue
+                choice_name = choice.get("name")
+                selected_value = selected_choice_values.get(choice_name)
+                if not isinstance(choice_name, str) or selected_value is None:
+                    continue
+                selected_values = (
+                    selected_value if isinstance(selected_value, list) else [selected_value]
+                )
+                options = resolve_choice_options(choice, self.character_data)
+                count = choice.get("count", 1)
+                if (
+                    len(selected_values) == count
+                    and all(value in options for value in selected_values)
+                ):
+                    resolved_choices[choice_name] = selected_value
+
             for effect in effects:
                 if isinstance(effect, dict):
-                    self._apply_effect(effect, name, "invocation")
+                    resolved_effect = dict(effect)
+                    choice_name = resolved_effect.get("from_choice")
+                    choice_field = resolved_effect.get("choice_field")
+                    if choice_name and choice_field:
+                        selected_value = resolved_choices.get(choice_name)
+                        if isinstance(selected_value, list):
+                            if len(selected_value) != 1:
+                                continue
+                            selected_value = selected_value[0]
+                        if not isinstance(selected_value, str):
+                            continue
+                        resolved_effect[choice_field] = selected_value
+                    self._apply_effect(resolved_effect, name, "invocation")
 
     def calculate_eldritch_invocation_stats(self) -> Dict[str, Any]:
         """
@@ -6812,6 +6993,9 @@ class CharacterBuilder:
                         "source": spell_info.get("source", "Unknown"),
                         "always_prepared": True,
                         "once_per_day": spell_info.get("once_per_day", False),
+                        "once_per_long_rest": spell_info.get(
+                            "once_per_long_rest", False
+                        ),
                     }
                 )
                 level = spell_info.get("level", spell_data.get("level", 0))
@@ -7005,6 +7189,9 @@ class CharacterBuilder:
                 if data.get("level", 1) > 0
             ],
         }
+        spellbook = spells.get("spellbook", {})
+        if isinstance(spellbook, dict) and spellbook:
+            spell_selections["spellbook"] = list(spellbook.keys())
 
         # Only include if there are any spell selections
         if any(spell_selections.values()):
@@ -7023,7 +7210,16 @@ class CharacterBuilder:
         eldritch_invocations = character_data.get("eldritch_invocations", {})
         selected_invocations = eldritch_invocations.get("selected", [])
         if selected_invocations:
-            character_data["choices_made"]["eldritch_invocation_selections"] = selected_invocations
+            existing_invocation_payload = character_data["choices_made"].get(
+                "eldritch_invocation_selections"
+            )
+            if isinstance(existing_invocation_payload, dict):
+                character_data["choices_made"]["eldritch_invocation_selections"] = {
+                    "selected": selected_invocations,
+                    "choices": existing_invocation_payload.get("choices", {}),
+                }
+            else:
+                character_data["choices_made"]["eldritch_invocation_selections"] = selected_invocations
 
         return character_data
 
