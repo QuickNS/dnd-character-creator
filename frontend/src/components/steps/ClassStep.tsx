@@ -47,8 +47,16 @@ interface PreviewChoice {
 }
 
 interface ClassFeatPrerequisiteWarning {
-  featName: string;
+  choice_key?: string;
+  feat_name?: string;
   messages: string[];
+}
+
+interface PrerequisiteResult {
+  ok?: boolean;
+  missing?: string[];
+  messages?: string[];
+  abilities_unknown?: boolean;
 }
 
 function isSpellLikeChoice(
@@ -273,125 +281,6 @@ function matchesPreviewContext(
   return previewClass === selectedClass && previewLevel === clampLevel(level);
 }
 
-/**
- * Parse a class's `primary_ability` string into a list of required abilities
- * and a combinator. Wiki shapes seen:
- *   "Intelligence"           -> { kind: 'and', abilities: ['Intelligence'] }
- *   "Strength & Charisma"    -> { kind: 'and', abilities: ['Strength','Charisma'] }
- *   "Dexterity & Wisdom"     -> { kind: 'and', abilities: ['Dexterity','Wisdom'] }
- *   "Strength or Dexterity"  -> { kind: 'or',  abilities: ['Strength','Dexterity'] }
- * "&" / "and" are treated as AND; "or" / "/" as OR.
- */
-function parsePrimaryAbilities(primary: string | undefined | null): {
-  kind: "and" | "or";
-  abilities: string[];
-} {
-  if (!primary || typeof primary !== "string") {
-    return { kind: "and", abilities: [] };
-  }
-  const trimmed = primary.trim();
-  if (!trimmed) return { kind: "and", abilities: [] };
-  const orRe = /\s+or\s+|\s*\/\s*/i;
-  const andRe = /\s*&\s*|\s+and\s+/i;
-  if (orRe.test(trimmed)) {
-    return {
-      kind: "or",
-      abilities: trimmed
-        .split(orRe)
-        .map((s) => s.trim())
-        .filter(Boolean),
-    };
-  }
-  if (andRe.test(trimmed)) {
-    return {
-      kind: "and",
-      abilities: trimmed
-        .split(andRe)
-        .map((s) => s.trim())
-        .filter(Boolean),
-    };
-  }
-  return { kind: "and", abilities: [trimmed] };
-}
-
-/**
- * Sum base ability score + species/feat additional modifiers + background
- * bonuses, all of which are already in `choicesMade` if the player has
- * progressed that far. Returns `undefined` if the base map is missing.
- */
-function combinedAbilityScores(
-  choicesMade: ChoicesMade,
-): Record<string, number> | undefined {
-  const base = choicesMade.ability_scores;
-  if (!base || typeof base !== "object") return undefined;
-  const result: Record<string, number> = { ...base };
-  const additional = choicesMade.additional_ability_modifiers;
-  if (additional && typeof additional === "object") {
-    for (const [k, v] of Object.entries(additional)) {
-      if (typeof v === "number") result[k] = (result[k] ?? 0) + v;
-    }
-  }
-  const bg = choicesMade.background_bonuses;
-  if (bg && typeof bg === "object") {
-    for (const [k, v] of Object.entries(bg)) {
-      if (typeof v === "number") result[k] = (result[k] ?? 0) + v;
-    }
-  }
-  return result;
-}
-
-/**
- * D&D 2024 multiclass prerequisites: to multiclass INTO a new class the
- * character needs ≥13 in the primary ability of every class they have plus
- * the candidate class. AND combos require all listed abilities ≥13; OR combos
- * require any one ≥13. The primary class row is unrestricted.
- *
- * When ability scores are unknown (player hasn't reached the Abilities step
- * yet), returns `ok: true` with `abilitiesUnknown: true` so the picker stays
- * enabled and the UI can surface an advisory instead.
- */
-function checkMulticlassPrereqs(
-  candidateClass: ClassSummary | undefined,
-  currentClasses: ClassAllocation[],
-  abilityScores: Record<string, number> | undefined,
-  allClasses: ClassSummary[],
-): { ok: boolean; missing: string[]; abilitiesUnknown: boolean } {
-  if (!candidateClass)
-    return { ok: true, missing: [], abilitiesUnknown: false };
-  if (!abilityScores || Object.keys(abilityScores).length === 0) {
-    return { ok: true, missing: [], abilitiesUnknown: true };
-  }
-  const byId = new Map(allClasses.map((c) => [c.id, c]));
-  const involved: ClassSummary[] = [];
-  for (const row of currentClasses) {
-    if (!row.class_name) continue;
-    if (row.class_name === candidateClass.id) continue;
-    const summary = byId.get(row.class_name);
-    if (summary) involved.push(summary);
-  }
-  involved.push(candidateClass);
-
-  const missing = new Set<string>();
-  for (const cls of involved) {
-    const parsed = parsePrimaryAbilities(cls.primary_ability);
-    if (parsed.abilities.length === 0) continue;
-    const checks = parsed.abilities.map((ab) => (abilityScores[ab] ?? 0) >= 13);
-    const ok =
-      parsed.kind === "or" ? checks.some(Boolean) : checks.every(Boolean);
-    if (!ok) {
-      const failed = parsed.abilities.filter(
-        (ab) => (abilityScores[ab] ?? 0) < 13,
-      );
-      for (const ab of failed) missing.add(ab);
-    }
-  }
-  return {
-    ok: missing.size === 0,
-    missing: Array.from(missing),
-    abilitiesUnknown: false,
-  };
-}
-
 function formatProfList(values: string[] | null | undefined): string {
   if (!values || values.length === 0) return "—";
   return values.join(", ");
@@ -409,92 +298,8 @@ function formatMulticlassSkillProfs(
   return `Choose ${block.count}`;
 }
 
-const ABILITIES = [
-  "Strength",
-  "Dexterity",
-  "Constitution",
-  "Intelligence",
-  "Wisdom",
-  "Charisma",
-] as const;
-
 function isClassFeatChoiceKey(value: string): boolean {
   return /^class_feat_\d+$/.test(value);
-}
-
-function evaluateFeatPrerequisite(
-  prerequisite: string | undefined,
-  choicesMade: Record<string, unknown>,
-): { met: boolean; messages: string[] } {
-  if (!prerequisite || prerequisite.trim().length === 0) {
-    return { met: true, messages: [] };
-  }
-
-  const messages: string[] = [];
-  const parts = prerequisite
-    .split(",")
-    .map((part) => part.trim())
-    .filter(Boolean);
-  const abilityScoresRaw = choicesMade.ability_scores;
-  const abilityScores =
-    abilityScoresRaw &&
-    typeof abilityScoresRaw === "object" &&
-    !Array.isArray(abilityScoresRaw)
-      ? (abilityScoresRaw as Record<string, number>)
-      : undefined;
-  const level =
-    typeof choicesMade.level === "number" && Number.isFinite(choicesMade.level)
-      ? Math.floor(choicesMade.level)
-      : undefined;
-
-  for (const part of parts) {
-    const levelMatch = part.match(/(\d+)(?:st|nd|rd|th)?\s+level/i);
-    if (levelMatch && level !== undefined) {
-      const requiredLevel = Number(levelMatch[1]);
-      if (Number.isFinite(requiredLevel) && level < requiredLevel) {
-        messages.push(
-          `Requires level ${requiredLevel}. Current level: ${level}.`,
-        );
-      }
-      continue;
-    }
-
-    const scoreMatch = part.match(/(\d+)\+/);
-    if (!scoreMatch || !abilityScores) continue;
-
-    const requiredScore = Number(scoreMatch[1]);
-    const presentAbilities = ABILITIES.filter((ability) =>
-      new RegExp(`\\b${ability}\\b`, "i").test(part),
-    );
-    if (presentAbilities.length === 0) continue;
-
-    const requiresAny = /\bor\b/i.test(part);
-    if (requiresAny) {
-      const met = presentAbilities.some(
-        (ability) => (abilityScores[ability] ?? 0) >= requiredScore,
-      );
-      if (!met) {
-        const current = presentAbilities
-          .map((ability) => `${ability} ${abilityScores[ability] ?? 0}`)
-          .join(", ");
-        messages.push(
-          `Requires ${presentAbilities.join(" or ")} ${requiredScore}+. Current: ${current}.`,
-        );
-      }
-      continue;
-    }
-
-    for (const ability of presentAbilities) {
-      const current = abilityScores[ability] ?? 0;
-      if (current < requiredScore) {
-        messages.push(
-          `Requires ${ability} ${requiredScore}+. Current ${ability}: ${current}.`,
-        );
-      }
-    }
-  }
-
-  return { met: messages.length === 0, messages };
 }
 
 export function ClassStep() {
@@ -581,12 +386,8 @@ export function ClassStep() {
     () => classesQuery.data ?? [],
     [classesQuery.data],
   );
-  const combinedScores = useMemo(
-    () => combinedAbilityScores(choicesMade),
-    [choicesMade],
-  );
   const abilitiesUnknown =
-    !combinedScores || Object.keys(combinedScores).length === 0;
+    !choicesMade.ability_scores || Object.keys(choicesMade.ability_scores).length === 0;
 
   // Fetch full class data (with features_by_level) for the detail panel
   const fullClassQuery = useQuery({
@@ -699,6 +500,14 @@ export function ClassStep() {
     ? previewDataRaw
     : undefined;
   const needsSubclass = previewData?.["needs_subclass"] === true;
+  const multiclassPrereqByClass =
+    ((previewData?.["multiclass_prerequisites"] as
+      | { classes?: Record<string, PrerequisiteResult> }
+      | undefined)?.classes) ?? {};
+  const serverFeatPrerequisiteWarnings =
+    (previewData?.["class_feat_prerequisite_warnings"] as
+      | ClassFeatPrerequisiteWarning[]
+      | undefined) ?? [];
   const availableSubclasses =
     (previewData?.["available_subclasses"] as SubclassSummary[] | undefined) ??
     [];
@@ -972,23 +781,15 @@ export function ClassStep() {
                               </option>
                             );
                           }
-                          const check = checkMulticlassPrereqs(
-                            cls,
-                            classAllocations,
-                            combinedScores,
-                            allClassSummaries,
-                          );
-                          if (check.ok) {
+                          const check = multiclassPrereqByClass[cls.id];
+                          if (!check || check.ok || check.abilities_unknown) {
                             return (
                               <option key={cls.id} value={cls.id}>
                                 {cls.name}
                               </option>
                             );
                           }
-                          const reasonParts = check.missing.map((ab) => {
-                            const have = combinedScores?.[ab] ?? 0;
-                            return `${ab} 13+ (have ${have})`;
-                          });
+                          const reasonParts = check.messages ?? check.missing ?? [];
                           return (
                             <option key={cls.id} value={cls.id} disabled>
                               {cls.name} — requires {reasonParts.join(", ")}
@@ -1144,13 +945,7 @@ export function ClassStep() {
         <ClassDetail
           previewData={previewData}
           choicesMade={choicesMade}
-          combinedScores={combinedScores}
-          totalLevel={
-            classAllocations.reduce(
-              (sum, row) => sum + clampLevel(row.level),
-              0,
-            ) || 1
-          }
+          featPrerequisiteWarnings={serverFeatPrerequisiteWarnings}
           featDefinitions={generalFeatDefinitions}
           originFeatDefinitions={originFeatDefinitions}
           selectedClassSummary={detailClass}
@@ -1767,8 +1562,7 @@ function ClassInfoPanel({
 function ClassDetail({
   previewData,
   choicesMade,
-  combinedScores,
-  totalLevel,
+  featPrerequisiteWarnings,
   featDefinitions,
   originFeatDefinitions,
   selectedClassSummary,
@@ -1783,8 +1577,7 @@ function ClassDetail({
 }: {
   previewData: Record<string, unknown>;
   choicesMade: Record<string, unknown>;
-  combinedScores?: Record<string, number>;
-  totalLevel: number;
+  featPrerequisiteWarnings: ClassFeatPrerequisiteWarning[];
   featDefinitions: Record<string, FeatDefinition>;
   originFeatDefinitions: Record<string, FeatDefinition>;
   selectedClassSummary?: {
@@ -1904,41 +1697,6 @@ function ClassDetail({
 
     return blocks;
   }, [groupedChoiceCounts, visibleNestedChoices]);
-  const featPrerequisiteWarnings = useMemo<
-    ClassFeatPrerequisiteWarning[]
-  >(() => {
-    if (!combinedScores) return [];
-
-    const warnings: ClassFeatPrerequisiteWarning[] = [];
-    for (const choice of nestedChoices) {
-      const key = choice.choice_key ?? choice.feature_name ?? choice.name ?? "";
-      if (!isClassFeatChoiceKey(key)) continue;
-
-      const selectedFeat =
-        typeof choicesMade[key] === "string" ? String(choicesMade[key]) : "";
-      if (!selectedFeat) continue;
-
-      const feat = featDefinitions[selectedFeat];
-      if (!feat?.prerequisite) continue;
-
-      const prerequisiteContext: Record<string, unknown> = {
-        ...choicesMade,
-        ability_scores: combinedScores,
-        level: totalLevel,
-      };
-      const evaluation = evaluateFeatPrerequisite(
-        feat.prerequisite,
-        prerequisiteContext,
-      );
-      if (!evaluation.met && evaluation.messages.length > 0) {
-        warnings.push({
-          featName: selectedFeat,
-          messages: evaluation.messages,
-        });
-      }
-    }
-    return warnings;
-  }, [choicesMade, combinedScores, featDefinitions, nestedChoices, totalLevel]);
   const renderChoiceControl = (
     choice: PreviewChoice,
     idx: number,
@@ -1962,7 +1720,7 @@ function ClassDetail({
           })
         : [];
       const warningsForFeat = featPrerequisiteWarnings
-        .filter((w) => w.featName === selectedFeat)
+        .filter((w) => w.feat_name === selectedFeat || w.choice_key === key)
         .flatMap((w) => w.messages);
       const asiGroup = asiChoiceGroups.find((g) => g.slotKey === key);
       return (
@@ -2163,8 +1921,8 @@ function ClassDetail({
                   <ul className="mt-1 list-disc space-y-1 pl-4">
                     {featPrerequisiteWarnings.map((warning) =>
                       warning.messages.map((message) => (
-                        <li key={`${warning.featName}-${message}`}>
-                          <strong>{warning.featName}</strong>: {message}
+                        <li key={`${warning.feat_name ?? warning.choice_key}-${message}`}>
+                          <strong>{warning.feat_name ?? "Selected feat"}</strong>: {message}
                         </li>
                       )),
                     )}

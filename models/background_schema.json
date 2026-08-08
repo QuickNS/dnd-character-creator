@@ -6,6 +6,8 @@
   "required": [
     "name",
     "description",
+    "edition",
+    "status",
     "ability_score_increase",
     "effects",
     "starting_equipment"
@@ -13,6 +15,16 @@
   "properties": {
     "name": { "type": "string" },
     "description": { "type": "string" },
+    "edition": {
+      "type": "string",
+      "enum": ["2024", "2014"],
+      "description": "Rules edition for catalog filtering. Active default backgrounds must be D&D 2024; retained 2014 entries are legacy only."
+    },
+    "status": {
+      "type": "string",
+      "enum": ["active", "legacy"],
+      "description": "Catalog status. Only active 2024 backgrounds appear in the default catalog."
+    },
     "ability_score_increase": {
       "type": "object",
       "required": ["total", "options"],
@@ -82,5 +94,27 @@
       "additionalProperties": false
     }
   },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "edition": { "const": "2024" } },
+        "required": ["edition"]
+      },
+      "then": {
+        "properties": { "status": { "const": "active" } },
+        "required": ["status"]
+      }
+    },
+    {
+      "if": {
+        "properties": { "edition": { "const": "2014" } },
+        "required": ["edition"]
+      },
+      "then": {
+        "properties": { "status": { "const": "legacy" } },
+        "required": ["status"]
+      }
+    }
+  ],
   "additionalProperties": false
 }

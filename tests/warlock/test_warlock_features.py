@@ -54,6 +54,60 @@ def _effects(character):
     return character.get("effects", [])
 
 
+def test_pact_of_the_blade_uses_charisma_for_only_the_bonded_weapon():
+    builder = CharacterBuilder()
+    builder.apply_choices({
+        "character_name": "Bound Blade",
+        "level": 1,
+        "species": "Human",
+        "class": "Warlock",
+        "background": "Acolyte",
+        "ability_scores": {
+            "Strength": 10, "Dexterity": 14, "Constitution": 12,
+            "Intelligence": 8, "Wisdom": 10, "Charisma": 18,
+        },
+        "background_bonuses": {},
+        "eldritch_invocation_selections": ["Pact of the Blade"],
+        "pact_weapon": "Mace",
+    })
+    builder.character_data["equipment"] = {
+        "weapons": [
+            {
+                "name": "Mace",
+                "quantity": 1,
+                "properties": {
+                    "category": "Simple Melee",
+                    "damage": "1d6",
+                    "damage_type": "Bludgeoning",
+                    "properties": [],
+                },
+            },
+            {
+                "name": "Dagger",
+                "quantity": 1,
+                "properties": {
+                    "category": "Simple Melee",
+                    "damage": "1d4",
+                    "damage_type": "Piercing",
+                    "properties": ["Finesse", "Light"],
+                },
+            },
+        ],
+        "armor": [],
+        "items": [],
+        "gold": 0,
+    }
+
+    attacks = {
+        attack["name"]: attack for attack in builder.calculate_weapon_attacks()["attacks"]
+    }
+
+    assert attacks["Mace"]["ability"] == "CHA"
+    assert attacks["Mace"]["attack_bonus"] == 4
+    assert attacks["Mace"]["damage"] == "1d6 + 4"
+    assert attacks["Dagger"]["ability"] == "STR/DEX (DEX)"
+
+
 # ===========================================================================
 # Base Warlock Class
 # ===========================================================================
@@ -256,6 +310,79 @@ class TestWarlockInvocationCount:
         character = build_warlock(1)
         stats = character.get("eldritch_invocation_stats", {})
         assert len(stats.get("available_invocations", [])) > 0
+
+
+class TestEldritchInvocationEffects:
+    """Invocation selections must apply their data-authored sheet effects."""
+
+    @staticmethod
+    def _build_with_invocations(selection):
+        builder = CharacterBuilder()
+        builder.apply_choices(
+            {
+                "character_name": "Invocation Test",
+                "level": 5,
+                "species": "Human",
+                "class": "Warlock",
+                "background": "Acolyte",
+                "ability_scores": {
+                    "Strength": 8,
+                    "Dexterity": 14,
+                    "Constitution": 14,
+                    "Intelligence": 10,
+                    "Wisdom": 10,
+                    "Charisma": 16,
+                },
+                "eldritch_invocation_selections": selection,
+            }
+        )
+        return builder.to_character()
+
+    def test_lessons_of_the_first_ones_applies_selected_origin_feat(self):
+        character = self._build_with_invocations(
+            {
+                "selected": ["Lessons of the First Ones"],
+                "choices": {
+                    "Lessons of the First Ones": {"origin_feat": "Alert"},
+                },
+            }
+        )
+
+        feat = next(
+            feature
+            for feature in character["features"]["feats"]
+            if feature["name"] == "Alert"
+        )
+        assert feat["source"] == "Lessons of the First Ones"
+
+    def test_lessons_of_the_first_ones_rejects_non_origin_feat(self):
+        character = self._build_with_invocations(
+            {
+                "selected": ["Lessons of the First Ones"],
+                "choices": {
+                    "Lessons of the First Ones": {"origin_feat": "Dual Wielder"},
+                },
+            }
+        )
+
+        assert "Dual Wielder" not in [
+            feature["name"] for feature in character["features"]["feats"]
+        ]
+
+    def test_gift_of_the_depths_water_breathing_is_once_per_long_rest(self):
+        character = self._build_with_invocations(["Gift of the Depths"])
+
+        spell = character["spells"]["always_prepared"]["Water Breathing"]
+        metadata = character["spell_metadata"]["Water Breathing"]
+        assert spell["once_per_long_rest"] is True
+        assert metadata["once_per_long_rest"] is True
+        assert spell.get("at_will") is not True
+        assert metadata.get("at_will") is not True
+
+    def test_water_breathing_is_absent_without_gift_of_the_depths(self):
+        character = self._build_with_invocations([])
+
+        assert "Water Breathing" not in character["spells"]["always_prepared"]
 
 
 # ===========================================================================

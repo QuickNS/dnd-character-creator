@@ -11,7 +11,7 @@ import json
 from pathlib import Path
 from typing import Any, Dict, List
 
-from flask import Blueprint, jsonify, abort
+from flask import Blueprint, jsonify, abort, request
 
 from modules.data_loader import DataLoader
 
@@ -120,17 +120,30 @@ def _extract_background_feat(data: Dict[str, Any]) -> str | None:
     return None
 
 
+def _is_default_background(data: Dict[str, Any]) -> bool:
+    """Return True for backgrounds in the default D&D 2024 catalog."""
+    return data.get("edition") == "2024" and data.get("status") == "active"
+
+
 @catalog_bp.get("/backgrounds")
 def list_backgrounds():
     backgrounds = _dl().backgrounds
+    include_legacy = request.args.get("include_legacy", "").lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
     items = []
     for name, data in sorted(backgrounds.items()):
+        if not include_legacy and not _is_default_background(data):
+            continue
         enriched = dict(data)
         if "feat" not in enriched:
             feat = _extract_background_feat(data)
             if feat is not None:
                 enriched["feat"] = feat
-        items.append(_summarize(name, enriched, ["skill_proficiencies", "ability_scores", "feat"]))
+        items.append(_summarize(name, enriched, ["skill_proficiencies", "ability_scores", "feat", "edition", "status"]))
     return jsonify({"backgrounds": items})
 
 

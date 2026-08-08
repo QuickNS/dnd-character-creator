@@ -341,6 +341,33 @@ class TestBattleMasterProgression:
         feature = next(f for f in subclass_features if f["name"] == "Ultimate Combat Superiority")
         assert "d12" in feature["description"]
 
+    def test_student_of_war_selected_tool_and_skill_are_granted(self):
+        builder = CharacterBuilder()
+        builder.apply_choices(
+            {
+                "character_name": "Student of War Test",
+                "level": 3,
+                "species": "Human",
+                "class": "Fighter",
+                "subclass": "Battle Master",
+                "background": "Soldier",
+                "ability_scores": {
+                    "Strength": 14,
+                    "Dexterity": 14,
+                    "Constitution": 14,
+                    "Intelligence": 10,
+                    "Wisdom": 10,
+                    "Charisma": 10,
+                },
+                "subclass_Student of War_artisan_tool": "Smith's Tools",
+                "subclass_Student of War_fighter_skill": "Perception",
+            }
+        )
+
+        character = builder.to_character()
+        assert "Smith's Tools" in character["proficiencies"]["tools"]
+        assert "Perception" in character["proficiencies"]["skills"]
+
     @pytest.mark.parametrize(
         "level,expected_features",
         [

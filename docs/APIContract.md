@@ -31,7 +31,7 @@ Read-only access to game data. Cached aggressively on the client.
 | GET    | `/catalog/classes/<class_name>/subclasses/<subclass_name>`   | Full subclass JSON                                  |
 | GET    | `/catalog/species`                                           | `{ "species": SpeciesSummary[] }`                   |
 | GET    | `/catalog/species/<species_name>`                            | Full species JSON (with `lineages`, `traits`)       |
-| GET    | `/catalog/backgrounds`                                       | `{ "backgrounds": BackgroundSummary[] }`            |
+| GET    | `/catalog/backgrounds`                                       | `{ "backgrounds": BackgroundSummary[] }` (active D&D 2024 only by default; `?include_legacy=true` includes retained legacy entries) |
 | GET    | `/catalog/backgrounds/<background_name>`                     | Full background JSON                                |
 | GET    | `/catalog/feats?type=origin\|general`                        | `{ "feats": FeatSummary[] }` (optional filter)      |
 | GET    | `/catalog/feats/<feat_name>`                                 | Full feat JSON                                      |
@@ -59,6 +59,7 @@ interface SpeciesSummary {
 interface BackgroundSummary {
   id: string; name: string; description?: string;
   skill_proficiencies?: string[]; ability_scores?: string[]; feat?: string;
+  edition: "2024" | "2014"; status: "active" | "legacy";
 }
 
 interface FeatSummary {
@@ -66,6 +67,8 @@ interface FeatSummary {
   category?: "origin" | "general"; prerequisites?: unknown;
 }
 ```
+
+`GET /catalog/backgrounds` is the wizard/frontend default catalog and filters to backgrounds with `edition: "2024"` and `status: "active"`. Retained 2014 legacy backgrounds remain available by direct detail lookup and through `?include_legacy=true` for explicit opt-in tools.
 
 ### Errors
 
@@ -294,6 +297,14 @@ Response (200) — **always includes `step`**, plus a step-specific payload. Exa
   }],
   "features_by_level": { "1": { "Feature": "Description" } },
   "nested_choices": [ /* choice descriptors */ ],
+  "multiclass_prerequisites": {
+    "classes": {
+      "Wizard": { "ok": false, "missing": ["Intelligence"], "messages": ["Requires Intelligence 13+ (have 10)"], "abilities_unknown": false }
+    }
+  },
+  "class_feat_prerequisite_warnings": [
+    { "choice_key": "class_feat_4", "feat_name": "Great Weapon Master", "messages": ["Requires Strength 13+. Current Strength: 10."] }
+  ],
   "row_context": {
     "row_index": 0,        // index into choices_made.classes
     "is_primary": true,    // row_index == 0
@@ -385,6 +396,15 @@ Example secondary-row payload (`choices_made.classes = [{Wizard, 5}, {Rogue, 1}]
 {
   "step": "abilities",
   "background_asi": { "total_points": 3, "options": [/* */] },
+  "ability_generation": {
+    "abilities": {
+      "Strength": { "score": 10, "modifier": 0, "modifier_display": "+0", "modifier_tone": "neutral" }
+    },
+    "standard_array": { "values": [15, 14, 13, 12, 10, 8], "assigned_count": 6, "complete": true, "valid": true },
+    "point_buy": { "total": 27, "min": 8, "max": 15, "spent": 27, "remaining": 0, "valid": true, "controls": {} },
+    "manual": { "min": 3, "max": 18 },
+    "background_asi": { "spent": 3, "remaining": 0, "values_by_ability": {} }
+  },
   "recommended_array": { "STR": 8, "DEX": 14, /* … */ }
 }
 
@@ -457,6 +477,19 @@ Response (200):
 
 Errors:
 - `400` request-validation errors use the [shared error envelope](#shared-request-validation).
+
+### `POST /character/roll-abilities`
+
+Return backend-rolled 4d6-drop-lowest candidates for the ability step. The frontend displays and assigns these raw roll values; modifier labels are supplied by the backend.
+
+Response (200):
+```json
+{
+  "rolls": [
+    { "value": 14, "dice": [6, 5, 3, 1], "modifier": 2, "modifier_display": "+2", "modifier_tone": "positive" }
+  ]
+}
+```
 
 ## Canonical Request — `ChoicesMade`
 
@@ -540,10 +573,11 @@ The `Character` object is the literal output of `CharacterBuilder.to_character()
 | `ability_scores`            | `self.ability_scores.final_scores`                  | Map of ability → final score.                                         |
 | `abilities`                 | `calculate_processed_ability_scores()`              | Map of ability → `{ score, modifier, save_modifier, save_proficient, ... }`. |
 | `skills`                    | `calculate_skills()`                                | Map of skill → `{ modifier, proficient, expertise?, ... }`.           |
-| `combat`                    | `calculate_combat_stats()`                          | `{ armor_class, initiative, initiative_bonus, speed, hit_point_maximum, hit_points: { current, maximum, temporary }, hp_breakdown, hit_dice: { total, spent }, passive_perception }`. |
+| `combat`                    | `calculate_combat_stats()`                          | `{ armor_class, initiative, initiative_bonus, speed, hit_point_maximum, hit_points: { current, maximum, temporary }, hp_breakdown, hit_dice: { total, spent }, passive_perception }`. `hit_dice.total` and `passive_perception` are display-ready server-calculated values. |
 | `darkvision`                | Applied via effects system                          | Range of darkvision in feet. `0` means no darkvision. Examples: `0` (Human), `60` (Elf), `120` (Orc). |
 | `attacks`                   | `calculate_weapon_attacks().attacks`                | List of attack rows.                                                  |
-| `attack_combinations`       | `calculate_weapon_attacks().combinations`           | List of multi-weapon combinations.                                    |
+| `attack_combinations`       | `calculate_weapon_attacks().combinations`           | List of multi-weapon combinations, sorted by backend recommendation with `rank` and `recommended` fields. |
+| `best_attack_combination`   | `calculate_weapon_attacks().combinations[0]`        | Recommended attack combination for sheets.                            |
 | `ac_options`                | `calculate_ac_options()`                            | List of AC formulas with their components.                            |
 | `spells_by_level`           | Computed inline                                     | `{ [level: number]: SpellDefinition[] }` — flattens `always_prepared`, `prepared`, `known`, `background_spells` and merges with definitions from `data/spells/definitions/`. |
 | `spell_slots`               | Inline (override if supplied; otherwise computed)    | `{ "1st": n, "2nd": n, ... }` (English ordinals). For multiclass rows, standard slots come from the canonical full-caster table keyed by `effective_caster_level`; single-class fallback remains class/subclass-by-level. |
