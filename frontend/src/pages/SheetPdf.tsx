@@ -239,9 +239,7 @@ function Page1({ c, damageCantrips }: { c: Char; damageCantrips: Row[] }) {
     (bestAcOption !== null ? num(bestAcOption.ac) : undefined);
   const bestAcUsesShield = Boolean(combat.uses_shield);
 
-  const perception = rec(skills.perception);
-  const perceptionMod = num(perception.modifier) ?? num(perception.bonus) ?? 0;
-  const passive = 10 + perceptionMod;
+  const passive = num(combat.passive_perception);
 
   const armorProfs = arr<string>(c.armor_proficiencies);
   const weaponProfs = arr<string>(c.weapon_proficiencies);

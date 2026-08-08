@@ -193,6 +193,7 @@
       "total": 3
     },
     "description": "You lived in seclusion\u2014either in a sheltered community such as a monastery, or entirely alone\u2014for a formative part of your life. In your time apart from the clamor of society, you found quiet, solitude, and perhaps some of the answers you were looking for.",
+    "edition": "2024",
     "effects": [
       {
         "feat": "Healer",
@@ -225,7 +226,8 @@
       "option_b": {
         "gold": 50
       }
-    }
+    },
+    "status": "active"
   },
   "choices_made": {
     "ability_scores": {

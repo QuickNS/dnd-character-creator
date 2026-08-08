@@ -649,6 +649,7 @@ Every valid `effect.type` string accepted by `_apply_effect()`. Using a value no
 | `bonus_ac` | Combat | Adds entry to `ac_bonuses` |
 | `bonus_damage` | Combat | Adds entry to `damage_bonuses` |
 | `bonus_attack` | Combat | Adds entry to `attack_bonuses` |
+| `attack_ability_override` | Combat | Uses an ability for the weapon named by `choices_made[weapon_tag]` when it is better |
 | `bonus_hp` | Combat | Adds entry to `hp_bonuses` |
 | `bonus_initiative` | Combat | Adds entry to `initiative_bonuses` |
 | `bonus_spell_damage_ability_mod` | Combat | Writes `spell_metadata[spell]["damage_bonus"]` |

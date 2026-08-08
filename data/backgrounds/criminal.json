@@ -1,6 +1,8 @@
 {
   "name": "Criminal",
   "description": "You are an experienced criminal with a history of breaking the law. You have spent a lot of time among other criminals and still have contacts within the criminal underworld.",
+  "edition": "2024",
+  "status": "active",
   "ability_score_increase": {
     "total": 3,
     "options": [

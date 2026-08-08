@@ -541,9 +541,8 @@ function CoreStats({ c }: { c: Char }) {
   const passive = num(combat.passive_perception);
   const pb = num(c.proficiency_bonus);
   const hpMax = num(hp.maximum) ?? num(combat.hp);
-  const classData = rec(c.class_data);
-  const hitDie = num(classData.hit_die);
-  const level = num(c.level);
+  const hitDice = rec(combat.hit_dice);
+  const hitDiceTotal = str(hitDice.total) ?? num(hitDice.total);
   return (
     <Section title="Combat">
       <dl className="grid grid-cols-2 sm:grid-cols-3 gap-y-3 gap-x-6 text-sm">
@@ -554,11 +553,7 @@ function CoreStats({ c }: { c: Char }) {
         <Stat label="Proficiency Bonus" value={signed(pb)} />
         <Stat
           label="Hit Dice"
-          value={
-            level !== undefined && hitDie !== undefined
-              ? `${level}d${hitDie}`
-              : "—"
-          }
+          value={hitDiceTotal}
         />
       </dl>
     </Section>
@@ -932,38 +927,11 @@ function Attacks({
   const attacks = arr<Record<string, unknown>>(c.attacks);
   const combinations = arr<Record<string, unknown>>(c.attack_combinations);
 
-  const bestCombination = combinations
-    .map((combo, index) => {
-      const mainhand = rec(combo.mainhand);
-      const offhand = rec(combo.offhand);
-      const mainAvg = num(mainhand.avg_damage) ?? 0;
-      const offAvg = num(offhand.avg_damage) ?? 0;
-      const mainBonus = num(mainhand.attack_bonus) ?? 0;
-      const offBonus = num(offhand.attack_bonus) ?? 0;
-
-      return {
-        combo,
-        index,
-        avgScore: mainAvg + offAvg,
-        bonusScore: mainBonus + offBonus,
-      };
-    })
-    .reduce<
-      | {
-          combo: Record<string, unknown>;
-          index: number;
-          avgScore: number;
-          bonusScore: number;
-        }
-      | undefined
-    >((best, current) => {
-      if (!best) return current;
-      if (current.avgScore > best.avgScore) return current;
-      if (current.avgScore < best.avgScore) return best;
-      if (current.bonusScore > best.bonusScore) return current;
-      if (current.bonusScore < best.bonusScore) return best;
-      return best;
-    }, undefined)?.combo;
+  const serverBestCombination = rec(c.best_attack_combination);
+  const bestCombination =
+    Object.keys(serverBestCombination).length > 0
+      ? serverBestCombination
+      : combinations.find((combo) => combo.recommended === true) ?? combinations[0];
 
   const bestMainhand = rec(bestCombination?.mainhand);
   const bestOffhand = rec(bestCombination?.offhand);

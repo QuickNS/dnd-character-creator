@@ -117,6 +117,8 @@
         "icon": "/static/images/weapons/axe.svg",
         "name": "Handaxe"
       },
+      "rank": 1,
+      "recommended": true,
       "type": "combination"
     }
   ],
@@ -247,6 +249,31 @@
         "gold": 50
       }
     }
+  },
+  "best_attack_combination": {
+    "mainhand": {
+      "attack_bonus": 5,
+      "attack_bonus_display": "+5",
+      "avg_damage": 6.5,
+      "damage": "1d6 + 3",
+      "damage_type": "Slashing",
+      "icon": "/static/images/weapons/axe.svg",
+      "name": "Handaxe"
+    },
+    "name": "Two Handaxes",
+    "notes": [],
+    "offhand": {
+      "attack_bonus": 5,
+      "attack_bonus_display": "+5",
+      "avg_damage": 3.5,
+      "damage": "1d6",
+      "damage_type": "Slashing",
+      "icon": "/static/images/weapons/axe.svg",
+      "name": "Handaxe"
+    },
+    "rank": 1,
+    "recommended": true,
+    "type": "combination"
   },
   "choices_made": {
     "ability_scores": {
