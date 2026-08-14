@@ -1,6 +1,8 @@
 {
   "name": "Noble",
   "description": "You understand wealth, power, and privilege. You carry a noble title, and your family owns land, collects taxes, and wields significant political influence. You might be a pampered aristocrat unfamiliar with work or discomfort, a former merchant just elevated to the nobility, or a disinherited scoundrel with a disproportionate sense of entitlement.",
+  "edition": "2024",
+  "status": "active",
   "ability_score_increase": {
     "total": 3,
     "options": [

@@ -29,7 +29,15 @@ from pathlib import Path
 from typing import Dict, List, Any, Optional, Tuple
 from copy import deepcopy
 
-from .ability_scores import AbilityScores
+from .ability_scores import (
+    ABILITIES,
+    POINT_BUY_COSTS,
+    POINT_BUY_MAX,
+    POINT_BUY_MIN,
+    POINT_BUY_TOTAL,
+    AbilityScores,
+    validate_point_buy,
+)
 from .feature_manager import FeatureManager
 from .hp_calculator import HPCalculator
 from .variant_manager import VariantManager
@@ -287,6 +295,7 @@ class CharacterBuilder:
             "hp_bonuses": [],                # bonus_hp      (Tough feat, Hill Dwarf, ...)
             "initiative_bonuses": [],        # bonus_initiative (Alert feat, ...)
             "alternative_ac_options": [],    # alternative_ac (Monk/Barbarian Unarmored Defense)
+            "attack_ability_overrides": [],  # attack_ability_override (Pact of the Blade)
             "fighting_style_flags": {
                 "great_weapon_fighting": [],         # list of source names
                 "two_weapon_fighting_modifier": [],  # list of source names
@@ -1468,7 +1477,9 @@ class CharacterBuilder:
                 else:
                     display_source = source_name
 
-                # Determine if spell is 1/day (for species/lineage spells)
+                # Species/lineage grants retain the legacy once-per-day flag.
+                # Explicit long-rest grants carry their independent metadata.
+                once_per_long_rest = bool(effect.get("once_per_long_rest", False))
                 once_per_day = source_type in ["species", "lineage"]
 
                 # Add to always_prepared dict with metadata
@@ -1477,6 +1488,7 @@ class CharacterBuilder:
                     "source": display_source,
                     "always_prepared": True,
                     "once_per_day": once_per_day,
+                    "once_per_long_rest": once_per_long_rest,
                     "counts_against_limit": counts_against_limit,
                 }
 
@@ -1485,6 +1497,7 @@ class CharacterBuilder:
                     "source": display_source,
                     "source_type": source_type,
                     "once_per_day": once_per_day,
+                    "once_per_long_rest": once_per_long_rest,
                     "always_prepared": True,
                     "counts_against_limit": counts_against_limit,
                 }
@@ -1522,8 +1535,16 @@ class CharacterBuilder:
                     )
 
         elif effect_type == "grant_tool_proficiency":
-            tools = effect.get("tools", [])
+            if "from_choice" in effect:
+                chosen = self.character_data.get("choices_made", {}).get(
+                    effect["from_choice"]
+                )
+                tools = chosen if isinstance(chosen, list) else [chosen] if chosen else []
+            else:
+                tools = effect.get("tools", [])
             for tool in tools:
+                if not isinstance(tool, str) or not tool:
+                    continue
                 if tool not in self.character_data["proficiencies"]["tools"]:
                     self.character_data["proficiencies"]["tools"].append(tool)
                     # Track the source of this tool proficiency
@@ -1538,7 +1559,13 @@ class CharacterBuilder:
                     )
 
         elif effect_type == "grant_skill_proficiency":
-            skills = effect.get("skills", [])
+            if "from_choice" in effect:
+                chosen = self.character_data.get("choices_made", {}).get(
+                    effect["from_choice"]
+                )
+                skills = chosen if isinstance(chosen, list) else [chosen] if chosen else []
+            else:
+                skills = effect.get("skills", [])
             for skill in skills:
                 if not isinstance(skill, str) or is_unresolved_placeholder(skill):
                     continue
@@ -1804,6 +1831,17 @@ class CharacterBuilder:
             # Martial Melee with Light property)
             self.character_data["monk_dexterous_attacks"] = True
 
+        elif effect_type == "attack_ability_override":
+            ability = effect.get("ability")
+            weapon_tag = effect.get("weapon_tag")
+            if isinstance(ability, str) and isinstance(weapon_tag, str):
+                self.character_data["attack_ability_overrides"].append({
+                    "ability": ability,
+                    "weapon_tag": weapon_tag,
+                    "source": source_name,
+                    "source_type": source_type,
+                })
+
         elif effect_type == "grant_language":
             # Resolve languages from a choice key if specified, otherwise use direct list
             if "from_choice" in effect:
@@ -1877,8 +1915,52 @@ class CharacterBuilder:
             # e.g. Armor of Shadows -> Mage Armor). Recorded in the same
             # `always_prepared` dict that `grant_spell` writes to, with an
             # `at_will: True` flag so renderers can annotate "(at will)".
-            spell_name = effect.get("spell")
-            if isinstance(spell_name, str) and spell_name:
+            if "from_choice" in effect:
+                chosen = self.character_data.get("choices_made", {}).get(
+                    effect["from_choice"]
+                )
+                spell_names = chosen if isinstance(chosen, list) else [chosen] if chosen else []
+            else:
+                spell_names = [effect.get("spell")]
+
+            eligible_from = effect.get("eligible_from")
+            if eligible_from == "spellbook":
+                spellbook = self.character_data["spells"].get("spellbook", {})
+                if isinstance(spellbook, dict):
+                    eligible_names = set(spellbook)
+                elif isinstance(spellbook, list):
+                    eligible_names = {
+                        item if isinstance(item, str) else item.get("name")
+                        for item in spellbook
+                        if isinstance(item, (str, dict))
+                    }
+                else:
+                    eligible_names = set()
+                spell_names = [name for name in spell_names if name in eligible_names]
+
+            required_casting_time = effect.get("casting_time")
+            if required_casting_time:
+                if any(
+                    not isinstance(name, str)
+                    or self._load_spell_definition(name).get("casting_time")
+                    != required_casting_time
+                    for name in spell_names
+                ):
+                    spell_names = []
+
+            required_levels = effect.get("spell_levels")
+            if isinstance(required_levels, list):
+                selected_levels = [
+                    self._load_spell_definition(name).get("level")
+                    for name in spell_names
+                    if isinstance(name, str)
+                ]
+                if sorted(selected_levels) != sorted(required_levels):
+                    spell_names = []
+
+            for spell_name in spell_names:
+                if not isinstance(spell_name, str) or not spell_name:
+                    continue
                 spell_def = self._load_spell_definition(spell_name) or {}
                 spell_level = spell_def.get("level", 0)
                 if source_type == "subclass":
@@ -2943,17 +3025,47 @@ class CharacterBuilder:
         equipment = self.character_data.get("equipment")
         proficiencies = self.character_data.get("proficiencies", {}).get("armor", [])
 
-        # Check for bonus_ac effects (e.g., Defense fighting style)
-        # Phase 6: read from structured field, not applied_effects.
-        ac_bonus = 0
-        ac_bonus_entries = []
-        for entry in self.character_data.get("ac_bonuses", []):
-            # Condition checking is done per option (e.g. "wearing armor" only
-            # applies when armor is equipped). For now we accumulate the raw
-            # bonus value and the calling code applies it only to armored options.
-            bonus_value = entry.get("value", 0)
-            ac_bonus += bonus_value
-            ac_bonus_entries.append((entry.get("source", "Unknown"), bonus_value))
+        def _ac_bonuses_for(armored: bool) -> List[Tuple[str, int]]:
+            """Resolve data-authored AC conditions for one equipment option."""
+            weapons = (equipment or {}).get("weapons", [])
+
+            def _weapon_data(weapon: Dict[str, Any]) -> Dict[str, Any]:
+                """Read direct weapon fields or the legacy catalog-entry wrapper."""
+                properties = weapon.get("properties")
+                return properties if isinstance(properties, dict) else weapon
+
+            wieldable_weapon_count = sum(
+                max(int(weapon.get("quantity", 1) or 1), 1)
+                for weapon in weapons
+                if isinstance(weapon, dict)
+                and "Melee" in _weapon_data(weapon).get("category", "")
+                and "Two-Handed" not in _weapon_data(weapon).get("properties", [])
+            )
+            entries = []
+            for entry in self.character_data.get("ac_bonuses", []):
+                condition = entry.get("condition", "")
+                applies = (
+                    not condition
+                    or (condition == "wearing armor" and armored)
+                    or (
+                        condition == "wielding two weapons"
+                        and wieldable_weapon_count >= 2
+                    )
+                )
+                if applies:
+                    entries.append(
+                        (entry.get("source", "Unknown"), entry.get("value", 0))
+                    )
+            return entries
+
+        def _apply_ac_bonuses(option: Dict[str, Any], armored: bool) -> None:
+            for source, value in _ac_bonuses_for(armored):
+                if not value:
+                    continue
+                option["ac"] += value
+                sign = "+" if value > 0 else "-"
+                option["notes"].append(f"{sign}{abs(value)} from {source}")
+                option["formula"] += f" + {source} ({sign}{abs(value)})"
 
         # Handle case where equipment is None (like in tests)
         if equipment is None:
@@ -2969,6 +3081,7 @@ class CharacterBuilder:
                     "equipped_armor": None,
                 }
             ]
+            _apply_ac_bonuses(ac_options[0], armored=False)
 
             # Check for alternative AC formulas (e.g., Monk/Barbarian Unarmored Defense)
             # Phase 6: read from structured field, not applied_effects.
@@ -2993,6 +3106,7 @@ class CharacterBuilder:
                     "notes": [source_name],
                     "equipped_armor": None,
                 }
+                _apply_ac_bonuses(alt_option, armored=False)
                 ac_options.append(alt_option)
 
             ac_options.sort(key=lambda x: x["ac"], reverse=True)
@@ -3015,13 +3129,7 @@ class CharacterBuilder:
                 )
                 ac_option["equipped_armor"] = armor_name
 
-                # Apply bonus_ac if wearing armor
-                if ac_bonus > 0:
-                    ac_option["ac"] += ac_bonus
-                    for source, value in ac_bonus_entries:
-                        if value > 0:
-                            ac_option["notes"].append(f"+{value} from {source}")
-                            ac_option["formula"] += f" + {source} (+{value})"
+                _apply_ac_bonuses(ac_option, armored=True)
 
                 ac_options.append(ac_option)
 
@@ -3042,6 +3150,7 @@ class CharacterBuilder:
             "notes": [],
             "equipped_armor": None,
         }
+        _apply_ac_bonuses(unarmored_option, armored=False)
         ac_options.append(unarmored_option)
 
         # Check for alternative AC formulas (e.g., Monk/Barbarian Unarmored Defense)
@@ -3078,6 +3187,7 @@ class CharacterBuilder:
                 "notes": [source_name],
                 "equipped_armor": None,
             }
+            _apply_ac_bonuses(alt_option, armored=False)
 
             # Replace default unarmored if this is better
             ac_options.append(alt_option)
@@ -3601,7 +3711,8 @@ class CharacterBuilder:
             # back into the nested object at the end of apply_choices().
             if isinstance(choice_value, dict):
                 for trait_name, trait_value in choice_value.items():
-                    self.apply_choice(trait_name, trait_value)
+                    if not self.apply_choice(trait_name, trait_value):
+                        return False
             return True
         elif choice_key_lower == "class":
             return self.set_class(choice_value, self.character_data.get("level", 1))
@@ -3843,6 +3954,27 @@ class CharacterBuilder:
                 self.character_data["spells"]["background_spells"][cantrip] = {"level": 0}
             for spell in validated["background_spells"]:
                 self.character_data["spells"]["background_spells"][spell] = {"level": 1}
+
+            if isinstance(choice_value, dict):
+                # Wizards retain a separate spellbook. It is intentionally not
+                # inferred from prepared spells: class features such as Spell
+                # Mastery select from the book, not merely today's preparations.
+                spellbook = choice_value.get("spellbook", [])
+                if isinstance(spellbook, dict):
+                    if spellbook:
+                        self.character_data["spells"]["spellbook"] = dict(spellbook)
+                    elif "spellbook" in choice_value:
+                        self.character_data["spells"].pop("spellbook", None)
+                elif isinstance(spellbook, list):
+                    spellbook_entries = {
+                        spell: {}
+                        for spell in spellbook
+                        if isinstance(spell, str) and spell
+                    }
+                    if spellbook_entries:
+                        self.character_data["spells"]["spellbook"] = spellbook_entries
+                    elif "spellbook" in choice_value:
+                        self.character_data["spells"].pop("spellbook", None)
             return True
 
         # Weapon Mastery - removed from creation wizard, managed post-creation
@@ -3863,15 +3995,45 @@ class CharacterBuilder:
 
         # Eldritch Invocation selections - restore user-selected invocations
         elif choice_key_lower == "eldritch_invocation_selections":
-            selected_invocations = self._validate_eldritch_invocation_selections(choice_value)
-            if "eldritch_invocations" not in self.character_data:
-                self.character_data["eldritch_invocations"] = {"selected": []}
-            self.character_data["eldritch_invocations"]["selected"] = selected_invocations
-            # Phase 7 (D0-1): route each chosen invocation through the
-            # single dispatcher. Sheet-affecting invocations carry an
-            # `effects` array in data/eldritch_invocations.json; we load
-            # the file once and apply effects per chosen invocation.
-            self._apply_eldritch_invocation_effects(selected_invocations)
+            invocation_selections = self._normalize_eldritch_invocation_selections(
+                choice_value
+            )
+            if invocation_selections is None:
+                return False
+            selected_invocations = self._validate_eldritch_invocation_selections(
+                invocation_selections["selected"]
+            )
+            invocation_selections["selected"] = selected_invocations
+            if not self._validate_eldritch_invocation_cantrip_choices(
+                invocation_selections
+            ):
+                raise SelectionValidationError(
+                    family="eldritch_invocation_selections",
+                    code="invalid_selection",
+                    message=(
+                        "Submitted Eldritch Invocation selections are not valid for this character"
+                    ),
+                    violations=[
+                        {
+                            "field": "eldritch_invocation_selections.cantrip_choices",
+                            "reason": "invalid_cantrip_choices",
+                        }
+                    ],
+                )
+
+            # Store and export one canonical shape.  List input remains accepted
+            # for saved characters created before cantrip choices were modeled.
+            self.character_data["choices_made"][choice_key] = invocation_selections
+            self.character_data["eldritch_invocations"] = invocation_selections
+
+            # Route each chosen invocation through the single dispatcher.  The
+            # cantrip-choice effects are materialized as grant_cantrip effects
+            # after their selections have been validated.
+            self._apply_eldritch_invocation_effects(
+                invocation_selections["selected"],
+                invocation_selections["cantrip_choices"],
+                invocation_selections["choices"],
+            )
             return True
 
         # Nested bonus choices (e.g., Thaumaturge_bonus_cantrip)
@@ -4218,6 +4380,20 @@ class CharacterBuilder:
                 matches_by_choice_name = any(
                     c.get("name") == choice_key for c in choices_list
                 )
+
+                # A feature effect can reference the canonical persisted key
+                # for one of its choices (for example, a selected tool or
+                # spell). Resolve it here so direct apply_choice() calls and
+                # batch rebuilds use the same dispatcher path.
+                for effect in feature_data.get("effects", []):
+                    if (
+                        isinstance(effect, dict)
+                        and effect.get("from_choice") == choice_key
+                    ):
+                        results.append((effect, feature_name, "class_choice"))
+
+                if results:
+                    return results
 
                 if not (matches_by_feature_name or matches_by_choice_name):
                     continue
@@ -5199,7 +5375,7 @@ class CharacterBuilder:
             choices["species_trait_choices"] = nested
         return choices
 
-    def apply_choices(self, choices: Dict[str, Any]) -> bool:
+    def apply_choices(self, choices: Dict[str, Any], *, fail_on_error: bool = False) -> bool:
         """
         Apply multiple choices at once from a choices dictionary.
         This is useful for batch operations like rebuilding from saved choices.
@@ -5291,7 +5467,9 @@ class CharacterBuilder:
                     # score reassignment over explicit ability_scores.
                     self.character_data["choices_made"][key] = choices[key]
                     continue
-                self.apply_choice(key, working_choices[key])
+                applied = self.apply_choice(key, working_choices[key])
+                if fail_on_error and not applied:
+                    return False
 
         # Invariant: species and class must be loaded before remaining choices.
         assert self.character_data.get("species") or not working_choices.get("species"), \
@@ -5318,7 +5496,9 @@ class CharacterBuilder:
         # ascending, so 0 < 1 means parents are processed first.
         remaining_keys.sort(key=lambda k: (1 if _CLASS_FEAT_SUB_RE.match(k) else 0))
         for key in remaining_keys:
-            self.apply_choice(key, working_choices[key])
+            applied = self.apply_choice(key, working_choices[key])
+            if fail_on_error and not applied:
+                return False
 
         # ── Multiclass block ─────────────────────────────────────────────────
         # Apply additional class tracks and recalculate totals.  Runs after
@@ -5347,9 +5527,11 @@ class CharacterBuilder:
         # Apply species_skill_replacements after trait effects so overlap
         # detection sees the full proficiency picture.
         if "species_skill_replacements" in choices:
-            self.apply_choice(
+            applied = self.apply_choice(
                 "species_skill_replacements", choices["species_skill_replacements"]
             )
+            if fail_on_error and not applied:
+                return False
 
         # ── Finalize ────────────────────────────────────────────────────────
         # Apply pending dynamic effects (e.g. damage_type_from_choice
@@ -5390,11 +5572,17 @@ class CharacterBuilder:
                     if "damage_type_from_choice" in effect:
                         self._apply_effect(effect, trait_name, data_key.replace("_data", ""))
 
-        # Also scan class features for grant_skill_expertise effects that use from_choice.
-        # These must be re-applied after all choices are made because the expertise
-        # selection arrives in the second pass of apply_choices (after set_class runs).
-        class_data = self.character_data.get("class_data")
-        if isinstance(class_data, dict):
+        # Re-apply class and subclass effects whose payload comes from a later
+        # feature choice. Class features are initially walked before the second
+        # pass of apply_choices, so this is the generic deferred resolution
+        # point for all ``from_choice`` effects.
+        for data_key, source_type in (
+            ("class_data", "class"),
+            ("subclass_data", "subclass"),
+        ):
+            class_data = self.character_data.get(data_key)
+            if not isinstance(class_data, dict):
+                continue
             level = self.character_data.get("level", 1)
             for level_str, level_features in class_data.get("features_by_level", {}).items():
                 if not isinstance(level_features, dict):
@@ -5405,16 +5593,8 @@ class CharacterBuilder:
                     if not isinstance(feature_data, dict):
                         continue
                     for effect in feature_data.get("effects", []):
-                        if (
-                            effect.get("type") == "grant_skill_expertise"
-                            and "from_choice" in effect
-                        ):
-                            self._apply_effect(effect, feature_name, "class")
-                        elif (
-                            effect.get("type") == "grant_language"
-                            and "from_choice" in effect
-                        ):
-                            self._apply_effect(effect, feature_name, "class")
+                        if isinstance(effect, dict) and "from_choice" in effect:
+                            self._apply_effect(effect, feature_name, source_type)
 
     # ==================== Calculation Methods ====================
 
@@ -5764,7 +5944,138 @@ class CharacterBuilder:
 
         return stats
 
-    def _apply_eldritch_invocation_effects(self, invocation_names: List[str]) -> None:
+    @staticmethod
+    def _eldritch_invocation_choice_id(
+        invocation_name: str, effect_index: int
+    ) -> str:
+        """Return the stable id for an invocation effect's cantrip picker."""
+        invocation_id = re.sub(r"[^a-z0-9]+", "_", invocation_name.lower()).strip("_")
+        return f"eldritch_invocation_{invocation_id}_{effect_index}"
+
+    def _load_eldritch_invocations(self) -> Dict[str, Any]:
+        """Load the invocation data set, returning an empty map on cache errors."""
+        path = self.data_dir / "eldritch_invocations.json"
+        if not path.exists():
+            return {}
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            return data if isinstance(data, dict) else {}
+        except (OSError, json.JSONDecodeError):
+            return {}
+
+    def _normalize_eldritch_invocation_selections(
+        self, value: Any
+    ) -> Optional[Dict[str, Any]]:
+        """Accept legacy invocation lists and normalize to the canonical object."""
+        if isinstance(value, list):
+            selected, cantrip_choices, choices = value, {}, {}
+        elif isinstance(value, dict):
+            selected = value.get("selected", [])
+            cantrip_choices = value.get("cantrip_choices", {})
+            choices = value.get("choices", {})
+        else:
+            return None
+
+        if not isinstance(selected, list) or not all(
+            isinstance(name, str) for name in selected
+        ):
+            return None
+        if not isinstance(cantrip_choices, dict) or not isinstance(choices, dict):
+            return None
+
+        normalized_choices: Dict[str, List[str]] = {}
+        for choice_id, spells in cantrip_choices.items():
+            if not isinstance(choice_id, str) or not isinstance(spells, list):
+                return None
+            if not all(isinstance(spell, str) for spell in spells):
+                return None
+            normalized_choices[choice_id] = spells
+        return {
+            "selected": selected,
+            "cantrip_choices": normalized_choices,
+            "choices": choices,
+        }
+
+    def _eldritch_invocation_cantrip_choice_descriptors(
+        self,
+        invocation_names: List[str],
+        cantrip_choices: Dict[str, List[str]],
+        all_invocations: Optional[Dict[str, Any]] = None,
+    ) -> List[Dict[str, Any]]:
+        """Build data-driven cantrip pickers for selected invocation effects."""
+        all_invocations = (
+            all_invocations
+            if all_invocations is not None
+            else self._load_eldritch_invocations()
+        )
+        descriptors: List[Dict[str, Any]] = []
+        for invocation_name in invocation_names:
+            invocation = all_invocations.get(invocation_name)
+            if not isinstance(invocation, dict):
+                continue
+            effects = invocation.get("effects", [])
+            if not isinstance(effects, list):
+                continue
+            for effect_index, effect in enumerate(effects):
+                if not isinstance(effect, dict) or effect.get("type") != "grant_cantrip_choice":
+                    continue
+                spell_list = effect.get("spell_list")
+                if not isinstance(spell_list, str):
+                    continue
+                spell_list_data = self._load_json_file(
+                    self.data_dir / "spells" / "class_lists" / f"{spell_list.lower()}.json"
+                ) or {}
+                options = spell_list_data.get("cantrips", [])
+                if not isinstance(options, list):
+                    options = []
+                choice_id = self._eldritch_invocation_choice_id(
+                    invocation_name, effect_index
+                )
+                try:
+                    count = int(effect.get("count", 1))
+                except (TypeError, ValueError):
+                    count = 0
+                descriptors.append(
+                    {
+                        "id": choice_id,
+                        "invocation": invocation_name,
+                        "count": max(0, count),
+                        "spell_list": spell_list,
+                        "options": options,
+                        "selected": cantrip_choices.get(choice_id, []),
+                    }
+                )
+        return descriptors
+
+    def _validate_eldritch_invocation_cantrip_choices(
+        self, invocation_selections: Dict[str, Any]
+    ) -> bool:
+        """Ensure invocation cantrip picks use their effect's class list and cap."""
+        selected = invocation_selections["selected"]
+        cantrip_choices = invocation_selections["cantrip_choices"]
+        descriptors = self._eldritch_invocation_cantrip_choice_descriptors(
+            selected, cantrip_choices
+        )
+        descriptors_by_id = {descriptor["id"]: descriptor for descriptor in descriptors}
+        if any(choice_id not in descriptors_by_id for choice_id in cantrip_choices):
+            return False
+        for descriptor in descriptors:
+            choices = descriptor["selected"]
+            if (
+                len(choices) > descriptor["count"]
+                or len(choices) != len(set(choices))
+                or any(choice not in descriptor["options"] for choice in choices)
+            ):
+                return False
+        return True
+
+    def _apply_eldritch_invocation_effects(
+        self,
+        invocation_names: List[str],
+        cantrip_choices: Optional[Dict[str, List[str]]] = None,
+        invocation_choices: Optional[Dict[str, Dict[str, Any]]] = None,
+    ) -> None:
         """Phase 7 (D0-1): apply sheet-affecting invocation effects.
 
         Each chosen invocation may carry an ``effects`` array in
@@ -5780,24 +6091,68 @@ class CharacterBuilder:
         """
         if not invocation_names:
             return
-        import json as _json
-        from pathlib import Path as _Path
-        path = _Path(__file__).resolve().parent.parent / "data" / "eldritch_invocations.json"
-        if not path.exists():
-            return
-        try:
-            with open(path, "r", encoding="utf-8") as f:
-                all_invocations = _json.load(f)
-        except (OSError, _json.JSONDecodeError):
-            return
+        cantrip_choices = cantrip_choices or {}
+        all_invocations = self._load_eldritch_invocations()
+        invocation_choices = invocation_choices or {}
         for name in invocation_names:
             inv = all_invocations.get(name) or {}
             effects = inv.get("effects") or []
             if not isinstance(effects, list):
                 continue
-            for effect in effects:
+
+            resolved_choices: Dict[str, Any] = {}
+            selected_choice_values = invocation_choices.get(name, {})
+            if not isinstance(selected_choice_values, dict):
+                selected_choice_values = {}
+            for choice in inv.get("choices", []):
+                if not isinstance(choice, dict):
+                    continue
+                choice_name = choice.get("name")
+                selected_value = selected_choice_values.get(choice_name)
+                if not isinstance(choice_name, str) or selected_value is None:
+                    continue
+                selected_values = (
+                    selected_value if isinstance(selected_value, list) else [selected_value]
+                )
+                options = resolve_choice_options(choice, self.character_data)
+                count = choice.get("count", 1)
+                if (
+                    len(selected_values) == count
+                    and all(value in options for value in selected_values)
+                ):
+                    resolved_choices[choice_name] = selected_value
+
+            for effect_index, effect in enumerate(effects):
                 if isinstance(effect, dict):
-                    self._apply_effect(effect, name, "invocation")
+                    resolved_effect = dict(effect)
+                    choice_name = resolved_effect.get("from_choice")
+                    choice_field = resolved_effect.get("choice_field")
+                    if choice_name and choice_field:
+                        selected_value = resolved_choices.get(choice_name)
+                        if isinstance(selected_value, list):
+                            if len(selected_value) != 1:
+                                continue
+                            selected_value = selected_value[0]
+                        if not isinstance(selected_value, str):
+                            continue
+                        resolved_effect[choice_field] = selected_value
+                    self._apply_effect(resolved_effect, name, "invocation")
+                    if effect.get("type") == "grant_cantrip_choice":
+                        choice_id = self._eldritch_invocation_choice_id(
+                            name, effect_index
+                        )
+                        for spell_name in cantrip_choices.get(choice_id, []):
+                            self._apply_effect(
+                                {
+                                    "type": "grant_cantrip",
+                                    "spell": spell_name,
+                                    "counts_against_limit": effect.get(
+                                        "counts_against_limit", False
+                                    ),
+                                },
+                                name,
+                                "invocation",
+                            )
 
     def calculate_eldritch_invocation_stats(self) -> Dict[str, Any]:
         """
@@ -5830,24 +6185,22 @@ class CharacterBuilder:
         stats["has_invocations"] = True
         stats["max_invocations"] = max_invocations
 
-        # Load all invocations from data file
-        import json
-        from pathlib import Path
-
-        invocations_file = Path(__file__).parent.parent / "data" / "eldritch_invocations.json"
-        all_invocations: Dict[str, Any] = {}
-        if invocations_file.exists():
-            try:
-                with open(invocations_file, "r") as f:
-                    all_invocations = json.load(f)
-            except (json.JSONDecodeError, IOError):
-                pass
+        # Load all invocations from data file.
+        all_invocations = self._load_eldritch_invocations()
 
         # Get current invocation selections
-        current_invocations = self.character_data.get("eldritch_invocations", {}).get(
-            "selected", []
-        )
+        invocation_selections = self._normalize_eldritch_invocation_selections(
+            self.character_data.get("eldritch_invocations", {})
+        ) or {"selected": [], "cantrip_choices": {}}
+        current_invocations = invocation_selections["selected"]
         stats["current_invocations"] = current_invocations
+        cantrip_choice_descriptors = self._eldritch_invocation_cantrip_choice_descriptors(
+            current_invocations,
+            invocation_selections["cantrip_choices"],
+            all_invocations,
+        )
+        if cantrip_choice_descriptors:
+            stats["cantrip_choice_descriptors"] = cantrip_choice_descriptors
 
         # Filter available invocations based on character level and prerequisites
         available: list[Dict[str, Any]] = []
@@ -6057,6 +6410,18 @@ class CharacterBuilder:
                 else:
                     ability_mod = str_mod
                     ability_name = "STR"
+
+            for override in self.character_data.get("attack_ability_overrides", []):
+                selected_weapon = self.character_data["choices_made"].get(
+                    override["weapon_tag"]
+                )
+                if selected_weapon != weapon_name:
+                    continue
+                ability = override["ability"].lower()
+                override_mod = ability_scores.get(ability, {}).get("modifier", 0)
+                if override_mod > ability_mod:
+                    ability_mod = override_mod
+                    ability_name = override["ability"].upper()[:3]
 
             # Check proficiency
             is_proficient = self._has_weapon_proficiency(weapon_props, weapon_profs)
@@ -6389,6 +6754,19 @@ class CharacterBuilder:
                         weapon1, weapon2, proficiency_bonus
                     )
                     combinations.append(combo)
+
+        combinations.sort(
+            key=lambda combo: (
+                (combo.get("mainhand", {}).get("avg_damage") or 0)
+                + (combo.get("offhand", {}).get("avg_damage") or 0),
+                (combo.get("mainhand", {}).get("attack_bonus") or 0)
+                + (combo.get("offhand", {}).get("attack_bonus") or 0),
+            ),
+            reverse=True,
+        )
+        for index, combo in enumerate(combinations, start=1):
+            combo["rank"] = index
+            combo["recommended"] = index == 1
 
         # Clean up temporary fields for all attacks
         for attack in attacks:
@@ -6724,11 +7102,9 @@ class CharacterBuilder:
             proficiency_bonus,
         )
 
-        # Check if proficient in Perception
-        skill_proficiencies = self.character_data.get("proficiencies", {}).get(
-            "skills", []
+        perception_bonus = (
+            self.calculate_skills().get("perception", {}).get("modifier", wis_modifier)
         )
-        perception_proficient = "Perception" in skill_proficiencies
 
         best_option = ac_options[0] if ac_options else {}
         return {
@@ -6741,9 +7117,301 @@ class CharacterBuilder:
             "hit_points": {"current": max_hp, "maximum": max_hp, "temporary": 0},
             "hp_breakdown": hp_breakdown,
             "hit_dice": {"total": hit_dice_total, "spent": 0},
-            "passive_perception": 10
-            + wis_modifier
-            + (proficiency_bonus if perception_proficient else 0),
+            "passive_perception": 10 + perception_bonus,
+        }
+
+    @staticmethod
+    def _modifier_tone(modifier: int) -> str:
+        if modifier > 0:
+            return "positive"
+        if modifier < 0:
+            return "negative"
+        return "neutral"
+
+    @staticmethod
+    def _format_signed(value: int) -> str:
+        return f"+{value}" if value >= 0 else str(value)
+
+    def get_ability_generation_state(self) -> Dict[str, Any]:
+        """Return display/validation state for the frontend ability step."""
+        choices = self.character_data.get("choices_made", {})
+        method = choices.get("ability_scores_method", "standard_array")
+        raw_scores = choices.get("ability_scores")
+        scores = raw_scores if isinstance(raw_scores, dict) else {}
+
+        ability_rows: Dict[str, Dict[str, Any]] = {}
+        for ability in ABILITIES:
+            score = scores.get(ability, self.ability_scores.base_scores.get(ability, 8))
+            try:
+                score_int = int(score)
+            except (TypeError, ValueError):
+                score_int = 8
+            modifier = self.calculate_ability_modifier(score_int)
+            ability_rows[ability] = {
+                "score": score_int,
+                "modifier": modifier,
+                "modifier_display": self._format_signed(modifier),
+                "modifier_tone": self._modifier_tone(modifier),
+            }
+
+        standard_array = [15, 14, 13, 12, 10, 8]
+        selected = []
+        for ability in ABILITIES:
+            try:
+                selected.append(int(scores.get(ability)))
+            except (TypeError, ValueError):
+                pass
+        standard_complete = len(selected) == len(ABILITIES)
+        standard_valid = standard_complete and sorted(selected) == sorted(standard_array)
+        standard_available: Dict[str, List[int]] = {}
+        for ability in ABILITIES:
+            current = scores.get(ability)
+            used_by_others = set()
+            for other in ABILITIES:
+                if other == ability:
+                    continue
+                try:
+                    used_by_others.add(int(scores.get(other)))
+                except (TypeError, ValueError):
+                    continue
+            standard_available[ability] = [
+                value
+                for value in standard_array
+                if value == current or value not in used_by_others
+            ]
+
+        spent = 0
+        for ability in ABILITIES:
+            try:
+                spent += POINT_BUY_COSTS.get(int(scores.get(ability)), 0)
+            except (TypeError, ValueError):
+                pass
+        is_valid, point_buy_message = (
+            validate_point_buy(scores) if isinstance(scores, dict) else (False, "Missing scores")
+        )
+        point_controls: Dict[str, Dict[str, Any]] = {}
+        for ability in ABILITIES:
+            score = ability_rows[ability]["score"]
+            current_cost = POINT_BUY_COSTS.get(score, 0)
+            next_score = score + 1
+            prev_score = score - 1
+            next_cost = POINT_BUY_COSTS.get(next_score)
+            can_increment = (
+                next_cost is not None
+                and score < POINT_BUY_MAX
+                and spent + next_cost - current_cost <= POINT_BUY_TOTAL
+            )
+            can_decrement = prev_score in POINT_BUY_COSTS and score > POINT_BUY_MIN
+            point_controls[ability] = {
+                "current_cost": current_cost,
+                "can_increment": can_increment,
+                "can_decrement": can_decrement,
+                "increment_score": next_score if can_increment else None,
+                "decrement_score": prev_score if can_decrement else None,
+            }
+
+        asi = self.get_background_asi_options()
+        asi_total = int(asi.get("total_points", 0) or 0)
+        stored_bonuses = choices.get("background_bonuses")
+        stored_bonuses = stored_bonuses if isinstance(stored_bonuses, dict) else {}
+        asi_spent = 0
+        for value in stored_bonuses.values():
+            try:
+                asi_spent += max(0, int(value))
+            except (TypeError, ValueError):
+                pass
+        asi_options = asi.get("ability_options") or ABILITIES
+        asi_values_by_ability: Dict[str, List[int]] = {}
+        for ability in asi_options:
+            try:
+                current = int(stored_bonuses.get(ability, 0) or 0)
+            except (TypeError, ValueError):
+                current = 0
+            asi_values_by_ability[ability] = [
+                value
+                for value in range(0, 3)
+                if asi_spent - current + value <= asi_total
+            ]
+
+        return {
+            "method": method,
+            "abilities": ability_rows,
+            "standard_array": {
+                "values": standard_array,
+                "assigned_count": len(selected),
+                "complete": standard_complete,
+                "valid": standard_valid,
+                "available_values_by_ability": standard_available,
+            },
+            "point_buy": {
+                "total": POINT_BUY_TOTAL,
+                "min": POINT_BUY_MIN,
+                "max": POINT_BUY_MAX,
+                "spent": spent,
+                "remaining": POINT_BUY_TOTAL - spent,
+                "valid": is_valid,
+                "message": point_buy_message,
+                "controls": point_controls,
+            },
+            "manual": {"min": 3, "max": 18},
+            "background_asi": {
+                "spent": asi_spent,
+                "remaining": asi_total - asi_spent,
+                "values_by_ability": asi_values_by_ability,
+            },
+        }
+
+    def roll_ability_scores(self) -> List[Dict[str, Any]]:
+        """Roll six 4d6-drop-lowest ability score candidates for the UI."""
+        rolls = []
+        for _ in range(6):
+            dice = sorted((random.randint(1, 6) for _ in range(4)), reverse=True)
+            score = sum(dice[:3])
+            modifier = self.calculate_ability_modifier(score)
+            rolls.append({
+                "value": score,
+                "dice": dice,
+                "modifier": modifier,
+                "modifier_display": self._format_signed(modifier),
+                "modifier_tone": self._modifier_tone(modifier),
+            })
+        return rolls
+
+    @staticmethod
+    def _parse_primary_abilities(primary: Any) -> Dict[str, Any]:
+        if not isinstance(primary, str) or not primary.strip():
+            return {"kind": "and", "abilities": []}
+        trimmed = primary.strip()
+        or_re = r"\s+or\s+|\s*/\s*"
+        and_re = r"\s*&\s*|\s+and\s+"
+        if re.search(or_re, trimmed, re.IGNORECASE):
+            return {
+                "kind": "or",
+                "abilities": [p.strip() for p in re.split(or_re, trimmed, flags=re.IGNORECASE) if p.strip()],
+            }
+        if re.search(and_re, trimmed, re.IGNORECASE):
+            return {
+                "kind": "and",
+                "abilities": [p.strip() for p in re.split(and_re, trimmed, flags=re.IGNORECASE) if p.strip()],
+            }
+        return {"kind": "and", "abilities": [trimmed]}
+
+    def _current_prerequisite_scores(self) -> Dict[str, int] | None:
+        choices = self.character_data.get("choices_made", {})
+        if not isinstance(choices.get("ability_scores"), dict):
+            return None
+        processed = self.calculate_processed_ability_scores()
+        scores: Dict[str, int] = {}
+        for ability in ABILITIES:
+            row = processed.get(ability.lower()) or {}
+            scores[ability] = int(row.get("score", 0) or 0)
+        return scores
+
+    def evaluate_multiclass_prerequisites(
+        self,
+        candidate_class: Dict[str, Any],
+        all_classes: List[Dict[str, Any]],
+    ) -> Dict[str, Any]:
+        """Evaluate 2024 multiclass entry prerequisites for a candidate class."""
+        scores = self._current_prerequisite_scores()
+        if scores is None:
+            return {"ok": True, "missing": [], "messages": [], "abilities_unknown": True}
+
+        candidate_id = candidate_class.get("id") or candidate_class.get("name")
+        by_id = {
+            (entry.get("id") or entry.get("name")): entry
+            for entry in all_classes
+            if isinstance(entry, dict)
+        }
+        involved: List[Dict[str, Any]] = []
+        for row in self._normalize_multiclass_rows(self.character_data.get("choices_made", {}).get("classes")):
+            class_name = row.get("class_name")
+            if not class_name or class_name == candidate_id:
+                continue
+            existing = by_id.get(class_name) or self._load_class_data(class_name) or {}
+            if existing:
+                involved.append(existing)
+        involved.append(candidate_class)
+
+        missing: Dict[str, int] = {}
+        for cls in involved:
+            parsed = self._parse_primary_abilities(cls.get("primary_ability"))
+            abilities = parsed["abilities"]
+            if not abilities:
+                continue
+            checks = [scores.get(ability, 0) >= 13 for ability in abilities]
+            ok = any(checks) if parsed["kind"] == "or" else all(checks)
+            if not ok:
+                for ability in abilities:
+                    if scores.get(ability, 0) < 13:
+                        missing[ability] = scores.get(ability, 0)
+
+        messages = [
+            f"Requires {ability} 13+ (have {score})"
+            for ability, score in missing.items()
+        ]
+        return {
+            "ok": not missing,
+            "missing": list(missing.keys()),
+            "messages": messages,
+            "abilities_unknown": False,
+        }
+
+    def evaluate_feat_prerequisite(
+        self,
+        prerequisite: Any,
+        *,
+        level: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        """Evaluate display warnings for a feat prerequisite string."""
+        if not isinstance(prerequisite, str) or not prerequisite.strip():
+            return {"met": True, "messages": [], "abilities_unknown": False}
+
+        scores = self._current_prerequisite_scores()
+        abilities_unknown = scores is None
+        current_level = int(level or self.character_data.get("level", 1) or 1)
+        messages: List[str] = []
+
+        for part in [p.strip() for p in prerequisite.split(",") if p.strip()]:
+            level_match = re.search(r"(\d+)(?:st|nd|rd|th)?\s+level", part, re.IGNORECASE)
+            if level_match:
+                required_level = int(level_match.group(1))
+                if current_level < required_level:
+                    messages.append(
+                        f"Requires level {required_level}. Current level: {current_level}."
+                    )
+                continue
+
+            score_match = re.search(r"(\d+)\+", part)
+            if not score_match or abilities_unknown:
+                continue
+
+            required_score = int(score_match.group(1))
+            present = [
+                ability
+                for ability in ABILITIES
+                if re.search(rf"\b{re.escape(ability)}\b", part, re.IGNORECASE)
+            ]
+            if not present:
+                continue
+            if re.search(r"\bor\b", part, re.IGNORECASE):
+                if not any(scores.get(ability, 0) >= required_score for ability in present):
+                    current = ", ".join(f"{ability} {scores.get(ability, 0)}" for ability in present)
+                    messages.append(
+                        f"Requires {' or '.join(present)} {required_score}+. Current: {current}."
+                    )
+                continue
+            for ability in present:
+                current = scores.get(ability, 0)
+                if current < required_score:
+                    messages.append(
+                        f"Requires {ability} {required_score}+. Current {ability}: {current}."
+                    )
+
+        return {
+            "met": not messages,
+            "messages": messages,
+            "abilities_unknown": abilities_unknown,
         }
 
     def _extract_hp_bonuses(self) -> List[Dict[str, Any]]:
@@ -6852,6 +7520,9 @@ class CharacterBuilder:
         weapon_data = self.calculate_weapon_attacks()
         character_data["attacks"] = weapon_data.get("attacks", [])
         character_data["attack_combinations"] = weapon_data.get("combinations", [])
+        combinations = character_data["attack_combinations"]
+        if combinations:
+            character_data["best_attack_combination"] = combinations[0]
 
         # Add calculated AC options
         character_data["ac_options"] = self.calculate_ac_options()
@@ -6874,6 +7545,9 @@ class CharacterBuilder:
                         "source": spell_info.get("source", "Unknown"),
                         "always_prepared": True,
                         "once_per_day": spell_info.get("once_per_day", False),
+                        "once_per_long_rest": spell_info.get(
+                            "once_per_long_rest", False
+                        ),
                     }
                 )
                 level = spell_info.get("level", spell_data.get("level", 0))
@@ -7067,6 +7741,9 @@ class CharacterBuilder:
                 if data.get("level", 1) > 0
             ],
         }
+        spellbook = spells.get("spellbook", {})
+        if isinstance(spellbook, dict) and spellbook:
+            spell_selections["spellbook"] = list(spellbook.keys())
 
         # Only include if there are any spell selections
         if any(spell_selections.values()):
@@ -7082,10 +7759,16 @@ class CharacterBuilder:
             )
 
         # Include Eldritch Invocation selections in choices_made for export/import
-        eldritch_invocations = character_data.get("eldritch_invocations", {})
-        selected_invocations = eldritch_invocations.get("selected", [])
+        eldritch_invocations = self._normalize_eldritch_invocation_selections(
+            character_data.get("eldritch_invocations", {})
+        ) or {"selected": [], "cantrip_choices": {}, "choices": {}}
+        selected_invocations = eldritch_invocations["selected"]
         if selected_invocations:
-            character_data["choices_made"]["eldritch_invocation_selections"] = selected_invocations
+            character_data["choices_made"]["eldritch_invocation_selections"] = {
+                "selected": selected_invocations,
+                "cantrip_choices": eldritch_invocations["cantrip_choices"],
+                "choices": eldritch_invocations["choices"],
+            }
 
         return character_data
 

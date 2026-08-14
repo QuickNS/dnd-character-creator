@@ -95,6 +95,7 @@
     "Medium armor",
     "Shields"
   ],
+  "attack_ability_overrides": [],
   "attack_combinations": [
     {
       "mainhand": {
@@ -117,6 +118,8 @@
         "icon": "/static/images/weapons/axe.svg",
         "name": "Handaxe"
       },
+      "rank": 1,
+      "recommended": true,
       "type": "combination"
     }
   ],
@@ -209,6 +212,7 @@
       "total": 3
     },
     "description": "War has been your life for as long as you care to remember. You trained as a youth, studied the use of weapons and armor, learned basic survival techniques, including how to stay alive on the battlefield. You might have been part of a standing national army or a mercenary company, or perhaps a member of a local militia who rose to prominence during a recent war.",
+    "edition": "2024",
     "effects": [
       {
         "feat": "Savage Attacker",
@@ -246,7 +250,33 @@
       "option_b": {
         "gold": 50
       }
-    }
+    },
+    "status": "active"
+  },
+  "best_attack_combination": {
+    "mainhand": {
+      "attack_bonus": 5,
+      "attack_bonus_display": "+5",
+      "avg_damage": 6.5,
+      "damage": "1d6 + 3",
+      "damage_type": "Slashing",
+      "icon": "/static/images/weapons/axe.svg",
+      "name": "Handaxe"
+    },
+    "name": "Two Handaxes",
+    "notes": [],
+    "offhand": {
+      "attack_bonus": 5,
+      "attack_bonus_display": "+5",
+      "avg_damage": 3.5,
+      "damage": "1d6",
+      "damage_type": "Slashing",
+      "icon": "/static/images/weapons/axe.svg",
+      "name": "Handaxe"
+    },
+    "rank": 1,
+    "recommended": true,
+    "type": "combination"
   },
   "choices_made": {
     "ability_scores": {

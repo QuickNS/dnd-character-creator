@@ -209,6 +209,7 @@
       "total": 3
     },
     "description": "You have always had a way with people. You know what makes them tick, you can tease out their hearts' desires after a few minutes of conversation, and with a few leading questions you can read them like they were children's books. It's a useful talent, and one that you're perfectly willing to use for your advantage.",
+    "edition": "2024",
     "effects": [
       {
         "feat": "Skilled",
@@ -241,7 +242,8 @@
       "option_b": {
         "gold": 50
       }
-    }
+    },
+    "status": "active"
   },
   "choices_made": {
     "ability_scores": {

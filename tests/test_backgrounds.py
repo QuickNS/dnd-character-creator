@@ -3,20 +3,24 @@
 import json
 import pytest
 from pathlib import Path
+from jsonschema import Draft7Validator
 
 from modules.data_loader import DataLoader
 from modules.character_builder import CharacterBuilder
 
 
 DATA_DIR = Path(__file__).parent.parent / "data" / "backgrounds"
+REPO_ROOT = Path(__file__).parent.parent
+BACKGROUND_SCHEMA = REPO_ROOT / "models" / "background_schema.json"
 
 # Every D&D 2024 background that should exist
-ALL_BACKGROUNDS = [
+ACTIVE_2024_BACKGROUNDS = [
     "Acolyte", "Artisan", "Charlatan", "Criminal", "Entertainer",
-    "Farmer", "Folk Hero", "Guard", "Guide", "Guild Artisan",
-    "Hermit", "Merchant", "Noble", "Sage", "Sailor", "Scribe",
-    "Soldier", "Wayfarer",
+    "Farmer", "Guard", "Guide", "Hermit", "Merchant", "Noble",
+    "Sage", "Sailor", "Scribe", "Soldier", "Wayfarer",
 ]
+LEGACY_BACKGROUNDS = ["Folk Hero", "Guild Artisan"]
+ALL_BACKGROUNDS = ACTIVE_2024_BACKGROUNDS + LEGACY_BACKGROUNDS
 
 
 @pytest.fixture(scope="module")
@@ -41,6 +45,8 @@ class TestBackgroundDataFiles:
 
         assert bg.get("name") == bg_name
         assert isinstance(bg.get("description"), str)
+        assert bg.get("edition") in {"2024", "2014"}
+        assert bg.get("status") in {"active", "legacy"}
         # Phase 9 (D1-1): backgrounds expose all mechanical grants via the
         # canonical ``effects`` array — the origin feat as
         # ``grant_origin_feat`` with a ``feat`` field, skill proficiencies as
@@ -73,6 +79,33 @@ class TestBackgroundDataFiles:
         assert len(tool_effects) >= 1
         tools_granted = [t for e in tool_effects for t in e.get("tools", [])]
         assert len(tools_granted) >= 1
+
+    def test_background_catalog_status_sets(self, data_loader):
+        """Only 2024 active backgrounds are in the default catalog set."""
+        active = {
+            name for name, bg in data_loader.backgrounds.items()
+            if bg.get("edition") == "2024" and bg.get("status") == "active"
+        }
+        legacy = {
+            name for name, bg in data_loader.backgrounds.items()
+            if bg.get("edition") == "2014" and bg.get("status") == "legacy"
+        }
+
+        assert active == set(ACTIVE_2024_BACKGROUNDS)
+        assert legacy == set(LEGACY_BACKGROUNDS)
+
+    def test_background_schema_rejects_unsupported_catalog_metadata(self):
+        """Schema validation must reject unsupported edition/status values."""
+        schema = json.loads(BACKGROUND_SCHEMA.read_text())
+        sample = json.loads((DATA_DIR / "artisan.json").read_text())
+        sample["edition"] = "2023"
+        sample["status"] = "deprecated"
+        sample["effects"] = []
+
+        validator = Draft7Validator(schema)
+
+        errors = list(validator.iter_errors(sample))
+        assert errors
 
     @pytest.mark.parametrize("bg_name", ALL_BACKGROUNDS)
     def test_background_ability_scores(self, data_loader, bg_name):
