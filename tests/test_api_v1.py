@@ -1482,3 +1482,36 @@ class TestCharacterDerived:
         assert body["applicable"] is False
         assert isinstance(body.get("reason"), str)
         assert body["data"] is None
+
+    def test_derived_invocation_management_returns_tome_cantrip_choices(self, client):
+        choices = {
+            "classes": [{"class_name": "Warlock", "level": 1}],
+            "species": "Human",
+            "background": "Acolyte",
+            "eldritch_invocation_selections": {
+                "selected": ["Pact of the Tome"],
+                "cantrip_choices": {
+                    "eldritch_invocation_pact_of_the_tome_0": ["Fire Bolt"],
+                    "eldritch_invocation_pact_of_the_tome_1": ["Guidance"],
+                    "eldritch_invocation_pact_of_the_tome_2": ["Druidcraft"],
+                },
+            },
+        }
+        r = client.post(
+            "/api/v1/character/derived",
+            json={"choices_made": choices, "view": "invocation_management"},
+        )
+
+        assert r.status_code == 200
+        data = r.get_json()["data"]
+        descriptors = data["cantrip_choice_descriptors"]
+        assert [descriptor["spell_list"] for descriptor in descriptors] == [
+            "Wizard",
+            "Cleric",
+            "Druid",
+        ]
+        assert [descriptor["selected"] for descriptor in descriptors] == [
+            ["Fire Bolt"],
+            ["Guidance"],
+            ["Druidcraft"],
+        ]

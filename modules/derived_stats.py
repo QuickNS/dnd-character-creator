@@ -339,8 +339,11 @@ def build_invocation_management_view(builder) -> Dict[str, Any]:
     if not stats or not stats.get("has_invocations"):
         raise ValueError("Character does not have Eldritch Invocations")
 
-    return {
+    view = {
         "available_invocations": stats.get("available_invocations", []),
         "max_invocations": stats.get("max_invocations", 0),
         "current_invocations": stats.get("current_invocations", []),
     }
+    if stats.get("cantrip_choice_descriptors"):
+        view["cantrip_choice_descriptors"] = stats["cantrip_choice_descriptors"]
+    return view

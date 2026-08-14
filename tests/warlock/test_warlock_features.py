@@ -312,6 +312,52 @@ class TestWarlockInvocationCount:
         assert len(stats.get("available_invocations", [])) > 0
 
 
+class TestWarlockInvocationEffects:
+    """Verify sheet-affecting invocation effects and their selections."""
+
+    def test_pact_of_the_tome_selected_cantrips_are_always_prepared(self):
+        builder = CharacterBuilder()
+        builder.set_species("Human")
+        builder.set_background("Acolyte")
+        builder.set_class("Warlock", 1)
+        assert builder.apply_choice(
+            "eldritch_invocation_selections",
+            {
+                "selected": ["Pact of the Tome"],
+                "cantrip_choices": {
+                    "eldritch_invocation_pact_of_the_tome_0": ["Fire Bolt"],
+                    "eldritch_invocation_pact_of_the_tome_1": ["Guidance"],
+                    "eldritch_invocation_pact_of_the_tome_2": ["Druidcraft"],
+                },
+            },
+        )
+
+        character = builder.to_character()
+        always_prepared = character["spells"]["always_prepared"]
+        assert {"Fire Bolt", "Guidance", "Druidcraft"} <= set(always_prepared)
+        for cantrip in ("Fire Bolt", "Guidance", "Druidcraft"):
+            assert always_prepared[cantrip]["level"] == 0
+            assert always_prepared[cantrip]["source"] == "Pact of the Tome"
+            assert always_prepared[cantrip]["counts_against_limit"] is False
+
+    def test_pact_of_the_chain_find_familiar_is_always_prepared(self):
+        builder = CharacterBuilder()
+        builder.set_species("Human")
+        builder.set_background("Acolyte")
+        builder.set_class("Warlock", 1)
+        assert builder.apply_choice(
+            "eldritch_invocation_selections", ["Pact of the Chain"]
+        )
+
+        character = builder.to_character()
+        find_familiar = character["spells"]["always_prepared"]["Find Familiar"]
+        assert find_familiar["source"] == "Pact of the Chain"
+        assert find_familiar["counts_against_limit"] is False
+        assert character["eldritch_invocation_stats"].get(
+            "cantrip_choice_descriptors", []
+        ) == []
+
+
 class TestEldritchInvocationEffects:
     """Invocation selections must apply their data-authored sheet effects."""
 

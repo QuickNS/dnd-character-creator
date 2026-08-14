@@ -219,7 +219,7 @@ def _load_feat_definitions() -> Dict[str, Dict[str, Any]]:
         path = data_dir / filename
         try:
             payload = json.loads(path.read_text())
-        except OSError:
+        except (OSError, json.JSONDecodeError):
             continue
         entries = payload.get(wrapper_key, {})
         if isinstance(entries, dict):
