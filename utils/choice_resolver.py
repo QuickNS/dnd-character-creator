@@ -4,6 +4,7 @@ Handles resolving choice options from various source types.
 """
 
 import json
+import os
 from functools import lru_cache
 from pathlib import Path
 
@@ -71,6 +72,23 @@ def is_unresolved_placeholder(skill_value: object) -> bool:
         and skill_value.startswith("__")
         and skill_value.endswith("__")
     )
+
+
+def resolve_data_file_path(file_path: str) -> Path | None:
+    """Resolve *file_path* against ``data/`` and reject anything outside it.
+
+    ``file_path`` is a relative path taken from a choice ``source`` block. Some
+    of those blocks are built from player selections (``external_dynamic``
+    patterns, class-derived spell lists), so the resolved path is verified to
+    stay inside the data directory before it is opened.
+    """
+    if not isinstance(file_path, str) or not file_path:
+        return None
+    data_dir = os.path.realpath(str(Path(__file__).parent.parent / "data"))
+    candidate = os.path.realpath(os.path.join(data_dir, file_path))
+    if not candidate.startswith(data_dir + os.sep):
+        return None
+    return Path(candidate)
 
 
 def resolve_choice_options(
@@ -185,10 +203,8 @@ def get_option_descriptions(
         list_name = source.get("list", "")
         if file_path and list_name:
             try:
-                # Get the project root directory (parent of utils/)
-                project_root = Path(__file__).parent.parent
-                full_path = project_root / "data" / file_path
-                if full_path.exists():
+                full_path = resolve_data_file_path(file_path)
+                if full_path is not None and full_path.exists():
                     with open(full_path, "r") as f:
                         data = json.load(f)
                         # Support dot-notation for nested keys
@@ -246,10 +262,8 @@ def load_external_choice_list(file_path: str, list_name: str) -> list:
     e.g. ``"spells_by_level.1"`` resolves ``data["spells_by_level"]["1"]``.
     """
     try:
-        # Get the project root directory (parent of utils/)
-        project_root = Path(__file__).parent.parent
-        full_path = project_root / "data" / file_path
-        if full_path.exists():
+        full_path = resolve_data_file_path(file_path)
+        if full_path is not None and full_path.exists():
             with open(full_path, "r") as f:
                 data = json.load(f)
                 # Support dot-notation for nested keys
