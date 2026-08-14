@@ -366,6 +366,38 @@ class TestCharacterBuild:
         r = client.post("/api/v1/character/build", json={})
         assert r.status_code == 400
 
+    def test_build_invalid_spell_selection_returns_structured_400(self, client):
+        payload = {
+            "choices_made": {
+                "character_name": "Broken Wizard",
+                "species": "Human",
+                "class": "Wizard",
+                "level": 3,
+                "background": "Sage",
+                "ability_scores": {
+                    "Strength": 8,
+                    "Dexterity": 14,
+                    "Constitution": 14,
+                    "Intelligence": 16,
+                    "Wisdom": 12,
+                    "Charisma": 10,
+                },
+                "skill_choices": ["Arcana", "History"],
+                "spell_selections": {
+                    "cantrips": [],
+                    "spells": ["Cure Wounds"],
+                    "background_cantrips": [],
+                    "background_spells": [],
+                },
+            }
+        }
+        r = client.post("/api/v1/character/build", json=payload)
+        assert r.status_code == 400
+        body = r.get_json()
+        assert body["selection_family"] == "spell_selections"
+        assert body["code"] == "invalid_selection"
+        assert isinstance(body.get("violations"), list) and body["violations"]
+
     def test_build_validation_errors_remain_client_errors(self, client):
         r = client.post(
             "/api/v1/character/build",

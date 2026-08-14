@@ -19,7 +19,8 @@ from typing import Any, Dict, List
 from flask import Blueprint, jsonify, request
 
 from modules.ability_scores import ABILITIES
-from modules.character_builder import CharacterBuilder
+from modules.ability_scores import validate_point_buy
+from modules.character_builder import CharacterBuilder, SelectionValidationError
 from modules.data_loader import DataLoader
 from modules import strict_mode
 from modules.derived_stats import (
@@ -763,6 +764,8 @@ def build_character():
         body = _require_request("build")
         builder = _build(body["choices_made"], preserve_explicit_class_context=True)
         return jsonify({"character": builder.to_character()})
+    except SelectionValidationError as exc:
+        return jsonify(exc.to_error_payload()), 400
     except ChoicesValidationError as exc:
         return _validation_response(exc)
     except ValueError as exc:

@@ -7,7 +7,7 @@ and the effects-based spell granting system (grant_spell, grant_cantrip).
 """
 
 import pytest
-from modules.character_builder import CharacterBuilder
+from modules.character_builder import CharacterBuilder, SelectionValidationError
 from modules.derived_stats import ORDINAL_TO_INT
 
 
@@ -319,6 +319,50 @@ class TestSpellManagement:
                 f"Level {level} Bard should have {expected_cantrips} cantrips, "
                 f"got {stats['max_cantrips_prepared']}"
             )
+
+    def test_spell_selections_reject_unavailable_spell(self, wizard_builder):
+        with pytest.raises(SelectionValidationError) as exc:
+            wizard_builder.apply_choice(
+                "spell_selections",
+                {
+                    "cantrips": [],
+                    "spells": ["Cure Wounds"],
+                    "background_cantrips": [],
+                    "background_spells": [],
+                },
+            )
+        assert exc.value.family == "spell_selections"
+        assert exc.value.code == "invalid_selection"
+
+    def test_spell_selections_reject_exceeding_limit(self, wizard_builder):
+        with pytest.raises(SelectionValidationError) as exc:
+            wizard_builder.apply_choice(
+                "spell_selections",
+                {
+                    "cantrips": ["Fire Bolt", "Light", "Mage Hand", "Ray of Frost"],
+                    "spells": [],
+                    "background_cantrips": [],
+                    "background_spells": [],
+                },
+            )
+        assert any(v.get("reason") == "max_exceeded" for v in exc.value.violations)
+
+    def test_spell_selections_reject_background_spells_without_requirement(self, wizard_builder):
+        with pytest.raises(SelectionValidationError) as exc:
+            wizard_builder.apply_choice(
+                "spell_selections",
+                {
+                    "cantrips": [],
+                    "spells": [],
+                    "background_cantrips": [],
+                    "background_spells": ["Magic Missile"],
+                },
+            )
+        assert exc.value.family == "spell_selections"
+        assert any(
+            v.get("field") == "spell_selections.background_spells"
+            for v in exc.value.violations
+        )
 
     def test_prepared_spell_limit(self, cleric_builder):
         """Test prepared spell limit calculation."""

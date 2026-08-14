@@ -16,7 +16,7 @@ Covers:
 """
 
 import pytest
-from modules.character_builder import CharacterBuilder
+from modules.character_builder import CharacterBuilder, SelectionValidationError
 
 
 # ---------------------------------------------------------------------------
@@ -53,6 +53,29 @@ def _effects(character):
     """Return the full effects list."""
     return character.get("effects", [])
 
+
+def _warlock_builder_for_invocation_validation(level=12):
+    builder = CharacterBuilder()
+    choices = {
+        "character_name": "Invocation Test",
+        "species": "Human",
+        "class": "Warlock",
+        "level": level,
+        "background": "Acolyte",
+        "ability_scores": {
+            "Strength": 8,
+            "Dexterity": 14,
+            "Constitution": 14,
+            "Intelligence": 10,
+            "Wisdom": 12,
+            "Charisma": 16,
+        },
+        "skill_choices": ["Arcana", "Deception"],
+    }
+    if level >= 3:
+        choices["subclass"] = "The Fiend"
+    builder.apply_choices(choices)
+    return builder
 
 def test_pact_of_the_blade_uses_charisma_for_only_the_bonded_weapon():
     builder = CharacterBuilder()
@@ -101,7 +124,6 @@ def test_pact_of_the_blade_uses_charisma_for_only_the_bonded_weapon():
     attacks = {
         attack["name"]: attack for attack in builder.calculate_weapon_attacks()["attacks"]
     }
-
     assert attacks["Mace"]["ability"] == "CHA"
     assert attacks["Mace"]["attack_bonus"] == 4
     assert attacks["Mace"]["damage"] == "1d6 + 4"
@@ -310,6 +332,48 @@ class TestWarlockInvocationCount:
         character = build_warlock(1)
         stats = character.get("eldritch_invocation_stats", {})
         assert len(stats.get("available_invocations", [])) > 0
+
+    def test_invocation_selection_rejects_unknown_name(self):
+        builder = _warlock_builder_for_invocation_validation(level=12)
+        with pytest.raises(SelectionValidationError) as exc:
+            builder.apply_choice(
+                "eldritch_invocation_selections",
+                ["Not A Real Invocation"],
+            )
+        assert exc.value.family == "eldritch_invocation_selections"
+
+    def test_invocation_selection_rejects_unmet_prerequisite(self):
+        builder = _warlock_builder_for_invocation_validation(level=12)
+        with pytest.raises(SelectionValidationError) as exc:
+            builder.apply_choice(
+                "eldritch_invocation_selections",
+                ["Devouring Blade"],
+            )
+        assert any(
+            v.get("reason") == "missing_prerequisite_invocations"
+            for v in exc.value.violations
+        )
+
+    def test_invocation_selection_rejects_exceeding_count(self):
+        builder = _warlock_builder_for_invocation_validation(level=1)
+        with pytest.raises(SelectionValidationError) as exc:
+            builder.apply_choice(
+                "eldritch_invocation_selections",
+                ["Pact of the Blade", "Pact of the Tome"],
+            )
+        assert any(v.get("reason") == "max_exceeded" for v in exc.value.violations)
+
+    def test_invocation_selection_allows_replacement_with_final_prereq_set(self):
+        builder = _warlock_builder_for_invocation_validation(level=12)
+        builder.apply_choice(
+            "eldritch_invocation_selections",
+            ["Pact of the Blade", "Thirsting Blade", "Devouring Blade"],
+        )
+        assert builder.character_data["eldritch_invocations"]["selected"] == [
+            "Pact of the Blade",
+            "Thirsting Blade",
+            "Devouring Blade",
+        ]
 
 
 class TestWarlockInvocationEffects:

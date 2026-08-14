@@ -235,6 +235,23 @@ Response (200):
 
 Errors:
 - `400` request-validation errors use the [shared error envelope](#shared-request-validation).
+- `400` for invalid submitted managed selections (spell selections, weapon masteries, eldritch invocations):
+
+```json
+{
+  "error": "Submitted spell selections are not valid for this character",
+  "selection_family": "spell_selections",
+  "code": "invalid_selection",
+  "violations": [
+    {
+      "field": "spell_selections.spells",
+      "reason": "unavailable_selection",
+      "selections": ["Cure Wounds"]
+    }
+  ]
+}
+```
+
 - `500` `{ "error": "Internal server error", "correlation_id": "<id>" }`
 
 ### `POST /character/validate`
