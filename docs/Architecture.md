@@ -29,6 +29,8 @@ TypeScript never:
 - computes an ability modifier;
 - computes AC, HP, initiative, passive perception, proficiency bonus;
 - computes spell save DC, spell attack, slot counts, prepared count;
+- evaluates multiclass or feat prerequisites;
+- ranks attacks or composes hit-dice display values;
 - decides which features grant which proficiencies, languages, or spells.
 
 If the UI needs to display any of those, it goes in Python and reaches the UI through the API.

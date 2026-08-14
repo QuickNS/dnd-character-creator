@@ -241,7 +241,14 @@
       ],
       "category": "General",
       "prerequisite": "4th Level, Strength or Dexterity 13+",
-      "source": "Player's Handbook 2024"
+      "source": "Player's Handbook 2024",
+      "effects": [
+        {
+          "type": "bonus_ac",
+          "value": 1,
+          "condition": "wielding two weapons"
+        }
+      ]
     },
     "Durable": {
       "description": "Hardy and resilient, you gain the following benefits:",

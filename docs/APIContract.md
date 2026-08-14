@@ -31,7 +31,7 @@ Read-only access to game data. Cached aggressively on the client.
 | GET    | `/catalog/classes/<class_name>/subclasses/<subclass_name>`   | Full subclass JSON                                  |
 | GET    | `/catalog/species`                                           | `{ "species": SpeciesSummary[] }`                   |
 | GET    | `/catalog/species/<species_name>`                            | Full species JSON (with `lineages`, `traits`)       |
-| GET    | `/catalog/backgrounds`                                       | `{ "backgrounds": BackgroundSummary[] }`            |
+| GET    | `/catalog/backgrounds`                                       | `{ "backgrounds": BackgroundSummary[] }` (active D&D 2024 only by default; `?include_legacy=true` includes retained legacy entries) |
 | GET    | `/catalog/backgrounds/<background_name>`                     | Full background JSON                                |
 | GET    | `/catalog/feats?type=origin\|general`                        | `{ "feats": FeatSummary[] }` (optional filter)      |
 | GET    | `/catalog/feats/<feat_name>`                                 | Full feat JSON                                      |
@@ -59,6 +59,7 @@ interface SpeciesSummary {
 interface BackgroundSummary {
   id: string; name: string; description?: string;
   skill_proficiencies?: string[]; ability_scores?: string[]; feat?: string;
+  edition: "2024" | "2014"; status: "active" | "legacy";
 }
 
 interface FeatSummary {
@@ -66,6 +67,8 @@ interface FeatSummary {
   category?: "origin" | "general"; prerequisites?: unknown;
 }
 ```
+
+`GET /catalog/backgrounds` is the wizard/frontend default catalog and filters to backgrounds with `edition: "2024"` and `status: "active"`. Retained 2014 legacy backgrounds remain available by direct detail lookup and through `?include_legacy=true` for explicit opt-in tools.
 
 ### Errors
 
@@ -141,6 +144,51 @@ See [docs/WizardFlow.md](WizardFlow.md) for the full step list, dependency map, 
 
 All character endpoints are `POST` with `Content-Type: application/json` and a body containing `choices_made` (and, where required, `step` or `view`).
 
+### Shared request validation
+
+All character endpoints validate their outer request envelope before processing. Envelopes are closed: unknown top-level fields return `400`. The permitted fields are:
+
+| Endpoint | Permitted request fields |
+|----------|--------------------------|
+| `/character/build`, `/character/validate`, `/character/random-languages` | `choices_made` |
+| `/character/preview-step` | `choices_made`, `step` |
+| `/character/derived` | `choices_made`, `view` |
+
+`choices_made` must be a JSON object. Its keys must be recognized static choices, data-driven choices, or supported dynamic choice keys; unknown choices are rejected. JSON arrays and objects are limited to 100 items, strings and object keys to 512 characters, and nesting to 8 levels. Class allocations have a separate maximum of 12 rows.
+
+Class levels must be JSON integers (not booleans) from `1` through `20`; the sum of all `classes[].level` values cannot exceed `20`. Each class row is a closed object with only `class_name`, `level`, and optional `subclass`.
+
+When supplied, `ability_scores` (or the legacy `abilities` alias) must be exactly:
+
+```json
+{
+  "Strength": 8,
+  "Dexterity": 8,
+  "Constitution": 8,
+  "Intelligence": 8,
+  "Wisdom": 8,
+  "Charisma": 8
+}
+```
+
+All six values must be integer (not boolean) scores from `1` through `20`.
+
+Class, subclass, species, background, and lineage identifiers are trimmed, matched case-insensitively against the catalog, and normalized to their canonical catalog spelling. Unknown identifiers are rejected.
+
+All request-validation failures use HTTP `400` and this envelope:
+
+```json
+{
+  "error": {
+    "code": "invalid_request",
+    "message": "Human-readable validation message",
+    "field": "choices_made.classes[0].level"
+  }
+}
+```
+
+`field` is omitted when the failure is not attributable to one field. Codes include `invalid_request`, `missing_field`, `unknown_field`, `unknown_identifier`, `out_of_bounds`, and `choice_error`.
+
 ### `POST /character/build`
 
 Build the complete calculated character.
@@ -186,7 +234,7 @@ Response (200):
 ```
 
 Errors:
-- `400` `{ "error": "Body must be JSON with 'choices_made'" }`
+- `400` request-validation errors use the [shared error envelope](#shared-request-validation).
 - `500` `{ "error": "Internal server error", "correlation_id": "<id>" }`
 
 ### `POST /character/validate`
@@ -222,7 +270,9 @@ Response (200):
 
 `complete` is `all(s.complete for s in steps)`. Conditional checks: subclass when level qualifies, species/background skill-replacement when there is overlap, species trait choices, lineage when species has lineages, background ASI when offered, class feature `nested_choices`.
 
-Errors: same as `/build`.
+Errors:
+- `400` request-validation errors use the [shared error envelope](#shared-request-validation).
+- `500` `{ "error": "Internal server error", "correlation_id": "<id>" }`
 
 > **Type drift to fix on the frontend:** `frontend/src/lib/api.ts` declares `ValidationResponse` as `{ valid, steps, missing_top_level }`, but the server returns `{ complete, steps }`. The frontend types must be updated to match.
 
@@ -250,6 +300,14 @@ Response (200) — **always includes `step`**, plus a step-specific payload. Exa
   }],
   "features_by_level": { "1": { "Feature": "Description" } },
   "nested_choices": [ /* choice descriptors */ ],
+  "multiclass_prerequisites": {
+    "classes": {
+      "Wizard": { "ok": false, "missing": ["Intelligence"], "messages": ["Requires Intelligence 13+ (have 10)"], "abilities_unknown": false }
+    }
+  },
+  "class_feat_prerequisite_warnings": [
+    { "choice_key": "class_feat_4", "feat_name": "Great Weapon Master", "messages": ["Requires Strength 13+. Current Strength: 10."] }
+  ],
   "row_context": {
     "row_index": 0,        // index into choices_made.classes
     "is_primary": true,    // row_index == 0
@@ -341,6 +399,15 @@ Example secondary-row payload (`choices_made.classes = [{Wizard, 5}, {Rogue, 1}]
 {
   "step": "abilities",
   "background_asi": { "total_points": 3, "options": [/* */] },
+  "ability_generation": {
+    "abilities": {
+      "Strength": { "score": 10, "modifier": 0, "modifier_display": "+0", "modifier_tone": "neutral" }
+    },
+    "standard_array": { "values": [15, 14, 13, 12, 10, 8], "assigned_count": 6, "complete": true, "valid": true },
+    "point_buy": { "total": 27, "min": 8, "max": 15, "spent": 27, "remaining": 0, "valid": true, "controls": {} },
+    "manual": { "min": 3, "max": 18 },
+    "background_asi": { "spent": 3, "remaining": 0, "values_by_ability": {} }
+  },
   "recommended_array": { "STR": 8, "DEX": 14, /* … */ }
 }
 
@@ -353,7 +420,7 @@ Example secondary-row payload (`choices_made.classes = [{Wizard, 5}, {Rogue, 1}]
 ```
 
 Errors:
-- `400` `{ "error": "Body must be JSON with 'choices_made' and 'step'" }`
+- `400` request-validation errors use the [shared error envelope](#shared-request-validation).
 - `500` `{ "error": "Internal server error", "correlation_id": "<id>" }`
 
 ### `POST /character/derived`
@@ -373,6 +440,13 @@ Allowed `view` values:
 | `spell_management`      | `derived_stats.build_spell_management_view` | Character has spellcasting              |
 | `mastery_management`    | `derived_stats.build_mastery_management_view` | Character has weapon mastery          |
 | `invocation_management` | `derived_stats.build_invocation_management_view` | Character is a Warlock             |
+
+For `invocation_management`, `data.cantrip_choice_descriptors` contains the
+server-validated pickers produced by selected invocation effects. Each
+descriptor has `{ id, invocation, count, spell_list, options, selected }`.
+Submit selections in the canonical nested shape
+`eldritch_invocation_selections: { selected: string[], cantrip_choices: { [id]: string[] } }`.
+Legacy `eldritch_invocation_selections: string[]` payloads remain accepted.
 
 Response (200):
 ```json
@@ -396,8 +470,7 @@ Response (200, valid view but not applicable):
 ```
 
 Errors:
-- `400` `{ "error": "Body must be JSON with 'choices_made' and 'view'" }`
-- `400` `{ "error": "Unknown view '<x>'", "allowed": ["damage_cantrips", "invocation_management", "mastery_management", "spell_management"] }`
+- `400` request-validation errors use the [shared error envelope](#shared-request-validation). For an unknown `view`, the response also includes `allowed` with the accepted values.
 - `500` `{ "error": "Internal server error", "correlation_id": "<id>" }`
 
 ### `POST /character/random-languages`
@@ -415,7 +488,23 @@ Response (200):
 ```
 
 Errors:
-- `400` `{ "error": "Body must be JSON with 'choices_made'" }`
+- `400` request-validation errors use the [shared error envelope](#shared-request-validation).
+- `500` `{ "error": "Internal server error", "correlation_id": "<id>" }`
+
+### `POST /character/roll-abilities`
+
+Return backend-rolled 4d6-drop-lowest candidates for the ability step. The frontend displays and assigns these raw roll values; modifier labels are supplied by the backend.
+
+Response (200):
+```json
+{
+  "rolls": [
+    { "value": 14, "dice": [6, 5, 3, 1], "modifier": 2, "modifier_display": "+2", "modifier_tone": "positive" }
+  ]
+}
+```
+
+Errors:
 - `500` `{ "error": "Internal server error", "correlation_id": "<id>" }`
 
 ## Canonical Request — `ChoicesMade`
@@ -432,6 +521,11 @@ interface ClassAllocation {
   level: number;
   subclass?: string;
 }
+
+interface AbilityScores {
+  Strength: number; Dexterity: number; Constitution: number;
+  Intelligence: number; Wisdom: number; Charisma: number;
+}
 ```
 
 The `classes` array may contain multiple rows for multiclass characters. The **first row is the primary class** (full starting proficiencies and level-1 max-hit-die HP); subsequent rows are secondary classes (proficiencies limited to each class's `multiclassing` block). `proficiency_bonus` is computed from total character level (`sum(classes[].level)`).
@@ -447,7 +541,7 @@ interface ChoicesMade {
   species?: string;
   lineage?: string;
   ability_scores_method?: "standard_array" | "point_buy" | "manual" | "roll" | "recommended";
-  ability_scores?: Record<string, number>;
+  ability_scores?: AbilityScores; // each value is an integer from 1 through 20
   additional_ability_modifiers?: Record<string, number>;
   background_bonuses?: Record<string, number>;
   skill_choices?: string[];
@@ -464,8 +558,8 @@ interface ChoicesMade {
   // Multiclass: player's resolution of pending skill picks per secondary class
   multiclass_skill_choices?: Record<string, string[]>;
   // Dynamic keys: feat sub-choices, ASI variants, per-feature picks, etc.
-  // Validated by Zod's .catchall(z.unknown()) on the client; the backend
-  // resolves and normalises them via apply_choices() Pass 2.
+  // Only supported dynamic keys are accepted; the backend resolves and
+  // normalises them via apply_choices() Pass 2.
   [key: string]: unknown;
 }
 ```
@@ -495,10 +589,11 @@ The `Character` object is the literal output of `CharacterBuilder.to_character()
 | `ability_scores`            | `self.ability_scores.final_scores`                  | Map of ability → final score.                                         |
 | `abilities`                 | `calculate_processed_ability_scores()`              | Map of ability → `{ score, modifier, save_modifier, save_proficient, ... }`. |
 | `skills`                    | `calculate_skills()`                                | Map of skill → `{ modifier, proficient, expertise?, ... }`.           |
-| `combat`                    | `calculate_combat_stats()`                          | `{ armor_class, initiative, initiative_bonus, speed, hit_point_maximum, hit_points: { current, maximum, temporary }, hp_breakdown, hit_dice: { total, spent }, passive_perception }`. |
+| `combat`                    | `calculate_combat_stats()`                          | `{ armor_class, initiative, initiative_bonus, speed, hit_point_maximum, hit_points: { current, maximum, temporary }, hp_breakdown, hit_dice: { total, spent }, passive_perception }`. `hit_dice.total` and `passive_perception` are display-ready server-calculated values. |
 | `darkvision`                | Applied via effects system                          | Range of darkvision in feet. `0` means no darkvision. Examples: `0` (Human), `60` (Elf), `120` (Orc). |
 | `attacks`                   | `calculate_weapon_attacks().attacks`                | List of attack rows.                                                  |
-| `attack_combinations`       | `calculate_weapon_attacks().combinations`           | List of multi-weapon combinations.                                    |
+| `attack_combinations`       | `calculate_weapon_attacks().combinations`           | List of multi-weapon combinations, sorted by backend recommendation with `rank` and `recommended` fields. |
+| `best_attack_combination`   | `calculate_weapon_attacks().combinations[0]`        | Recommended attack combination for sheets.                            |
 | `ac_options`                | `calculate_ac_options()`                            | List of AC formulas with their components.                            |
 | `spells_by_level`           | Computed inline                                     | `{ [level: number]: SpellDefinition[] }` — flattens `always_prepared`, `prepared`, `known`, `background_spells` and merges with definitions from `data/spells/definitions/`. |
 | `spell_slots`               | Inline (override if supplied; otherwise computed)    | `{ "1st": n, "2nd": n, ... }` (English ordinals). For multiclass rows, standard slots come from the canonical full-caster table keyed by `effective_caster_level`; single-class fallback remains class/subclass-by-level. |
@@ -565,7 +660,7 @@ The original nested `proficiencies` object is also preserved.
 |----------------------------------|-----------------------------------------------|
 | `spell_selections`               | Any cantrip/spell/background spell selected. Shape: `{ cantrips, spells, background_cantrips, background_spells }` (lists of names). |
 | `weapon_mastery_selections`      | Any weapon masteries selected.                |
-| `eldritch_invocation_selections` | Warlock with at least one invocation chosen.  |
+| `eldritch_invocation_selections` | Warlock with at least one invocation chosen. Shape: `{ selected, cantrip_choices }`, where `cantrip_choices` maps invocation effect descriptor IDs to selected cantrip names. |
 
 ### Other fields
 

@@ -51,7 +51,28 @@
             ]
           }
         }
-      ]
+      ],
+      "choice_effects": {
+        "artisan_tools": {
+          "Alchemist's Supplies": [{"type": "grant_tool_proficiency", "tools": ["Alchemist's Supplies"]}],
+          "Brewer's Supplies": [{"type": "grant_tool_proficiency", "tools": ["Brewer's Supplies"]}],
+          "Calligrapher's Supplies": [{"type": "grant_tool_proficiency", "tools": ["Calligrapher's Supplies"]}],
+          "Carpenter's Tools": [{"type": "grant_tool_proficiency", "tools": ["Carpenter's Tools"]}],
+          "Cartographer's Tools": [{"type": "grant_tool_proficiency", "tools": ["Cartographer's Tools"]}],
+          "Cobbler's Tools": [{"type": "grant_tool_proficiency", "tools": ["Cobbler's Tools"]}],
+          "Cook's Utensils": [{"type": "grant_tool_proficiency", "tools": ["Cook's Utensils"]}],
+          "Glassblower's Tools": [{"type": "grant_tool_proficiency", "tools": ["Glassblower's Tools"]}],
+          "Jeweler's Tools": [{"type": "grant_tool_proficiency", "tools": ["Jeweler's Tools"]}],
+          "Leatherworker's Tools": [{"type": "grant_tool_proficiency", "tools": ["Leatherworker's Tools"]}],
+          "Mason's Tools": [{"type": "grant_tool_proficiency", "tools": ["Mason's Tools"]}],
+          "Painter's Supplies": [{"type": "grant_tool_proficiency", "tools": ["Painter's Supplies"]}],
+          "Potter's Tools": [{"type": "grant_tool_proficiency", "tools": ["Potter's Tools"]}],
+          "Smith's Tools": [{"type": "grant_tool_proficiency", "tools": ["Smith's Tools"]}],
+          "Tinker's Tools": [{"type": "grant_tool_proficiency", "tools": ["Tinker's Tools"]}],
+          "Weaver's Tools": [{"type": "grant_tool_proficiency", "tools": ["Weaver's Tools"]}],
+          "Woodcarver's Tools": [{"type": "grant_tool_proficiency", "tools": ["Woodcarver's Tools"]}]
+        }
+      }
     },
     "Healer": {
       "description": "You have the training and intuition to administer first aid and other care effectively, granting you the following benefits:",
@@ -210,7 +231,21 @@
             ]
           }
         }
-      ]
+      ],
+      "choice_effects": {
+        "musical_instruments": {
+          "Bagpipes": [{"type": "grant_tool_proficiency", "tools": ["Bagpipes"]}],
+          "Drum": [{"type": "grant_tool_proficiency", "tools": ["Drum"]}],
+          "Dulcimer": [{"type": "grant_tool_proficiency", "tools": ["Dulcimer"]}],
+          "Flute": [{"type": "grant_tool_proficiency", "tools": ["Flute"]}],
+          "Horn": [{"type": "grant_tool_proficiency", "tools": ["Horn"]}],
+          "Lute": [{"type": "grant_tool_proficiency", "tools": ["Lute"]}],
+          "Lyre": [{"type": "grant_tool_proficiency", "tools": ["Lyre"]}],
+          "Pan Flute": [{"type": "grant_tool_proficiency", "tools": ["Pan Flute"]}],
+          "Shawm": [{"type": "grant_tool_proficiency", "tools": ["Shawm"]}],
+          "Viol": [{"type": "grant_tool_proficiency", "tools": ["Viol"]}]
+        }
+      }
     },
     "Savage Attacker": {
       "description": "You've trained to deal particularly damaging strikes. Once per turn when you hit a target with a weapon, you can roll the weapon's damage dice twice and use either roll against the target.",

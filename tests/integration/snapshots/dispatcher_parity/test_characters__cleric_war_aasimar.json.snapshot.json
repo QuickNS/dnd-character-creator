@@ -142,6 +142,7 @@
       "total": 3
     },
     "description": "You grew up close to the land. Years tending animals and cultivating the earth rewarded you with patience and good health. You have a keen appreciation for nature's bounty alongside a healthy respect for nature's wrath.",
+    "edition": "2024",
     "effects": [
       {
         "feat": "Tough",
@@ -177,7 +178,8 @@
       "option_b": {
         "gold": 50
       }
-    }
+    },
+    "status": "active"
   },
   "choices_made": {
     "ability_scores": {

@@ -13,6 +13,15 @@ export function WizardStep() {
     queryFn: api.wizard.steps,
   });
 
+  const steps = stepsQuery.data ?? [];
+  const step = steps.find((s) => s.id === stepId);
+
+  useEffect(() => {
+    if (steps.length > 0 && !step) {
+      navigate(`/wizard/${steps[0].id}`, { replace: true });
+    }
+  }, [navigate, step, steps]);
+
   if (stepsQuery.isLoading) {
     return <p className="text-muted-foreground">Loading…</p>;
   }
@@ -24,16 +33,9 @@ export function WizardStep() {
     );
   }
 
-  const step = stepsQuery.data.find((s) => s.id === stepId);
-  useEffect(() => {
-    if (!step && stepsQuery.data.length > 0) {
-      navigate(`/wizard/${stepsQuery.data[0].id}`, { replace: true });
-    }
-  }, [navigate, step, stepsQuery.data]);
-
   if (!step) {
     return <p className="text-muted-foreground">Loading wizard step…</p>;
   }
 
-  return <StepRenderer step={step} steps={stepsQuery.data} />;
+  return <StepRenderer step={step} steps={steps} />;
 }

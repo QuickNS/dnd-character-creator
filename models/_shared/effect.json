@@ -10,6 +10,7 @@
       "description": "Effect handler key. Closed enum as of Phase 5 / D6-4. To add a new type, follow the contract in .github/instructions/effects-system.instructions.md.",
       "enum": [
         "ability_bonus",
+        "attack_ability_override",
         "alternative_ac",
         "bonus_ac",
         "bonus_attack",
