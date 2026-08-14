@@ -366,6 +366,45 @@ class TestCharacterBuild:
         r = client.post("/api/v1/character/build", json={})
         assert r.status_code == 400
 
+    def test_build_validation_errors_remain_client_errors(self, client):
+        r = client.post(
+            "/api/v1/character/build",
+            json={"choices_made": {"classes": "not-a-list"}},
+        )
+        assert r.status_code == 400
+        assert "error" in r.get_json()
+
+    @pytest.mark.parametrize(
+        ("path", "payload"),
+        [
+            ("/api/v1/character/build", {"choices_made": {"class": "Fighter"}}),
+            ("/api/v1/character/validate", {"choices_made": {"class": "Fighter"}}),
+            (
+                "/api/v1/character/preview-step",
+                {"choices_made": {"class": "Fighter"}, "step": "class"},
+            ),
+            (
+                "/api/v1/character/derived",
+                {"choices_made": {"class": "Fighter"}, "view": "damage_cantrips"},
+            ),
+        ],
+    )
+    def test_character_internal_errors_are_sanitized(self, client, monkeypatch, path, payload):
+        from routes.api import character as character_routes
+
+        def fail_build(*args, **kwargs):
+            raise RuntimeError("sensitive traceback detail")
+
+        monkeypatch.setattr(character_routes, "_build", fail_build)
+
+        r = client.post(path, json=payload)
+
+        assert r.status_code == 500
+        assert r.get_json()["error"] == "Internal server error"
+        assert isinstance(r.get_json().get("correlation_id"), str)
+        assert "traceback" not in r.get_json()
+        assert "sensitive traceback detail" not in r.get_data(as_text=True)
+
     def test_build_legacy_class_level_payload_still_supported(self, client, dwarf_cleric_choices):
         r = client.post(
             "/api/v1/character/build",

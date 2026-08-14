@@ -8,6 +8,7 @@ All routes are organized into blueprint modules in the routes/ directory.
 from flask import Flask, session
 import logging
 import os
+import secrets
 from typing import Dict, Any, Optional
 from routes import register_routes
 
@@ -25,13 +26,55 @@ logger = logging.getLogger(__name__)
 
 # ==================== Flask App Initialization ====================
 
+
+def _is_truthy(value: str | None) -> bool:
+    return str(value or "").strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _environment_name() -> str:
+    return os.environ.get("FLASK_ENV") or os.environ.get("APP_ENV") or "development"
+
+
+def _is_production() -> bool:
+    return _environment_name().strip().lower() in {"production", "prod"}
+
+
+def _is_development() -> bool:
+    return _environment_name().strip().lower() in {"development", "dev", "local"}
+
+
+def _secret_key_from_environment() -> str:
+    secret_key = os.environ.get("SECRET_KEY") or os.environ.get("FLASK_SECRET_KEY")
+    if secret_key:
+        return secret_key
+
+    if _is_production():
+        raise RuntimeError("SECRET_KEY or FLASK_SECRET_KEY must be set in production")
+
+    logger.warning("Using an ephemeral Flask secret key; set SECRET_KEY for persistent sessions")
+    return secrets.token_urlsafe(32)
+
+
+def _debug_enabled() -> bool:
+    return _is_development() and _is_truthy(os.environ.get("FLASK_DEBUG"))
+
+
+def _run_config() -> Dict[str, Any]:
+    return {
+        "debug": _debug_enabled(),
+        "host": os.environ.get("HOST", "127.0.0.1"),
+        "port": int(os.environ.get("PORT", "5000")),
+    }
+
+
 app = Flask(__name__)
-app.secret_key = "dnd-character-creator-secret-key-2024"  # Change this in production
+app.secret_key = _secret_key_from_environment()
+app.config["DEBUG"] = _debug_enabled()
 
 
 # Enable CORS for the Vite dev server when running in development. In
-    # production, CORS is not needed.
-if os.environ.get("FLASK_ENV") == "development" or app.debug:
+# production, CORS is not needed.
+if _is_development():
     try:
         from flask_cors import CORS
         CORS(app, resources={r"/api/*": {"origins": ["http://localhost:5173"]}})
@@ -252,4 +295,4 @@ def serve_spa(path: str):
 # ==================== Application Entry Point ====================
 
 if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=5000)
+    app.run(**_run_config())

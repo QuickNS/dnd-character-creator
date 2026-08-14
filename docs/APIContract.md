@@ -235,6 +235,7 @@ Response (200):
 
 Errors:
 - `400` request-validation errors use the [shared error envelope](#shared-request-validation).
+- `500` `{ "error": "Internal server error", "correlation_id": "<id>" }`
 
 ### `POST /character/validate`
 
@@ -269,7 +270,9 @@ Response (200):
 
 `complete` is `all(s.complete for s in steps)`. Conditional checks: subclass when level qualifies, species/background skill-replacement when there is overlap, species trait choices, lineage when species has lineages, background ASI when offered, class feature `nested_choices`.
 
-Errors: request-validation failures use the [shared error envelope](#shared-request-validation).
+Errors:
+- `400` request-validation errors use the [shared error envelope](#shared-request-validation).
+- `500` `{ "error": "Internal server error", "correlation_id": "<id>" }`
 
 > **Type drift to fix on the frontend:** `frontend/src/lib/api.ts` declares `ValidationResponse` as `{ valid, steps, missing_top_level }`, but the server returns `{ complete, steps }`. The frontend types must be updated to match.
 
@@ -418,6 +421,7 @@ Example secondary-row payload (`choices_made.classes = [{Wizard, 5}, {Rogue, 1}]
 
 Errors:
 - `400` request-validation errors use the [shared error envelope](#shared-request-validation).
+- `500` `{ "error": "Internal server error", "correlation_id": "<id>" }`
 
 ### `POST /character/derived`
 
@@ -467,6 +471,7 @@ Response (200, valid view but not applicable):
 
 Errors:
 - `400` request-validation errors use the [shared error envelope](#shared-request-validation). For an unknown `view`, the response also includes `allowed` with the accepted values.
+- `500` `{ "error": "Internal server error", "correlation_id": "<id>" }`
 
 ### `POST /character/random-languages`
 
@@ -484,6 +489,7 @@ Response (200):
 
 Errors:
 - `400` request-validation errors use the [shared error envelope](#shared-request-validation).
+- `500` `{ "error": "Internal server error", "correlation_id": "<id>" }`
 
 ### `POST /character/roll-abilities`
 
@@ -497,6 +503,9 @@ Response (200):
   ]
 }
 ```
+
+Errors:
+- `500` `{ "error": "Internal server error", "correlation_id": "<id>" }`
 
 ## Canonical Request — `ChoicesMade`
 
