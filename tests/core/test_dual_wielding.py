@@ -87,6 +87,22 @@ class TestDualWielding:
             assert "offhand" in combo, "Combination should have offhand"
             assert "name" in combo, "Combination should have name"
 
+    def test_dual_wield_combinations_are_server_ranked(self, dual_wielding_fighter):
+        """Server ranks dual-wield combinations for frontend display."""
+        combinations = dual_wielding_fighter.calculate_weapon_attacks().get("combinations", [])
+
+        assert combinations
+        assert combinations[0]["recommended"] is True
+        assert combinations[0]["rank"] == 1
+        scores = [
+            (
+                combo["mainhand"]["avg_damage"] + combo["offhand"]["avg_damage"],
+                combo["mainhand"]["attack_bonus"] + combo["offhand"]["attack_bonus"],
+            )
+            for combo in combinations
+        ]
+        assert scores == sorted(scores, reverse=True)
+
     def test_single_weapon_no_offhand(self, single_weapon_fighter):
         """Test that single weapon doesn't get combination cards."""
         weapon_data = single_weapon_fighter.calculate_weapon_attacks()

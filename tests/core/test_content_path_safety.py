@@ -125,68 +125,85 @@ class TestBuildApiRejectsTraversal:
         choices.update(overrides)
         return client.post("/api/v1/character/build", json={"choices_made": choices})
 
+    @staticmethod
+    def _assert_sanitized_rejection(response, identifier, field):
+        """A rejection is a 400 that names the field but never echoes the value."""
+        assert response.status_code == 400
+        body = response.get_json()
+        assert body["error"]["field"] == field
+        assert identifier not in response.get_data(as_text=True)
+
     def test_valid_build_still_succeeds(self, client):
         r = self._post(client, {})
         assert r.status_code == 200
         assert r.get_json()["character"]["species"] == "Elf"
 
-    @pytest.mark.parametrize("key", ["species", "class", "background"])
-    @pytest.mark.parametrize("identifier", ["../general_feats", "/etc/passwd", "..%2f..%2fapp", "NotRealContent"])
-    def test_traversal_and_unknown_identifiers_rejected(self, client, key, identifier):
+    # A bare `class` selection is normalized into `classes[0]` before the
+    # identifier is resolved, so that is the field reported back.
+    @pytest.mark.parametrize(
+        "key,field",
+        [
+            ("species", "choices_made.species"),
+            ("class", "choices_made.classes[0].class_name"),
+            ("background", "choices_made.background"),
+        ],
+    )
+    @pytest.mark.parametrize(
+        "identifier",
+        ["../general_feats", "/etc/passwd", "..%2f..%2fapp", "NotRealContent"],
+    )
+    def test_traversal_and_unknown_identifiers_rejected(self, client, key, field, identifier):
         r = self._post(client, {key: identifier})
-        assert r.status_code == 400
-        error = r.get_json()["error"]
-        assert "Unknown or invalid" in error
-        # The response must not echo the submitted value back to the client.
-        assert identifier not in error
+        self._assert_sanitized_rejection(r, identifier, field)
 
     def test_lineage_traversal_rejected(self, client):
-        r = self._post(client, {"lineage": "../../general_feats"})
-        assert r.status_code == 400
-        assert "lineage" in r.get_json()["error"]
+        identifier = "../../general_feats"
+        r = self._post(client, {"lineage": identifier})
+        self._assert_sanitized_rejection(r, identifier, "choices_made.lineage")
 
     def test_subclass_traversal_rejected(self, client):
-        r = self._post(client, {"level": 3, "subclass": "../../general_feats"})
-        assert r.status_code == 400
-        assert "subclass" in r.get_json()["error"]
+        identifier = "../../general_feats"
+        r = self._post(client, {"level": 3, "subclass": identifier})
+        self._assert_sanitized_rejection(r, identifier, "choices_made.classes[0].subclass")
 
     def test_traversal_in_classes_payload_rejected(self, client):
+        identifier = "../../general_feats"
         r = client.post(
             "/api/v1/character/build",
             json={
                 "choices_made": {
                     "species": "Elf",
                     "background": "Sage",
-                    "classes": [{"class_name": "../../general_feats", "level": 1}],
+                    "classes": [{"class_name": identifier, "level": 1}],
                 }
             },
         )
-        assert r.status_code == 400
-        assert "class_name" in r.get_json()["error"]
+        self._assert_sanitized_rejection(
+            r, identifier, "choices_made.classes[0].class_name"
+        )
 
     def test_validate_endpoint_rejects_traversal(self, client):
+        identifier = "../../general_feats"
         r = client.post(
             "/api/v1/character/validate",
-            json={"choices_made": {"species": "../../general_feats"}},
+            json={"choices_made": {"species": identifier}},
         )
-        assert r.status_code == 400
-        assert "Unknown or invalid" in r.get_json()["error"]
+        self._assert_sanitized_rejection(r, identifier, "choices_made.species")
 
     def test_preview_step_endpoint_rejects_traversal(self, client):
+        identifier = "../../general_feats"
         r = client.post(
             "/api/v1/character/preview-step",
-            json={"choices_made": {"species": "../../general_feats"}, "step": "species"},
+            json={"choices_made": {"species": identifier}, "step": "species"},
         )
-        assert r.status_code == 400
-        assert "Unknown or invalid" in r.get_json()["error"]
+        self._assert_sanitized_rejection(r, identifier, "choices_made.species")
 
     def test_derived_endpoint_rejects_traversal(self, client):
+        identifier = "../../general_feats"
         r = client.post(
             "/api/v1/character/derived",
-            json={
-                "choices_made": {"class": "../../general_feats"},
-                "view": "spell_management",
-            },
+            json={"choices_made": {"class": identifier}, "view": "spell_management"},
         )
-        assert r.status_code == 400
-        assert "Unknown or invalid" in r.get_json()["error"]
+        self._assert_sanitized_rejection(
+            r, identifier, "choices_made.classes[0].class_name"
+        )

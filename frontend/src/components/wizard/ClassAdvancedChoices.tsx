@@ -190,10 +190,8 @@ export function ClassAdvancedChoices({
 
 function useDerived(choicesMade: Loose, view: string) {
   // Key on only the fields that change which options are available.
-  // Selecting a spell/mastery/invocation updates spell_selections in the
-  // store but does NOT change the available-options list, so we deliberately
-  // exclude it (and other selection fields) from the cache key to avoid a
-  // spurious re-fetch every time the player makes a pick.
+  // Selecting a spell or mastery does not change the available-options list.
+  // Invocation cantrip choices do, so keep invocation selections in the key.
   return useQuery({
     queryKey: [
       "character", "derived", view,
@@ -201,6 +199,7 @@ function useDerived(choicesMade: Loose, view: string) {
       choicesMade.level,
       choicesMade.subclass,
       choicesMade.classes,
+      choicesMade.eldritch_invocation_selections,
     ],
     queryFn: () => api.character.derived(choicesMade, view),
     enabled: Array.isArray(choicesMade["classes"]) && (choicesMade["classes"] as unknown[]).length > 0,
@@ -757,25 +756,101 @@ export function MasteryPicker({ data }: { data: Loose }) {
 
 // ---------- Eldritch Invocations ----------
 
+interface InvocationSelections {
+  selected: string[];
+  cantrip_choices: Record<string, string[]>;
+}
+
+interface InvocationCantripChoice {
+  id: string;
+  invocation: string;
+  count: number;
+  spell_list: string;
+  options: string[];
+  selected: string[];
+}
+
+function readInvocationSelections(
+  value: unknown,
+  fallbackSelected: string[],
+): InvocationSelections {
+  if (Array.isArray(value)) {
+    return { selected: value as string[], cantrip_choices: {} };
+  }
+
+  if (!value || typeof value !== "object") {
+    return { selected: fallbackSelected, cantrip_choices: {} };
+  }
+
+  const stored = rec(value);
+  return {
+    selected: arr<string>(stored.selected),
+    cantrip_choices: Object.entries(rec(stored.cantrip_choices)).reduce<
+      Record<string, string[]>
+    >((choices, [id, spells]) => {
+      choices[id] = arr<string>(spells);
+      return choices;
+    }, {}),
+  };
+}
+
 export function InvocationPicker({ data }: { data: Loose }) {
   const setChoice = useCharacterStore((s) => s.setChoice);
   const choicesMade = useCharacterStore((s) => s.choicesMade);
   const max = num(data.max_invocations) ?? 0;
   const available = arr<Loose>(data.available_invocations);
-  const current =
-    (choicesMade["eldritch_invocation_selections"] as string[] | undefined) ??
-    arr<string>(data.current_invocations);
+  const cantripDescriptors = arr<InvocationCantripChoice>(
+    data.cantrip_choice_descriptors,
+  );
+  const selections = readInvocationSelections(
+    choicesMade["eldritch_invocation_selections"],
+    arr<string>(data.current_invocations),
+  );
+  const current = selections.selected;
+
+  function resolvedCantripChoices(
+    selectedInvocations: string[] = current,
+  ): Record<string, string[]> {
+    const resolved = { ...selections.cantrip_choices };
+    for (const descriptor of cantripDescriptors) {
+      if (!selectedInvocations.includes(descriptor.invocation)) {
+        delete resolved[descriptor.id];
+      } else if (!(descriptor.id in resolved)) {
+        resolved[descriptor.id] = descriptor.selected;
+      }
+    }
+    return resolved;
+  }
 
   function toggle(name: string) {
-    const list = current;
-    if (list.includes(name)) {
-      setChoice(
-        "eldritch_invocation_selections",
-        list.filter((n) => n !== name),
-      );
-    } else if (list.length < max) {
-      setChoice("eldritch_invocation_selections", [...list, name]);
-    }
+    const isSelected = current.includes(name);
+    if (!isSelected && current.length >= max) return;
+
+    const selected = isSelected
+      ? current.filter((invocation) => invocation !== name)
+      : [...current, name];
+    const cantrip_choices = resolvedCantripChoices(selected);
+
+    setChoice("eldritch_invocation_selections", {
+      selected,
+      cantrip_choices,
+    } satisfies InvocationSelections);
+  }
+
+  function toggleCantrip(descriptor: InvocationCantripChoice, spell: string) {
+    const cantrip_choices = resolvedCantripChoices();
+    const selected = cantrip_choices[descriptor.id] ?? descriptor.selected;
+    const isSelected = selected.includes(spell);
+    if (!isSelected && selected.length >= descriptor.count) return;
+
+    cantrip_choices[descriptor.id] = isSelected
+      ? selected.filter((choice) => choice !== spell)
+      : [...selected, spell];
+
+    setChoice("eldritch_invocation_selections", {
+      selected: current,
+      cantrip_choices,
+    } satisfies InvocationSelections);
   }
 
   const [expandedInv, setExpandedInv] = useState<string | null>(null);
@@ -798,6 +873,9 @@ export function InvocationPicker({ data }: { data: Loose }) {
           const description = str(inv.description);
           const isSelected = current.includes(name);
           const isOpen = expandedInv === name;
+          const invocationCantripChoices = cantripDescriptors.filter(
+            (descriptor) => descriptor.invocation === name,
+          );
           return (
             <div
               key={`${name}-${i}`}
@@ -847,6 +925,53 @@ export function InvocationPicker({ data }: { data: Loose }) {
                   <p className="text-xs text-foreground/90 whitespace-pre-line">{description}</p>
                 </div>
               )}
+              {isSelected && invocationCantripChoices.map((descriptor) => {
+                const selectedCantrips =
+                  selections.cantrip_choices[descriptor.id] ?? descriptor.selected;
+                return (
+                  <div
+                    key={descriptor.id}
+                    className="border-t border-border/60 px-3 py-3"
+                  >
+                    <div className="mb-2 flex items-baseline justify-between gap-2">
+                      <h5 className="text-xs font-semibold text-foreground">
+                        {descriptor.spell_list}
+                      </h5>
+                      <span className="shrink-0 text-xs text-muted-foreground">
+                        {selectedCantrips.length}/{descriptor.count} chosen
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {descriptor.options.map((spell) => {
+                        const isCantripSelected = selectedCantrips.includes(spell);
+                        return (
+                          <button
+                            key={spell}
+                            type="button"
+                            onClick={() => toggleCantrip(descriptor, spell)}
+                            aria-pressed={isCantripSelected}
+                            className={cn(
+                              "inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors",
+                              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
+                              isCantripSelected
+                                ? "border-primary bg-primary text-primary-foreground"
+                                : "border-border bg-background text-foreground hover:border-primary/50",
+                            )}
+                          >
+                            <Check
+                              className={cn(
+                                "h-3 w-3",
+                                isCantripSelected ? "opacity-100" : "opacity-0",
+                              )}
+                            />
+                            {spell}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           );
         })}

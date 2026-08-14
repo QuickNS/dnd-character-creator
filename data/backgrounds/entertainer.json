@@ -1,6 +1,8 @@
 {
   "name": "Entertainer",
   "description": "You thrive in front of an audience. You know how to entrance them, entertain them, and even inspire them. Your poetics can stir the hearts of those who hear you, awakening grief or joy, laughter or anger. Your music raises their spirits or captures their sorrow.",
+  "edition": "2024",
+  "status": "active",
   "ability_score_increase": {
     "total": 3,
     "options": [

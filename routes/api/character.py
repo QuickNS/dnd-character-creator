@@ -8,14 +8,21 @@ frontend is the source of truth for in-progress choices, the Python
 
 from __future__ import annotations
 
+import json
+import logging
 import re
-import traceback
+import uuid
+from functools import lru_cache
+from pathlib import Path
 from typing import Any, Dict, List
 
 from flask import Blueprint, jsonify, request
 
+from modules.ability_scores import ABILITIES
 from modules.ability_scores import validate_point_buy
-from modules.character_builder import CharacterBuilder, content_slug
+from modules.character_builder import CharacterBuilder, SelectionValidationError
+from modules.data_loader import DataLoader
+from modules import strict_mode
 from modules.derived_stats import (
     build_damage_cantrip_rows,
     build_invocation_management_view,
@@ -24,6 +31,7 @@ from modules.derived_stats import (
 )
 
 character_bp = Blueprint("character", __name__, url_prefix="/character")
+logger = logging.getLogger(__name__)
 
 _DERIVED_VIEWS = {
     "damage_cantrips",
@@ -36,6 +44,45 @@ _CORE_TRAIT_PROFICIENCY_KEYS = {"skill_choices", "tool_choices"}
 
 class ChoicesValidationError(ValueError):
     """Raised when API request choices are structurally invalid."""
+
+    def __init__(self, message: str, field: str | None = None, code: str = "invalid_request"):
+        super().__init__(message)
+        self.message = message
+        self.field = field
+        self.code = code
+
+    def to_response(self) -> Dict[str, Any]:
+        error: Dict[str, Any] = {"code": self.code, "message": self.message}
+        if self.field:
+            error["field"] = self.field
+        return {"error": error}
+
+
+_MAX_COLLECTION_ITEMS = 100
+_MAX_CLASSES = 12
+_MAX_STRING_LENGTH = 512
+_MAX_NESTING_DEPTH = 8
+_ENDPOINT_FIELDS = {
+    "build": {"choices_made"},
+    "validate": {"choices_made"},
+    "preview-step": {"choices_made", "step"},
+    "random-languages": {"choices_made"},
+    "derived": {"choices_made", "view"},
+}
+
+
+def _internal_error_response(action: str, exc: Exception):
+    correlation_id = uuid.uuid4().hex
+    logger.exception(
+        "Unhandled character API error while %s (correlation_id=%s, error_type=%s)",
+        action,
+        correlation_id,
+        exc.__class__.__name__,
+    )
+    return jsonify({
+        "error": "Internal server error",
+        "correlation_id": correlation_id,
+    }), 500
 
 
 # ==================== Multiclass nested-choice filtering ====================
@@ -177,6 +224,67 @@ def _filter_nested_choices_for_secondary_class(
     return filtered
 
 
+@lru_cache(maxsize=None)
+def _load_feat_definitions() -> Dict[str, Dict[str, Any]]:
+    """Load feat definitions needed for server-side prerequisite warnings."""
+    data_dir = Path(__file__).resolve().parent.parent.parent / "data"
+    feats: Dict[str, Dict[str, Any]] = {}
+    for filename, wrapper_key in (
+        ("general_feats.json", "general_feats"),
+        ("origin_feats.json", "origin_feats"),
+    ):
+        path = data_dir / filename
+        try:
+            payload = json.loads(path.read_text())
+        except (OSError, json.JSONDecodeError):
+            continue
+        entries = payload.get(wrapper_key, {})
+        if isinstance(entries, dict):
+            feats.update({
+                name: data
+                for name, data in entries.items()
+                if isinstance(data, dict)
+            })
+    return feats
+
+
+def _class_feat_prerequisite_warnings(
+    builder: CharacterBuilder,
+    choices: Dict[str, Any],
+) -> List[Dict[str, Any]]:
+    feats = _load_feat_definitions()
+    total_level = 1
+    class_rows = choices.get("classes")
+    if isinstance(class_rows, list) and class_rows:
+        total_level = sum(
+            int(row.get("level", 0) or 0)
+            for row in class_rows
+            if isinstance(row, dict)
+        )
+    elif isinstance(choices.get("level"), int):
+        total_level = int(choices["level"])
+
+    warnings: List[Dict[str, Any]] = []
+    for key, selected_feat in choices.items():
+        if not re.match(r"^class_feat_\d+$", str(key)):
+            continue
+        if not isinstance(selected_feat, str) or not selected_feat:
+            continue
+        feat = feats.get(selected_feat)
+        prerequisite = feat.get("prerequisite") if isinstance(feat, dict) else None
+        evaluation = builder.evaluate_feat_prerequisite(
+            prerequisite,
+            level=total_level,
+        )
+        if not evaluation["met"] and evaluation["messages"]:
+            warnings.append({
+                "choice_key": key,
+                "feat_name": selected_feat,
+                "messages": evaluation["messages"],
+            })
+    return warnings
+
+
 def _resolve_class_row_context(
     request_choices: Dict[str, Any],
     previewed_class: str | None,
@@ -213,21 +321,108 @@ def _resolve_class_row_context(
     }
 
 
-def _require_json() -> Dict[str, Any] | None:
+def _validation_response(exc: ChoicesValidationError):
+    error: Dict[str, Any] = {
+        "code": exc.code,
+        "message": "Invalid character request",
+    }
+    if exc.field:
+        error["field"] = exc.field
+    return jsonify({"error": error}), 400
+
+
+def _require_request(endpoint: str) -> Dict[str, Any]:
     if not request.is_json:
-        return None
-    return request.get_json(silent=True)
+        raise ChoicesValidationError("Body must be a JSON object")
+    body = request.get_json(silent=True)
+    if not isinstance(body, dict):
+        raise ChoicesValidationError("Body must be a JSON object")
+    allowed = _ENDPOINT_FIELDS[endpoint]
+    unknown = set(body) - allowed
+    if unknown:
+        raise ChoicesValidationError(
+            f"Unknown request fields: {', '.join(sorted(unknown))}",
+            code="unknown_field",
+        )
+    missing = allowed - set(body)
+    if missing:
+        field = sorted(missing)[0]
+        raise ChoicesValidationError(
+            f"Missing required request fields: {', '.join(sorted(missing))}",
+            field,
+            code="missing_field",
+        )
+    if not isinstance(body["choices_made"], dict):
+        raise ChoicesValidationError("'choices_made' must be a JSON object", "choices_made")
+    return body
+
+
+def _validate_json_value(value: Any, field: str, depth: int = 0) -> None:
+    if depth > _MAX_NESTING_DEPTH:
+        raise ChoicesValidationError("Value is nested too deeply", field, "out_of_bounds")
+    if isinstance(value, str):
+        if len(value) > _MAX_STRING_LENGTH:
+            raise ChoicesValidationError("String is too long", field, "out_of_bounds")
+        return
+    if value is None or isinstance(value, (bool, int, float)):
+        return
+    if isinstance(value, list):
+        if len(value) > _MAX_COLLECTION_ITEMS:
+            raise ChoicesValidationError("Collection has too many items", field, "out_of_bounds")
+        for index, item in enumerate(value):
+            _validate_json_value(item, f"{field}[{index}]", depth + 1)
+        return
+    if isinstance(value, dict):
+        if len(value) > _MAX_COLLECTION_ITEMS:
+            raise ChoicesValidationError("Collection has too many items", field, "out_of_bounds")
+        for key, item in value.items():
+            if not isinstance(key, str) or not key or len(key) > _MAX_STRING_LENGTH:
+                raise ChoicesValidationError("Object keys must be bounded non-empty strings", field)
+            _validate_json_value(item, f"{field}.{key}", depth + 1)
+        return
+    raise ChoicesValidationError("Value must be JSON-compatible", field)
+
+
+def _canonical_identifier(value: Any, options: Dict[str, Any], field: str) -> str:
+    if not isinstance(value, str) or not value.strip():
+        raise ChoicesValidationError("Must be a non-empty string", field)
+    normalized = value.strip().casefold()
+    canonical = next((name for name in options if name.casefold() == normalized), None)
+    if canonical is None:
+        raise ChoicesValidationError("Unknown identifier", field, "unknown_identifier")
+    return canonical
+
+
+def _canonical_subclass_identifier(
+    value: Any, class_name: str, loader: DataLoader, field: str
+) -> str:
+    subclasses = loader.get_subclasses_for_class(class_name)
+    try:
+        return _canonical_identifier(value, subclasses, field)
+    except ChoicesValidationError:
+        if not isinstance(value, str) or not value.strip():
+            raise
+        requested = value.strip().casefold()
+        matches = [
+            name for name in subclasses
+            if name.casefold().startswith(f"{requested} ")
+            or name.casefold().endswith(f" {requested}")
+            or (
+                len(requested.split()) > 1
+                and name.casefold().split()[0] == requested.split()[0]
+            )
+        ]
+        if len(matches) == 1:
+            return matches[0]
+        raise
 
 
 def _coerce_level(value: Any, field_name: str) -> int:
-    if isinstance(value, bool):
-        raise ChoicesValidationError(f"'{field_name}' must be an integer")
-    try:
-        level = int(value)
-    except (TypeError, ValueError) as exc:
-        raise ChoicesValidationError(f"'{field_name}' must be an integer") from exc
-    if level < 1:
-        raise ChoicesValidationError(f"'{field_name}' must be at least 1")
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise ChoicesValidationError("Must be an integer", field_name)
+    level = value
+    if not 1 <= level <= 20:
+        raise ChoicesValidationError("Must be between 1 and 20", field_name, "out_of_bounds")
     return level
 
 
@@ -237,12 +432,21 @@ def _normalize_class_entries(classes: Any, field_name: str = "choices_made.class
         raise ChoicesValidationError(f"'{field_name}' must be an array")
     if len(classes) == 0:
         raise ChoicesValidationError(f"'{field_name}' must contain at least one class entry")
+    if len(classes) > _MAX_CLASSES:
+        raise ChoicesValidationError("Too many class entries", field_name, "out_of_bounds")
 
     normalized_entries: List[Dict[str, Any]] = []
     for idx, class_entry in enumerate(classes):
         entry_path = f"{field_name}[{idx}]"
         if not isinstance(class_entry, dict):
             raise ChoicesValidationError(f"'{entry_path}' must be an object")
+        unknown = set(class_entry) - {"class_name", "level", "subclass"}
+        if unknown:
+            raise ChoicesValidationError(
+                f"Unknown class entry fields: {', '.join(sorted(unknown))}",
+                entry_path,
+                "unknown_field",
+            )
 
         class_name = class_entry.get("class_name")
         if not isinstance(class_name, str) or not class_name.strip():
@@ -263,6 +467,12 @@ def _normalize_class_entries(classes: Any, field_name: str = "choices_made.class
 
         normalized_entries.append(normalized_entry)
 
+    if sum(entry["level"] for entry in normalized_entries) > 20:
+        raise ChoicesValidationError(
+            "Total class levels must be between 1 and 20",
+            field_name,
+            "out_of_bounds",
+        )
     return normalized_entries
 
 
@@ -276,6 +486,7 @@ def _normalize_choices_for_builder(
         raise ChoicesValidationError("'choices_made' must be a JSON object")
 
     normalized = dict(choices_made)
+    _validate_json_value(normalized, "choices_made")
 
     # Normalise singular API key → plural internal key expected by CharacterBuilder.
     if "background_skill_replacement" in normalized and "background_skill_replacements" not in normalized:
@@ -346,54 +557,144 @@ def _normalize_choices_for_builder(
     return normalized
 
 
-def _validate_content_selections(
-    choices: Dict[str, Any], builder: CharacterBuilder
-) -> None:
-    """Reject selections that do not name canonical game content.
+def _validate_and_canonicalize_choices(
+    choices_made: Dict[str, Any],
+    *,
+    preserve_explicit_class_context: bool = False,
+) -> Dict[str, Any]:
+    """Reject malformed choices and normalize data-backed identifiers."""
+    allowed_keys = strict_mode.KNOWN_CHOICE_KEYS | strict_mode.collect_data_driven_choice_keys({})
+    unknown_keys = [
+        key for key in choices_made
+        if key not in allowed_keys and not strict_mode.is_dynamic_choice_key(key)
+    ]
+    if unknown_keys:
+        raise ChoicesValidationError(
+            f"Unknown choices: {', '.join(sorted(unknown_keys))}",
+            "choices_made",
+            "unknown_field",
+        )
+    normalized = _normalize_choices_for_builder(
+        choices_made,
+        preserve_explicit_class_context=preserve_explicit_class_context,
+    )
+    loader = DataLoader()
 
-    Class, species, lineage and background selections address JSON files on
-    disk, so only canonical content identifiers are accepted. Traversal
-    segments, absolute paths and unknown names are rejected here with a
-    sanitized message that never echoes the submitted value.
-    """
-    for key in ("species", "lineage", "background"):
-        value = choices.get(key)
-        if value is None or (isinstance(value, str) and not value.strip()):
-            continue
-        if not builder.content_selection_exists(key, value):
-            raise ChoicesValidationError(f"Unknown or invalid '{key}' selection")
-
-    for index, entry in enumerate(choices.get("classes") or []):
-        class_name = entry.get("class_name") if isinstance(entry, dict) else None
-        if class_name is None:
-            continue
-        if not builder.content_selection_exists("class", class_name):
-            raise ChoicesValidationError(
-                f"Unknown or invalid 'classes[{index}].class_name' selection"
+    if "classes" in normalized:
+        seen_classes = set()
+        for index, entry in enumerate(normalized["classes"]):
+            path = f"choices_made.classes[{index}]"
+            entry["class_name"] = _canonical_identifier(
+                entry["class_name"], loader.classes, f"{path}.class_name"
             )
-        subclass = entry.get("subclass")
-        if subclass is not None and content_slug(subclass) is None:
-            raise ChoicesValidationError(
-                f"Unknown or invalid 'classes[{index}].subclass' selection"
+            class_key = entry["class_name"].casefold()
+            if class_key in seen_classes:
+                raise ChoicesValidationError("Duplicate class entry", path, "invalid_request")
+            seen_classes.add(class_key)
+            if "subclass" in entry:
+                entry["subclass"] = _canonical_subclass_identifier(
+                    entry["subclass"], entry["class_name"], loader, f"{path}.subclass"
+                )
+        primary = normalized["classes"][0]
+        normalized["class"] = primary["class_name"]
+        normalized["level"] = (
+            normalized["level"] if "class" in choices_made else sum(
+                entry["level"] for entry in normalized["classes"]
+            )
+        )
+        if primary.get("subclass"):
+            normalized["subclass"] = primary["subclass"]
+    elif "class" in normalized:
+        normalized["class"] = _canonical_identifier(
+            normalized["class"], loader.classes, "choices_made.class"
+        )
+        normalized["level"] = _coerce_level(
+            normalized.get("level", 1), "choices_made.level"
+        )
+        if "subclass" in normalized and normalized["subclass"] not in (None, ""):
+            normalized["subclass"] = _canonical_subclass_identifier(
+                normalized["subclass"], normalized["class"], loader, "choices_made.subclass"
             )
 
-    subclass = choices.get("subclass")
-    if isinstance(subclass, str) and subclass.strip() and content_slug(subclass) is None:
-        raise ChoicesValidationError("Unknown or invalid 'subclass' selection")
+    for key, catalog in (("species", loader.species), ("background", loader.backgrounds)):
+        if key in normalized and normalized[key] not in (None, ""):
+            normalized[key] = _canonical_identifier(normalized[key], catalog, f"choices_made.{key}")
 
+    if "lineage" in normalized and normalized["lineage"] not in (None, ""):
+        species_name = normalized.get("species")
+        if not species_name:
+            raise ChoicesValidationError("Requires a selected species", "choices_made.lineage")
+        lineages = loader.species[species_name].get("lineages") or {}
+        lineage_options = (
+            {name: None for name in lineages}
+            if isinstance(lineages, list)
+            else lineages
+            if isinstance(lineages, dict)
+            else {}
+        )
+        normalized["lineage"] = _canonical_identifier(
+            normalized["lineage"], lineage_options, "choices_made.lineage"
+        )
+
+    scores = normalized.get("ability_scores", normalized.get("abilities"))
+    if scores is not None:
+        field = "choices_made.ability_scores" if "ability_scores" in normalized else "choices_made.abilities"
+        if not isinstance(scores, dict) or set(scores) != set(ABILITIES):
+            raise ChoicesValidationError(
+                "Must contain exactly the six ability scores", field
+            )
+        if any(isinstance(score, bool) or not isinstance(score, int) or not 1 <= score <= 20
+               for score in scores.values()):
+            raise ChoicesValidationError("Scores must be integers between 1 and 20", field)
+
+    for key in (
+        "background_ability_score_assignment",
+        "background_bonuses",
+        "additional_ability_modifiers",
+        "ability_modifiers",
+    ):
+        if key not in normalized:
+            continue
+        bonuses = normalized[key]
+        if (
+            not isinstance(bonuses, dict)
+            or not set(bonuses).issubset(ABILITIES)
+            or any(
+                isinstance(value, bool) or not isinstance(value, int) or not -20 <= value <= 20
+                for value in bonuses.values()
+            )
+        ):
+            raise ChoicesValidationError(
+                "Must be an ability-to-integer map with values between -20 and 20",
+                f"choices_made.{key}",
+            )
+
+    for key in ("languages", "skill_choices", "tools", "tool_choices", "rare_languages"):
+        if key in normalized:
+            value = normalized[key]
+            if (not isinstance(value, list) or any(not isinstance(item, str) for item in value)
+                    or len(value) != len(set(value))):
+                raise ChoicesValidationError(
+                    "Must be an array of unique strings", f"choices_made.{key}"
+                )
+
+    return normalized
 
 def _build(
     choices_made: Dict[str, Any],
     *,
     preserve_explicit_class_context: bool = False,
 ) -> CharacterBuilder:
-    builder = CharacterBuilder()
-    normalized_choices = _normalize_choices_for_builder(
+    normalized_choices = _validate_and_canonicalize_choices(
         choices_made,
         preserve_explicit_class_context=preserve_explicit_class_context,
     )
-    _validate_content_selections(normalized_choices, builder)
-    builder.apply_choices(normalized_choices)
+    builder = CharacterBuilder()
+    if not builder.apply_choices(normalized_choices, fail_on_error=True):
+        raise ChoicesValidationError(
+            "A character choice could not be applied",
+            code="choice_error",
+        )
     return builder
 
 
@@ -459,16 +760,18 @@ def build_character():
     Request: `{ "choices_made": { ... } }`
     Response: `{ "character": <to_character() output> }`
     """
-    body = _require_json()
-    if body is None or "choices_made" not in body:
-        return jsonify({"error": "Body must be JSON with 'choices_made'"}), 400
     try:
+        body = _require_request("build")
         builder = _build(body["choices_made"], preserve_explicit_class_context=True)
         return jsonify({"character": builder.to_character()})
+    except SelectionValidationError as exc:
+        return jsonify(exc.to_error_payload()), 400
     except ChoicesValidationError as exc:
-        return jsonify({"error": str(exc)}), 400
+        return _validation_response(exc)
+    except ValueError as exc:
+        return _validation_response(ChoicesValidationError(str(exc), code="choice_error"))
     except Exception as exc:
-        return jsonify({"error": str(exc), "traceback": traceback.format_exc()}), 500
+        return _internal_error_response("building character", exc)
 
 
 # ==================== Validate ====================
@@ -683,10 +986,8 @@ def _step_status(builder: CharacterBuilder, step: str) -> Dict[str, Any]:
 @character_bp.post("/validate")
 def validate_character():
     """Return per-step completion status for a `choices_made` payload."""
-    body = _require_json()
-    if body is None or "choices_made" not in body:
-        return jsonify({"error": "Body must be JSON with 'choices_made'"}), 400
     try:
+        body = _require_request("validate")
         builder = _build(body["choices_made"])
         steps = list(_STEP_REQUIRED_KEYS.keys())
         statuses = [_step_status(builder, s) for s in steps]
@@ -695,9 +996,11 @@ def validate_character():
             "steps": statuses,
         })
     except ChoicesValidationError as exc:
-        return jsonify({"error": str(exc)}), 400
+        return _validation_response(exc)
+    except ValueError as exc:
+        return _validation_response(ChoicesValidationError(str(exc), code="choice_error"))
     except Exception as exc:
-        return jsonify({"error": str(exc), "traceback": traceback.format_exc()}), 500
+        return _internal_error_response("validating character", exc)
 
 
 # ==================== Preview step ====================
@@ -716,21 +1019,22 @@ def preview_step():
     Request: `{ "choices_made": {...}, "step": "class" }`
     Response: `{ "step": "class", "nested_choices": [...], "features": ... }`
     """
-    body = _require_json()
-    if body is None or "choices_made" not in body or "step" not in body:
-        return jsonify({"error": "Body must be JSON with 'choices_made' and 'step'"}), 400
-
-    step = body["step"]
     try:
+        body = _require_request("preview-step")
+        step = body["step"]
+        if not isinstance(step, str) or step not in _STEP_REQUIRED_KEYS:
+            raise ChoicesValidationError("Unknown wizard step", "step", "unknown_identifier")
         # preserve_explicit_class_context ensures that when the frontend sends
         # `class: "druid"` for the active multiclass row, the builder uses only
         # that class — not the first entry in the `classes` array (which would
         # surface the wrong class's features, e.g. Cleric's Divine Order for Druid).
         builder = _build(body["choices_made"], preserve_explicit_class_context=True)
     except ChoicesValidationError as exc:
-        return jsonify({"error": str(exc)}), 400
+        return _validation_response(exc)
+    except ValueError as exc:
+        return _validation_response(ChoicesValidationError(str(exc), code="choice_error"))
     except Exception as exc:
-        return jsonify({"error": str(exc), "traceback": traceback.format_exc()}), 500
+        return _internal_error_response("preparing step preview", exc)
 
     try:
         result: Dict[str, Any] = {"step": step, "choices_made": body["choices_made"]}
@@ -773,6 +1077,11 @@ def preview_step():
                     class_name,
                 )
                 cdata = dl.classes.get(canonical_class, {})
+                class_summaries = [
+                    {"id": key, **value}
+                    for key, value in sorted(dl.classes.items())
+                    if isinstance(value, dict)
+                ]
                 sub_level = cdata.get("subclass_selection_level", 3)
                 result["needs_subclass"] = level >= sub_level
                 if result["needs_subclass"]:
@@ -798,6 +1107,18 @@ def preview_step():
                         result["nested_choices"], cdata
                     )
                 result["row_context"] = row_context
+                result["multiclass_prerequisites"] = {
+                    "classes": {
+                        (entry.get("id") or entry.get("name")): builder.evaluate_multiclass_prerequisites(
+                            entry,
+                            class_summaries,
+                        )
+                        for entry in class_summaries
+                    }
+                }
+                result["class_feat_prerequisite_warnings"] = (
+                    _class_feat_prerequisite_warnings(builder, request_choices)
+                )
                 # Surface currently-known languages so the frontend can disable
                 # them in language choice pickers (e.g. Thieves' Cant).
                 result["granted_languages"] = character.get("languages", [])
@@ -855,6 +1176,7 @@ def preview_step():
 
         elif step == "abilities":
             result["background_asi"] = builder.get_background_asi_options()
+            result["ability_generation"] = builder.get_ability_generation_state()
             class_name = character.get("class", "")
             if class_name:
                 from modules.data_loader import DataLoader
@@ -875,23 +1197,35 @@ def preview_step():
             result["background_equipment"] = dl.backgrounds.get(background_name, {}).get("starting_equipment", {})
 
         return jsonify(result)
+    except ValueError as exc:
+        return _validation_response(ChoicesValidationError(str(exc), code="choice_error"))
     except Exception as exc:
-        return jsonify({"error": str(exc), "traceback": traceback.format_exc()}), 500
+        return _internal_error_response("rendering step preview", exc)
 
 
 @character_bp.post("/random-languages")
 def random_languages():
     """Return a random valid language selection for the language step."""
-    body = _require_json()
-    if body is None or "choices_made" not in body:
-        return jsonify({"error": "Body must be JSON with 'choices_made'"}), 400
     try:
+        body = _require_request("random-languages")
         builder = _build(body["choices_made"])
         return jsonify({"languages": builder.roll_languages()})
     except ChoicesValidationError as exc:
-        return jsonify({"error": str(exc)}), 400
-    except Exception:
-        return jsonify({"error": "Failed to generate random languages"}), 500
+        return _validation_response(exc)
+    except ValueError as exc:
+        return _validation_response(ChoicesValidationError(str(exc), code="choice_error"))
+    except Exception as exc:
+        return _internal_error_response("generating random languages", exc)
+
+
+@character_bp.post("/roll-abilities")
+def roll_abilities():
+    """Return server-rolled 4d6-drop-lowest ability score candidates."""
+    try:
+        builder = CharacterBuilder()
+        return jsonify({"rolls": builder.roll_ability_scores()})
+    except Exception as exc:
+        return _internal_error_response("rolling ability scores", exc)
 
 
 # ==================== Derived views ====================
@@ -909,22 +1243,25 @@ def derived_view():
     not applicable to the current character (e.g. invocations on a non-Warlock),
     returns 200 with `applicable: false` and a human-readable `reason`.
     """
-    body = _require_json()
-    if body is None or "choices_made" not in body or "view" not in body:
-        return jsonify({"error": "Body must be JSON with 'choices_made' and 'view'"}), 400
-    view = body["view"]
-    if view not in _DERIVED_VIEWS:
-        return jsonify({
-            "error": f"Unknown view '{view}'",
-            "allowed": sorted(_DERIVED_VIEWS),
-        }), 400
-
     try:
+        body = _require_request("derived")
+        view = body["view"]
+        if not isinstance(view, str) or view not in _DERIVED_VIEWS:
+            return jsonify({
+                "error": {
+                    "code": "unknown_identifier",
+                    "field": "view",
+                    "message": "Unknown derived view",
+                },
+                "allowed": sorted(_DERIVED_VIEWS),
+            }), 400
         builder = _build(body["choices_made"], preserve_explicit_class_context=True)
     except ChoicesValidationError as exc:
-        return jsonify({"error": str(exc)}), 400
+        return _validation_response(exc)
+    except ValueError as exc:
+        return _validation_response(ChoicesValidationError(str(exc), code="choice_error"))
     except Exception as exc:
-        return jsonify({"error": str(exc), "traceback": traceback.format_exc()}), 500
+        return _internal_error_response("building derived view", exc)
 
     try:
         if view == "damage_cantrips":
@@ -950,4 +1287,4 @@ def derived_view():
             "data": None,
         })
     except Exception as exc:
-        return jsonify({"error": str(exc), "traceback": traceback.format_exc()}), 500
+        return _internal_error_response("rendering derived view", exc)

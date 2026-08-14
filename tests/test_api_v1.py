@@ -81,8 +81,31 @@ class TestCatalogMisc:
     def test_list_backgrounds(self, client):
         r = client.get("/api/v1/catalog/backgrounds")
         assert r.status_code == 200
-        names = {b["name"] for b in r.get_json()["backgrounds"]}
+        backgrounds = r.get_json()["backgrounds"]
+        names = {b["name"] for b in backgrounds}
         assert "Acolyte" in names
+        assert "Folk Hero" not in names
+        assert "Guild Artisan" not in names
+        assert all(b["edition"] == "2024" for b in backgrounds)
+        assert all(b["status"] == "active" for b in backgrounds)
+
+    def test_list_backgrounds_include_legacy(self, client):
+        r = client.get("/api/v1/catalog/backgrounds?include_legacy=true")
+        assert r.status_code == 200
+        backgrounds = r.get_json()["backgrounds"]
+        by_name = {b["name"]: b for b in backgrounds}
+        assert by_name["Folk Hero"]["edition"] == "2014"
+        assert by_name["Folk Hero"]["status"] == "legacy"
+        assert by_name["Guild Artisan"]["edition"] == "2014"
+        assert by_name["Guild Artisan"]["status"] == "legacy"
+
+    def test_get_legacy_background_detail(self, client):
+        r = client.get("/api/v1/catalog/backgrounds/Folk%20Hero")
+        assert r.status_code == 200
+        data = r.get_json()
+        assert data["name"] == "Folk Hero"
+        assert data["edition"] == "2014"
+        assert data["status"] == "legacy"
 
     def test_list_feats(self, client):
         r = client.get("/api/v1/catalog/feats")
@@ -343,6 +366,77 @@ class TestCharacterBuild:
         r = client.post("/api/v1/character/build", json={})
         assert r.status_code == 400
 
+    def test_build_invalid_spell_selection_returns_structured_400(self, client):
+        payload = {
+            "choices_made": {
+                "character_name": "Broken Wizard",
+                "species": "Human",
+                "class": "Wizard",
+                "level": 3,
+                "background": "Sage",
+                "ability_scores": {
+                    "Strength": 8,
+                    "Dexterity": 14,
+                    "Constitution": 14,
+                    "Intelligence": 16,
+                    "Wisdom": 12,
+                    "Charisma": 10,
+                },
+                "skill_choices": ["Arcana", "History"],
+                "spell_selections": {
+                    "cantrips": [],
+                    "spells": ["Cure Wounds"],
+                    "background_cantrips": [],
+                    "background_spells": [],
+                },
+            }
+        }
+        r = client.post("/api/v1/character/build", json=payload)
+        assert r.status_code == 400
+        body = r.get_json()
+        assert body["selection_family"] == "spell_selections"
+        assert body["code"] == "invalid_selection"
+        assert isinstance(body.get("violations"), list) and body["violations"]
+
+    def test_build_validation_errors_remain_client_errors(self, client):
+        r = client.post(
+            "/api/v1/character/build",
+            json={"choices_made": {"classes": "not-a-list"}},
+        )
+        assert r.status_code == 400
+        assert "error" in r.get_json()
+
+    @pytest.mark.parametrize(
+        ("path", "payload"),
+        [
+            ("/api/v1/character/build", {"choices_made": {"class": "Fighter"}}),
+            ("/api/v1/character/validate", {"choices_made": {"class": "Fighter"}}),
+            (
+                "/api/v1/character/preview-step",
+                {"choices_made": {"class": "Fighter"}, "step": "class"},
+            ),
+            (
+                "/api/v1/character/derived",
+                {"choices_made": {"class": "Fighter"}, "view": "damage_cantrips"},
+            ),
+        ],
+    )
+    def test_character_internal_errors_are_sanitized(self, client, monkeypatch, path, payload):
+        from routes.api import character as character_routes
+
+        def fail_build(*args, **kwargs):
+            raise RuntimeError("sensitive traceback detail")
+
+        monkeypatch.setattr(character_routes, "_build", fail_build)
+
+        r = client.post(path, json=payload)
+
+        assert r.status_code == 500
+        assert r.get_json()["error"] == "Internal server error"
+        assert isinstance(r.get_json().get("correlation_id"), str)
+        assert "traceback" not in r.get_json()
+        assert "sensitive traceback detail" not in r.get_data(as_text=True)
+
     def test_build_legacy_class_level_payload_still_supported(self, client, dwarf_cleric_choices):
         r = client.post(
             "/api/v1/character/build",
@@ -405,6 +499,7 @@ class TestCharacterBuild:
         assert char["class"] == "Rogue"
         assert char["level"] == 5
         assert char["proficiency_bonus"] == 3
+        assert char["combat"]["hit_dice"]["total"] == "3d8 + 2d10"
 
     def test_build_multiclass_features_include_both_class_tracks(self, client):
         r = client.post(
@@ -438,6 +533,18 @@ class TestCharacterBuild:
         )
         assert spell_stats["spell_save_dc"] == (
             8 + char["proficiency_bonus"] + spell_stats["spellcasting_modifier"]
+        )
+
+    def test_build_passive_perception_matches_server_skill_bonus(self, client):
+        r = client.post(
+            "/api/v1/character/build",
+            json={"choices_made": self._rogue_fighter_multiclass_choices()},
+        )
+
+        assert r.status_code == 200
+        char = r.get_json()["character"]
+        assert char["combat"]["passive_perception"] == (
+            10 + char["skills"]["perception"]["modifier"]
         )
 
     def test_multiclass_full_plus_full_uses_effective_caster_level_for_slots(self, client):
@@ -1047,6 +1154,52 @@ class TestCharacterBuild:
         assert nested_by_key["class_feat_4_abilities_plus_1"]["depends_on"] == "class_feat_4_asi_option"
         assert nested_by_key["class_feat_4_abilities_plus_1"]["depends_on_value"] == "+1 to two abilities"
 
+    def test_preview_abilities_includes_server_calculation_state(self, client):
+        choices = self._basics_for_preview()
+        choices["ability_scores_method"] = "point_buy"
+
+        r = client.post(
+            "/api/v1/character/preview-step",
+            json={"step": "abilities", "choices_made": choices},
+        )
+
+        assert r.status_code == 200
+        state = r.get_json()["ability_generation"]
+        assert state["abilities"]["Dexterity"]["modifier_display"] == "+1"
+        assert state["point_buy"]["total"] == 27
+        assert state["point_buy"]["remaining"] == 0
+        assert state["point_buy"]["controls"]["Dexterity"]["current_cost"] == 4
+        assert state["standard_array"]["values"] == [15, 14, 13, 12, 10, 8]
+
+    def test_preview_class_includes_server_multiclass_prerequisites(self, client):
+        choices = self._basics_for_preview()
+        choices["ability_scores"]["Intelligence"] = 10
+        choices["background_bonuses"] = {"Wisdom": 2, "Constitution": 1}
+        choices["classes"] = [
+            {"class_name": "Cleric", "level": 1},
+            {"class_name": "Wizard", "level": 1},
+        ]
+
+        data = self._preview_class(client, choices, target_class="Wizard", target_level=1)
+
+        wizard = data["multiclass_prerequisites"]["classes"]["Wizard"]
+        assert wizard["ok"] is False
+        assert wizard["abilities_unknown"] is False
+        assert "Intelligence" in wizard["missing"]
+
+    def test_preview_class_includes_server_feat_prerequisite_warnings(self, client):
+        choices = self._basics_for_preview()
+        choices["classes"] = [{"class_name": "Fighter", "level": 4}]
+        choices["class_feat_4"] = "Great Weapon Master"
+
+        data = self._preview_class(client, choices, target_class="Fighter", target_level=4)
+
+        warnings = data["class_feat_prerequisite_warnings"]
+        assert warnings
+        assert warnings[0]["choice_key"] == "class_feat_4"
+        assert warnings[0]["feat_name"] == "Great Weapon Master"
+        assert any("Strength 13+" in message for message in warnings[0]["messages"])
+
     def test_preview_class_cleric_thaumaturge_bonus_cantrip_appears_after_divine_order(
         self, client
     ):
@@ -1400,3 +1553,36 @@ class TestCharacterDerived:
         assert body["applicable"] is False
         assert isinstance(body.get("reason"), str)
         assert body["data"] is None
+
+    def test_derived_invocation_management_returns_tome_cantrip_choices(self, client):
+        choices = {
+            "classes": [{"class_name": "Warlock", "level": 1}],
+            "species": "Human",
+            "background": "Acolyte",
+            "eldritch_invocation_selections": {
+                "selected": ["Pact of the Tome"],
+                "cantrip_choices": {
+                    "eldritch_invocation_pact_of_the_tome_0": ["Fire Bolt"],
+                    "eldritch_invocation_pact_of_the_tome_1": ["Guidance"],
+                    "eldritch_invocation_pact_of_the_tome_2": ["Druidcraft"],
+                },
+            },
+        }
+        r = client.post(
+            "/api/v1/character/derived",
+            json={"choices_made": choices, "view": "invocation_management"},
+        )
+
+        assert r.status_code == 200
+        data = r.get_json()["data"]
+        descriptors = data["cantrip_choice_descriptors"]
+        assert [descriptor["spell_list"] for descriptor in descriptors] == [
+            "Wizard",
+            "Cleric",
+            "Druid",
+        ]
+        assert [descriptor["selected"] for descriptor in descriptors] == [
+            ["Fire Bolt"],
+            ["Guidance"],
+            ["Druidcraft"],
+        ]

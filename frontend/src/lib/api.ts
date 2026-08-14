@@ -140,6 +140,14 @@ export interface PreviewStepResponse {
   [key: string]: unknown;
 }
 
+export interface AbilityRoll {
+  value: number;
+  dice?: number[];
+  modifier: number;
+  modifier_display: string;
+  modifier_tone: "positive" | "negative" | "neutral";
+}
+
 export interface MulticlassingSkillProficiencies {
   count: number;
   /** Either a closed list of skills, or the literal string "any". */
@@ -202,6 +210,8 @@ export interface BackgroundSummary {
   name: string;
   description?: string;
   feat?: string;
+  edition: "2024" | "2014";
+  status: "active" | "legacy";
 }
 
 export interface SpeciesSummary {
@@ -437,6 +447,12 @@ export const api = {
         body: JSON.stringify({ choices_made: validated, step }),
       });
     },
+
+    rollAbilities: (): Promise<AbilityRoll[]> =>
+      apiFetch<{ rolls: AbilityRoll[] }>("/character/roll-abilities", {
+        method: "POST",
+        body: JSON.stringify({}),
+      }).then((r) => r.rolls),
 
     derived: (choices: ChoicesMade, view: string): Promise<DerivedResponse> =>
       apiFetch<DerivedResponse>("/character/derived", {

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { AlertCircle, Check, ChevronDown, ChevronUp, Dice6, Info, Loader2 } from "lucide-react";
-import { api } from "@/lib/api";
+import { api, type AbilityRoll } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { useCharacterStore } from "@/store/characterStore";
 
@@ -15,22 +15,6 @@ const ABILITIES = [
 ] as const;
 type Ability = (typeof ABILITIES)[number];
 
-const STANDARD_ARRAY = [15, 14, 13, 12, 10, 8] as const;
-
-// D&D 2024 point-buy table (matches modules/ability_scores.POINT_BUY_COSTS).
-const POINT_BUY_COSTS: Record<number, number> = {
-  8: 0,
-  9: 1,
-  10: 2,
-  11: 3,
-  12: 4,
-  13: 5,
-  14: 7,
-  15: 9,
-};
-const POINT_BUY_MIN = 8;
-const POINT_BUY_MAX = 15;
-const POINT_BUY_TOTAL = 27;
 const MANUAL_MIN = 3;
 const MANUAL_MAX = 18;
 const EXTRA_MOD_MIN = -5;
@@ -51,6 +35,7 @@ const EMPTY_ROLL_ASSIGNMENTS: RollAssignments = {
 function defaultScores(
   method: Method,
   recommended?: Record<string, number>,
+  pointBuyMin = 8,
 ): Partial<Record<Ability, number>> {
   if (method === "standard_array") {
     return {};
@@ -60,7 +45,7 @@ function defaultScores(
       ABILITIES.map((a) => [a, Number(recommended[a] ?? 10)]),
     ) as Record<Ability, number>;
   }
-  return Object.fromEntries(ABILITIES.map((a) => [a, 8])) as Record<
+  return Object.fromEntries(ABILITIES.map((a) => [a, pointBuyMin])) as Record<
     Ability,
     number
   >;
@@ -78,29 +63,51 @@ function normalizeMethod(method: unknown): Method {
   return "standard_array";
 }
 
-function formatModifier(score: number) {
-  const mod = Math.floor((score - 10) / 2);
-  return mod >= 0 ? `+${mod}` : `${mod}`;
-}
-
-function modifierColor(score: number): string {
-  const mod = Math.floor((score - 10) / 2);
-  if (mod > 0) return "text-green-600 dark:text-green-400";
-  if (mod < 0) return "text-destructive/80";
+function modifierToneClass(tone: unknown): string {
+  if (tone === "positive") return "text-green-600 dark:text-green-400";
+  if (tone === "negative") return "text-destructive/80";
   return "text-muted-foreground";
-}
-
-function roll4d6DropLowest() {
-  const rolls = Array.from({ length: 4 }, () => Math.floor(Math.random() * 6) + 1);
-  // Descending sort keeps the highest three values in indices 0..2.
-  rolls.sort((a, b) => b - a);
-  return rolls[0] + rolls[1] + rolls[2];
 }
 
 interface BackgroundAsi {
   total_points?: number;
   suggested?: Record<string, number>;
   ability_options?: string[];
+}
+
+interface AbilityGenerationState {
+  abilities?: Record<string, {
+    score?: number;
+    modifier_display?: string;
+    modifier_tone?: string;
+  }>;
+  standard_array?: {
+    values?: number[];
+    assigned_count?: number;
+    complete?: boolean;
+    valid?: boolean;
+    available_values_by_ability?: Record<string, number[]>;
+  };
+  point_buy?: {
+    total?: number;
+    min?: number;
+    max?: number;
+    spent?: number;
+    remaining?: number;
+    controls?: Record<string, {
+      current_cost?: number;
+      can_increment?: boolean;
+      can_decrement?: boolean;
+      increment_score?: number | null;
+      decrement_score?: number | null;
+    }>;
+  };
+  manual?: { min?: number; max?: number };
+  background_asi?: {
+    spent?: number;
+    remaining?: number;
+    values_by_ability?: Record<string, number[]>;
+  };
 }
 
 export function AbilitiesStep() {
@@ -119,12 +126,17 @@ export function AbilitiesStep() {
     | undefined;
   const asi = (previewQuery.data?.background_asi as BackgroundAsi | undefined) ??
     { total_points: 3, suggested: {}, ability_options: [...ABILITIES] };
+  const abilityGeneration = (previewQuery.data?.ability_generation as
+    | AbilityGenerationState
+    | undefined) ?? {};
+  const pointBuyMin = abilityGeneration.point_buy?.min ?? 8;
+  const standardValues = abilityGeneration.standard_array?.values ?? [];
 
   const storedScores = (choicesMade["ability_scores"] as
     | Record<string, unknown>
     | undefined) ??
     {};
-  const fallbackScores = defaultScores(method, recommended);
+  const fallbackScores = defaultScores(method, recommended, pointBuyMin);
 
   const scores = ABILITIES.reduce(
     (acc, a) => {
@@ -144,7 +156,7 @@ export function AbilitiesStep() {
   const standardArrayAssignments = ABILITIES.reduce(
     (acc, a) => {
       const value = Number(storedScores[a]);
-      acc[a] = STANDARD_ARRAY.includes(value as (typeof STANDARD_ARRAY)[number])
+      acc[a] = standardValues.includes(value)
         ? value
         : "";
       return acc;
@@ -152,13 +164,13 @@ export function AbilitiesStep() {
     {} as Record<Ability, number | "">,
   );
 
-  const [rolledValues, setRolledValues] = useState<number[]>([]);
+  const [rolledValues, setRolledValues] = useState<AbilityRoll[]>([]);
   const [rollAssignments, setRollAssignments] =
     useState<RollAssignments>(EMPTY_ROLL_ASSIGNMENTS);
 
   function setMethod(next: Method) {
     setChoice("ability_scores_method", next);
-    setChoice("ability_scores", defaultScores(next, recommended));
+    setChoice("ability_scores", defaultScores(next, recommended, pointBuyMin));
   }
 
   // Keep `recommended` mode in sync with whatever the class-recommended
@@ -173,9 +185,9 @@ export function AbilitiesStep() {
       (a) => Number(current[a]) === Number(recommended[a]),
     );
     if (!matches) {
-      setChoice("ability_scores", defaultScores("recommended", recommended));
+      setChoice("ability_scores", defaultScores("recommended", recommended, pointBuyMin));
     }
-  }, [method, recommended, choicesMade, setChoice]);
+  }, [method, recommended, choicesMade, pointBuyMin, setChoice]);
 
   function setScore(ability: Ability, value: number) {
     const next = { ...scores, [ability]: value };
@@ -196,20 +208,17 @@ export function AbilitiesStep() {
   }
 
   function decrementPointBuy(ability: Ability) {
-    if (scores[ability] <= POINT_BUY_MIN) return;
-    setScore(ability, scores[ability] - 1);
+    const next = abilityGeneration.point_buy?.controls?.[ability]?.decrement_score;
+    if (typeof next === "number") setScore(ability, next);
   }
 
   function incrementPointBuy(ability: Ability) {
-    const score = scores[ability];
-    if (score >= POINT_BUY_MAX) return;
-    const delta = (POINT_BUY_COSTS[score + 1] ?? POINT_BUY_TOTAL) - POINT_BUY_COSTS[score];
-    if (pointSpend + delta > POINT_BUY_TOTAL) return;
-    setScore(ability, score + 1);
+    const next = abilityGeneration.point_buy?.controls?.[ability]?.increment_score;
+    if (typeof next === "number") setScore(ability, next);
   }
 
-  function rollAllAbilityScores() {
-    setRolledValues(Array.from({ length: 6 }, () => roll4d6DropLowest()));
+  async function rollAllAbilityScores() {
+    setRolledValues(await api.character.rollAbilities());
     setRollAssignments(EMPTY_ROLL_ASSIGNMENTS);
   }
 
@@ -224,7 +233,7 @@ export function AbilitiesStep() {
     const assigned = ABILITIES.reduce(
       (acc, ability) => {
         const index = rollAssignments[ability];
-        if (index !== null) acc[ability] = rolledValues[index] ?? 8;
+        if (index !== null) acc[ability] = rolledValues[index]?.value ?? pointBuyMin;
         return acc;
       },
       {} as Record<Ability, number>,
@@ -234,22 +243,11 @@ export function AbilitiesStep() {
     setChoice("ability_scores", assigned);
   }
 
-  // Standard array: each value used once.
   const arraySelections = ABILITIES.map((a) => standardArrayAssignments[a]).filter(
     (v): v is number => typeof v === "number",
   );
-  const arrayComplete = arraySelections.length === ABILITIES.length;
-  const arrayValid =
-    method !== "standard_array" ||
-    (arrayComplete &&
-      [...arraySelections].sort((a, b) => a - b).join(",") ===
-        [...STANDARD_ARRAY].sort((a, b) => a - b).join(","));
-
-  // Point buy: total spend.
-  const pointSpend =
-    method === "point_buy"
-      ? ABILITIES.reduce((sum, a) => sum + (POINT_BUY_COSTS[scores[a]] ?? 0), 0)
-      : 0;
+  const arrayComplete = abilityGeneration.standard_array?.complete ?? false;
+  const arrayValid = method !== "standard_array" || (abilityGeneration.standard_array?.valid ?? false);
 
   const additionalStored = (choicesMade["additional_ability_modifiers"] as
     | Record<string, number>
@@ -286,6 +284,10 @@ export function AbilitiesStep() {
 
   const rollAssignmentsComplete =
     rolledValues.length === 6 && ABILITIES.every((a) => rollAssignments[a] !== null);
+  const pointTotal = abilityGeneration.point_buy?.total ?? 0;
+  const pointRemaining = abilityGeneration.point_buy?.remaining ?? 0;
+  const manualMin = abilityGeneration.manual?.min ?? MANUAL_MIN;
+  const manualMax = abilityGeneration.manual?.max ?? MANUAL_MAX;
 
   return (
     <div className="space-y-8">
@@ -386,10 +388,8 @@ export function AbilitiesStep() {
               <div>
                 <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-3">Rolled values</p>
                 <div className="flex flex-wrap gap-2">
-                  {rolledValues.map((value, idx) => {
+                  {rolledValues.map((roll, idx) => {
                     const assignedTo = ABILITIES.find((a) => rollAssignments[a] === idx);
-                    const mod = Math.floor((value - 10) / 2);
-                    const modStr = mod >= 0 ? `+${mod}` : `${mod}`;
                     return (
                       <div
                         key={idx}
@@ -400,8 +400,10 @@ export function AbilitiesStep() {
                             : "border-border/80 bg-background/80 shadow-sm",
                         )}
                       >
-                        <span className="text-xl font-bold text-foreground leading-tight">{value}</span>
-                        <span className={cn("text-xs font-medium", modifierColor(value))}>{modStr}</span>
+                        <span className="text-xl font-bold text-foreground leading-tight">{roll.value}</span>
+                        <span className={cn("text-xs font-medium", modifierToneClass(roll.modifier_tone))}>
+                          {roll.modifier_display}
+                        </span>
                         {assignedTo && (
                           <span className="text-[10px] uppercase tracking-wider text-muted-foreground mt-0.5">
                             {assignedTo.slice(0, 3)}
@@ -422,7 +424,7 @@ export function AbilitiesStep() {
                       .filter((i): i is number => i !== null),
                   );
                   const options = rolledValues
-                    .map((value, idx) => ({ value, idx }))
+                    .map((roll, idx) => ({ roll, idx }))
                     .filter(({ idx }) => idx === current || !usedByOthers.has(idx));
 
                   return (
@@ -448,9 +450,9 @@ export function AbilitiesStep() {
                         )}
                       >
                         <option value="">— assign —</option>
-                        {options.map(({ value, idx }) => (
-                          <option key={`${ability}-${idx}-${value}`} value={idx}>
-                            {value}
+                        {options.map(({ roll, idx }) => (
+                          <option key={`${ability}-${idx}-${roll.value}`} value={idx}>
+                            {roll.value}
                           </option>
                         ))}
                       </select>
@@ -487,12 +489,12 @@ export function AbilitiesStep() {
               <h3 className="font-semibold text-lg">Assign scores</h3>
               {method === "standard_array" && (
                 <p className="text-sm text-muted-foreground">
-                  Assign each of {STANDARD_ARRAY.join(", ")} to exactly one ability.
+                  Assign each of {standardValues.join(", ")} to exactly one ability.
                 </p>
               )}
               {method === "point_buy" && (
                 <p className="text-sm text-muted-foreground">
-                  Spend up to {POINT_BUY_TOTAL} points. Higher scores cost more.
+                  Spend up to {pointTotal} points. Higher scores cost more.
                 </p>
               )}
               {method === "recommended" && (
@@ -502,7 +504,7 @@ export function AbilitiesStep() {
               )}
               {method === "manual" && (
                 <p className="text-sm text-muted-foreground">
-                  Enter scores between {MANUAL_MIN} and {MANUAL_MAX} for each ability.
+                  Enter scores between {manualMin} and {manualMax} for each ability.
                 </p>
               )}
             </div>
@@ -510,18 +512,18 @@ export function AbilitiesStep() {
             {method === "point_buy" && (
               <div className={cn(
                 "flex-shrink-0 rounded-lg border px-3 py-2 text-center min-w-[108px]",
-                pointSpend > POINT_BUY_TOTAL
+                pointRemaining < 0
                   ? "border-destructive/40 bg-destructive/10 text-destructive"
-                  : pointSpend === POINT_BUY_TOTAL
+                  : pointRemaining === 0
                     ? "border-green-500/40 bg-green-500/10 text-green-700 dark:text-green-400"
                     : "border-border bg-secondary/30 text-muted-foreground",
               )}>
-                {pointSpend > POINT_BUY_TOTAL ? (
+                {pointRemaining < 0 ? (
                   <>
                     <p className="text-xs uppercase tracking-widest mb-0.5">Over budget</p>
-                    <p className="text-lg font-bold">+{pointSpend - POINT_BUY_TOTAL}</p>
+                    <p className="text-lg font-bold">+{Math.abs(pointRemaining)}</p>
                   </>
-                ) : pointSpend === POINT_BUY_TOTAL ? (
+                ) : pointRemaining === 0 ? (
                   <>
                     <p className="text-xs uppercase tracking-widest mb-0.5">Complete</p>
                     <p className="text-lg font-bold flex items-center justify-center gap-1">
@@ -531,7 +533,7 @@ export function AbilitiesStep() {
                 ) : (
                   <>
                     <p className="text-xs uppercase tracking-widest mb-0.5">Remaining</p>
-                    <p className="text-lg font-bold">{POINT_BUY_TOTAL - pointSpend}</p>
+                    <p className="text-lg font-bold">{pointRemaining}</p>
                   </>
                 )}
               </div>
@@ -565,13 +567,10 @@ export function AbilitiesStep() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {ABILITIES.map((ability) => {
               const currentScore = scores[ability];
-              const pointBuyIncrementCost =
-                (POINT_BUY_COSTS[currentScore + 1] ?? POINT_BUY_TOTAL + 1) -
-                (POINT_BUY_COSTS[currentScore] ?? 0);
-              const canPointBuyDecrement = currentScore > POINT_BUY_MIN;
-              const canPointBuyIncrement =
-                currentScore < POINT_BUY_MAX &&
-                pointSpend + pointBuyIncrementCost <= POINT_BUY_TOTAL;
+              const abilityView = abilityGeneration.abilities?.[ability];
+              const pointControl = abilityGeneration.point_buy?.controls?.[ability];
+              const canPointBuyDecrement = pointControl?.can_decrement === true;
+              const canPointBuyIncrement = pointControl?.can_increment === true;
 
               const displayScore =
                 method === "standard_array"
@@ -594,8 +593,8 @@ export function AbilitiesStep() {
                         {displayScore ?? "—"}
                       </span>
                       {displayScore !== null && (
-                        <span className={cn("text-sm font-medium", modifierColor(displayScore))}>
-                          {formatModifier(displayScore)}
+                        <span className={cn("text-sm font-medium", modifierToneClass(abilityView?.modifier_tone))}>
+                          {abilityView?.modifier_display ?? "—"}
                         </span>
                       )}
                     </div>
@@ -609,8 +608,8 @@ export function AbilitiesStep() {
                           {standardArrayAssignments[ability] || "—"}
                         </span>
                         {standardArrayAssignments[ability] && (
-                          <span className={cn("text-sm font-medium", modifierColor(standardArrayAssignments[ability] as number))}>
-                            {formatModifier(standardArrayAssignments[ability] as number)}
+                          <span className={cn("text-sm font-medium", modifierToneClass(abilityView?.modifier_tone))}>
+                            {abilityView?.modifier_display ?? "—"}
                           </span>
                         )}
                       </div>
@@ -629,13 +628,7 @@ export function AbilitiesStep() {
                         )}
                       >
                         <option value="">— choose —</option>
-                        {STANDARD_ARRAY.filter((value) => {
-                          const current = standardArrayAssignments[ability];
-                          if (current === value) return true;
-                          return !ABILITIES.some(
-                            (a) => a !== ability && standardArrayAssignments[a] === value,
-                          );
-                        }).map((value) => (
+                        {(abilityGeneration.standard_array?.available_values_by_ability?.[ability] ?? standardValues).map((value) => (
                           <option key={`${ability}-${value}`} value={value}>
                             {value}
                           </option>
@@ -676,7 +669,7 @@ export function AbilitiesStep() {
                       </button>
                       {method === "point_buy" && (
                         <span className="text-xs text-muted-foreground">
-                          costs {POINT_BUY_COSTS[currentScore] ?? 0} pts
+                        costs {pointControl?.current_cost ?? 0} pts
                         </span>
                       )}
                     </div>
@@ -685,15 +678,15 @@ export function AbilitiesStep() {
                       <input
                         id={`score-${ability}`}
                         type="number"
-                        min={MANUAL_MIN}
-                        max={MANUAL_MAX}
+                        min={manualMin}
+                        max={manualMax}
                         value={currentScore}
                         onChange={(e) =>
                           setScore(
                             ability,
                             Math.max(
-                              MANUAL_MIN,
-                              Math.min(MANUAL_MAX, Number(e.target.value) || MANUAL_MIN),
+                              manualMin,
+                              Math.min(manualMax, Number(e.target.value) || manualMin),
                             ),
                           )
                         }
@@ -729,6 +722,7 @@ export function AbilitiesStep() {
 
       <BackgroundAsiPicker
         asi={asi}
+        state={abilityGeneration.background_asi}
         hasBackground={!!choicesMade["background"]}
       />
 
@@ -810,9 +804,11 @@ export function AbilitiesStep() {
 
 function BackgroundAsiPicker({
   asi,
+  state,
   hasBackground,
 }: {
   asi: BackgroundAsi;
+  state?: AbilityGenerationState["background_asi"];
   hasBackground: boolean;
 }) {
   const choicesMade = useCharacterStore((s) => s.choicesMade);
@@ -823,11 +819,7 @@ function BackgroundAsiPicker({
     (choicesMade["background_bonuses"] as Record<string, number> | undefined) ??
     {};
 
-  const spent = Object.values(stored).reduce(
-    (sum, v) => sum + Math.max(0, Number(v) || 0),
-    0,
-  );
-  const remaining = total - spent;
+  const remaining = state?.remaining ?? total;
 
   function setBonus(ability: string, value: number) {
     const next = { ...stored, [ability]: value };
@@ -920,11 +912,10 @@ function BackgroundAsiPicker({
                     "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1",
                   )}
                 >
-                  {[0, 1, 2].map((opt) => {
-                    const wouldExceed = spent - v + opt > total;
+                  {(state?.values_by_ability?.[ability] ?? [v]).map((opt) => {
                     return (
-                      <option key={opt} value={opt} disabled={wouldExceed}>
-                        +{opt}{wouldExceed ? " (over budget)" : ""}
+                      <option key={opt} value={opt}>
+                        +{opt}
                       </option>
                     );
                   })}

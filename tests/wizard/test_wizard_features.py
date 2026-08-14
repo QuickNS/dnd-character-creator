@@ -71,6 +71,31 @@ def build_wizard_with_choices(level, scholar_skill=None, subclass=None):
     return builder.to_character()
 
 
+def build_wizard_with_spell_mastery(spellbook, selection):
+    """Build a level-18 Wizard with a persisted spellbook and mastery selection."""
+    builder = CharacterBuilder()
+    builder.apply_choices(
+        {
+            "character_name": "Spell Mastery Test",
+            "level": 18,
+            "class": "Wizard",
+            "species": "Human",
+            "background": "Sage",
+            "ability_scores": {
+                "Strength": 8,
+                "Dexterity": 14,
+                "Constitution": 14,
+                "Intelligence": 16,
+                "Wisdom": 10,
+                "Charisma": 10,
+            },
+            "spell_selections": {"spellbook": spellbook},
+            "Spell Mastery": selection,
+        }
+    )
+    return builder.to_character()
+
+
 # ---------------------------------------------------------------------------
 # 1. Base Wizard Class
 # ---------------------------------------------------------------------------
@@ -165,6 +190,7 @@ class TestWizardBaseClass:
         class_data = character["class_data"]
         assert class_data["prepared_spells_by_level"][str(level)] == expected_prepared
         assert class_data["cantrips_by_level"][str(level)] == expected_cantrips
+
 
     # -- Spell slot progression --
 
@@ -710,3 +736,51 @@ class TestWizardEffectsAndEdgeCases:
                 f"Expected {slot_level}={count} at wizard level {level}, "
                 f"got {slots.get(slot_level)}"
             )
+
+
+class TestSpellMastery:
+    """Spell Mastery must use the submitted spellbook and enforce its filters."""
+
+    def test_spellbook_action_spells_become_at_will(self):
+        character = build_wizard_with_spell_mastery(
+            ["Magic Missile", "Web"],
+            ["Magic Missile", "Web"],
+        )
+
+        always_prepared = character["spells"]["always_prepared"]
+        assert {"Magic Missile", "Web"}.issubset(always_prepared)
+        assert set(character["spells"]["spellbook"]) == {"Magic Missile", "Web"}
+        for spell in ("Magic Missile", "Web"):
+            assert always_prepared[spell]["at_will"] is True
+            assert character["spell_metadata"][spell]["at_will"] is True
+
+    def test_spell_mastery_rejects_spell_not_in_submitted_spellbook(self):
+        character = build_wizard_with_spell_mastery(
+            ["Magic Missile"],
+            ["Magic Missile", "Web"],
+        )
+
+        assert {"Magic Missile", "Web"}.isdisjoint(
+            character["spells"]["always_prepared"]
+        )
+
+    @pytest.mark.parametrize(
+        "spellbook,selection",
+        [
+            (
+                ["Magic Missile", "Detect Magic"],
+                ["Magic Missile", "Detect Magic"],
+            ),
+            (
+                ["Magic Missile", "Misty Step"],
+                ["Magic Missile", "Misty Step"],
+            ),
+        ],
+        ids=["two_level_one_spells", "bonus_action_level_two_spell"],
+    )
+    def test_spell_mastery_requires_one_action_spell_at_each_level(
+        self, spellbook, selection
+    ):
+        character = build_wizard_with_spell_mastery(spellbook, selection)
+
+        assert set(selection).isdisjoint(character["spells"]["always_prepared"])
